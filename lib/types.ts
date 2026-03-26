@@ -4,6 +4,8 @@
 
 export type BusinessType = "storm_insurance" | "residential" | "full_service";
 
+export type DesignStyle = "modern_clean" | "bold_confident" | "warm_trustworthy";
+
 export type LeadSource = "contact_form" | "estimate_widget" | "external_widget";
 
 export type LeadStatus = "new" | "contacted" | "quoted" | "won" | "lost";

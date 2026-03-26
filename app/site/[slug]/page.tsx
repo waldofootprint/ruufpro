@@ -83,9 +83,9 @@ export default async function ContractorSite({
     }
   );
 
-  // Pick the right template based on business type.
-  // For now, all types use StormInsurance — we'll add the others in the next tasks.
-  // The template receives ALL the data it needs as props.
+  // Render the template. Currently all design styles use the same layout
+  // component — when Hannah's v0 designs are ready, we'll create separate
+  // components for modern_clean, bold_confident, and warm_trustworthy.
   return (
     <StormInsuranceTemplate
       contractor={contractor}

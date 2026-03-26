@@ -1,48 +1,49 @@
 // Onboarding flow — 3 steps on one page:
-// Step 1: Pick a template (storm_insurance, residential, full_service)
+// Step 1: Pick a design style (visual look for the site)
 // Step 2: Enter business info (name, phone, city, state)
 // Step 3: Confirm & publish
 //
-// After publish, the roofer's site is live at [slug].roofready.com
+// All templates are residential-focused. The roofer picks a visual style,
+// not a business type. Business type defaults to "residential".
 
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import type { BusinessType } from "@/lib/types";
 
-// Template options — mapped to business types, not visual styles
-const TEMPLATES = [
+type DesignStyle = "modern_clean" | "bold_confident" | "warm_trustworthy";
+
+const DESIGN_OPTIONS = [
   {
-    id: "storm_insurance" as BusinessType,
-    name: "Storm & Insurance",
+    id: "modern_clean" as DesignStyle,
+    name: "Modern Clean",
     description:
-      "For roofers who chase storms and handle insurance claims. Urgent CTAs, emergency language, 24/7 availability.",
-    headline: "Storm Damage? We're Here to Help.",
-    cta: "Get Free Storm Inspection",
-    color: "border-red-400 bg-red-50",
-    selectedColor: "border-red-500 bg-red-100 ring-2 ring-red-500",
+      "White space, subtle shadows, minimal color, elegant typography. Professional and polished.",
+    vibe: "Upscale & refined",
+    color: "border-gray-300 bg-white",
+    selectedColor: "border-brand-500 bg-brand-50 ring-2 ring-brand-500",
+    preview: "bg-gradient-to-br from-white to-gray-100",
   },
   {
-    id: "residential" as BusinessType,
-    name: "Residential",
+    id: "bold_confident" as DesignStyle,
+    name: "Bold & Confident",
     description:
-      "For roofers doing scheduled re-roofs and repairs. Trust-focused, quality-first, professional tone.",
-    headline: "Trusted Roofing in Your City",
-    cta: "Get Your Free Estimate",
-    color: "border-blue-400 bg-blue-50",
-    selectedColor: "border-blue-500 bg-blue-100 ring-2 ring-blue-500",
+      "Darker tones, strong contrast, prominent CTAs, bold imagery. Commands authority and trust.",
+    vibe: "Established & powerful",
+    color: "border-gray-300 bg-white",
+    selectedColor: "border-gray-800 bg-gray-50 ring-2 ring-gray-800",
+    preview: "bg-gradient-to-br from-gray-800 to-gray-900",
   },
   {
-    id: "full_service" as BusinessType,
-    name: "Full Service",
+    id: "warm_trustworthy" as DesignStyle,
+    name: "Warm & Trustworthy",
     description:
-      "For contractors offering roofing + gutters + siding + more. Shows the full range of what you do.",
-    headline: "Your Home, Our Expertise",
-    cta: "Get Your Free Estimate",
-    color: "border-green-400 bg-green-50",
-    selectedColor: "border-green-500 bg-green-100 ring-2 ring-green-500",
+      "Earthy tones, friendly feel, community-oriented. Your local neighborhood roofer.",
+    vibe: "Local & approachable",
+    color: "border-gray-300 bg-white",
+    selectedColor: "border-amber-600 bg-amber-50 ring-2 ring-amber-600",
+    preview: "bg-gradient-to-br from-amber-50 to-amber-100",
   },
 ];
 
@@ -54,7 +55,7 @@ export default function OnboardingPage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   // Form state
-  const [template, setTemplate] = useState<BusinessType>("residential");
+  const [designStyle, setDesignStyle] = useState<DesignStyle>("modern_clean");
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
@@ -75,9 +76,9 @@ export default function OnboardingPage() {
   function generateSlug(name: string): string {
     return name
       .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "") // remove special characters
-      .replace(/\s+/g, "-") // spaces to hyphens
-      .replace(/-+/g, "-") // collapse multiple hyphens
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
       .trim();
   }
 
@@ -93,7 +94,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Step 1: Create the contractor row
+    // Create the contractor row (always residential)
     const { data: contractor, error: contractorErr } = await supabase
       .from("contractors")
       .insert({
@@ -103,7 +104,7 @@ export default function OnboardingPage() {
         phone,
         city,
         state,
-        business_type: template,
+        business_type: "residential",
       })
       .select()
       .single();
@@ -118,11 +119,11 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Step 2: Create the site
+    // Create the site with the chosen design style
     const { error: siteErr } = await supabase.from("sites").insert({
       contractor_id: contractor.id,
       slug,
-      template,
+      template: designStyle,
       published: true,
     });
 
@@ -138,9 +139,6 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Success — redirect to their new site
-    // In production this would be slug.roofready.com
-    // In dev, we go to the site preview page
     router.push(`/site/${slug}`);
   }
 
@@ -173,32 +171,41 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* ===== STEP 1: Pick Template ===== */}
+        {/* ===== STEP 1: Pick Design Style ===== */}
         {step === 1 && (
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              What type of roofing business do you run?
+              Choose your site's look
             </h1>
             <p className="text-gray-600 mb-6">
-              This determines your site's content, tone, and default services.
-              You can customize everything later.
+              Pick the style that fits your brand. You can change this anytime.
             </p>
 
             <div className="space-y-4">
-              {TEMPLATES.map((t) => (
+              {DESIGN_OPTIONS.map((d) => (
                 <button
-                  key={t.id}
-                  onClick={() => setTemplate(t.id)}
+                  key={d.id}
+                  onClick={() => setDesignStyle(d.id)}
                   className={`w-full text-left rounded-lg border-2 p-5 transition-all ${
-                    template === t.id ? t.selectedColor : t.color
+                    designStyle === d.id ? d.selectedColor : d.color
                   }`}
                 >
-                  <div className="font-semibold text-gray-900">{t.name}</div>
-                  <div className="mt-1 text-sm text-gray-600">
-                    {t.description}
-                  </div>
-                  <div className="mt-3 text-xs text-gray-500">
-                    Preview headline: "{t.headline}" • CTA: "{t.cta}"
+                  <div className="flex items-center gap-4">
+                    {/* Color preview swatch */}
+                    <div
+                      className={`h-14 w-14 rounded-lg ${d.preview} shrink-0`}
+                    />
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        {d.name}
+                      </div>
+                      <div className="mt-0.5 text-sm text-gray-600">
+                        {d.description}
+                      </div>
+                      <div className="mt-1 text-xs text-gray-400">
+                        {d.vibe}
+                      </div>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -343,9 +350,9 @@ export default function OnboardingPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Template</span>
+                <span className="text-sm text-gray-500">Design</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {TEMPLATES.find((t) => t.id === template)?.name}
+                  {DESIGN_OPTIONS.find((d) => d.id === designStyle)?.name}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -378,7 +385,6 @@ export default function OnboardingPage() {
   );
 }
 
-// US state abbreviations for the dropdown
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
   "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
