@@ -1,35 +1,96 @@
 // This page renders a contractor's site.
-// The [slug] in the folder name is a dynamic parameter —
-// when someone visits "joes-roofing.roofready.com", the middleware
-// rewrites it to "/site/joes-roofing", and Next.js passes
-// { params: { slug: "joes-roofing" } } to this component.
 //
-// For now, this is a placeholder. Once Supabase is connected,
-// we'll look up the contractor's data by slug and render their template.
+// How the data flows:
+// 1. Visitor goes to "joes-roofing.roofready.com"
+// 2. Middleware rewrites to "/site/joes-roofing"
+// 3. This page receives { params: { slug: "joes-roofing" } }
+// 4. We query Supabase for the site + contractor data matching that slug
+// 5. We merge the data with smart defaults (so the site looks complete
+//    even if the roofer only entered 4 fields during onboarding)
+// 6. We render the appropriate template based on business type
+
+import { createServerSupabase } from "@/lib/supabase-server";
+import { getSiteContent } from "@/lib/defaults";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import type { Contractor, Site, BusinessType } from "@/lib/types";
+import StormInsuranceTemplate from "@/components/templates/storm-insurance";
+
+// Generate SEO metadata for each contractor site
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const supabase = createServerSupabase();
+  const { data: site } = await supabase
+    .from("sites")
+    .select("*, contractors(*)")
+    .eq("slug", params.slug)
+    .eq("published", true)
+    .single();
+
+  if (!site) return { title: "Site Not Found" };
+
+  const contractor = site.contractors as unknown as Contractor;
+  const content = getSiteContent(
+    contractor.business_type as BusinessType,
+    contractor.business_name,
+    contractor.city,
+    { metaTitle: site.meta_title, metaDescription: site.meta_description }
+  );
+
+  return {
+    title: content.metaTitle,
+    description: content.metaDescription,
+  };
+}
 
 export default async function ContractorSite({
   params,
 }: {
   params: { slug: string };
 }) {
-  const { slug } = params;
+  const supabase = createServerSupabase();
 
+  // Fetch the site and its contractor data in one query.
+  // The "contractors(*)" part is a Supabase join — it pulls the related
+  // contractor row along with the site row.
+  const { data: site } = await supabase
+    .from("sites")
+    .select("*, contractors(*)")
+    .eq("slug", params.slug)
+    .eq("published", true)
+    .single();
+
+  // If no published site exists for this slug, show a 404
+  if (!site) {
+    notFound();
+  }
+
+  const contractor = site.contractors as unknown as Contractor;
+  const content = getSiteContent(
+    contractor.business_type as BusinessType,
+    contractor.business_name,
+    contractor.city,
+    {
+      headline: site.hero_headline,
+      ctaText: site.hero_cta_text,
+      aboutText: site.about_text,
+      services: site.services,
+      metaTitle: site.meta_title,
+      metaDescription: site.meta_description,
+    }
+  );
+
+  // Pick the right template based on business type.
+  // For now, all types use StormInsurance — we'll add the others in the next tasks.
+  // The template receives ALL the data it needs as props.
   return (
-    <main className="min-h-screen bg-white">
-      <div className="flex flex-col items-center justify-center min-h-screen p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          {slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-        </h1>
-        <p className="text-gray-500 mb-2">
-          This contractor site is being set up.
-        </p>
-        <p className="text-sm text-gray-400">
-          Powered by{" "}
-          <a href="https://roofready.com" className="text-brand-600 underline">
-            RoofReady
-          </a>
-        </p>
-      </div>
-    </main>
+    <StormInsuranceTemplate
+      contractor={contractor}
+      site={site as unknown as Site}
+      content={content}
+    />
   );
 }
