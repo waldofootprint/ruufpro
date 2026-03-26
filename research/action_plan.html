@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoofReady Action Plan — Competitor Analysis, Market Gaps & Playbook</title>
+<style>
+  @media print {
+    body { font-size: 10pt; }
+    h1 { font-size: 18pt; }
+    h2 { font-size: 15pt; page-break-before: auto; }
+    h3 { font-size: 12pt; }
+    pre { font-size: 8pt; }
+    table { font-size: 9pt; }
+    .no-break { page-break-inside: avoid; }
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+    line-height: 1.55;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 26px; border-bottom: 3px solid #1a1a1a; padding-bottom: 10px; }
+  h2 { font-size: 21px; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-top: 36px; color: #111; }
+  h3 { font-size: 16px; margin-top: 24px; color: #333; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13px; }
+  th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #f5f5f5; font-weight: 600; }
+  tr:nth-child(even) { background: #fafafa; }
+  pre { background: #f5f5f5; padding: 14px; border-radius: 6px; overflow-x: auto; font-size: 12px; font-family: "SF Mono", Menlo, Monaco, monospace; }
+  code { background: #f0f0f0; padding: 2px 5px; border-radius: 3px; font-size: 0.9em; }
+  strong { color: #000; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 28px 0; }
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 3px; }
+  .subtitle { color: #666; font-size: 15px; margin-top: -8px; }
+  .highlight { background: #fff3cd; padding: 10px 14px; border-left: 4px solid #ffc107; margin: 14px 0; border-radius: 4px; }
+  .callout { background: #e8f5e9; padding: 10px 14px; border-left: 4px solid #4caf50; margin: 14px 0; border-radius: 4px; }
+  .danger { background: #ffebee; padding: 10px 14px; border-left: 4px solid #f44336; margin: 14px 0; border-radius: 4px; }
+  .small { font-size: 11px; color: #888; }
+</style>
+</head>
+<body>
+
+<h1>RoofReady Action Plan</h1>
+<p class="subtitle">Competitor Analysis &bull; Market Gaps &bull; Technical Playbook &bull; Prepared 2026-03-26</p>
+
+<div class="highlight">
+<strong>The Opportunity:</strong> Google launched an "Online Estimates" filter (Dec 2025) that hides roofers without online pricing. 78% of homeowners want pricing. 76% of roofers don't show it. Roofle charges $350/mo + $2K setup. We offer a free website + $99/mo estimate widget.
+</div>
+
+<hr>
+
+<h2>Part 1: Comprehensive Competitor Table</h2>
+
+<div style="overflow-x:auto;">
+<table>
+  <tr>
+    <th>Feature</th>
+    <th>Roofle</th>
+    <th>Roofr</th>
+    <th>JobNimbus</th>
+    <th>AccuLynx</th>
+    <th>ProLine</th>
+    <th>QuoteIQ</th>
+    <th>Scorpion</th>
+    <th>RoofWebs</th>
+    <th>GoDaddy/Wix</th>
+    <th><strong>RoofReady (Us)</strong></th>
+  </tr>
+  <tr>
+    <td><strong>Price</strong></td>
+    <td>$350/mo + $2K setup</td>
+    <td>$249-349/mo + per-report</td>
+    <td>$349-549/mo (solo)</td>
+    <td>$250/mo + $60-120/user</td>
+    <td>Free + paid</td>
+    <td>$29.99-399/mo</td>
+    <td>$3-10K/mo</td>
+    <td>Custom (agency)</td>
+    <td>$10-25/mo</td>
+    <td><strong>Free &rarr; $99-149/mo</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Contract</strong></td>
+    <td>Annual</td>
+    <td>Month-to-month or annual</td>
+    <td>Monthly or annual</td>
+    <td>Per-user monthly</td>
+    <td>Month-to-month</td>
+    <td>Month-to-month</td>
+    <td>12-24 months</td>
+    <td>Contract</td>
+    <td>Month-to-month</td>
+    <td><strong>Month-to-month</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Website Builder</strong></td>
+    <td>No</td>
+    <td>Beta ($199/mo add-on)</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>Yes (proprietary, locked)</td>
+    <td>Yes (agency-built)</td>
+    <td>Yes (generic)</td>
+    <td><strong>Yes (free, roofing-specific)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Instant Estimate Widget</strong></td>
+    <td>Yes (core product)</td>
+    <td>Yes ($149/mo add-on)</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>Yes (InstaQuote)</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td><strong>Yes ($99/mo tier)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Satellite Roof Measurement</strong></td>
+    <td>AI + EagleView/GAF</td>
+    <td>In-house ($13-19/report)</td>
+    <td>Integrates EagleView</td>
+    <td>EagleView/Hover/GAF</td>
+    <td>Integrates EagleView</td>
+    <td>MapMeasure Pro</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td><strong>V2: Google Solar API</strong></td>
+  </tr>
+  <tr>
+    <td><strong>CRM / Lead Dashboard</strong></td>
+    <td>Basic lead dashboard</td>
+    <td>Yes (full CRM)</td>
+    <td>Yes (full, core product)</td>
+    <td>Yes (full, core product)</td>
+    <td>Yes (full CRM)</td>
+    <td>Yes (full CRM)</td>
+    <td>Yes (Leads AI)</td>
+    <td>No</td>
+    <td>No</td>
+    <td><strong>Basic lead dashboard</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Proposals / eSign</strong></td>
+    <td>Yes</td>
+    <td>Yes (unlimited on paid)</td>
+    <td>Yes</td>
+    <td>Yes</td>
+    <td>No (integrates SumoQuote)</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td><strong>No (V3 roadmap)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Speed-to-Lead Auto-Reply</strong></td>
+    <td>No</td>
+    <td>SMS on paid plans</td>
+    <td>Yes ($49-249/mo add-on)</td>
+    <td>Texting (extra fee)</td>
+    <td>Yes (virtual phone)</td>
+    <td>Yes (AI Virtual Call)</td>
+    <td>Yes (Scorpion Connect AI)</td>
+    <td>No</td>
+    <td>No</td>
+    <td><strong>Yes ($149/mo tier)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Review Automation</strong></td>
+    <td>No</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td>Yes</td>
+    <td>Yes</td>
+    <td>DataPins</td>
+    <td>No</td>
+    <td><strong>Yes ($99/mo tier)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Follow-Up Sequences</strong></td>
+    <td>No</td>
+    <td>Limited automations</td>
+    <td>Yes (workflow automation)</td>
+    <td>Yes (limited)</td>
+    <td>Yes (automated follow-up)</td>
+    <td>Yes (AI Autopilot)</td>
+    <td>Yes (AI-driven)</td>
+    <td>No</td>
+    <td>No</td>
+    <td><strong>Yes ($149/mo tier)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>SEO / City Pages</strong></td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>Yes (Ranking AI)</td>
+    <td>Yes (agency SEO)</td>
+    <td>Basic SEO tools</td>
+    <td><strong>Yes ($149/mo tier)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Material Ordering</strong></td>
+    <td>Beacon Pro+</td>
+    <td>Supplier integrations</td>
+    <td>Beacon, ABC Supply</td>
+    <td>ABC Supply, SRS, QXO</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td><strong>No (not planned)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Financing</strong></td>
+    <td>ContractorLoan PRO</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td><strong>No (V3 roadmap)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Google Estimates Filter</strong></td>
+    <td>Yes (core value)</td>
+    <td>Yes (with add-on)</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>Yes (InstaQuote)</td>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td><strong>Yes (core value)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Onboarding Time</strong></td>
+    <td>Hours</td>
+    <td>Days-weeks</td>
+    <td>Weeks</td>
+    <td>Weeks</td>
+    <td>Minutes-hours</td>
+    <td>Minutes</td>
+    <td>Weeks-months</td>
+    <td>Weeks</td>
+    <td>Hours</td>
+    <td><strong>Minutes</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Target Size</strong></td>
+    <td>5-50+ employees</td>
+    <td>3-50+ employees</td>
+    <td>5-100+ employees</td>
+    <td>10-100+ employees</td>
+    <td>1-20 employees</td>
+    <td>1-20 employees</td>
+    <td>20-200+ employees</td>
+    <td>5-50 employees</td>
+    <td>Any</td>
+    <td><strong>1-10 employees</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Own Your Site on Exit</strong></td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td><strong>No</strong></td>
+    <td>Unclear</td>
+    <td>Yes</td>
+    <td><strong>Yes</strong></td>
+  </tr>
+</table>
+</div>
+
+<hr>
+
+<h2>Part 2: Market Gap Analysis &mdash; What We MUST Offer</h2>
+
+<h3>The 3 Gaps That Define Our Opportunity</h3>
+
+<div class="callout">
+<strong>Gap 1: No one offers a free roofing website + estimate widget together.</strong><br>
+Roofle = widget only (no website). Roofr = CRM + measurements (no website; beta site builder at $199/mo add-on). Scorpion = website + everything ($3-10K/mo, locked in). GoDaddy = generic website (no estimate widget, no lead tools). <strong>We fill this: free roofing-specific website + $99/mo estimate widget.</strong>
+</div>
+
+<div class="callout">
+<strong>Gap 2: Google's Online Estimates filter has no affordable solution for small roofers.</strong><br>
+Roofle ($350/mo + $2K) and Roofr ($249/mo + $149 estimator = $398/mo) serve it but exclude 1-10 person crews. 76% of roofers don't show pricing. 78% of homeowners want it. <strong>We fill this: estimate widget at $99/mo &mdash; 71% cheaper than Roofle.</strong>
+</div>
+
+<div class="callout">
+<strong>Gap 3: Small roofers choose between "too basic" and "too much."</strong><br>
+GoDaddy/Wix = too basic (no lead tools). JobNimbus/AccuLynx = too much ($349-549/mo, weeks of setup). <strong>We fill this: website + estimates + reviews + auto-reply at $99-149/mo, setup in minutes.</strong>
+</div>
+
+<h3>Features We MUST Have at Launch (Non-Negotiable)</h3>
+
+<table class="no-break">
+  <tr><th>Feature</th><th>Why Non-Negotiable</th><th>Evidence</th></tr>
+  <tr><td><strong>Free roofing website</strong></td><td>Our lead magnet and differentiator. Nobody else offers this.</td><td>97% of homeowners search Google. No website = invisible.</td></tr>
+  <tr><td><strong>Instant estimate calculator</strong></td><td>Core value prop. Gets roofers into Google's Online Estimates filter.</td><td>78% of homeowners want pricing. Google filter launched Dec 2025.</td></tr>
+  <tr><td><strong>Lead capture + email notification</strong></td><td>Useless to get traffic without capturing leads.</td><td>Table stakes for any business website.</td></tr>
+  <tr><td><strong>Review request automation</strong></td><td>35% of homeowners say reviews are #1 factor. Easy to build, massive ROI.</td><td>Roofers using automated requests get 3x more reviews.</td></tr>
+  <tr><td><strong>Mobile-responsive design</strong></td><td>61% of traffic is mobile.</td><td>Google penalizes non-mobile sites.</td></tr>
+  <tr><td><strong>Click-to-call button</strong></td><td>Roofers live on phone calls.</td><td>73% of homeowners find roofers via referral + search &rarr; call.</td></tr>
+</table>
+
+<h3>Features We SHOULD Have Soon (High-Value Upsell)</h3>
+
+<table class="no-break">
+  <tr><th>Feature</th><th>Why</th><th>Timeline</th></tr>
+  <tr><td><strong>Auto-text reply to leads</strong></td><td>"5-minute response = 400% higher conversion."</td><td>V1.2 (week 4)</td></tr>
+  <tr><td><strong>Follow-up drip sequences</strong></td><td>"80% of sales need 5+ follow-ups. 44% give up after 1."</td><td>V1.2 (week 4)</td></tr>
+  <tr><td><strong>City-specific SEO pages</strong></td><td>What Scorpion charges $3K/mo for. We auto-generate it.</td><td>V3 (week 6-8)</td></tr>
+  <tr><td><strong>Google Solar API integration</strong></td><td>Upgrades estimate from "rough range" to "satellite-informed."</td><td>V2 (week 5-6)</td></tr>
+</table>
+
+<h3>Features We Should NOT Build</h3>
+
+<table class="no-break">
+  <tr><th>Feature</th><th>Why NOT</th><th>Who Does This Already</th></tr>
+  <tr><td>Full CRM</td><td>6+ months to build. Compete with entrenched players.</td><td>JobNimbus, AccuLynx, ProLine</td></tr>
+  <tr><td>Material ordering</td><td>Complex supplier integrations. Not our ICP's pain.</td><td>Roofle, JobNimbus</td></tr>
+  <tr><td>Detailed roof measurement reports</td><td>$15-38/report, requires EagleView partnership.</td><td>Roofr, EagleView</td></tr>
+  <tr><td>Invoicing / payments</td><td>Dilutes focus. Partner or integrate.</td><td>JobNimbus, Roofr, QuoteIQ</td></tr>
+  <tr><td>Full marketing agency services</td><td>We're SaaS, not an agency.</td><td>Scorpion, Roofing Webmasters</td></tr>
+</table>
+
+<hr>
+
+<h2>Part 3: Actionable Playbook &mdash; Step by Step</h2>
+
+<h3>Phase 0: Validation (Days 1-7)</h3>
+
+<p><strong>Goal:</strong> Confirm roofers want this before writing code.</p>
+
+<table>
+  <tr><th>Day</th><th>Action</th><th>How</th><th>Success Metric</th></tr>
+  <tr><td>1</td><td>Create landing page</td><td>Carrd.co or single page. Headline: "Google just changed roofing search. Is your business invisible?" Email capture.</td><td>Page live</td></tr>
+  <tr><td>1-2</td><td>Find 50 roofers with no website</td><td>Google Maps "roofer" in 10 cities. Screenshot GBP listings with no website link.</td><td>50 prospects</td></tr>
+  <tr><td>2-3</td><td>Join 5 Facebook roofing groups</td><td>"Roofing Contractors," "Storm Restoration Contractors," "Roofing Sales &amp; Marketing," "Residential Roofing Contractors," "Roofing Business Owners"</td><td>Joined + approved</td></tr>
+  <tr><td>3-4</td><td>Post in 2 groups</td><td>"Google launched a filter that hides roofers without online estimates. I'm building a free tool &mdash; 5-minute roofing website + estimate widget. Looking for 20 beta testers."</td><td>10+ comments/DMs</td></tr>
+  <tr><td>3-5</td><td>Cold DM 20 roofers</td><td>"Hey [name], noticed [Company] doesn't have a website. Google's new filter is hiding contractors without online estimates. I'm building a free tool to fix this. Would you try it?"</td><td>5+ positive replies</td></tr>
+  <tr><td>5-7</td><td>Post on RoofersCoffeeShop.com</td><td>Technology forum. Same angle: Google filter + free solution.</td><td>3+ engaged responses</td></tr>
+  <tr><td>7</td><td><strong>Decision gate</strong></td><td>Count signups + positive DMs + group engagement</td><td><strong>PASS: 20+ signups or 5+ "I'd use this."<br>KILL: &lt;10 signups AND &lt;3 positive replies.</strong></td></tr>
+</table>
+
+<h3>Phase 1: MVP Build (Days 8-21)</h3>
+
+<p><strong>Goal:</strong> Ship the free website generator + basic estimate calculator.</p>
+
+<h4>Week 1 (Days 8-14): Core Infrastructure</h4>
+
+<table>
+  <tr><th>Task</th><th>Details</th><th>Hours</th></tr>
+  <tr><td>Next.js project setup</td><td>Clone Vercel Platforms Starter Kit. Configure multi-tenant <code>[slug].roofready.com</code> subdomain routing.</td><td>4</td></tr>
+  <tr><td>Supabase setup</td><td>Tables: contractors, sites, leads, estimates. Enable Row Level Security.</td><td>2</td></tr>
+  <tr><td>Onboarding flow</td><td>Sign up &rarr; Pick template (3 options) &rarr; Enter business info &rarr; Site generates &rarr; Preview &rarr; Publish</td><td>8</td></tr>
+  <tr><td>Template 1: "Storm Pro"</td><td>Hero with emergency CTA, services grid, reviews, before/after gallery, contact form, Google Map.</td><td>6</td></tr>
+  <tr><td>Template 2: "Clean Residential"</td><td>Calm, professional. Photo-heavy. Service pages. Trust badges.</td><td>4</td></tr>
+  <tr><td>Template 3: "Full Service"</td><td>Multi-service (roofing + gutters + siding). Tabbed services.</td><td>4</td></tr>
+  <tr><td>Contact form &rarr; lead capture</td><td>Form &rarr; Supabase insert &rarr; email notification via Resend/SendGrid.</td><td>3</td></tr>
+  <tr><td>Stripe billing</td><td>Free tier (no card). $99/mo and $149/mo products. Subscription management.</td><td>3</td></tr>
+  <tr><td>"Powered by RoofReady" footer</td><td>Links to roofready.com. Removable on paid tier.</td><td>0.5</td></tr>
+</table>
+
+<h4>Week 2 (Days 15-21): Estimate Widget + Polish</h4>
+
+<table>
+  <tr><th>Task</th><th>Details</th><th>Hours</th></tr>
+  <tr><td>Estimate calculator widget</td><td>React component. Inputs: home sqft, roof type (icons), stories, material. Output: price range. Embeddable via <code>&lt;script&gt;</code>.</td><td>8</td></tr>
+  <tr><td>Contractor pricing dashboard</td><td>Set $/sqft per material (low + high). Service area ZIPs. Preview widget.</td><td>4</td></tr>
+  <tr><td>Embed on Estimate page</td><td>Toggle show/hide. Only for $99+ tier.</td><td>2</td></tr>
+  <tr><td>Lead capture on estimate</td><td>After range shown &rarr; "Get exact quote" &rarr; name, phone, email, address &rarr; stored + notification.</td><td>3</td></tr>
+  <tr><td>RoofReady landing page</td><td>roofready.com: hero, how it works, pricing, demo video, FAQ.</td><td>4</td></tr>
+  <tr><td>Testing + bug fixes</td><td>Cross-device. Full lead flow. Stripe billing.</td><td>4</td></tr>
+  <tr><td>Deploy + announce</td><td>Push to prod. Email beta list. Post in Facebook groups.</td><td>2</td></tr>
+</table>
+
+<div class="highlight"><strong>MVP Total: ~57 hours across 2 weeks</strong></div>
+
+<h3>Phase 2: Paid Features (Days 22-35)</h3>
+
+<h4>Week 3: Review Automation + Lead Dashboard</h4>
+
+<table>
+  <tr><th>Task</th><th>Details</th><th>Hours</th></tr>
+  <tr><td>Lead dashboard</td><td>Table view: all leads, status, filters, estimate details.</td><td>6</td></tr>
+  <tr><td>Twilio setup</td><td>Account + 10DLC registration + phone number.</td><td>2</td></tr>
+  <tr><td>Review request automation</td><td>Job marked complete &rarr; 5 days later &rarr; auto-text with Google review link. Dashboard tracks sent/received.</td><td>6</td></tr>
+  <tr><td>Google review link generator</td><td>Input Place ID &rarr; direct review URL.</td><td>1</td></tr>
+</table>
+
+<h4>Week 4: Auto-Reply + Follow-Up Sequences</h4>
+
+<table>
+  <tr><th>Task</th><th>Details</th><th>Hours</th></tr>
+  <tr><td>Speed-to-lead auto-reply</td><td>New lead &rarr; auto-text in 60 seconds. Configurable template.</td><td>4</td></tr>
+  <tr><td>Follow-up drip builder</td><td>3-step: Day 2, Day 5, Day 10. Auto-stops on reply.</td><td>6</td></tr>
+  <tr><td>SMS compliance</td><td>Opt-in checkbox. STOP handling. Compliance logging.</td><td>3</td></tr>
+  <tr><td>Notification preferences</td><td>Email only / SMS+email. Quiet hours.</td><td>2</td></tr>
+</table>
+
+<h3>Phase 3: Growth Features (Days 36-56)</h3>
+
+<h4>Week 5-6: Google Solar API (V2 Estimates)</h4>
+
+<table>
+  <tr><th>Task</th><th>Details</th><th>Hours</th></tr>
+  <tr><td>Solar API integration</td><td><code>buildingInsights</code> endpoint &rarr; roof area + pitch. Replace manual sqft input.</td><td>8</td></tr>
+  <tr><td>Fallback handling</td><td>~20% of addresses return NOT_FOUND. Fall back to manual entry. Cache results.</td><td>3</td></tr>
+  <tr><td>Updated widget flow</td><td>Homeowner enters address only &rarr; auto-detect roof size &rarr; show estimate.</td><td>4</td></tr>
+</table>
+
+<h4>Week 7-8: SEO Pages + GBP</h4>
+
+<table>
+  <tr><th>Task</th><th>Details</th><th>Hours</th></tr>
+  <tr><td>City page generator</td><td>Input service area &rarr; auto-generate "Roof Replacement in [City]" pages with estimate widget + reviews.</td><td>10</td></tr>
+  <tr><td>Schema markup</td><td>LocalBusiness + Service + AggregateRating on every page.</td><td>3</td></tr>
+  <tr><td>GBP sync (optional)</td><td>OAuth &rarr; read GBP data &rarr; auto-populate site.</td><td>6</td></tr>
+</table>
+
+<h3>Phase 4: Scale (Day 57+)</h3>
+
+<table>
+  <tr><th>Task</th><th>Timeline</th><th>Details</th></tr>
+  <tr><td>Custom domain support</td><td>Week 9</td><td>Paid contractors use own domain. Cloudflare DNS API for SSL.</td></tr>
+  <tr><td>Content marketing</td><td>Ongoing</td><td>"Google's Online Estimates Filter Explained," "How to Get More Reviews," "Roofle Alternative"</td></tr>
+  <tr><td>Supply house partnerships</td><td>Month 3+</td><td>ABC Supply, Beacon. "Help your contractors get found online."</td></tr>
+  <tr><td>Expand to HVAC/Plumbing</td><td>Month 4+</td><td>Same platform, new templates.</td></tr>
+  <tr><td>EagleView integration</td><td>Month 4+</td><td>Detailed measurement reports for serious leads ($15-38/report).</td></tr>
+</table>
+
+<hr>
+
+<h2>Part 4: Key Metrics to Track</h2>
+
+<table>
+  <tr><th>Metric</th><th>Month 1</th><th>Month 3</th><th>Month 6</th></tr>
+  <tr><td>Free sites created</td><td>100</td><td>500</td><td>2,000</td></tr>
+  <tr><td>Free-to-paid conversion</td><td>5%</td><td>8%</td><td>10%</td></tr>
+  <tr><td>Paying customers</td><td>5</td><td>40</td><td>200</td></tr>
+  <tr><td>MRR</td><td>$500</td><td>$4,960</td><td>$24,800</td></tr>
+  <tr><td>Leads generated (all sites)</td><td>200</td><td>2,000</td><td>15,000</td></tr>
+  <tr><td>Reviews generated</td><td>20</td><td>300</td><td>2,000</td></tr>
+  <tr><td>Monthly churn</td><td>&mdash;</td><td>&lt;5%</td><td>&lt;3%</td></tr>
+  <tr><td>CAC (paid customer)</td><td>$50</td><td>$30</td><td>$20</td></tr>
+</table>
+
+<hr>
+
+<h2>Part 5: Critical Risks + Mitigations</h2>
+
+<table>
+  <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+  <tr><td>Google changes/removes Online Estimates filter</td><td>Low</td><td>High</td><td>Website + reviews + auto-reply have standalone value. Filter removal hurts urgency, not product.</td></tr>
+  <tr><td>Roofle drops pricing</td><td>Medium</td><td>Medium</td><td>Our free website is our moat. Roofle can't offer free sites &mdash; not their model.</td></tr>
+  <tr><td>Roofr's beta website builder improves</td><td>Medium</td><td>Medium</td><td>They charge $199/mo add-on. We offer free. Price gap sustains.</td></tr>
+  <tr><td>V1 estimate not accurate enough</td><td>Medium</td><td>Low</td><td>It's a range, not a quote. V2 with Solar API fixes accuracy.</td></tr>
+  <tr><td>Twilio SMS / 10DLC issues</td><td>Low</td><td>Medium</td><td>Register 10DLC properly. Start low volume. Follow TCPA.</td></tr>
+  <tr><td>Contractors don't convert free to paid</td><td>Medium</td><td>High</td><td>The "aha" = seeing leads come in and not being able to respond. Ensure notifications are immediate.</td></tr>
+</table>
+
+<hr>
+
+<h2>Part 6: Week 1 Daily Action Plan</h2>
+
+<table>
+  <tr><th>Day</th><th>Morning</th><th>Afternoon</th><th>Evening</th></tr>
+  <tr><td><strong>Mon</strong></td><td>Create landing page on Carrd. Write copy. Email capture form.</td><td>Google Maps: "roofer" in 5 cities. Save 25 roofers with no website.</td><td>Join 3 Facebook roofing groups.</td></tr>
+  <tr><td><strong>Tue</strong></td><td>Google Maps: 5 more cities. 25 more prospects.</td><td>Join 2 more groups. Write intro post.</td><td>Cold DM 10 roofers with no website.</td></tr>
+  <tr><td><strong>Wed</strong></td><td>Post in 2 Facebook groups (Google filter angle).</td><td>Cold DM 10 more roofers.</td><td>Post on RoofersCoffeeShop.com forum.</td></tr>
+  <tr><td><strong>Thu</strong></td><td>Respond to all DMs and comments. Track responses.</td><td>Start Next.js setup if signals are strong.</td><td>Watch 3 Roofle/Roofr demo videos to study UX.</td></tr>
+  <tr><td><strong>Fri</strong></td><td>Follow up on unanswered DMs. Post in 1 more group.</td><td>Count: signups + replies + comments.</td><td><strong>Decision: 20+ signups or 5+ positive = BUILD.</strong></td></tr>
+  <tr><td><strong>Sat</strong></td><td>If BUILD: Clone Vercel Platforms Starter Kit. Set up Supabase.</td><td>Design Template 1 wireframe.</td><td>Set up Stripe account + products.</td></tr>
+  <tr><td><strong>Sun</strong></td><td>Build onboarding flow (signup &rarr; template &rarr; business info).</td><td>Continue building.</td><td>Continue building.</td></tr>
+</table>
+
+<hr>
+
+<p class="small">Generated by the Micro SaaS Opportunity Finder &bull; Pipeline ID: roofing-website-estimate-engine &bull; Composite Score: 7.8 &bull; 2026-03-26</p>
+
+</body>
+</html>

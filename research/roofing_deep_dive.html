@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roofing Deep Dive — RoofReady Technical Build Plan</title>
+<style>
+  @media print {
+    body { font-size: 11pt; }
+    h1 { font-size: 20pt; }
+    h2 { font-size: 16pt; page-break-before: auto; }
+    h3 { font-size: 13pt; }
+    pre { font-size: 9pt; }
+    table { font-size: 10pt; }
+    .no-print { display: none; }
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    max-width: 850px;
+    margin: 40px auto;
+    padding: 0 20px;
+    line-height: 1.6;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 28px; border-bottom: 3px solid #1a1a1a; padding-bottom: 10px; margin-top: 0; }
+  h2 { font-size: 22px; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-top: 40px; color: #111; }
+  h3 { font-size: 17px; margin-top: 28px; color: #333; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+  th { background: #f5f5f5; font-weight: 600; }
+  tr:nth-child(even) { background: #fafafa; }
+  pre {
+    background: #f5f5f5;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+  }
+  code { background: #f0f0f0; padding: 2px 5px; border-radius: 3px; font-size: 0.9em; }
+  strong { color: #000; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 32px 0; }
+  ul, ol { padding-left: 24px; }
+  li { margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 16px; margin-top: -8px; }
+  .highlight { background: #fff3cd; padding: 12px 16px; border-left: 4px solid #ffc107; margin: 16px 0; border-radius: 4px; }
+  .callout { background: #e8f5e9; padding: 12px 16px; border-left: 4px solid #4caf50; margin: 16px 0; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Roofle Teardown + Technical Build Plan for RoofReady</h1>
+<p class="subtitle">Prepared 2026-03-26 | Micro SaaS Opportunity Research</p>
+
+<div class="highlight">
+<strong>The Opportunity:</strong> Google launched an "Online Estimates" filter for roofing searches (Dec 2025) that hides roofers without online pricing. 78% of homeowners want pricing on the website. 76% of roofers don't show it. Roofle charges $350/mo + $2K setup. We offer a free website + $99/mo estimate widget.
+</div>
+
+<hr>
+
+<h2>How Roofle Works (Exact System)</h2>
+
+<p><strong>What they sell:</strong> An embeddable quote widget (not a website builder). Contractors add it to their existing site. Homeowner enters address &rarr; gets instant roof price range in ~29 seconds.</p>
+
+<h3>Data Pipeline</h3>
+<ol>
+  <li>Homeowner enters address on contractor's website</li>
+  <li>Roofle pulls roof data: total sqft, predominant slope/pitch, suggested waste factor</li>
+  <li>For initial quotes, they use <strong>AI-estimated measurements</strong> (not full satellite reports)</li>
+  <li>For final proposals, they integrate <strong>EagleView</strong> ($15-38/report) and <strong>GAF QuickMeasure</strong> for detailed imagery &mdash; ordered manually or auto-triggered</li>
+  <li>Contractor's pre-set pricing ($/sqft by material type + markup) is applied to the measurement</li>
+  <li>Homeowner sees price range across multiple material options (shingles, metal, tile, etc.)</li>
+  <li>Lead is captured in Roofle's dashboard with contact info</li>
+</ol>
+
+<h3>Key Facts</h3>
+<table>
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Pricing</td><td>$350/mo + $2,000 setup. Or $5,500/year. First year = $6,200 minimum.</td></tr>
+  <tr><td>Users</td><td>15,000+ contractors</td></tr>
+  <tr><td>Quotes sent</td><td>2.4M+</td></tr>
+  <tr><td>Avg quote time</td><td>29 seconds</td></tr>
+  <tr><td>Claimed conversion lift</td><td>4-6x vs traditional methods</td></tr>
+  <tr><td>CRM integrations</td><td>AccuLynx, JobNimbus, Leap, OneClick, ProLine</td></tr>
+  <tr><td>Material ordering</td><td>Beacon Pro+ integration</td></tr>
+  <tr><td>Financing</td><td>ContractorLoan PRO ($50 app + $450/yr)</td></tr>
+</table>
+
+<p><strong>What they DON'T do:</strong> Build websites. They're widget-only. Contractors need an existing site to embed on.</p>
+
+<hr>
+
+<h2>How Roofr Works (The Other Major Competitor)</h2>
+
+<p><strong>What they sell:</strong> Roof measurements + instant estimator + proposals + CRM. More full-stack than Roofle.</p>
+
+<p><strong>Pricing:</strong> $89+/mo base. Measurement reports cost $13-19/report on top. Instant estimator is an add-on. Free starter plan exists but limited.</p>
+
+<p><strong>Key difference from Roofle:</strong> Roofr owns the measurement data (they generate reports in-house). Roofle outsources to EagleView/GAF. Roofr also includes a basic CRM. But Roofr doesn't build websites either.</p>
+
+<p><strong>Main complaint:</strong> Per-report costs add up fast for high-volume roofers.</p>
+
+<hr>
+
+<h2>Every Competitor in This Space</h2>
+
+<table>
+  <tr><th>Name</th><th>What They Do</th><th>Price</th><th>Gap for Us</th></tr>
+  <tr><td><strong>Roofle</strong></td><td>Quote widget only</td><td>$350/mo + $2K setup</td><td>No website. Too expensive for small crews.</td></tr>
+  <tr><td><strong>Roofr</strong></td><td>Measurements + estimator + CRM</td><td>$89+/mo + per-report</td><td>No website. Per-report costs. Complex.</td></tr>
+  <tr><td><strong>InstantRoofer</strong></td><td>Consumer-facing estimate marketplace</td><td>Free for homeowners</td><td>Sends leads to multiple roofers (not exclusive)</td></tr>
+  <tr><td><strong>RoofHero</strong></td><td>Roof surface area API</td><td>$500/mo min, $2K integration</td><td>API-only, needs $2M+ revenue, enterprise</td></tr>
+  <tr><td><strong>Scorpion</strong></td><td>Website + full marketing</td><td>$3-10K/mo, 12-24mo lock</td><td>Way too expensive. You lose your site on exit.</td></tr>
+  <tr><td><strong>Roofing Webmasters</strong></td><td>Website builder + SEO</td><td>Custom pricing</td><td>Agency model, not self-serve SaaS</td></tr>
+  <tr><td><strong>GoDaddy/Wix</strong></td><td>Generic website builder</td><td>$10-25/mo</td><td>No estimate widget, no lead tools, generic</td></tr>
+  <tr><td><strong>QuoteIQ</strong></td><td>Basic CRM + quoting</td><td>$29.99/mo</td><td>No website, no estimate widget, basic</td></tr>
+</table>
+
+<div class="callout">
+<strong>The gap nobody fills:</strong> Free roofing website + affordable instant estimate widget + lead tools, self-serve, for 1-10 person crews at $99-149/mo.
+</div>
+
+<hr>
+
+<h2>How to Build RoofReady &mdash; Technical Blueprint</h2>
+
+<h3>Architecture Overview</h3>
+<pre>
+┌─────────────────────────────────────────────┐
+│            RoofReady Platform                │
+├──────────┬──────────┬───────────┬───────────┤
+│ Website  │ Estimate │ Lead      │ Review    │
+│ Generator│ Widget   │ Engine    │ Automator │
+├──────────┴──────────┴───────────┴───────────┤
+│              Shared Backend (API)            │
+├──────────┬──────────┬───────────┬───────────┤
+│ Supabase │ Stripe   │ Twilio    │ Google    │
+│ (DB/Auth)│ (Billing)│ (SMS)     │ Solar API │
+└──────────┴──────────┴───────────┴───────────┘
+</pre>
+
+<h3>Component 1: Website Generator (Free Tier)</h3>
+
+<p><strong>How Roofle does it:</strong> They don't. This is our differentiator.</p>
+
+<p><strong>Approach: Multi-tenant static site generation with Next.js</strong></p>
+<ul>
+  <li>Use Vercel's <strong>Platforms Starter Kit</strong> (open source, built for multi-tenant apps with custom domains)</li>
+  <li>3-5 roofing-specific templates (storm restoration, residential re-roof, commercial, full-service, insurance specialist)</li>
+  <li>Contractor signs up &rarr; picks template &rarr; enters business name OR we auto-pull from Google Business Profile API</li>
+  <li>Site generates in seconds at <code>[company].roofready.com</code></li>
+  <li>Custom domain support on paid tier ($5/mo DNS via Vercel or Cloudflare)</li>
+</ul>
+
+<p><strong>Tech stack for generator:</strong></p>
+<ul>
+  <li><strong>Next.js 14+ App Router</strong> with ISR (Incremental Static Regeneration)</li>
+  <li><strong>Supabase</strong> for contractor accounts, site content, lead storage</li>
+  <li><strong>Vercel</strong> for hosting (handles custom domains natively, $0 for static sites)</li>
+  <li><strong>Tailwind CSS</strong> for responsive templates</li>
+  <li><strong>Google Business Profile API</strong> (optional) &mdash; auto-populate name, address, phone, hours, review count</li>
+</ul>
+
+<p><strong>Pages each site gets:</strong></p>
+<ul>
+  <li>Home (hero + services + reviews + contact form)</li>
+  <li>Services (residential, commercial, repairs, gutters &mdash; toggleable)</li>
+  <li>About (crew photos, license #, insurance info)</li>
+  <li>Gallery (before/after photos, drag-and-drop upload)</li>
+  <li>Contact (form + embedded Google Map + click-to-call)</li>
+  <li><strong>Instant Estimate page</strong> (paid tier &mdash; embeds the widget)</li>
+</ul>
+
+<p><strong>Cost to us per site:</strong> ~$0 on Vercel's free tier for static/ISR sites.</p>
+
+<h3>Component 2: Instant Estimate Widget (Paid &mdash; $99/mo tier)</h3>
+
+<p><strong>How Roofle does it:</strong> Satellite imagery AI &rarr; sqft + pitch + waste &rarr; multiply by contractor pricing &rarr; show range.</p>
+
+<div class="highlight">
+<strong>Key insight:</strong> We don't need satellite imagery for V1. Roofle's precision is overkill for a "range estimate." A simplified calculator that gets within 15-20% is enough to satisfy Google's Online Estimates filter, give homeowners a price range, and capture the lead.
+</div>
+
+<p><strong>V1 Calculator Logic:</strong></p>
+<pre>
+Input:
+  - Address (for lead capture + regional pricing)
+  - Home sqft (homeowner knows this, or estimate from bedrooms/stories)
+  - Roof type: gable / hip / flat (dropdown with visual icons)
+  - Stories: 1 / 2 / 3
+  - Material preference: asphalt shingles / metal / tile
+
+Calculation:
+  roof_sqft = home_sqft &times; roof_factor[roof_type] &times; story_factor[stories]
+
+  roof_factors = { gable: 1.3, hip: 1.4, flat: 1.05 }
+  story_factors = { 1: 1.0, 2: 1.05, 3: 1.1 }
+
+  price_low = roof_sqft &times; contractor_rate_low[material]
+  price_high = roof_sqft &times; contractor_rate_high[material]
+
+Output:
+  "Estimated range: $8,500 - $12,200 for asphalt shingles"
+  "Based on ~2,100 sqft roof | Prices vary by condition &amp; access"
+  [Get Your Exact Quote &mdash; Schedule Free Inspection]
+  [See Financing Options]
+</pre>
+
+<p><strong>How contractor configures it:</strong></p>
+<ul>
+  <li>Dashboard: set $/sqft for each material (low and high)</li>
+  <li>Set service area (ZIP codes)</li>
+  <li>Customize colors to match their site</li>
+  <li>Embed via <code>&lt;script&gt;</code> tag or iframe (one line of code)</li>
+</ul>
+
+<p><strong>V2 Upgrade Path (month 2-3):</strong></p>
+<ul>
+  <li>Add <strong>Google Solar API</strong> for actual roof area measurement</li>
+  <li><code>buildingInsights</code> endpoint returns roof area, pitch, segments</li>
+  <li>~$0.075/request, 10,000 free calls/month</li>
+  <li>472M+ buildings covered, 2-5% accuracy</li>
+  <li>Address entry &rarr; auto-pull roof sqft &rarr; much more accurate range</li>
+</ul>
+
+<p><strong>V3 Upgrade Path (month 4+):</strong></p>
+<ul>
+  <li>Partner with <strong>EagleView</strong> ($15-38/report) for detailed measurement reports on serious leads only</li>
+  <li>Contractor can order a full report from dashboard when lead converts to site visit</li>
+</ul>
+
+<h3>Component 3: Lead Engine (Paid &mdash; $99/mo tier)</h3>
+
+<p><strong>Contact form &rarr; instant notification:</strong></p>
+<ul>
+  <li>Lead submits form or estimate request</li>
+  <li>Webhook fires &rarr; Supabase stores lead &rarr; triggers notification</li>
+  <li>Email notification immediately</li>
+  <li>Dashboard shows all leads with status (new / contacted / quoted / won / lost)</li>
+</ul>
+
+<p><strong>Speed-to-lead auto-reply ($149/mo tier):</strong></p>
+<ul>
+  <li><strong>Twilio</strong> for SMS ($0.0079/message sent)</li>
+  <li>Lead comes in &rarr; auto-text within 60 seconds</li>
+  <li>Follow-up drip: Day 2, Day 5, Day 10 if no response</li>
+  <li><strong>10DLC registration required</strong> (~$15 one-time + $2/mo per campaign)</li>
+  <li>Cost per lead to us: ~$0.05 (3-5 texts per sequence)</li>
+</ul>
+
+<h3>Component 4: Review Automation (Paid &mdash; $99/mo tier)</h3>
+
+<ul>
+  <li>Contractor marks job "complete" in dashboard</li>
+  <li>3-7 days later, auto-text with direct Google review link</li>
+  <li>Dashboard tracks: reviews requested / received / avg rating</li>
+  <li>Cost to us: ~$0.01 per review request (1 text)</li>
+</ul>
+
+<p><strong>Why this matters:</strong> 35% of homeowners say reviews are #1 factor. Roofers using automated requests get 3x more reviews.</p>
+
+<h3>Component 5: SEO Pages ($149/mo tier)</h3>
+
+<ul>
+  <li>Contractor sets service area (ZIP codes or city list)</li>
+  <li>System auto-generates: "Roof Replacement in [City], [State]" pages</li>
+  <li>Template: H1 + 300-word localized content + estimate widget + reviews + contact form</li>
+  <li>ISR regeneration keeps pages fresh</li>
+  <li>Schema markup for local business + service</li>
+</ul>
+
+<p><strong>Why this matters:</strong> This is what Scorpion charges $3K+/mo for. We auto-generate it.</p>
+
+<hr>
+
+<h2>Tech Stack Summary</h2>
+
+<table>
+  <tr><th>Layer</th><th>Choice</th><th>Why</th><th>Cost</th></tr>
+  <tr><td><strong>Frontend</strong></td><td>Next.js 14 (App Router)</td><td>Multi-tenant SSG/ISR, Vercel native</td><td>$0</td></tr>
+  <tr><td><strong>Hosting</strong></td><td>Vercel</td><td>Custom domains, edge functions, ISR</td><td>$0-20/mo</td></tr>
+  <tr><td><strong>Database</strong></td><td>Supabase</td><td>Auth, Postgres, RLS, real-time</td><td>$0-25/mo</td></tr>
+  <tr><td><strong>Payments</strong></td><td>Stripe</td><td>Subscription billing</td><td>2.9% + $0.30/tx</td></tr>
+  <tr><td><strong>SMS</strong></td><td>Twilio</td><td>Auto-reply, follow-up, reviews</td><td>~$0.05/lead</td></tr>
+  <tr><td><strong>Roof Data (V2)</strong></td><td>Google Solar API</td><td>Roof area, pitch from address</td><td>~$0.075/call, 10K free/mo</td></tr>
+  <tr><td><strong>Email</strong></td><td>Resend or SendGrid</td><td>Transactional + lead notifications</td><td>$0-20/mo</td></tr>
+  <tr><td><strong>DNS</strong></td><td>Cloudflare</td><td>Custom domain management</td><td>$0</td></tr>
+  <tr><td><strong>Analytics</strong></td><td>Plausible or PostHog</td><td>Privacy-friendly</td><td>$0-9/mo</td></tr>
+</table>
+
+<div class="callout">
+<strong>Total infrastructure cost at launch: ~$0-50/mo.</strong> Scales with usage.
+</div>
+
+<hr>
+
+<h2>How We Find Leads (GTM Playbook)</h2>
+
+<p><strong>How Roofle finds leads:</strong> Trade shows, partnerships with material manufacturers (GAF, Owens Corning, CertainTeed), roofing industry publications, webinars, referrals from 15K+ users.</p>
+
+<p><strong>How we find ours (bootstrapped, $0 budget):</strong></p>
+
+<h3>Week 1-2: Organic Outreach</h3>
+<ol>
+  <li><strong>Google Maps scraping</strong> &mdash; search "roofer" in 50 metro areas. Flag every result with no website or a terrible GoDaddy site.</li>
+  <li><strong>Facebook roofing groups</strong> &mdash; join 5-10 groups. Post: "I built a free tool that generates a professional roofing website in 5 minutes &mdash; need 20 beta testers. Google just added a filter that hides roofers without online estimates."</li>
+  <li><strong>Cold DM on Facebook</strong> &mdash; message 20 roofers who have no website.</li>
+  <li><strong>RoofersCoffeeShop.com forum</strong> &mdash; post in the technology section about Google's new filter.</li>
+</ol>
+
+<h3>Week 3-4: Content + SEO</h3>
+<ol start="5">
+  <li><strong>Blog post:</strong> "Google's New 'Online Estimates' Filter: What Every Roofer Needs to Know"</li>
+  <li><strong>YouTube video:</strong> screen recording of generating a roofing site in 5 minutes</li>
+  <li><strong>SEO pages:</strong> "free roofing website," "roofing estimate widget," "Roofle alternative"</li>
+</ol>
+
+<h3>Month 2+: Scale</h3>
+<ol start="8">
+  <li><strong>"Powered by RoofReady" footer</strong> on every free site = free advertising</li>
+  <li><strong>Referral program:</strong> refer a roofer, both get 1 month free</li>
+  <li><strong>Supply house partnerships</strong> &mdash; ABC Supply, Beacon, SRS Distribution</li>
+</ol>
+
+<hr>
+
+<h2>Build Phases + Timeline</h2>
+
+<table>
+  <tr><th>Phase</th><th>What</th><th>Timeline</th><th>Outcome</th></tr>
+  <tr><td><strong>MVP</strong></td><td>Website generator (3 templates) + basic estimate calculator + contact form + Stripe</td><td>2 weeks</td><td>Free sites generating, basic estimate working</td></tr>
+  <tr><td><strong>V1.1</strong></td><td>Lead dashboard + email notifications + review request automation</td><td>+1 week</td><td>Paid tier ($99/mo) sellable</td></tr>
+  <tr><td><strong>V1.2</strong></td><td>Twilio auto-reply + follow-up sequences</td><td>+1 week</td><td>$149/mo tier sellable</td></tr>
+  <tr><td><strong>V2</strong></td><td>Google Solar API integration for address-based roof measurements</td><td>+1-2 weeks</td><td>Estimate accuracy jumps to satellite-informed</td></tr>
+  <tr><td><strong>V3</strong></td><td>City-specific SEO page generator + GBP sync</td><td>+1-2 weeks</td><td>$149/mo tier fully realized</td></tr>
+</table>
+
+<div class="callout"><strong>MVP in 2 weeks. Full product in 6-8 weeks.</strong></div>
+
+<hr>
+
+<h2>Unit Economics</h2>
+
+<table>
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Free tier CAC</td><td>$5-15 (organic outreach)</td></tr>
+  <tr><td>Free-to-paid conversion</td><td>6-10% (SMB SaaS benchmark)</td></tr>
+  <tr><td>Paid tier ARPU</td><td>~$124/mo (mix of $99 and $149)</td></tr>
+  <tr><td>Infrastructure cost per customer</td><td>~$0.50-2/mo</td></tr>
+  <tr><td>SMS cost per customer</td><td>~$2-5/mo</td></tr>
+  <tr><td>Gross margin</td><td>~95%</td></tr>
+  <tr><td>Breakeven</td><td>50 paid customers &times; $124 = $6,200 MRR</td></tr>
+  <tr><td>Target 12-month</td><td>200 paid &times; $124 = $24,800 MRR</td></tr>
+</table>
+
+<hr>
+
+<h2>Why This Beats Roofle</h2>
+
+<table>
+  <tr><th>Factor</th><th>Roofle</th><th>RoofReady</th></tr>
+  <tr><td><strong>Website</strong></td><td>None &mdash; widget only</td><td>Free professional site included</td></tr>
+  <tr><td><strong>Setup cost</strong></td><td>$2,000</td><td>$0</td></tr>
+  <tr><td><strong>Monthly cost</strong></td><td>$350/mo</td><td>$99-149/mo</td></tr>
+  <tr><td><strong>First-year cost</strong></td><td>$6,200+</td><td>$1,188-1,788</td></tr>
+  <tr><td><strong>Lock-in</strong></td><td>Annual contract</td><td>Month-to-month</td></tr>
+  <tr><td><strong>Target</strong></td><td>10+ person operations</td><td>1-10 person crews</td></tr>
+  <tr><td><strong>Online estimate</strong></td><td>Satellite-precise</td><td>V1: range estimate. V2: Google Solar API</td></tr>
+  <tr><td><strong>Reviews</strong></td><td>Not included</td><td>Included in base paid tier</td></tr>
+  <tr><td><strong>Auto-reply</strong></td><td>Not included</td><td>Included in $149 tier</td></tr>
+  <tr><td><strong>SEO pages</strong></td><td>Not included</td><td>Included in $149 tier</td></tr>
+</table>
+
+<p><strong>Roofle is better at precision measurements. We're better at everything else &mdash; and we're 71% cheaper with no setup fee.</strong></p>
+
+</body>
+</html>

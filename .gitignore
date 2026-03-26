@@ -1,0 +1,13 @@
+# Environment & secrets
+.env
+credentials.json
+token.json
+
+# Temporary files
+.tmp/
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
