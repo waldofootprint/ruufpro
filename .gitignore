@@ -6,6 +6,10 @@ token.json
 # Temporary files
 .tmp/
 
+# Next.js build output
+.next/
+out/
+
 # Dependencies
 node_modules/
 

@@ -36,8 +36,7 @@ Solo roofers and small crews (1-10 employees) who either have no website or a ba
 ## Phased Roadmap
 | Phase | What | Timeline |
 |-------|------|----------|
-| Phase 0 | Validation — landing page, find 50 roofers, Facebook groups, cold DMs | Days 1-7 |
-| MVP | Website generator (3 templates) + estimate calculator + contact form + Stripe | Days 8-21 |
+| MVP | Website generator (3 templates) + estimate calculator + contact form + Stripe | Weeks 1-2 |
 | V1.1 | Lead dashboard + email notifications + review automation | +1 week |
 | V1.2 | Twilio auto-reply + follow-up sequences | +1 week |
 | V2 | Google Solar API for address-based roof measurements | +1-2 weeks |

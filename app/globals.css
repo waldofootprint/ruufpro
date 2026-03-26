@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* RoofReady brand colors — available as bg-brand-600, text-brand-900, etc. */
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-900: #1e3a5f;
+}
