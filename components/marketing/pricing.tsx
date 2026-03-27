@@ -151,17 +151,15 @@ export default function Pricing() {
               {/* Card — matches widget style */}
               <div
                 className={cn(
-                  "overflow-hidden rounded-3xl bg-white shadow-xl transition-all duration-500 hover:shadow-2xl relative h-full flex flex-col",
-                  plan.highlighted
-                    ? "ring-2 ring-brand-600 shadow-2xl shadow-brand-500/15"
-                    : ""
+                  "overflow-hidden rounded-[20px] bg-[#f0f0f0] transition-all duration-300 relative h-full flex flex-col",
+                  plan.highlighted ? "ring-2 ring-brand-600" : ""
                 )}
+                style={{
+                  boxShadow: plan.highlighted
+                    ? "10px 10px 20px #c8c8c8, -10px -10px 20px #ffffff, 0 0 30px rgba(37,99,235,0.1)"
+                    : "8px 8px 16px #d1d1d1, -8px -8px 16px #ffffff",
+                }}
               >
-                {/* Subtle border */}
-                <div className={cn(
-                  "absolute inset-0 rounded-3xl border pointer-events-none",
-                  plan.highlighted ? "border-brand-200" : "border-gray-200/60"
-                )} />
 
                 {/* Most Popular badge */}
                 {plan.highlighted && (
@@ -175,7 +173,7 @@ export default function Pricing() {
                 {/* Header with glass effect */}
                 <div className={cn(
                   "relative p-6 pb-5",
-                  plan.highlighted ? "bg-gradient-to-b from-brand-50/80 to-white" : "bg-gradient-to-b from-gray-50/80 to-white"
+                  plan.highlighted ? "bg-gradient-to-b from-brand-50/60 to-[#f0f0f0]" : "bg-gradient-to-b from-[#f5f5f5] to-[#f0f0f0]"
                 )}>
                   {/* Glass gradient overlay */}
                   <div

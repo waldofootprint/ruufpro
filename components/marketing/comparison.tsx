@@ -152,7 +152,12 @@ export default function Comparison() {
         </div>
 
         {/* Animated comparison table */}
-        <div className="relative border border-gray-200 rounded-2xl p-4 md:p-6 bg-white shadow-sm">
+        <div
+          className="relative rounded-[20px] bg-[#f0f0f0] p-4 md:p-6"
+          style={{
+            boxShadow: "10px 10px 20px #d1d1d1, -10px -10px 20px #ffffff",
+          }}
+        >
           {/* Column headers */}
           <div className="grid grid-cols-12 gap-2 md:gap-4 px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
             <div className="col-span-4">Feature</div>
@@ -202,7 +207,10 @@ export default function Comparison() {
                 }}
               >
                 <motion.div
-                  className="relative bg-gray-50/50 border border-gray-100 rounded-xl p-4 overflow-hidden"
+                  className="relative bg-[#f0f0f0] rounded-xl p-4 overflow-hidden"
+                  style={{
+                    boxShadow: "inset 2px 2px 5px #d1d1d1, inset -2px -2px 5px #ffffff",
+                  }}
                   whileHover={{
                     y: -1,
                     backgroundColor: "rgba(249, 250, 251, 0.8)",

@@ -231,9 +231,12 @@ export default function EstimateWidget({
 
   return (
     <div className="w-full max-w-[540px] mx-auto">
-      <div className="overflow-hidden rounded-3xl bg-white p-8 md:p-10 shadow-xl transition-shadow duration-500 hover:shadow-2xl relative">
-        {/* Subtle border accent */}
-        <div className="absolute inset-0 rounded-3xl border border-gray-200/60 pointer-events-none" />
+      <div
+        className="overflow-hidden rounded-[30px] bg-[#f0f0f0] p-8 md:p-10 transition-all duration-500 relative"
+        style={{
+          boxShadow: "12px 12px 24px #d1d1d1, -12px -12px 24px #ffffff",
+        }}
+      >
 
         {/* Progress bar (hidden on landing) */}
         {step > 1 && step < 8 && (
