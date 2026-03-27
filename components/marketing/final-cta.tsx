@@ -17,7 +17,7 @@ import {
 
 export default function FinalCTA() {
   return (
-    <section className="relative bg-gray-950 py-20 md:py-28 overflow-hidden">
+    <section className="relative bg-gray-950 py-16 md:py-20 overflow-hidden">
       <div className="mx-auto max-w-6xl px-6">
         {/* Radar + Icons background */}
         <div className="relative flex flex-col items-center justify-center min-h-[420px]">

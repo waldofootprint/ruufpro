@@ -1,7 +1,6 @@
-// How It Works — 3 simple steps to remove friction from signing up.
+// How It Works — 3 simple steps. Cards match the estimate widget card style.
 
 import { FlowButton } from "@/components/ui/flow-button";
-import { AnimatedCard, CardBody } from "@/components/ui/animated-card";
 
 const STEPS = [
   {
@@ -38,30 +37,31 @@ const STEPS = [
 
 export default function HowItWorks() {
   return (
-    <section className="py-20 md:py-28 bg-gray-50">
+    <section className="py-16 md:py-20 bg-gray-50">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">
             How It Works
           </p>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">
             Live in 5 minutes. Seriously.
           </h2>
-          <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+          <p className="mt-3 text-lg text-gray-500 max-w-2xl mx-auto">
             No sales calls. No onboarding meetings. No waiting weeks for a website.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {STEPS.map((step, i) => (
             <div key={step.number} className="relative">
-              {/* Connector line between steps (desktop only) */}
               {i < STEPS.length - 1 && (
                 <div className="hidden md:block absolute top-12 left-[calc(50%+40px)] w-[calc(100%-80px)] h-px bg-gray-200" />
               )}
 
-              <AnimatedCard className="h-full">
-                <CardBody className="border-0 p-8 text-center">
+              {/* Card matching widget style: rounded-3xl, shadow-xl, hover:shadow-2xl */}
+              <div className="overflow-hidden rounded-3xl bg-white p-8 shadow-xl transition-shadow duration-500 hover:shadow-2xl relative h-full">
+                <div className="absolute inset-0 rounded-3xl border border-gray-200/60 pointer-events-none" />
+                <div className="relative text-center">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 mb-5 mx-auto">
                     {step.icon}
                   </div>
@@ -77,13 +77,13 @@ export default function HowItWorks() {
                   <p className="text-gray-500 text-sm leading-relaxed">
                     {step.description}
                   </p>
-                </CardBody>
-              </AnimatedCard>
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="text-center mt-12">
+        <div className="flex justify-center mt-10">
           <a href="/signup">
             <FlowButton text="Get Started — It's Free" />
           </a>

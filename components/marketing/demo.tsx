@@ -6,9 +6,9 @@ import EstimateWidget from "@/components/estimate-widget";
 
 export default function Demo() {
   return (
-    <section id="demo" className="py-20 md:py-28 bg-gradient-to-b from-gray-50 to-white">
+    <section id="demo" className="py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-14">
+        <div className="text-center mb-10">
           <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">
             See It In Action
           </p>

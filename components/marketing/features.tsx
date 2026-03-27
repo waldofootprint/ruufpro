@@ -137,10 +137,10 @@ export default function Features() {
   const feature = FEATURE_CONTENT[activeTab];
 
   return (
-    <section id="features" className="py-20 md:py-28 bg-white">
+    <section id="features" className="py-16 md:py-20 bg-white">
       <div className="mx-auto max-w-6xl px-6">
         {/* Section header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">
             What We Offer
           </p>
@@ -154,7 +154,7 @@ export default function Features() {
         </div>
 
         {/* Animated tabs */}
-        <div className="flex justify-center mb-12 border-b border-gray-200 pb-[6px]">
+        <div className="flex justify-center mb-10 border-b border-gray-200 pb-[6px]">
           <Tabs
             tabs={FEATURE_TABS}
             onTabChange={(tabId) => setActiveTab(tabId)}

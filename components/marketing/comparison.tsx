@@ -136,9 +136,9 @@ function CellValue({ value, isUs }: { value: string | boolean; isUs?: boolean })
 
 export default function Comparison() {
   return (
-    <section className="py-20 md:py-28 bg-white">
+    <section className="py-16 md:py-20 bg-white">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-14">
+        <div className="text-center mb-10">
           <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">
             Compare
           </p>

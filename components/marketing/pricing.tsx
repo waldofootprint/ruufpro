@@ -9,9 +9,9 @@ import { CheckCircle2, XCircleIcon, Globe, Calculator, Zap } from "lucide-react"
 
 export default function Pricing() {
   return (
-    <section id="pricing" className="py-20 md:py-28 bg-white relative overflow-hidden">
+    <section id="pricing" className="py-16 md:py-20 bg-white relative overflow-hidden">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-14">
+        <div className="text-center mb-10">
           <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">
             Pricing
           </p>

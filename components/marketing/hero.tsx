@@ -31,7 +31,7 @@ export default function MarketingHero() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-white to-blue-50/50">
-      <div className="mx-auto max-w-6xl px-6 pt-20 pb-16 md:pt-28 md:pb-24">
+      <div className="mx-auto max-w-6xl px-6 pt-16 pb-12 md:pt-22 md:pb-18">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left: Copy */}
           <div>
