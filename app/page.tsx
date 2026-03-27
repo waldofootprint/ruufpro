@@ -1,4 +1,5 @@
 import MarketingHero from "@/components/marketing/hero";
+import GoogleFilter from "@/components/marketing/google-filter";
 import Features from "@/components/marketing/features";
 import Demo from "@/components/marketing/demo";
 import Comparison from "@/components/marketing/comparison";
@@ -37,6 +38,7 @@ export default function Home() {
       </nav>
 
       <MarketingHero />
+      <GoogleFilter />
       <Features />
       <Demo />
       <HowItWorks />

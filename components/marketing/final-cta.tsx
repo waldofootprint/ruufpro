@@ -1,104 +1,50 @@
-// Final CTA section with radar scanning effect.
-// Icons represent our product features orbiting around the CTA.
+// Final CTA section — radial glow background + dual CTAs.
 
-"use client";
-
-import { Radar, IconContainer } from "@/components/ui/radar-effect";
 import { FlowButton } from "@/components/ui/flow-button";
-import {
-  Globe,
-  Calculator,
-  Bell,
-  Star,
-  MessageCircle,
-  MapPin,
-  Satellite,
-} from "lucide-react";
 
 export default function FinalCTA() {
   return (
     <section className="relative bg-gray-950 py-16 md:py-20 overflow-hidden">
-      <div className="mx-auto max-w-6xl px-6">
-        {/* Radar + Icons background */}
-        <div className="relative flex flex-col items-center justify-center min-h-[420px]">
-          {/* Row 1 — top icons */}
-          <div className="mx-auto w-full max-w-3xl">
-            <div className="flex w-full items-center justify-center space-x-10 md:justify-between md:space-x-0">
-              <IconContainer
-                text="Free Website"
-                delay={0.2}
-                icon={<Globe className="h-6 w-6 text-slate-500" />}
-              />
-              <IconContainer
-                text="Satellite Data"
-                delay={0.4}
-                icon={<Satellite className="h-6 w-6 text-slate-500" />}
-              />
-              <IconContainer
-                text="Instant Estimates"
-                delay={0.3}
-                icon={<Calculator className="h-6 w-6 text-slate-500" />}
-              />
-            </div>
-          </div>
+      {/* Radial glow behind the text */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full"
+        style={{
+          background: "radial-gradient(ellipse at center, rgba(37,99,235,0.12) 0%, rgba(37,99,235,0.04) 40%, transparent 70%)",
+        }}
+      />
 
-          {/* Row 2 — middle icons + CTA text */}
-          <div className="mx-auto w-full max-w-md my-8">
-            <div className="flex w-full items-center justify-center space-x-10 md:justify-between md:space-x-0">
-              <IconContainer
-                text="Lead Alerts"
-                delay={0.5}
-                icon={<Bell className="h-6 w-6 text-slate-500" />}
-              />
+      <div className="mx-auto max-w-3xl px-6 text-center relative z-10">
+        <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-4">
+          Ready to get found online?
+        </h2>
+        <p className="text-base text-slate-400 mb-10 max-w-xl mx-auto">
+          Join roofers who are getting leads with satellite-powered
+          estimates and professional websites — free to start, no credit card.
+        </p>
 
-              {/* Center CTA content — sits in the middle of the radar */}
-              <div className="relative z-50 text-center px-4">
-                <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-3">
-                  Ready to get found online?
-                </h2>
-                <p className="text-base text-slate-400 mb-8 max-w-md mx-auto">
-                  Join roofers who are getting leads with satellite-powered
-                  estimates and professional websites.
-                </p>
-                <a href="/signup">
-                  <FlowButton text="Get Your Free Website" />
-                </a>
-                <div className="flex items-center justify-center gap-6 mt-6 text-sm text-slate-500">
-                  <span>Free forever</span>
-                  <span className="w-1 h-1 rounded-full bg-slate-600" />
-                  <span>No credit card</span>
-                  <span className="w-1 h-1 rounded-full bg-slate-600" />
-                  <span>5-minute setup</span>
-                </div>
-              </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="/signup">
+            <FlowButton text="Get Your Free Website" />
+          </a>
+          <a
+            href="#demo"
+            className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            See Live Demo
+          </a>
+        </div>
 
-              <IconContainer
-                text="Auto Follow-Up"
-                delay={0.8}
-                icon={<MessageCircle className="h-6 w-6 text-slate-500" />}
-              />
-            </div>
-          </div>
-
-          {/* Row 3 — bottom icons */}
-          <div className="mx-auto w-full max-w-3xl">
-            <div className="flex w-full items-center justify-center space-x-10 md:justify-between md:space-x-0">
-              <IconContainer
-                text="Review Automation"
-                delay={0.6}
-                icon={<Star className="h-6 w-6 text-slate-500" />}
-              />
-              <IconContainer
-                text="SEO City Pages"
-                delay={0.7}
-                icon={<MapPin className="h-6 w-6 text-slate-500" />}
-              />
-            </div>
-          </div>
-
-          {/* Radar effect positioned at bottom center */}
-          <Radar className="absolute -bottom-12" />
-          <div className="absolute bottom-0 z-[41] h-px w-full bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+        <div className="flex items-center justify-center gap-6 mt-8 text-sm text-slate-500">
+          <span>Free forever</span>
+          <span className="w-1 h-1 rounded-full bg-slate-600" />
+          <span>No credit card</span>
+          <span className="w-1 h-1 rounded-full bg-slate-600" />
+          <span>5-minute setup</span>
         </div>
       </div>
     </section>
