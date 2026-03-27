@@ -213,7 +213,7 @@ export default function OnboardingPage() {
 
             <button
               onClick={() => setStep(2)}
-              className="mt-6 w-full rounded-md bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+              className="mt-6 w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 hover:bg-gray-800 hover:shadow-[0_2px_4px_rgba(0,0,0,0.12),0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-[1px] active:scale-[0.98]"
             >
               Continue
             </button>
@@ -299,7 +299,7 @@ export default function OnboardingPage() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setStep(1)}
-                className="rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:scale-[0.98]"
               >
                 Back
               </button>
@@ -312,7 +312,7 @@ export default function OnboardingPage() {
                   setError("");
                   setStep(3);
                 }}
-                className="flex-1 rounded-md bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+                className="flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 hover:bg-gray-800 hover:shadow-[0_2px_4px_rgba(0,0,0,0.12),0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-[1px] active:scale-[0.98]"
               >
                 Continue
               </button>
@@ -366,7 +366,7 @@ export default function OnboardingPage() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setStep(2)}
-                className="rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:scale-[0.98]"
               >
                 Back
               </button>
