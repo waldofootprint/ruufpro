@@ -30,8 +30,8 @@ export default function Demo() {
         </div>
 
         <EstimateWidget
-          contractorId="demo"
-          contractorName="Your Company Name"
+          contractorId="c2a1286d-4faa-444a-b5b7-99f592359f80"
+          contractorName="Demo Roofing Co"
           contractorPhone="(555) 123-4567"
         />
 
