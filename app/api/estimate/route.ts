@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate required fields
-    const { contractor_id, address, material, stories, shingle_layers } = body;
+    const {
+      contractor_id, address, material,
+      pitch_category, current_material, shingle_layers,
+      timeline, financing_interest,
+    } = body;
 
     if (!contractor_id || !material) {
       return NextResponse.json(
@@ -98,10 +102,14 @@ export async function POST(request: NextRequest) {
       geometry: geometry || undefined,
       bedrooms: bedrooms || 3,
       roofType: roof_type || "gable",
-      stories: stories || 1,
+      pitchCategory: pitch_category,
+      currentMaterial: current_material,
       shingleLayers: shingle_layers || "not_sure",
       material: material as RoofMaterial,
+      timeline,
+      financingInterest: financing_interest,
       rates,
+      bufferPercent: settings.buffer_percent || 0,
     });
 
     // Step 5: Format and return

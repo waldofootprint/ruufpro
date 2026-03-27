@@ -27,6 +27,8 @@ export interface ContractorRates {
   flat_high: number;
 }
 
+export type PitchCategory = "flat" | "low" | "moderate" | "steep";
+
 export interface EstimateInput {
   // From Solar API (V2 path)
   roofData?: RoofData;
@@ -37,12 +39,18 @@ export interface EstimateInput {
   roofType?: "gable" | "hip" | "flat";
 
   // From homeowner (both paths)
-  stories: number;
+  pitchCategory?: PitchCategory; // homeowner's cross-check of Solar API pitch
+  currentMaterial?: RoofMaterial; // what's currently on the roof (affects tear-off)
   shingleLayers: 1 | 2 | "not_sure";
-  material: RoofMaterial;
+  material: RoofMaterial; // desired material
+
+  // Lead qualification (doesn't affect price, captured for the roofer)
+  timeline?: "no_timeline" | "1_3_months" | "now";
+  financingInterest?: "yes" | "no" | "maybe";
 
   // From contractor's dashboard settings
   rates: ContractorRates;
+  bufferPercent?: number; // contractor's safety buffer (0-20%)
 
   // Weather surge (from NOAA monitoring, if active)
   weatherSurgeMultiplier?: number;
@@ -61,7 +69,7 @@ export interface EstimateResult {
     materialCostHigh: number;
     pitchMultiplier: number;
     wasteFactor: number;
-    storyFactor: number;
+    bufferPercent: number;
     accessoryCost: number;
     tearoffCost: number;
     penetrationCost: number;
@@ -83,6 +91,26 @@ function getPitchMultiplier(pitchDegrees: number): number {
   return 1.5; // Very steep — specialized equipment
 }
 
+// Cross-check: if the homeowner's pitch category disagrees significantly
+// with the Solar API pitch, use the more conservative (higher) value.
+// This catches cases where satellite data underestimates steepness.
+const PITCH_CATEGORY_DEGREES: Record<string, number> = {
+  flat: 5,
+  low: 18,
+  moderate: 28,
+  steep: 38,
+};
+
+function crossCheckPitch(
+  solarPitchDegrees: number,
+  homeownerCategory?: string
+): number {
+  if (!homeownerCategory) return solarPitchDegrees;
+  const homeownerPitch = PITCH_CATEGORY_DEGREES[homeownerCategory] || solarPitchDegrees;
+  // Use the higher of the two — more conservative = safer for contractor
+  return Math.max(solarPitchDegrees, homeownerPitch);
+}
+
 // Waste factor: more complex roofs (more segments) need more extra material
 // because of cuts at hips, valleys, and edges
 function getWasteFactor(numSegments: number): number {
@@ -90,13 +118,6 @@ function getWasteFactor(numSegments: number): number {
   if (numSegments <= 4) return 1.15; // Moderate: 15%
   if (numSegments <= 6) return 1.18; // Complex: 18%
   return 1.22; // Very complex hip: 22%
-}
-
-// Story factor: taller homes cost more because of ladder/scaffold setup
-function getStoryFactor(stories: number): number {
-  if (stories <= 1) return 1.0;
-  if (stories === 2) return 1.05;
-  return 1.1; // 3+ stories
 }
 
 // Penetration cost estimate: chimneys, vents, skylights add flashing labor
@@ -146,9 +167,10 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
 
   // Determine roof area and pitch from either Solar API or manual input
   if (input.roofData) {
-    // V2 path: satellite data
+    // V2 path: satellite data + homeowner cross-check
     roofAreaSqft = input.roofData.roofAreaSqft;
-    pitchDegrees = input.roofData.pitchDegrees;
+    // Cross-check: use the more conservative of Solar API pitch vs homeowner input
+    pitchDegrees = crossCheckPitch(input.roofData.pitchDegrees, input.pitchCategory);
     numSegments = input.roofData.numSegments;
     isFromSatellite = true;
   } else {
@@ -157,15 +179,15 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
     const homeSqft = BEDROOM_SQFT_MAP[bedrooms] || 1500;
     const roofTypeFactor = ROOF_TYPE_FACTOR[input.roofType || "gable"] || 1.3;
     roofAreaSqft = homeSqft * roofTypeFactor;
-    pitchDegrees = 22; // assume average residential pitch
-    numSegments = input.roofType === "hip" ? 4 : 2; // hip = more complex
+    // Use homeowner's pitch category if available, otherwise assume moderate
+    pitchDegrees = PITCH_CATEGORY_DEGREES[input.pitchCategory || "moderate"] || 22;
+    numSegments = input.roofType === "hip" ? 4 : 2;
     isFromSatellite = false;
   }
 
   // Get all multipliers
   const pitchMultiplier = getPitchMultiplier(pitchDegrees);
   const wasteFactor = getWasteFactor(numSegments);
-  const storyFactor = getStoryFactor(input.stories);
   const penetration = getPenetrationCost(roofAreaSqft);
   const weatherSurge = input.weatherSurgeMultiplier || 1.0;
 
@@ -213,9 +235,13 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
     tearoffCostHigh = roofAreaSqft * TEAROFF_RATE_HIGH * 0.5; // 50% chance factored in
   }
 
+  // Contractor buffer: widens the HIGH end only, giving the contractor
+  // a safety margin for unknowns found during inspection
+  const bufferMultiplier = 1 + (input.bufferPercent || 0) / 100;
+
   // Assemble final price
   const priceLow = Math.round(
-    (materialCostLow * pitchMultiplier * storyFactor +
+    (materialCostLow * pitchMultiplier +
       accessoryCostLow +
       tearoffCostLow +
       penetration.low) *
@@ -223,11 +249,12 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   );
 
   const priceHigh = Math.round(
-    (materialCostHigh * pitchMultiplier * storyFactor +
+    (materialCostHigh * pitchMultiplier +
       accessoryCostHigh +
       tearoffCostHigh +
       penetration.high) *
-      weatherSurge
+      weatherSurge *
+      bufferMultiplier // buffer only affects the high end
   );
 
   return {
@@ -241,7 +268,7 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
       materialCostHigh: Math.round(materialCostHigh),
       pitchMultiplier,
       wasteFactor,
-      storyFactor,
+      bufferPercent: input.bufferPercent || 0,
       accessoryCost: Math.round((accessoryCostLow + accessoryCostHigh) / 2),
       tearoffCost: Math.round((tearoffCostLow + tearoffCostHigh) / 2),
       penetrationCost: Math.round((penetration.low + penetration.high) / 2),
