@@ -476,14 +476,21 @@ export default function EstimateWidget({
                   <button
                     key={opt.id}
                     onClick={() => setTimeline(opt.id)}
-                    className={`p-4 rounded-xl border-2 text-left transition-all hover:shadow-sm ${
-                      timeline === opt.id
-                        ? "border-brand-500 bg-brand-50"
-                        : "border-gray-150 hover:border-gray-300"
-                    }`}
+                    className="text-left"
                   >
-                    <span className="font-semibold text-gray-900 text-sm block">{opt.label}</span>
-                    <span className="text-xs text-gray-400 mt-1 block">{opt.description}</span>
+                    <AnimatedCard
+                      className={cn(
+                        "cursor-pointer transition-all duration-200 h-full",
+                        timeline === opt.id
+                          ? "border-gray-900 shadow-md ring-1 ring-gray-900/10"
+                          : "hover:border-gray-300"
+                      )}
+                    >
+                      <CardBody>
+                        <CardTitle>{opt.label}</CardTitle>
+                        <CardDescription>{opt.description}</CardDescription>
+                      </CardBody>
+                    </AnimatedCard>
                   </button>
                 ))}
               </div>
@@ -498,14 +505,21 @@ export default function EstimateWidget({
                   <button
                     key={opt.id}
                     onClick={() => setFinancing(opt.id)}
-                    className={`p-4 rounded-xl border-2 text-left transition-all hover:shadow-sm ${
-                      financing === opt.id
-                        ? "border-brand-500 bg-brand-50"
-                        : "border-gray-150 hover:border-gray-300"
-                    }`}
+                    className="text-left"
                   >
-                    <span className="font-semibold text-gray-900 text-sm block">{opt.label}</span>
-                    <span className="text-xs text-gray-400 mt-1 block">{opt.description}</span>
+                    <AnimatedCard
+                      className={cn(
+                        "cursor-pointer transition-all duration-200 h-full",
+                        financing === opt.id
+                          ? "border-gray-900 shadow-md ring-1 ring-gray-900/10"
+                          : "hover:border-gray-300"
+                      )}
+                    >
+                      <CardBody>
+                        <CardTitle>{opt.label}</CardTitle>
+                        <CardDescription>{opt.description}</CardDescription>
+                      </CardBody>
+                    </AnimatedCard>
                   </button>
                 ))}
               </div>
@@ -527,7 +541,7 @@ export default function EstimateWidget({
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name<span className="text-red-500">*</span>
+                  Name<span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <input
                   type="text"
@@ -535,14 +549,14 @@ export default function EstimateWidget({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your full name"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none transition-all"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email<span className="text-red-500">*</span>
+                    Email<span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     type="email"
@@ -550,12 +564,12 @@ export default function EstimateWidget({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
+                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none transition-all"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone<span className="text-red-500">*</span>
+                    Phone<span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     type="tel"
@@ -563,7 +577,7 @@ export default function EstimateWidget({
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Enter your phone"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
+                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -575,14 +589,14 @@ export default function EstimateWidget({
                   type="checkbox"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                 />
                 <span className="text-sm text-gray-600">
                   I agree to the{" "}
-                  <a href="#" className="text-brand-600 hover:underline">Terms of Service</a>
+                  <a href="#" className="text-gray-900 underline underline-offset-2">Terms of Service</a>
                   {" "}and{" "}
-                  <a href="#" className="text-brand-600 hover:underline">Privacy Policy</a>.
-                  <span className="text-red-500">*</span>
+                  <a href="#" className="text-gray-900 underline underline-offset-2">Privacy Policy</a>.
+                  <span className="text-red-500 ml-0.5">*</span>
                 </span>
               </label>
 
@@ -591,10 +605,10 @@ export default function EstimateWidget({
                   type="checkbox"
                   checked={agreedToSms}
                   onChange={(e) => setAgreedToSms(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                 />
                 <span className="text-xs text-gray-400 leading-relaxed">
-                  To ensure you're getting the best offers and pricing, {contractorName} may
+                  To ensure you&#39;re getting the best offers and pricing, {contractorName} may
                   need to contact you by text/call. By checking this box, you agree to these
                   communications, including marketing and promotional messages. Message and data
                   rates may apply. You can reply STOP to opt-out of future messaging; reply HELP
@@ -611,64 +625,67 @@ export default function EstimateWidget({
 
         {/* ===== STEP 8: Results ===== */}
         {step === 8 && estimate && (
-          <div className="space-y-6">
+          <div className="space-y-6 py-4">
             <div className="text-center">
-              <p className="text-sm text-gray-400 mb-1">
-                Based on {estimate.is_satellite ? "satellite" : "estimated"} roof measurement
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-6">
+                {estimate.is_satellite ? "Satellite-Measured" : "Estimated"} Roof Analysis
               </p>
-              <h2 className="text-lg font-semibold text-gray-500 uppercase tracking-wider mb-4">
+
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
                 Ballpark Roof Estimate
               </h2>
 
-              <div className="mb-2">
-                <span className="text-4xl md:text-5xl font-bold text-gray-900">
+              <div className="mb-3">
+                <span className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">
                   {estimate.range_display}
                 </span>
               </div>
-              <p className="text-lg text-gray-600 mb-1">
+              <p className="text-base text-gray-600 mb-1">
                 for {DESIRED_MATERIALS.find((m) => m.id === desiredMaterial)?.label || desiredMaterial}
               </p>
-              <p className="text-sm text-gray-400">
+              <p className="text-xs text-gray-400">
                 {estimate.detail_display}
               </p>
             </div>
 
-            {/* Disclaimer — visible, not fine print */}
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-              <div className="flex gap-3">
-                <svg className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  <strong className="text-gray-700">Note:</strong> This is a ballpark estimate,
-                  not a final quote. Your actual price depends on roof condition, access, and
-                  other factors assessed during a free inspection. Final pricing may be higher or lower.
-                </p>
-              </div>
-            </div>
+            {/* Disclaimer */}
+            <AnimatedCard className="border-0 shadow-none bg-gray-50">
+              <CardBody className="border-0">
+                <div className="flex gap-3">
+                  <svg className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    <strong className="text-gray-700">Note:</strong> This is a ballpark estimate,
+                    not a final quote. Your actual price depends on roof condition, access, and
+                    other factors assessed during a free inspection. Final pricing may be higher or lower.
+                  </p>
+                </div>
+              </CardBody>
+            </AnimatedCard>
 
             <div className="border-t border-gray-100 pt-6 text-center">
-              <p className="text-lg font-semibold text-gray-900 mb-4">
+              <p className="text-base font-semibold text-gray-900 mb-5">
                 Want your exact price?
               </p>
               <a href={`tel:${contractorPhone.replace(/\D/g, "")}`}>
                 <FlowButton text="Schedule Free Inspection" />
               </a>
 
-              <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-400">
-                <span className="flex items-center gap-1">
+              <div className="flex items-center justify-center gap-5 mt-5 text-xs text-gray-400">
+                <span className="flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
                   </svg>
                   Free Inspection
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
                   </svg>
                   No Obligation
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
                   </svg>
@@ -677,7 +694,7 @@ export default function EstimateWidget({
               </div>
             </div>
 
-            <p className="text-center text-xs text-gray-400">
+            <p className="text-center text-xs text-gray-400 pt-2">
               Powered by{" "}
               <a href="https://roofready.com" className="text-brand-500 hover:underline">
                 RoofReady
