@@ -10,7 +10,9 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 import { FlowButton } from "@/components/ui/flow-button";
+import { AnimatedCard, CardBody, CardTitle, CardDescription, CardVisual } from "@/components/ui/animated-card";
 
 interface EstimateWidgetProps {
   contractorId: string;
@@ -27,10 +29,17 @@ const PITCH_OPTIONS = [
     label: "Flat",
     description: "Nearly level surface",
     icon: (
-      <svg viewBox="0 0 64 40" className="w-16 h-10">
-        <rect x="8" y="20" width="48" height="4" rx="1" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="18" width="48" height="2" rx="1" fill="currentColor" opacity="0.4" />
-        <rect x="4" y="24" width="56" height="12" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+      <svg viewBox="0 0 80 70" className="w-20 h-14">
+        {/* House body */}
+        <rect x="15" y="30" width="50" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.35" rx="1" />
+        {/* Flat roof */}
+        <line x1="10" y1="30" x2="70" y2="30" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+        <line x1="10" y1="28" x2="70" y2="28" stroke="currentColor" strokeWidth="1" opacity="0.25" />
+        {/* Door */}
+        <rect x="35" y="42" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="1" />
+        {/* Window */}
+        <rect x="20" y="36" width="10" height="8" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="0.5" />
+        <rect x="50" y="36" width="10" height="8" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="0.5" />
       </svg>
     ),
   },
@@ -39,10 +48,17 @@ const PITCH_OPTIONS = [
     label: "Low",
     description: "Easily walked on",
     icon: (
-      <svg viewBox="0 0 64 40" className="w-16 h-10">
-        <path d="M8 28 L32 18 L56 28" fill="currentColor" opacity="0.15" />
-        <path d="M8 28 L32 18 L56 28" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
-        <rect x="4" y="28" width="56" height="8" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+      <svg viewBox="0 0 80 70" className="w-20 h-14">
+        {/* House body */}
+        <rect x="15" y="35" width="50" height="25" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.35" rx="1" />
+        {/* Low pitch roof */}
+        <path d="M10 35 L40 22 L70 35" fill="currentColor" opacity="0.08" />
+        <path d="M10 35 L40 22 L70 35" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+        {/* Door */}
+        <rect x="35" y="45" width="10" height="15" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="1" />
+        {/* Windows */}
+        <rect x="20" y="40" width="10" height="8" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="0.5" />
+        <rect x="50" y="40" width="10" height="8" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="0.5" />
       </svg>
     ),
   },
@@ -51,10 +67,17 @@ const PITCH_OPTIONS = [
     label: "Moderate",
     description: "Not easily walked on",
     icon: (
-      <svg viewBox="0 0 64 40" className="w-16 h-10">
-        <path d="M8 32 L32 12 L56 32" fill="currentColor" opacity="0.15" />
-        <path d="M8 32 L32 12 L56 32" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
-        <rect x="4" y="32" width="56" height="6" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+      <svg viewBox="0 0 80 70" className="w-20 h-14">
+        {/* House body */}
+        <rect x="15" y="38" width="50" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.35" rx="1" />
+        {/* Moderate pitch roof */}
+        <path d="M10 38 L40 14 L70 38" fill="currentColor" opacity="0.08" />
+        <path d="M10 38 L40 14 L70 38" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+        {/* Door */}
+        <rect x="35" y="46" width="10" height="14" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="1" />
+        {/* Windows */}
+        <rect x="20" y="43" width="10" height="8" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="0.5" />
+        <rect x="50" y="43" width="10" height="8" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="0.5" />
       </svg>
     ),
   },
@@ -63,26 +86,33 @@ const PITCH_OPTIONS = [
     label: "Steep",
     description: "Can't be walked on",
     icon: (
-      <svg viewBox="0 0 64 40" className="w-16 h-10">
-        <path d="M12 36 L32 6 L52 36" fill="currentColor" opacity="0.15" />
-        <path d="M12 36 L32 6 L52 36" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
-        <rect x="8" y="36" width="48" height="4" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+      <svg viewBox="0 0 80 70" className="w-20 h-14">
+        {/* House body */}
+        <rect x="18" y="42" width="44" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.35" rx="1" />
+        {/* Steep roof */}
+        <path d="M13 42 L40 8 L67 42" fill="currentColor" opacity="0.08" />
+        <path d="M13 42 L40 8 L67 42" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+        {/* Door */}
+        <rect x="35" y="48" width="10" height="12" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="1" />
+        {/* Windows */}
+        <rect x="22" y="47" width="8" height="6" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="0.5" />
+        <rect x="50" y="47" width="8" height="6" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.25" rx="0.5" />
       </svg>
     ),
   },
 ];
 
 const CURRENT_MATERIALS = [
-  { id: "asphalt", label: "Asphalt", color: "from-gray-700 to-gray-800" },
-  { id: "metal", label: "Metal", color: "from-slate-400 to-slate-500" },
-  { id: "tile", label: "Tile", color: "from-amber-600 to-amber-700" },
-  { id: "flat", label: "Flat Roof", color: "from-gray-500 to-gray-600" },
+  { id: "asphalt", label: "Asphalt", description: "Shingle roof", image: "/images/asphalt.jpg" },
+  { id: "metal", label: "Metal", description: "Standing seam or corrugated", image: "/images/metal.jpg" },
+  { id: "tile", label: "Tile", description: "Clay or concrete", image: "/images/tile.jpg" },
+  { id: "cedar", label: "Cedar", description: "Wood shake or shingle", image: "/images/cedar.jpg" },
 ];
 
 const DESIRED_MATERIALS = [
-  { id: "asphalt", label: "Asphalt Shingles", badge: "Most Popular", color: "from-gray-700 to-gray-800" },
-  { id: "metal", label: "Standing Seam Metal", badge: null, color: "from-slate-400 to-slate-500" },
-  { id: "tile", label: "Tile", badge: null, color: "from-amber-600 to-amber-700" },
+  { id: "asphalt", label: "Asphalt Shingles", description: "Most popular choice", badge: "Most Popular", image: "/images/asphalt.jpg" },
+  { id: "metal", label: "Standing Seam Metal", description: "Durable & long-lasting", badge: null, image: "/images/metal.jpg" },
+  { id: "tile", label: "Tile", description: "Premium clay or concrete", badge: null, image: "/images/tile.jpg" },
 ];
 
 const TIMELINE_OPTIONS = [
@@ -304,42 +334,53 @@ export default function EstimateWidget({
 
         {/* ===== STEP 3: Roof Steepness ===== */}
         {step === 3 && (
-            <div className="space-y-6">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-                How steep is your roof?
-              </h2>
+          <div className="space-y-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+              How steep is your roof?
+            </h2>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {PITCH_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => {
-                      setPitchCategory(opt.id);
-                      nextStep();
-                    }}
-                    className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all hover:shadow-md ${
+            <div className="grid grid-cols-2 gap-3">
+              {PITCH_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => {
+                    setPitchCategory(opt.id);
+                    nextStep();
+                  }}
+                  className="text-left"
+                >
+                  <AnimatedCard
+                    className={cn(
+                      "cursor-pointer transition-all duration-200",
                       pitchCategory === opt.id
-                        ? "border-brand-500 bg-brand-50"
-                        : "border-gray-150 bg-white hover:border-gray-300"
-                    }`}
+                        ? "border-gray-900 shadow-md ring-1 ring-gray-900/10"
+                        : "hover:border-gray-300"
+                    )}
                   >
-                    <div className="text-gray-500 mb-3">{opt.icon}</div>
-                    <span className="font-semibold text-gray-900 text-sm">{opt.label}</span>
-                    <span className="text-xs text-gray-400 mt-1 text-center">{opt.description}</span>
-                  </button>
-                ))}
-              </div>
+                    <CardVisual>
+                      <div className="text-gray-400 group-hover/animated-card:text-gray-600 transition-colors">
+                        {opt.icon}
+                      </div>
+                    </CardVisual>
+                    <CardBody>
+                      <CardTitle>{opt.label}</CardTitle>
+                      <CardDescription>{opt.description}</CardDescription>
+                    </CardBody>
+                  </AnimatedCard>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
         {/* ===== STEP 4: Current Material ===== */}
         {step === 4 && (
           <div className="space-y-6">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-              What's currently on your roof?
+              What&#39;s currently on your roof?
             </h2>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {CURRENT_MATERIALS.map((mat) => (
                 <button
                   key={mat.id}
@@ -347,17 +388,28 @@ export default function EstimateWidget({
                     setCurrentMaterial(mat.id);
                     nextStep();
                   }}
-                  className={`relative overflow-hidden rounded-xl border-2 transition-all hover:shadow-md aspect-[4/3] ${
-                    currentMaterial === mat.id
-                      ? "border-brand-500 ring-2 ring-brand-500/20"
-                      : "border-gray-150 hover:border-gray-300"
-                  }`}
+                  className="text-left"
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${mat.color}`} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <span className="absolute bottom-3 left-3 text-white font-semibold text-sm">
-                    {mat.label} ↗
-                  </span>
+                  <AnimatedCard
+                    className={cn(
+                      "cursor-pointer transition-all duration-200",
+                      currentMaterial === mat.id
+                        ? "border-gray-900 shadow-md ring-1 ring-gray-900/10"
+                        : "hover:border-gray-300"
+                    )}
+                  >
+                    <CardVisual className="h-[100px] p-0 bg-transparent">
+                      <img
+                        src={mat.image}
+                        alt={mat.label}
+                        className="w-full h-full object-cover"
+                      />
+                    </CardVisual>
+                    <CardBody>
+                      <CardTitle>{mat.label}</CardTitle>
+                      <CardDescription>{mat.description}</CardDescription>
+                    </CardBody>
+                  </AnimatedCard>
                 </button>
               ))}
             </div>
@@ -379,22 +431,33 @@ export default function EstimateWidget({
                     setDesiredMaterial(mat.id);
                     nextStep();
                   }}
-                  className={`relative overflow-hidden rounded-xl border-2 transition-all hover:shadow-md aspect-[4/3] ${
-                    desiredMaterial === mat.id
-                      ? "border-brand-500 ring-2 ring-brand-500/20"
-                      : "border-gray-150 hover:border-gray-300"
-                  }`}
+                  className="text-left"
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${mat.color}`} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  {mat.badge && (
-                    <span className="absolute top-2 right-2 bg-brand-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      {mat.badge}
-                    </span>
-                  )}
-                  <span className="absolute bottom-3 left-3 text-white font-semibold text-sm">
-                    {mat.label} ↗
-                  </span>
+                  <AnimatedCard
+                    className={cn(
+                      "cursor-pointer transition-all duration-200",
+                      desiredMaterial === mat.id
+                        ? "border-gray-900 shadow-md ring-1 ring-gray-900/10"
+                        : "hover:border-gray-300"
+                    )}
+                  >
+                    <CardVisual className="h-[100px] p-0 bg-transparent relative">
+                      <img
+                        src={mat.image}
+                        alt={mat.label}
+                        className="w-full h-full object-cover"
+                      />
+                      {mat.badge && (
+                        <span className="absolute top-2 right-2 bg-gray-900 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                          {mat.badge}
+                        </span>
+                      )}
+                    </CardVisual>
+                    <CardBody>
+                      <CardTitle className="text-xs">{mat.label}</CardTitle>
+                      <CardDescription className="text-[10px]">{mat.description}</CardDescription>
+                    </CardBody>
+                  </AnimatedCard>
                 </button>
               ))}
             </div>
