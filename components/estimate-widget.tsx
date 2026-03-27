@@ -220,6 +220,24 @@ export default function EstimateWidget({
         estimate_roof_sqft: data.estimate.roof_area_sqft,
       });
 
+      // Send email notification to the contractor (fire and forget)
+      fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contractor_id: contractorId,
+          lead_name: name,
+          lead_phone: phone,
+          lead_email: email,
+          lead_address: address,
+          source: "estimate_widget",
+          estimate_low: data.estimate.price_low,
+          estimate_high: data.estimate.price_high,
+          estimate_material: desiredMaterial,
+          estimate_roof_sqft: data.estimate.roof_area_sqft,
+        }),
+      }).catch(() => {}); // don't block the UI if notification fails
+
       setEstimate(data.estimate);
       setStep(8);
     } catch {

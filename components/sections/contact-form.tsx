@@ -53,6 +53,20 @@ export default function ContactForm({
       return;
     }
 
+    // Send email notification to the contractor
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contractor_id: contractorId,
+        lead_name: name,
+        lead_phone: phoneInput,
+        lead_email: email,
+        lead_message: message,
+        source: "contact_form",
+      }),
+    }).catch(() => {});
+
     setSubmitted(true);
   }
 
