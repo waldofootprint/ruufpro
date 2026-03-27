@@ -9,9 +9,17 @@ export default function Demo() {
     <section id="demo" className="py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white">
       <div className="mx-auto max-w-6xl px-6">
         <div className="text-center mb-10">
-          <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">
-            See It In Action
-          </p>
+          {/* Glass badge pill with pulsing green dot */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-200/50 bg-brand-50/50 px-3.5 py-1.5 backdrop-blur-md mb-4">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-700">
+              Live Demo · Try It Now
+            </span>
+          </div>
+
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">
             Try the estimate widget yourself
           </h2>

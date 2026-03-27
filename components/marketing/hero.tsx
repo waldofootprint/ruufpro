@@ -4,8 +4,8 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
 import { FlowButton } from "@/components/ui/flow-button";
+import { RotatingText } from "@/components/ui/rotating-text";
 
 const ROTATING_WORDS = [
   "get found on Google",
@@ -15,19 +15,6 @@ const ROTATING_WORDS = [
 ];
 
 export default function MarketingHero() {
-  const [wordIndex, setWordIndex] = useState(0);
-  const [fade, setFade] = useState(true);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFade(false);
-      setTimeout(() => {
-        setWordIndex((i) => (i + 1) % ROTATING_WORDS.length);
-        setFade(true);
-      }, 300);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-white to-blue-50/50">
@@ -37,13 +24,12 @@ export default function MarketingHero() {
           <div>
             <h1 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-gray-900 leading-[1.15] tracking-tight">
               Everything roofers need to{" "}
-              <span
-                className={`text-brand-600 inline-block transition-all duration-300 ${
-                  fade ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-                }`}
-              >
-                {ROTATING_WORDS[wordIndex]}
-              </span>
+              <RotatingText
+                words={ROTATING_WORDS}
+                mode="slide"
+                interval={3000}
+                className="text-brand-600"
+              />
             </h1>
 
             <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-lg">
