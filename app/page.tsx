@@ -1,4 +1,11 @@
 import MarketingHero from "@/components/marketing/hero";
+import Features from "@/components/marketing/features";
+import Demo from "@/components/marketing/demo";
+import Comparison from "@/components/marketing/comparison";
+import HowItWorks from "@/components/marketing/how-it-works";
+import Pricing from "@/components/marketing/pricing";
+import FAQ from "@/components/marketing/faq";
+import FinalCTA from "@/components/marketing/final-cta";
 
 export default function Home() {
   return (
@@ -30,11 +37,35 @@ export default function Home() {
       </nav>
 
       <MarketingHero />
+      <Features />
+      <Demo />
+      <HowItWorks />
+      <Comparison />
+      <Pricing />
+      <FAQ />
+      <FinalCTA />
 
-      {/* Placeholder for remaining sections — we'll build these next */}
-      <section className="py-20 text-center text-gray-400">
-        <p className="text-sm">More sections coming: Problem → Solution → Demo → Compare → Pricing → FAQ</p>
-      </section>
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-400 py-12">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+              <p className="text-white font-bold text-lg">RoofReady</p>
+              <p className="text-sm mt-1">Free roofing websites + satellite-powered estimates</p>
+            </div>
+            <div className="flex gap-8 text-sm">
+              <a href="#features" className="hover:text-white transition-colors">Features</a>
+              <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+              <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
+              <a href="/signup" className="hover:text-white transition-colors">Sign Up</a>
+              <a href="/login" className="hover:text-white transition-colors">Log In</a>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-sm text-center text-gray-500">
+            &copy; {new Date().getFullYear()} RoofReady. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
