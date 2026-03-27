@@ -48,22 +48,22 @@ export default function Home() {
       <FinalCTA />
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
+      <footer className="bg-white text-gray-500 py-12 border-t border-gray-100">
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div>
-              <p className="text-white font-bold text-lg">RoofReady</p>
+              <p className="text-gray-900 font-bold text-lg">RoofReady</p>
               <p className="text-sm mt-1">Free roofing websites + satellite-powered estimates</p>
             </div>
             <div className="flex gap-8 text-sm">
-              <a href="#features" className="hover:text-white transition-colors">Features</a>
-              <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-              <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-              <a href="/signup" className="hover:text-white transition-colors">Sign Up</a>
-              <a href="/login" className="hover:text-white transition-colors">Log In</a>
+              <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
+              <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
+              <a href="#faq" className="hover:text-gray-900 transition-colors">FAQ</a>
+              <a href="/signup" className="hover:text-gray-900 transition-colors">Sign Up</a>
+              <a href="/login" className="hover:text-gray-900 transition-colors">Log In</a>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-sm text-center text-gray-500">
+          <div className="border-t border-gray-100 mt-8 pt-8 text-sm text-center text-gray-400">
             &copy; {new Date().getFullYear()} RoofReady. All rights reserved.
           </div>
         </div>
