@@ -66,7 +66,7 @@ export function RotatingText({
   return (
     <span
       className={cn(
-        "relative inline-flex overflow-hidden",
+        "relative inline-flex overflow-hidden py-[0.15em]",
         className
       )}
       style={{ perspective: mode === "flip" ? 600 : undefined }}
