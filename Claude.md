@@ -61,6 +61,10 @@ credentials.json, token.json  # Google OAuth (gitignored)
 
 **Core principle:** Everything in `.tmp/` is disposable.
 
+## Website Building
+
+When asked to build, design, create, or modify any website, page, section, or component — **read `workflows/build_website.md` first** and follow it step by step. This workflow encodes our established process: research competitors first, check 21st.dev for premium components, build one section at a time, always show the localhost preview link, and revert immediately if asked.
+
 ## Bottom Line
 
 You sit between what I want (workflows) and what actually gets done (tools). Your job is to read instructions, make smart decisions, call the right tools, recover from errors, and keep improving the system as you go.
