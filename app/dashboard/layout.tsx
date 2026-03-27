@@ -7,14 +7,12 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
-  LayoutDashboard,
   Users,
-  Settings,
   Calculator,
-  Globe,
   LogOut,
   Menu,
   X,
+  Bell,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -31,7 +29,9 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [businessName, setBusinessName] = useState("");
+  const [contractorId, setContractorId] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   useEffect(() => {
     async function checkAuth() {
@@ -43,7 +43,7 @@ export default function DashboardLayout({
 
       const { data: contractor } = await supabase
         .from("contractors")
-        .select("business_name")
+        .select("id, business_name")
         .eq("user_id", user.id)
         .single();
 
@@ -53,10 +53,38 @@ export default function DashboardLayout({
       }
 
       setBusinessName(contractor.business_name);
+      setContractorId(contractor.id);
+      // Check if push is already enabled
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription();
+          setPushEnabled(!!sub);
+        }
+      }
       setLoading(false);
     }
     checkAuth();
   }, [router]);
+
+  async function enablePush() {
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      });
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contractor_id: contractorId, subscription: sub.toJSON() }),
+      });
+      setPushEnabled(true);
+    } catch (err) {
+      console.error("Push enable failed:", err);
+      alert("Could not enable notifications. Please allow notifications in your browser settings.");
+    }
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -120,8 +148,22 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          {/* Logout */}
-          <div className="px-3 py-4 border-t border-gray-100">
+          {/* Push notifications + Logout */}
+          <div className="px-3 py-4 border-t border-gray-100 space-y-1">
+            {!pushEnabled ? (
+              <button
+                onClick={enablePush}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-brand-600 bg-brand-50 hover:bg-brand-100 transition-all w-full"
+              >
+                <Bell className="w-4 h-4" />
+                Enable Notifications
+              </button>
+            ) : (
+              <div className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-green-600">
+                <Bell className="w-4 h-4" />
+                Notifications On
+              </div>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all w-full"

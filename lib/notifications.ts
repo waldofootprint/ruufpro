@@ -86,20 +86,21 @@ export async function sendLeadNotificationEmail(data: LeadNotificationData) {
 
   try {
     const { error } = await resend.emails.send({
-      from: "RoofReady Leads <leads@roofready.com>",
+      from: "RoofReady <onboarding@resend.dev>",
       to: contractorEmail,
       subject: `New lead: ${leadName}${hasEstimate ? ` — $${estimateLow!.toLocaleString()}-$${estimateHigh!.toLocaleString()}` : ""}`,
       html,
     });
 
     if (error) {
-      console.error("Email send error:", error);
+      console.error("Email send error:", JSON.stringify(error));
       return false;
     }
 
+    console.log("Email sent successfully to:", contractorEmail);
     return true;
   } catch (err) {
-    console.error("Email send failed:", err);
+    console.error("Email send caught error:", err);
     return false;
   }
 }

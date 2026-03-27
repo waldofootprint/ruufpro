@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send email notification
-    const sent = await sendLeadNotificationEmail({
+    const emailSent = await sendLeadNotificationEmail({
       contractorEmail: contractor.email,
       contractorName: contractor.business_name,
       leadName: lead_name,
@@ -46,7 +46,23 @@ export async function POST(request: NextRequest) {
       estimateRoofSqft: estimate_roof_sqft || null,
     });
 
-    return NextResponse.json({ sent });
+    // Send push notification (fire and forget — don't block the response)
+    const hasEstimate = estimate_low && estimate_high;
+    const pushBody = hasEstimate
+      ? `${lead_name} — $${estimate_low.toLocaleString()}-$${estimate_high.toLocaleString()}`
+      : `${lead_name}${lead_phone ? ` · ${lead_phone}` : ""}`;
+
+    fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL ? request.nextUrl.origin : "http://localhost:3000"}/api/push/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contractor_id,
+        title: `New Lead from ${source === "estimate_widget" ? "Estimate Widget" : "Contact Form"}`,
+        body: pushBody,
+      }),
+    }).catch(() => {});
+
+    return NextResponse.json({ emailSent, to: contractor.email });
   } catch (err) {
     console.error("Notify error:", err);
     return NextResponse.json({ error: "Failed to send notification" }, { status: 500 });
