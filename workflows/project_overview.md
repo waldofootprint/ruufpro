@@ -26,12 +26,18 @@ Solo roofers and small crews (1-10 employees) who either have no website or a ba
 | Email | Resend or SendGrid |
 | DNS | Cloudflare |
 
-## Pricing Tiers
-| Tier | Price | Includes |
-|------|-------|----------|
-| Free | $0 | Roofing website + contact form + lead email notifications |
-| Pro | $99/mo | + Estimate widget + review automation + lead dashboard |
-| Growth | $149/mo | + Auto-reply + follow-up drips + SEO city pages |
+## Business Model
+The free website is our lead magnet and main acquisition tool — always free, fully functional, no gates. Revenue comes from paid services sold independently. Roofers who already have their own website can buy services standalone (widget embeds on any site).
+
+### Pricing
+| Product | Price | Description |
+|---------|-------|-------------|
+| Roofing Website | Free (always) | Professional single-page site + contact form + lead notifications |
+| Estimate Widget | $99/mo | Instant pricing calculator, embeddable on any site |
+| Review Automation | $99/mo | Auto-text Google review requests after job completion |
+| Auto-Reply + Follow-Up | $149/mo | Speed-to-lead auto-text + drip sequences |
+| SEO City Pages | $149/mo | Auto-generated "[Service] in [City]" pages |
+| Custom Domain | TBD | Use own domain instead of slug.roofready.com |
 
 ## Phased Roadmap
 | Phase | What | Timeline |

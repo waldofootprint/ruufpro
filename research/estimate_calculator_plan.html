@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoofReady — Estimate Calculator Build Plan (Final)</title>
+<style>
+  @media print {
+    body { font-size: 10pt; }
+    h1 { font-size: 18pt; }
+    h2 { font-size: 14pt; page-break-before: auto; }
+    h3 { font-size: 12pt; }
+    h4 { font-size: 11pt; }
+    pre { font-size: 8pt; }
+    table { font-size: 9pt; }
+    .no-break { page-break-inside: avoid; }
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+    line-height: 1.55;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 26px; border-bottom: 3px solid #1a1a1a; padding-bottom: 10px; }
+  h2 { font-size: 21px; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-top: 36px; color: #111; }
+  h3 { font-size: 16px; margin-top: 24px; color: #333; }
+  h4 { font-size: 14px; margin-top: 20px; color: #444; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13px; }
+  th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #f5f5f5; font-weight: 600; }
+  tr:nth-child(even) { background: #fafafa; }
+  pre { background: #f5f5f5; padding: 14px; border-radius: 6px; overflow-x: auto; font-size: 12px; font-family: "SF Mono", Menlo, Monaco, monospace; white-space: pre-wrap; }
+  code { background: #f0f0f0; padding: 2px 5px; border-radius: 3px; font-size: 0.9em; }
+  strong { color: #000; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 28px 0; }
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 3px; }
+  .highlight { background: #fff3cd; padding: 10px 14px; border-left: 4px solid #ffc107; margin: 14px 0; border-radius: 4px; }
+  .callout { background: #e8f5e9; padding: 10px 14px; border-left: 4px solid #4caf50; margin: 14px 0; border-radius: 4px; }
+  .danger { background: #ffebee; padding: 10px 14px; border-left: 4px solid #f44336; margin: 14px 0; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<h1>RoofReady Estimate Calculator &mdash; Final Build Plan</h1>
+<p style="color: #666; margin-top: -8px;">V2 (Google Solar API) + Full Accuracy Stack &bull; Updated 2026-03-27</p>
+
+<div class="highlight">
+<strong>What this is:</strong> The estimate widget is RoofReady's core paid product ($99/mo). Homeowners enter their address, get an instant satellite-measured price range, and become leads. We use every data point from Google's Solar API &mdash; roof area, pitch, segment complexity &mdash; plus geometric inference, weather adjustment, and a calibration loop to match or exceed Roofle's accuracy at a fraction of the cost.
+</div>
+
+<hr>
+
+<h2>How It Works</h2>
+
+<h3>Homeowner Flow (V2 &mdash; Happy Path, ~80% of addresses)</h3>
+<ol>
+  <li>Enters <strong>address</strong> (Google Places autocomplete) + picks <strong>material</strong> (asphalt / metal / tile)</li>
+  <li>We call Google Solar API &rarr; get roof sqft, pitch, and segment complexity</li>
+  <li>Two quick refinement questions: <strong>stories</strong> (1/2/3) and <strong>shingle layers</strong> (1/2/not sure)</li>
+  <li>Full calculation with all factors &rarr; show price range</li>
+  <li>"Get Your Exact Quote" &rarr; enters name, phone, email &rarr; becomes a lead</li>
+</ol>
+
+<h3>Homeowner Flow (V1 &mdash; Fallback, ~20% of addresses)</h3>
+<p>If Solar API returns no data:</p>
+<ol>
+  <li>Show: "We'll need a few more details about your home"</li>
+  <li>Enter <strong>bedrooms, stories, roof type</strong> (gable/hip/flat), <strong>shingle layers</strong></li>
+  <li>We estimate sqft from those inputs &rarr; show price range</li>
+  <li>Same lead capture step</li>
+</ol>
+
+<h3>Roofer Flow (Dashboard)</h3>
+<ol>
+  <li>Set $/sqft per material with <strong>regional pricing suggestions</strong></li>
+  <li>Set service area (ZIP codes or cities)</li>
+  <li>Preview widget with their pricing</li>
+  <li>Copy embed code for external sites</li>
+  <li>View leads with estimate details attached</li>
+  <li>Order EagleView detailed reports for serious leads ($25-50)</li>
+</ol>
+
+<hr>
+
+<h2>Calculation Logic</h2>
+
+<h3>V2 (Solar API &mdash; Full Data Utilization)</h3>
+<pre>
+From Solar API (buildingInsights endpoint):
+  roof_area      = wholeRoofStats.areaMeters2 &rarr; convert to sqft
+  pitch_degrees  = wholeRoofStats.pitchDegrees
+  num_segments   = count of roofSegmentStats[]
+
+From homeowner (2 quick questions after Solar lookup):
+  stories        = 1 / 2 / 3
+  shingle_layers = 1 / 2 / "not sure"
+
+PITCH_MULTIPLIER (labor cost for steep roofs):
+  0-18&deg;  (low slope):     1.00
+  19-26&deg; (walkable):      1.05-1.10
+  27-34&deg; (steep):         1.15-1.25
+  35-45&deg; (very steep):    1.30-1.50
+
+WASTE_FACTOR (extra material based on roof complexity):
+  2 segments (simple gable):    1.10 (10%)
+  3-4 segments:                 1.15 (15%)
+  5-6 segments:                 1.18 (18%)
+  7+ segments (complex hip):    1.22 (22%)
+
+STORY_FACTOR:  1-story: 1.00 | 2-story: 1.05 | 3-story: 1.10
+
+TEAROFF_COST (per sqft):
+  1 layer: $0 | 2 layers: +$1.00-1.50/sqft | "not sure": $0
+
+GEOMETRIC INFERENCE (from segment data):
+  Calculate shared edge lengths between adjacent segments:
+    ridge_length, hip_length, valley_length, perimeter
+  RIDGE_CAP    = ridge_length &times; $2.50-4.00/ft
+  HIP_FLASH    = hip_length &times; $3.00-5.00/ft
+  VALLEY_FLASH = valley_length &times; $4.00-6.00/ft
+  STARTER      = perimeter &times; $1.50-2.50/ft
+
+PENETRATION ESTIMATE (statistical by roof size):
+  &lt;1,500 sqft: $400 | 1,500-2,500: $600 | &gt;2,500: $800
+
+FULL CALCULATION:
+  material_sqft  = roof_area &times; waste_factor
+  material_cost  = material_sqft &times; contractor_rate[material]
+  labor_cost     = material_cost &times; pitch_multiplier &times; story_factor
+  accessory_cost = ridge_cap + hip_flash + valley_flash + starter_strip
+  tearoff_cost   = roof_area &times; tearoff_rate
+  penetration    = penetration_cost
+
+  price_low  = material_low + labor_low + accessory_low + tearoff_low + penetration_low
+  price_high = material_high + labor_high + accessory_high + tearoff_high + penetration_high
+
+Output: "$9,800 - $14,100 for asphalt shingles"
+        "Based on 2,145 sqft roof &middot; 5/12 pitch &middot; satellite-measured"
+</pre>
+
+<h3>V1 (Manual Fallback &mdash; ~20% of addresses)</h3>
+<pre>
+BEDROOM_SQFT_MAP = { 1: 750, 2: 1100, 3: 1500, 4: 2000, 5: 2800 }
+ROOF_FACTOR      = { gable: 1.3, hip: 1.4, flat: 1.05 }
+Default pitch_multiplier = 1.10 | Default waste_factor = 1.15
+
+Same formula as V2 but with estimated roof_sqft from bedroom lookup.
+</pre>
+
+<h3>What We Intentionally Don't Estimate (Requires Inspection)</h3>
+<ul>
+  <li>Decking condition / replacement ($2-4/sqft if rotten)</li>
+  <li>Access issues (trees, fences, power lines)</li>
+  <li>Code upgrades (ventilation, ice/water shield)</li>
+  <li>Exact penetration count (we use statistical estimate)</li>
+</ul>
+<p><em>These are handled during the roofer's free inspection &mdash; the estimate is the hook.</em></p>
+
+<hr>
+
+<h2>Accuracy Systems (All Included in Build)</h2>
+
+<table>
+  <tr><th>System</th><th>What It Does</th><th>Impact</th><th>Cost</th></tr>
+  <tr><td><strong>Google Solar API</strong></td><td>Satellite-measured roof area, pitch, segments</td><td>Core data source (&plusmn;2-5% area)</td><td>Free (10K/mo)</td></tr>
+  <tr><td><strong>Geometric Inference</strong></td><td>Calculate ridge/hip/valley lengths from segments</td><td>Closes EagleView gap for accessory costs</td><td>Free</td></tr>
+  <tr><td><strong>Penetration Estimation</strong></td><td>Statistical estimate by roof size</td><td>Captures $400-800 cost most tools ignore</td><td>Free</td></tr>
+  <tr><td><strong>Google Places Autocomplete</strong></td><td>Validated address input, no typos</td><td>Prevents wrong-address errors entirely</td><td>~$0.003/session</td></tr>
+  <tr><td><strong>Regional Pricing Defaults</strong></td><td>Suggest $/sqft when roofer first sets up</td><td>Prevents bad config from corrupting estimates</td><td>Free</td></tr>
+  <tr><td><strong>Quick Accuracy Feedback</strong></td><td>One-tap "Too Low / About Right / Too High" after job</td><td>Calibrates 3x faster than waiting for actual prices</td><td>Free</td></tr>
+  <tr><td><strong>Calibration Loop</strong></td><td>Capture actual contract price, auto-adjust multipliers</td><td>Highest long-term impact (&plusmn;4-8% at 12 months)</td><td>Free</td></tr>
+  <tr><td><strong>Weather Event Adjustment</strong></td><td>NOAA storm data &rarr; surge multiplier in affected ZIPs</td><td>No competitor does this. &plusmn;5-10% during storms.</td><td>Free</td></tr>
+  <tr><td><strong>EagleView Integration</strong></td><td>Resell detailed reports for serious leads ($25-50)</td><td>Bridges range estimate to exact quote. Revenue positive.</td><td>Revenue: $5-15/report</td></tr>
+</table>
+
+<hr>
+
+<h2>How We Compare to Competitors</h2>
+
+<table>
+  <tr><th>Factor</th><th>EagleView ($15-38)</th><th>Roofle ($350/mo)</th><th>RoofReady ($99/mo)</th></tr>
+  <tr><td><strong>Roof area</strong></td><td>Exact (HD aerial)</td><td>AI-estimated</td><td>Satellite (Google Solar, &plusmn;2-5%)</td></tr>
+  <tr><td><strong>Pitch</strong></td><td>Per facet</td><td>Yes</td><td>Per segment (Solar API)</td></tr>
+  <tr><td><strong>Ridge/hip/valley</strong></td><td>Exact measurement</td><td>Estimated</td><td>Inferred from geometry</td></tr>
+  <tr><td><strong>Waste factor</strong></td><td>Calculated</td><td>Suggested</td><td>Derived from segment count</td></tr>
+  <tr><td><strong>Penetrations</strong></td><td>Visual ID</td><td>Unknown</td><td>Statistical estimate</td></tr>
+  <tr><td><strong>Address validation</strong></td><td>N/A</td><td>Unknown</td><td>Google Places autocomplete</td></tr>
+  <tr><td><strong>Roofer rate guidance</strong></td><td>N/A</td><td>No</td><td>Regional pricing defaults</td></tr>
+  <tr><td><strong>Weather adjustment</strong></td><td>No</td><td>No</td><td><strong>Yes &mdash; NOAA storm data</strong></td></tr>
+  <tr><td><strong>Detailed report option</strong></td><td>IS the report</td><td>Via EagleView add-on</td><td><strong>Yes &mdash; EagleView resale</strong></td></tr>
+  <tr><td><strong>Accuracy feedback</strong></td><td>N/A</td><td>2.4M quotes of data</td><td>Quick one-tap (calibrates in 3-4 months)</td></tr>
+  <tr><td><strong>Cost per estimate</strong></td><td>$15-38</td><td>Included in $350/mo</td><td>~$0.05</td></tr>
+</table>
+
+<h3>Accuracy Over Time</h3>
+<table class="no-break">
+  <tr><th>Timeframe</th><th>EagleView</th><th>Roofle</th><th>RoofReady</th></tr>
+  <tr><td><strong>At launch</strong></td><td>&plusmn;2-3%</td><td>&plusmn;10-15%</td><td><strong>&plusmn;8-12%</strong></td></tr>
+  <tr><td><strong>At 3 months</strong></td><td>&plusmn;2-3%</td><td>&plusmn;10-15%</td><td><strong>&plusmn;5-10%</strong></td></tr>
+  <tr><td><strong>At 12 months</strong></td><td>&plusmn;2-3%</td><td>&plusmn;8-12%</td><td><strong>&plusmn;4-8%</strong></td></tr>
+</table>
+
+<div class="callout">
+<strong>Two things no competitor has:</strong> real-time weather-adjusted estimates and the EagleView bridge from range estimate to exact quote &mdash; all in one platform.
+</div>
+
+<hr>
+
+<h2>Google Cloud Setup (Hannah)</h2>
+<ol>
+  <li>Create Google Cloud account (free, $300 credit for new accounts)</li>
+  <li>Create a new project ("RoofReady")</li>
+  <li>Enable: <strong>Solar API</strong> + <strong>Places API (New)</strong></li>
+  <li>Create API keys (restrict each to its respective API)</li>
+  <li>Add to <code>.env</code>: <code>GOOGLE_SOLAR_API_KEY</code> and <code>GOOGLE_PLACES_API_KEY</code></li>
+</ol>
+<p><strong>Cost:</strong> Solar API free tier = 10,000 calls/mo. Places = ~$0.003/session. Total at MVP scale: ~$0-5/mo.</p>
+
+<hr>
+
+<h2>What We Build</h2>
+
+<table>
+  <tr><th>#</th><th>Component</th><th>Description</th></tr>
+  <tr><td>1</td><td><strong>Solar API Client + Cache</strong></td><td>Call Solar API, cache results by address hash so we never pay for the same address twice.</td></tr>
+  <tr><td>2</td><td><strong>Geometric Inference Engine</strong></td><td>Calculate ridge/hip/valley lengths from segment data. The math that closes the EagleView gap.</td></tr>
+  <tr><td>3</td><td><strong>Full Calculation Engine</strong></td><td>Ties together: Solar data + geometry + pitch/waste/story/tearoff multipliers + penetration + weather adjustment.</td></tr>
+  <tr><td>4</td><td><strong>API Route</strong></td><td>Public POST endpoint the widget calls. Keeps API keys server-side.</td></tr>
+  <tr><td>5</td><td><strong>Regional Pricing Defaults</strong></td><td>Suggest $/sqft rates when roofer configures their widget. Prevents bad setup.</td></tr>
+  <tr><td>6</td><td><strong>Roofer Pricing Dashboard</strong></td><td>Set rates, service area, preview widget, copy embed code.</td></tr>
+  <tr><td>7</td><td><strong>Widget UI</strong></td><td>Homeowner-facing form with Google Places autocomplete. Designed in v0.</td></tr>
+  <tr><td>8</td><td><strong>Embed System</strong></td><td>One-line <code>&lt;script&gt;</code> tag for external sites. Creates iframe to hosted widget.</td></tr>
+  <tr><td>9</td><td><strong>Quick Accuracy Feedback</strong></td><td>One-tap email/SMS after job: "Too Low / About Right / Too High"</td></tr>
+  <tr><td>10</td><td><strong>Calibration Data Capture</strong></td><td>Optional actual_price field on leads. Auto-calculate accuracy %.</td></tr>
+  <tr><td>11</td><td><strong>Weather Event Monitoring</strong></td><td>NOAA storm data by ZIP. Surge multiplier + roofer notification.</td></tr>
+  <tr><td>12</td><td><strong>EagleView Integration</strong></td><td>Resell detailed reports from lead dashboard. $25-50 per report, revenue positive.</td></tr>
+</table>
+
+<hr>
+
+<h2>Build Order</h2>
+
+<h3>Phase 1: Core Engine</h3>
+<table>
+  <tr><th>Step</th><th>What</th><th>Who</th></tr>
+  <tr><td>1</td><td>Google Cloud setup (account, project, Solar + Places API, keys)</td><td>Hannah</td></tr>
+  <tr><td>2</td><td>Solar API client + caching</td><td>Claude</td></tr>
+  <tr><td>3</td><td>Geometric inference engine</td><td>Claude</td></tr>
+  <tr><td>4</td><td>Full calculation engine</td><td>Claude</td></tr>
+  <tr><td>5</td><td>API route (public endpoint)</td><td>Claude</td></tr>
+</table>
+
+<h3>Phase 2: Roofer Configuration</h3>
+<table>
+  <tr><th>Step</th><th>What</th><th>Who</th></tr>
+  <tr><td>6</td><td>Regional pricing defaults</td><td>Claude</td></tr>
+  <tr><td>7</td><td>Roofer pricing dashboard with regional suggestions</td><td>Claude</td></tr>
+</table>
+
+<h3>Phase 3: Widget</h3>
+<table>
+  <tr><th>Step</th><th>What</th><th>Who</th></tr>
+  <tr><td>8</td><td>Widget UI with Google Places autocomplete (design in v0)</td><td>Hannah + Claude</td></tr>
+  <tr><td>9</td><td>Embed system (script + hosted widget page)</td><td>Claude</td></tr>
+</table>
+
+<h3>Phase 4: Intelligence Layer</h3>
+<table>
+  <tr><th>Step</th><th>What</th><th>Who</th></tr>
+  <tr><td>10</td><td>Quick accuracy feedback (one-tap email/SMS)</td><td>Claude</td></tr>
+  <tr><td>11</td><td>Calibration fields (actual_price + accuracy tracking)</td><td>Claude</td></tr>
+  <tr><td>12</td><td>Weather event monitoring (NOAA integration)</td><td>Claude</td></tr>
+  <tr><td>13</td><td>EagleView integration (report ordering + dashboard)</td><td>Claude</td></tr>
+</table>
+
+<h3>Phase 5: Testing</h3>
+<table>
+  <tr><th>Step</th><th>What</th><th>Who</th></tr>
+  <tr><td>14</td><td>End-to-end testing with real addresses + accuracy spot-checks</td><td>Both</td></tr>
+</table>
+
+<hr>
+
+<h2>Verification Checklist</h2>
+<ul>
+  <li>Call Solar API with a known Dallas address &mdash; verify roof sqft + segments return</li>
+  <li>Run geometric inference on segments &mdash; verify ridge/hip/valley lengths are reasonable</li>
+  <li>Test fallback: address the API doesn't cover &mdash; verify manual input flow</li>
+  <li>Set up test contractor pricing, run estimate &mdash; verify math is correct</li>
+  <li>Cross-check 5 real addresses against known roof sizes</li>
+  <li>Submit lead through widget &mdash; verify it appears in Supabase with estimate details</li>
+  <li>Test embed on a plain HTML page outside RoofReady</li>
+  <li>Test caching: same address twice &mdash; verify only 1 API call</li>
+  <li>Verify Google Places autocomplete returns correct addresses</li>
+  <li>Verify regional pricing defaults show for a new roofer</li>
+  <li>Verify quick feedback email fires after lead status changes to "won"</li>
+  <li>Test weather event detection with a known recent storm ZIP code</li>
+</ul>
+
+<hr>
+
+<h2>Cost Projection</h2>
+<table>
+  <tr><th>Scale</th><th>Monthly API Calls</th><th>Cost</th></tr>
+  <tr><td>MVP (0-50 roofers)</td><td>~500-2,000</td><td>$0 (free tier)</td></tr>
+  <tr><td>Growth (50-200 roofers)</td><td>~2,000-8,000</td><td>$0 (free tier)</td></tr>
+  <tr><td>Scale (200-500 roofers)</td><td>~8,000-20,000</td><td>$0-$750/mo</td></tr>
+  <tr><td>With caching</td><td>~40-60% fewer calls</td><td>Cuts costs nearly in half</td></tr>
+</table>
+
+<div class="callout">
+<strong>EagleView resale is revenue positive:</strong> We charge $25-50, pay $15-38. At 100 reports/month = $500-1,500/mo in margin. This is a profit center, not a cost.
+</div>
+
+<hr>
+
+<p style="font-size: 11px; color: #888;">RoofReady Estimate Calculator Plan (Final) &bull; 2026-03-27</p>
+
+</body>
+</html>

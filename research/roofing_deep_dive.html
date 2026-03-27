@@ -54,7 +54,7 @@
 <p class="subtitle">Prepared 2026-03-26 | Micro SaaS Opportunity Research</p>
 
 <div class="highlight">
-<strong>The Opportunity:</strong> Google launched an "Online Estimates" filter for roofing searches (Dec 2025) that hides roofers without online pricing. 78% of homeowners want pricing on the website. 76% of roofers don't show it. Roofle charges $350/mo + $2K setup. We offer a free website + $99/mo estimate widget.
+<strong>The Opportunity:</strong> Google launched an "Online Estimates" filter for roofing searches (Dec 2025) that hides roofers without online pricing. 78% of homeowners want pricing on the website. 76% of roofers don't show it. Roofle charges $350/mo + $2K setup. We offer a free roofing website as our lead magnet and sell the estimate widget ($99/mo) and other services to roofers who see the value &mdash; whether they use our free site or already have their own.
 </div>
 
 <hr>
@@ -144,13 +144,17 @@
 
 <p><strong>How Roofle does it:</strong> They don't. This is our differentiator.</p>
 
+<div class="callout">
+<strong>Free Tier Philosophy (Hormozi-Style):</strong> The free website is fully functional with no artificial limits, no gated features, no "upgrade to unlock" teasers. We give away the best free roofing website available. The templates are designed to attract roofers who already understand the value of online estimates and lead capture &mdash; these are the customers who will naturally want the paid estimate widget as their next step. We don't create pain to sell. We create value and let the right customer self-select.
+</div>
+
 <p><strong>Approach: Multi-tenant static site generation with Next.js</strong></p>
 <ul>
   <li>Use Vercel's <strong>Platforms Starter Kit</strong> (open source, built for multi-tenant apps with custom domains)</li>
-  <li>3-5 roofing-specific templates (storm restoration, residential re-roof, commercial, full-service, insurance specialist)</li>
-  <li>Contractor signs up &rarr; picks template &rarr; enters business name OR we auto-pull from Google Business Profile API</li>
+  <li>3 templates mapped to <strong>business types</strong> (Storm/Insurance, Residential, Full Service) &mdash; not visual styles</li>
+  <li>Minimum onboarding input: <strong>business name, phone, city, business type</strong> &mdash; site generates with smart defaults from these 4 fields</li>
   <li>Site generates in seconds at <code>[company].roofready.com</code></li>
-  <li>Custom domain support on paid tier ($5/mo DNS via Vercel or Cloudflare)</li>
+  <li>Custom domain support on paid tier (Vercel or Cloudflare)</li>
 </ul>
 
 <p><strong>Tech stack for generator:</strong></p>
@@ -159,17 +163,72 @@
   <li><strong>Supabase</strong> for contractor accounts, site content, lead storage</li>
   <li><strong>Vercel</strong> for hosting (handles custom domains natively, $0 for static sites)</li>
   <li><strong>Tailwind CSS</strong> for responsive templates</li>
-  <li><strong>Google Business Profile API</strong> (optional) &mdash; auto-populate name, address, phone, hours, review count</li>
+  <li><strong>Google Business Profile API</strong> (V1.1) &mdash; auto-populate name, address, phone, hours, review count</li>
 </ul>
 
-<p><strong>Pages each site gets:</strong></p>
+<h4>Designed for the ICP (1-10 Person Crews)</h4>
+<p>Our target roofer is running jobs all day, answering calls from his truck. Templates must account for this:</p>
+<table>
+  <tr><th>ICP Reality</th><th>Template Solution</th></tr>
+  <tr><td>No professional photos</td><td>Curated default roofing imagery (not generic stock). Site looks polished with zero uploads.</td></tr>
+  <tr><td>No logo</td><td>Auto-generated text logo from business name. Upload optional.</td></tr>
+  <tr><td>Won't write copy</td><td>Pre-written service descriptions and CTAs auto-populated with business name + city.</td></tr>
+  <tr><td>No list of certifications</td><td>Checkboxes: GAF Master Elite? Licensed? Insured? Template auto-generates trust badges.</td></tr>
+  <tr><td>On their phone, not laptop</td><td>Onboarding fully works on mobile. Under 3 minutes with minimal input.</td></tr>
+  <tr><td>No written reviews</td><td>Reviews section hidden until roofer adds them. V1.1: auto-pull from Google.</td></tr>
+</table>
+
+<h4>Template Types (Business-Type Based)</h4>
+<table>
+  <tr><th></th><th>Storm / Insurance</th><th>Residential</th><th>Full Service</th></tr>
+  <tr><td><strong>Hero headline</strong></td><td>"Storm Damage? We're Here to Help."</td><td>"Trusted Roofing in [City]"</td><td>"Your Home, Our Expertise"</td></tr>
+  <tr><td><strong>Primary CTA</strong></td><td>"Get Free Storm Inspection"</td><td>"Get Your Free Estimate"</td><td>"Get Your Free Estimate"</td></tr>
+  <tr><td><strong>Default services</strong></td><td>Storm repair, insurance claims, emergency tarping, replacement</td><td>Replacement, repair, inspections, gutters</td><td>Roofing, gutters, siding, windows, repairs</td></tr>
+  <tr><td><strong>Tone</strong></td><td>Urgent &mdash; emergency language, 24/7</td><td>Trust-building &mdash; quality, reliability</td><td>Breadth &mdash; one-stop-shop convenience</td></tr>
+  <tr><td><strong>Targets roofer who...</strong></td><td>Chases storms, works insurance claims, values speed-to-lead</td><td>Does scheduled re-roofs, values reviews and reputation</td><td>Offers multiple trades, values showing full capability</td></tr>
+</table>
+
+<h4>Section Order (Single-Page Scroll, All Templates)</h4>
+<ol>
+  <li><strong>Hero</strong> &mdash; Business name, headline, CTA (click-to-call on mobile), trust badge</li>
+  <li><strong>Services Grid</strong> &mdash; Visual cards with icons, auto-populated from business type</li>
+  <li><strong>Why Choose Us</strong> &mdash; Auto-generated from checkboxes: certifications, years, warranty, license</li>
+  <li><strong>Reviews</strong> &mdash; Shown when available; hidden by default</li>
+  <li><strong>Gallery</strong> &mdash; Shown when roofer uploads photos; hidden by default</li>
+  <li><strong>Service Area</strong> &mdash; "Proudly serving [City] and surrounding areas"</li>
+  <li><strong>Contact Form + Map</strong> &mdash; Name, phone, email, message. Google Map. Click-to-call.</li>
+  <li><strong>Footer</strong> &mdash; Phone, address, license #, "Powered by RoofReady"</li>
+</ol>
+
+<h4>The 2-Second Test (Above the Fold, Mobile)</h4>
+<p>What a homeowner must see without scrolling:</p>
 <ul>
-  <li>Home (hero + services + reviews + contact form)</li>
-  <li>Services (residential, commercial, repairs, gutters &mdash; toggleable)</li>
-  <li>About (crew photos, license #, insurance info)</li>
-  <li>Gallery (before/after photos, drag-and-drop upload)</li>
-  <li>Contact (form + embedded Google Map + click-to-call)</li>
-  <li><strong>Instant Estimate page</strong> (paid tier &mdash; embeds the widget)</li>
+  <li>Business name + what they do + where ("Roof Replacement &amp; Repair in [City]")</li>
+  <li>Click-to-call button (thumb-reachable)</li>
+  <li>One trust signal (&star; rating, "Licensed &amp; Insured", years in business)</li>
+  <li>One clear CTA button</li>
+</ul>
+
+<h4>Trust Signals (Checkbox &rarr; Auto-Display)</h4>
+<table>
+  <tr><th>Roofer Selects</th><th>Template Shows</th></tr>
+  <tr><td>Licensed (+ #)</td><td>Shield badge: "Licensed Contractor #12345"</td></tr>
+  <tr><td>Insured</td><td>Shield badge: "Fully Insured"</td></tr>
+  <tr><td>Years in business</td><td>"Serving [City] Since [Year]"</td></tr>
+  <tr><td>GAF Master Elite</td><td>GAF badge + "Top 2% of Roofers Nationwide"</td></tr>
+  <tr><td>Owens Corning Preferred</td><td>OC badge</td></tr>
+  <tr><td>Offers financing</td><td>"Financing Available" badge</td></tr>
+  <tr><td>Offers warranty</td><td>"[X]-Year Workmanship Warranty" badge</td></tr>
+</table>
+
+<h4>Technical Requirements</h4>
+<ul>
+  <li>Mobile-first (61% of traffic)</li>
+  <li>Lighthouse 90+ performance</li>
+  <li>Schema markup: LocalBusiness, Service, AggregateRating (auto-generated)</li>
+  <li>ADA/WCAG accessibility basics (contrast, alt text, keyboard nav)</li>
+  <li>Load time under 3 seconds on 3G</li>
+  <li>Click-to-call on all phone numbers</li>
 </ul>
 
 <p><strong>Cost to us per site:</strong> ~$0 on Vercel's free tier for static/ISR sites.</p>
@@ -360,10 +419,11 @@ Output:
 
 <table>
   <tr><th>Factor</th><th>Roofle</th><th>RoofReady</th></tr>
-  <tr><td><strong>Website</strong></td><td>None &mdash; widget only</td><td>Free professional site included</td></tr>
+  <tr><td><strong>Website</strong></td><td>None &mdash; widget only</td><td>Free professional site (our lead magnet, always free)</td></tr>
   <tr><td><strong>Setup cost</strong></td><td>$2,000</td><td>$0</td></tr>
-  <tr><td><strong>Monthly cost</strong></td><td>$350/mo</td><td>$99-149/mo</td></tr>
-  <tr><td><strong>First-year cost</strong></td><td>$6,200+</td><td>$1,188-1,788</td></tr>
+  <tr><td><strong>Monthly cost</strong></td><td>$350/mo</td><td>$99/mo per service (widget, reviews, etc. sold independently)</td></tr>
+  <tr><td><strong>First-year cost</strong></td><td>$6,200+</td><td>$1,188+ (depends on services selected)</td></tr>
+  <tr><td><strong>Works without our site?</strong></td><td>Yes (embed on any site)</td><td>Yes &mdash; widget embeds on any site, free website is optional acquisition tool</td></tr>
   <tr><td><strong>Lock-in</strong></td><td>Annual contract</td><td>Month-to-month</td></tr>
   <tr><td><strong>Target</strong></td><td>10+ person operations</td><td>1-10 person crews</td></tr>
   <tr><td><strong>Online estimate</strong></td><td>Satellite-precise</td><td>V1: range estimate. V2: Google Solar API</td></tr>
