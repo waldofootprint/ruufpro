@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatedCard, CardBody } from "@/components/ui/animated-card";
 
 const FAQS = [
   {
@@ -56,10 +57,7 @@ export default function FAQ() {
 
         <div className="space-y-3">
           {FAQS.map((faq, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden"
-            >
+            <AnimatedCard key={i} className="overflow-hidden">
               <button
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
                 className="w-full flex items-center justify-between px-6 py-5 text-left"
@@ -85,7 +83,7 @@ export default function FAQ() {
                   </p>
                 </div>
               )}
-            </div>
+            </AnimatedCard>
           ))}
         </div>
       </div>

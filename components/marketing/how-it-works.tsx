@@ -1,6 +1,7 @@
 // How It Works — 3 simple steps to remove friction from signing up.
 
 import { FlowButton } from "@/components/ui/flow-button";
+import { AnimatedCard, CardBody } from "@/components/ui/animated-card";
 
 const STEPS = [
   {
@@ -59,24 +60,25 @@ export default function HowItWorks() {
                 <div className="hidden md:block absolute top-12 left-[calc(50%+40px)] w-[calc(100%-80px)] h-px bg-gray-200" />
               )}
 
-              <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center relative">
-                {/* Step number */}
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 mb-5">
-                  {step.icon}
-                </div>
+              <AnimatedCard className="h-full">
+                <CardBody className="border-0 p-8 text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 mb-5 mx-auto">
+                    {step.icon}
+                  </div>
 
-                <div className="text-xs font-bold text-brand-600 uppercase tracking-widest mb-2">
-                  Step {step.number}
-                </div>
+                  <div className="text-xs font-bold text-brand-600 uppercase tracking-widest mb-2">
+                    Step {step.number}
+                  </div>
 
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  {step.title}
-                </h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    {step.title}
+                  </h3>
 
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
+                  <p className="text-gray-500 text-sm leading-relaxed">
+                    {step.description}
+                  </p>
+                </CardBody>
+              </AnimatedCard>
             </div>
           ))}
         </div>

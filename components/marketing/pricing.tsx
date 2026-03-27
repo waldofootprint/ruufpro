@@ -1,6 +1,8 @@
 // Pricing section — clear, simple pricing cards.
 
 import { FlowButton } from "@/components/ui/flow-button";
+import { AnimatedCard, CardBody } from "@/components/ui/animated-card";
+import { cn } from "@/lib/utils";
 
 const PRODUCTS = [
   {
@@ -73,51 +75,54 @@ export default function Pricing() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           {PRODUCTS.map((product) => (
-            <div
+            <AnimatedCard
               key={product.name}
-              className={`rounded-2xl border p-8 flex flex-col ${
+              className={cn(
+                "flex flex-col",
                 product.highlighted
-                  ? "border-brand-600 bg-brand-50/30 shadow-lg shadow-brand-500/10 relative"
-                  : "border-gray-200 bg-white"
-              }`}
+                  ? "border-brand-600 shadow-lg shadow-brand-500/10 relative"
+                  : ""
+              )}
             >
               {product.highlighted && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                   <span className="bg-brand-600 text-white text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
                     Most Popular
                   </span>
                 </div>
               )}
 
-              <h3 className="text-lg font-bold text-gray-900">{product.name}</h3>
-              <p className="text-sm text-gray-500 mt-1 mb-5">{product.description}</p>
+              <CardBody className="border-0 p-8 flex flex-col flex-1">
+                <h3 className="text-lg font-bold text-gray-900">{product.name}</h3>
+                <p className="text-sm text-gray-500 mt-1 mb-5">{product.description}</p>
 
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">{product.price}</span>
-                <span className="text-gray-400 text-sm ml-1">{product.period}</span>
-              </div>
-
-              <ul className="space-y-3 mb-8 flex-1">
-                {product.features.map((feat) => (
-                  <li key={feat} className="flex items-start gap-2.5 text-sm text-gray-600">
-                    <svg className="w-4 h-4 text-green-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-                    </svg>
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-
-              {product.comingSoon ? (
-                <div className="text-center text-sm text-gray-400 font-medium py-3">
-                  Coming Soon
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-gray-900">{product.price}</span>
+                  <span className="text-gray-400 text-sm ml-1">{product.period}</span>
                 </div>
-              ) : (
-                <a href="/signup">
-                  <FlowButton text={product.cta} />
-                </a>
-              )}
-            </div>
+
+                <ul className="space-y-3 mb-8 flex-1">
+                  {product.features.map((feat) => (
+                    <li key={feat} className="flex items-start gap-2.5 text-sm text-gray-600">
+                      <svg className="w-4 h-4 text-green-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                      </svg>
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+
+                {product.comingSoon ? (
+                  <div className="text-center text-sm text-gray-400 font-medium py-3">
+                    Coming Soon
+                  </div>
+                ) : (
+                  <a href="/signup">
+                    <FlowButton text={product.cta} />
+                  </a>
+                )}
+              </CardBody>
+            </AnimatedCard>
           ))}
         </div>
       </div>

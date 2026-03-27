@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { Tabs } from "@/components/ui/vercel-tabs";
 import { FlowButton } from "@/components/ui/flow-button";
+import { AnimatedCard, CardBody, CardVisual } from "@/components/ui/animated-card";
 
 const FEATURE_TABS = [
   { id: "website", label: "Free Website" },
@@ -207,15 +208,17 @@ export default function Features() {
 
             {/* Visual side — placeholder for product screenshots */}
             <div className="flex-1 w-full">
-              <div className="rounded-2xl bg-gradient-to-br from-brand-50 to-blue-50 border border-brand-100/50 p-8 aspect-[4/3] flex items-center justify-center">
-                <div className="text-center text-brand-300">
-                  <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-brand-100/50 flex items-center justify-center">
-                    {feature.icon}
+              <AnimatedCard className="w-full">
+                <CardVisual className="h-[250px] bg-gradient-to-br from-brand-50 to-blue-50">
+                  <div className="text-center text-brand-300">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-brand-100/50 flex items-center justify-center">
+                      {feature.icon}
+                    </div>
+                    <p className="text-sm font-medium">Product screenshot</p>
+                    <p className="text-xs mt-1">Coming soon</p>
                   </div>
-                  <p className="text-sm font-medium">Product screenshot</p>
-                  <p className="text-xs mt-1">Coming soon</p>
-                </div>
-              </div>
+                </CardVisual>
+              </AnimatedCard>
             </div>
           </div>
         </div>

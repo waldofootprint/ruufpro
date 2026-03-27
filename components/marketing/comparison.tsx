@@ -2,6 +2,7 @@
 // Shows why we're the better choice for small roofers.
 
 import { FlowButton } from "@/components/ui/flow-button";
+import { AnimatedCard } from "@/components/ui/animated-card";
 
 const ROWS = [
   { feature: "Monthly cost", us: "$0 – $99", roofle: "$350", roofr: "$249+", scorpion: "$3,000+" },
@@ -54,7 +55,7 @@ export default function Comparison() {
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-gray-200">
+        <AnimatedCard className="overflow-x-auto w-full">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-gray-50">
@@ -95,7 +96,7 @@ export default function Comparison() {
               ))}
             </tbody>
           </table>
-        </div>
+        </AnimatedCard>
 
         <div className="text-center mt-10">
           <a href="/signup">
