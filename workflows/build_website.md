@@ -2,6 +2,9 @@
 
 **Trigger:** When asked to build, design, create, or modify any website, page, section, or component.
 
+## Template Strategy
+All contractor templates target the **same ICP: residential roofers (1-10 person crews).** Templates differ by **visual design style**, NOT by business type. The onboarding flow asks roofers to pick a look (Modern Clean / Bold & Confident / Warm & Trustworthy), and all three use the same residential-focused smart defaults (headlines, services, CTAs). Storm/insurance and full-service business types are preserved in code for future use but not shown to users yet. See `lib/defaults.ts` for the content defaults and `app/onboarding/page.tsx` for the style picker.
+
 ## Before You Write Any Code
 
 ### Step 1: Research Competitors
