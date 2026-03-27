@@ -1,64 +1,15 @@
-// Pricing section — clear, simple pricing cards.
+// Pricing section — 21st.dev premium pricing cards with glass effect headers.
 
-import { FlowButton } from "@/components/ui/flow-button";
-import { AnimatedCard, CardBody } from "@/components/ui/animated-card";
+"use client";
+
 import { cn } from "@/lib/utils";
-
-const PRODUCTS = [
-  {
-    name: "Roofing Website",
-    price: "Free",
-    period: "forever",
-    description: "Professional website that gets you found online",
-    features: [
-      "Mobile-first roofing website",
-      "Contact form + lead capture",
-      "Email notifications",
-      "SEO optimized",
-      "Click-to-call",
-      "Trust badges",
-    ],
-    cta: "Get Your Free Website",
-    highlighted: false,
-  },
-  {
-    name: "Estimate Widget",
-    price: "$99",
-    period: "/month",
-    description: "Satellite-powered estimates that capture leads",
-    features: [
-      "Everything in Free, plus:",
-      "Satellite roof measurement",
-      "Instant ballpark estimates",
-      "Embed on any website",
-      "Lead dashboard",
-      "Contractor-controlled pricing",
-    ],
-    cta: "Start Free Trial",
-    highlighted: true,
-  },
-  {
-    name: "Growth Suite",
-    price: "$149",
-    period: "/month",
-    description: "Automate reviews, follow-ups, and more",
-    features: [
-      "Everything in Estimate, plus:",
-      "Review automation",
-      "Auto-reply (60 seconds)",
-      "Follow-up drip sequences",
-      "SEO city pages",
-      "Priority support",
-    ],
-    cta: "Coming Soon",
-    highlighted: false,
-    comingSoon: true,
-  },
-];
+import { Button } from "@/components/ui/button";
+import * as PricingCard from "@/components/ui/pricing-card";
+import { CheckCircle2, XCircleIcon, Globe, Calculator, Zap } from "lucide-react";
 
 export default function Pricing() {
   return (
-    <section id="pricing" className="py-20 md:py-28 bg-white">
+    <section id="pricing" className="py-20 md:py-28 bg-white relative overflow-hidden">
       <div className="mx-auto max-w-6xl px-6">
         <div className="text-center mb-14">
           <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">
@@ -73,57 +24,174 @@ export default function Pricing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          {PRODUCTS.map((product) => (
-            <AnimatedCard
-              key={product.name}
-              className={cn(
-                "flex flex-col",
-                product.highlighted
-                  ? "border-brand-600 shadow-lg shadow-brand-500/10 relative"
-                  : ""
-              )}
-            >
-              {product.highlighted && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <span className="bg-brand-600 text-white text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
-                    Most Popular
-                  </span>
-                </div>
-              )}
-
-              <CardBody className="border-0 p-8 flex flex-col flex-1">
-                <h3 className="text-lg font-bold text-gray-900">{product.name}</h3>
-                <p className="text-sm text-gray-500 mt-1 mb-5">{product.description}</p>
-
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">{product.price}</span>
-                  <span className="text-gray-400 text-sm ml-1">{product.period}</span>
-                </div>
-
-                <ul className="space-y-3 mb-8 flex-1">
-                  {product.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2.5 text-sm text-gray-600">
-                      <svg className="w-4 h-4 text-green-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-                      </svg>
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-
-                {product.comingSoon ? (
-                  <div className="text-center text-sm text-gray-400 font-medium py-3">
-                    Coming Soon
-                  </div>
-                ) : (
-                  <a href="/signup">
-                    <FlowButton text={product.cta} />
-                  </a>
+        <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center gap-6">
+          {/* Free Plan */}
+          <PricingCard.Card>
+            <PricingCard.Header>
+              <PricingCard.Plan>
+                <PricingCard.PlanName>
+                  <Globe aria-hidden="true" />
+                  <span>Starter</span>
+                </PricingCard.PlanName>
+                <PricingCard.Badge>Free Forever</PricingCard.Badge>
+              </PricingCard.Plan>
+              <PricingCard.Price>
+                <PricingCard.MainPrice>$0</PricingCard.MainPrice>
+                <PricingCard.Period>/ month</PricingCard.Period>
+              </PricingCard.Price>
+              <Button
+                className={cn(
+                  "w-full font-semibold text-white",
+                  "bg-gradient-to-b from-gray-800 to-gray-900 shadow-[0_10px_25px_rgba(0,0,0,0.15)]",
                 )}
-              </CardBody>
-            </AnimatedCard>
-          ))}
+                onClick={() => window.location.href = "/signup"}
+              >
+                Get Your Free Website
+              </Button>
+            </PricingCard.Header>
+            <PricingCard.Body>
+              <PricingCard.List>
+                {[
+                  "Professional roofing website",
+                  "Mobile-first, SEO optimized",
+                  "Contact form + lead capture",
+                  "Email notifications",
+                  "Click-to-call on every page",
+                  "Trust badges auto-generated",
+                ].map((item) => (
+                  <PricingCard.ListItem key={item}>
+                    <span className="mt-0.5">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" aria-hidden="true" />
+                    </span>
+                    <span>{item}</span>
+                  </PricingCard.ListItem>
+                ))}
+              </PricingCard.List>
+              <PricingCard.Separator>Pro features</PricingCard.Separator>
+              <PricingCard.List>
+                {[
+                  "Satellite estimate widget",
+                  "Embed on external sites",
+                  "Review automation",
+                ].map((item) => (
+                  <PricingCard.ListItem key={item} className="opacity-60">
+                    <span className="mt-0.5">
+                      <XCircleIcon className="h-4 w-4 text-red-400" aria-hidden="true" />
+                    </span>
+                    <span>{item}</span>
+                  </PricingCard.ListItem>
+                ))}
+              </PricingCard.List>
+            </PricingCard.Body>
+          </PricingCard.Card>
+
+          {/* Estimate Widget Plan */}
+          <PricingCard.Card className="border-brand-600 shadow-2xl shadow-brand-500/10 scale-[1.02]">
+            <PricingCard.Header className="bg-brand-50/80 border-brand-200">
+              <PricingCard.Plan>
+                <PricingCard.PlanName>
+                  <Calculator aria-hidden="true" />
+                  <span>Pro</span>
+                </PricingCard.PlanName>
+                <PricingCard.Badge className="border-brand-300 text-brand-700 bg-brand-50">
+                  Most Popular
+                </PricingCard.Badge>
+              </PricingCard.Plan>
+              <PricingCard.Price>
+                <PricingCard.MainPrice>$99</PricingCard.MainPrice>
+                <PricingCard.Period>/ month</PricingCard.Period>
+              </PricingCard.Price>
+              <Button
+                className={cn(
+                  "w-full font-semibold text-white",
+                  "bg-gradient-to-b from-brand-500 to-brand-600 shadow-[0_10px_25px_rgba(37,99,235,0.3)]",
+                )}
+                onClick={() => window.location.href = "/signup"}
+              >
+                Start Free Trial
+              </Button>
+            </PricingCard.Header>
+            <PricingCard.Body>
+              <PricingCard.List>
+                {[
+                  "Everything in Starter, plus:",
+                  "Satellite estimate widget",
+                  "Instant ballpark estimates",
+                  "Embed on any website",
+                  "Lead dashboard with details",
+                  "Contractor-controlled pricing",
+                  "Regional pricing suggestions",
+                ].map((item) => (
+                  <PricingCard.ListItem key={item}>
+                    <span className="mt-0.5">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" aria-hidden="true" />
+                    </span>
+                    <span>{item}</span>
+                  </PricingCard.ListItem>
+                ))}
+              </PricingCard.List>
+              <PricingCard.Separator>Coming soon</PricingCard.Separator>
+              <PricingCard.List>
+                {[
+                  "Review automation",
+                  "Auto-reply & follow-up",
+                ].map((item) => (
+                  <PricingCard.ListItem key={item} className="opacity-60">
+                    <span className="mt-0.5">
+                      <XCircleIcon className="h-4 w-4 text-gray-300" aria-hidden="true" />
+                    </span>
+                    <span>{item}</span>
+                  </PricingCard.ListItem>
+                ))}
+              </PricingCard.List>
+            </PricingCard.Body>
+          </PricingCard.Card>
+
+          {/* Growth Suite */}
+          <PricingCard.Card>
+            <PricingCard.Header>
+              <PricingCard.Plan>
+                <PricingCard.PlanName>
+                  <Zap aria-hidden="true" />
+                  <span>Growth</span>
+                </PricingCard.PlanName>
+                <PricingCard.Badge>Coming Soon</PricingCard.Badge>
+              </PricingCard.Plan>
+              <PricingCard.Price>
+                <PricingCard.MainPrice>$149</PricingCard.MainPrice>
+                <PricingCard.Period>/ month</PricingCard.Period>
+              </PricingCard.Price>
+              <Button
+                className={cn(
+                  "w-full font-semibold",
+                  "bg-gray-100 text-gray-400 cursor-not-allowed",
+                )}
+                disabled
+              >
+                Coming Soon
+              </Button>
+            </PricingCard.Header>
+            <PricingCard.Body>
+              <PricingCard.List>
+                {[
+                  "Everything in Pro, plus:",
+                  "Review automation",
+                  "Auto-reply (60 seconds)",
+                  "Follow-up drip sequences",
+                  "SEO city pages",
+                  "Priority support",
+                  "Custom domain",
+                ].map((item) => (
+                  <PricingCard.ListItem key={item}>
+                    <span className="mt-0.5">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" aria-hidden="true" />
+                    </span>
+                    <span>{item}</span>
+                  </PricingCard.ListItem>
+                ))}
+              </PricingCard.List>
+            </PricingCard.Body>
+          </PricingCard.Card>
         </div>
       </div>
     </section>
