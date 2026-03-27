@@ -45,6 +45,7 @@ export default function EstimateSettingsPage() {
   const [contractorId, setContractorId] = useState<string | null>(null);
   const [contractorState, setContractorState] = useState("TX");
   const [serviceZips, setServiceZips] = useState("");
+  const [buffer, setBuffer] = useState(10); // default 10% buffer
 
   const [rates, setRates] = useState<Rates>({
     asphalt_low: "", asphalt_high: "",
@@ -250,6 +251,36 @@ export default function EstimateSettingsPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-lg bg-white border border-gray-200 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            Estimate Buffer
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Widens the high end of your estimate range to account for unknowns
+            you typically find during inspection (decking, access, code issues).
+            Most roofers use 10-15%.
+          </p>
+          <div className="flex gap-2">
+            {[0, 5, 10, 15, 20].map((pct) => (
+              <button
+                key={pct}
+                onClick={() => setBuffer(pct)}
+                className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+                  buffer === pct
+                    ? "bg-brand-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {pct === 0 ? "None" : `+${pct}%`}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-gray-400">
+            Example: With a 15% buffer, a $10,000-$14,000 estimate becomes $10,000-$16,100.
+            The low end stays the same — only the high end widens.
+          </p>
         </div>
 
         <div className="rounded-lg bg-white border border-gray-200 p-6 mb-6">
