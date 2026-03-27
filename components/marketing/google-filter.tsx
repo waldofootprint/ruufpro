@@ -62,10 +62,7 @@ export default function GoogleFilter() {
                   transition: { type: "spring", stiffness: 300, damping: 25 },
                 },
               }}
-              className="relative overflow-hidden rounded-[20px] bg-[#f0f0f0] p-6 text-center transition-all duration-300 hover:-translate-y-1"
-              style={{
-                boxShadow: "8px 8px 16px #d1d1d1, -8px -8px 16px #ffffff",
-              }}
+              className="relative overflow-hidden rounded-3xl border border-brand-200/40 bg-gradient-to-br from-brand-50/80 to-white p-6 text-center shadow-xl backdrop-blur-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-1"
             >
               {/* Glass glow effect */}
               <div className="absolute top-0 right-0 -mr-8 -mt-8 h-32 w-32 rounded-full bg-brand-200/20 blur-2xl pointer-events-none" />
@@ -89,12 +86,7 @@ export default function GoogleFilter() {
         {/* Before/After visual */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {/* Without RoofReady */}
-          <div
-            className="overflow-hidden rounded-[20px] bg-[#f0f0f0] p-6"
-            style={{
-              boxShadow: "8px 8px 16px #d1d1d1, -8px -8px 16px #ffffff",
-            }}
-          >
+          <div className="overflow-hidden rounded-3xl bg-red-50 border border-red-200/60 p-6 shadow-xl">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-2 h-2 rounded-full bg-red-500" />
               <span className="text-sm font-semibold text-red-600">Without Online Estimates</span>
@@ -117,12 +109,7 @@ export default function GoogleFilter() {
           </div>
 
           {/* With RoofReady */}
-          <div
-            className="overflow-hidden rounded-[20px] bg-[#f0f0f0] p-6"
-            style={{
-              boxShadow: "8px 8px 16px #d1d1d1, -8px -8px 16px #ffffff",
-            }}
-          >
+          <div className="overflow-hidden rounded-3xl bg-green-50 border border-green-200/60 p-6 shadow-xl">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-sm font-semibold text-green-700">With RoofReady</span>
