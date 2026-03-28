@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direction A — "Legit Tech" SaaS Credibility</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; background: #fff; }
+    :root {
+      --blue: #2563EB; --blue-dark: #1D4ED8; --blue-light: #EFF6FF;
+      --dark: #0F172A; --gray-900: #111827; --gray-700: #374151;
+      --gray-500: #6B7280; --gray-300: #D1D5DB; --gray-100: #F3F4F6;
+      --green: #10B981; --white: #FFFFFF;
+    }
+    .label { background: #0F172A; color: #6B7280; padding: 12px 24px; font-size: 12px; text-align: center; }
+    .label strong { color: #93C5FD; }
+
+    /* NAV */
+    .nav-a { background: var(--dark); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 0 24px; }
+    .nav-a-inner { max-width: 1200px; margin: 0 auto; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-a-logo { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 800; color: white; letter-spacing: -0.03em; }
+    .nav-a-logo span { color: var(--blue); }
+    .nav-a-links { display: flex; gap: 28px; list-style: none; }
+    .nav-a-links a { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.5); text-decoration: none; }
+    .nav-a-links a:hover { color: white; }
+    .nav-a-cta { padding: 8px 20px; border-radius: 8px; background: var(--blue); color: white; font-size: 13px; font-weight: 600; text-decoration: none; }
+
+    /* HERO */
+    .hero-a { background: var(--dark); padding: 80px 24px 100px; position: relative; overflow: hidden; }
+    .hero-a::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 50%, rgba(37,99,235,0.08) 0%, transparent 60%); }
+    .hero-a-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 64px; align-items: center; position: relative; z-index: 1; }
+    .hero-a-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.2); border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: #93C5FD; margin-bottom: 24px; }
+    .hero-a-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .hero-a h1 { font-family: 'Inter', sans-serif; font-size: 52px; font-weight: 800; color: white; line-height: 1.05; letter-spacing: -0.04em; margin-bottom: 20px; }
+    .hero-a h1 .gradient { background: linear-gradient(135deg, #60A5FA, #2563EB); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-a .sub { font-size: 17px; color: rgba(255,255,255,0.5); line-height: 1.7; margin-bottom: 32px; max-width: 460px; }
+    .hero-a-btns { display: flex; gap: 12px; margin-bottom: 40px; }
+    .btn-a-primary { padding: 14px 28px; border-radius: 10px; background: var(--blue); color: white; font-size: 15px; font-weight: 700; border: none; cursor: pointer; }
+    .btn-a-secondary { padding: 14px 28px; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .hero-a-stats { display: flex; gap: 40px; }
+    .hero-a-stat-num { font-family: 'Inter', sans-serif; font-size: 28px; font-weight: 800; color: white; }
+    .hero-a-stat-label { font-size: 13px; color: rgba(255,255,255,0.4); }
+
+    /* Hero right: dashboard mockup */
+    .hero-a-visual { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; }
+    .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .dash-title { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; color: white; }
+    .dash-badge { font-size: 11px; font-weight: 600; color: var(--green); background: rgba(16,185,129,0.1); padding: 3px 10px; border-radius: 6px; }
+    .dash-metric { margin-bottom: 16px; }
+    .dash-metric-label { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+    .dash-metric-value { font-family: 'Inter', sans-serif; font-size: 32px; font-weight: 800; color: white; }
+    .dash-bar-row { display: flex; gap: 4px; margin-bottom: 16px; }
+    .dash-bar { height: 32px; border-radius: 6px; background: var(--blue); }
+    .dash-bar:nth-child(2) { background: rgba(37,99,235,0.6); }
+    .dash-bar:nth-child(3) { background: rgba(37,99,235,0.3); }
+    .dash-bar:nth-child(4) { background: rgba(37,99,235,0.15); }
+    .dash-leads { display: flex; gap: 12px; }
+    .dash-lead { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; }
+    .dash-lead-name { font-size: 13px; font-weight: 600; color: white; margin-bottom: 2px; }
+    .dash-lead-detail { font-size: 11px; color: rgba(255,255,255,0.35); }
+    .dash-lead-status { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-top: 6px; display: inline-block; }
+    .status-new { background: rgba(37,99,235,0.15); color: #60A5FA; }
+    .status-hot { background: rgba(245,158,11,0.15); color: #FBBF24; }
+
+    /* FEATURES SECTION */
+    .features-a { background: white; padding: 100px 24px; }
+    .features-a-inner { max-width: 1100px; margin: 0 auto; }
+    .features-a-header { text-align: center; margin-bottom: 60px; }
+    .features-a-header .tag { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+    .features-a-header h2 { font-family: 'Inter', sans-serif; font-size: 40px; font-weight: 800; color: var(--gray-900); letter-spacing: -0.035em; margin-bottom: 12px; }
+    .features-a-header p { font-size: 16px; color: var(--gray-500); max-width: 500px; margin: 0 auto; line-height: 1.6; }
+    .features-a-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .feature-card-a { background: var(--gray-100); border: 1px solid #E5E7EB; border-radius: 14px; padding: 28px; transition: all 0.2s; }
+    .feature-card-a:hover { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    .feature-icon-a { width: 44px; height: 44px; border-radius: 10px; background: var(--blue-light); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+    .feature-icon-a svg { width: 22px; height: 22px; stroke: var(--blue); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .feature-card-a h3 { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+    .feature-card-a p { font-size: 14px; color: var(--gray-500); line-height: 1.6; }
+    .feature-card-a .price-tag { display: inline-block; margin-top: 12px; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
+    .price-free { background: rgba(16,185,129,0.1); color: #059669; }
+    .price-paid { background: rgba(37,99,235,0.1); color: var(--blue); }
+
+    @media (max-width: 768px) {
+      .hero-a-inner { grid-template-columns: 1fr; }
+      .hero-a h1 { font-size: 36px; }
+      .features-a-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="label"><strong>Direction A: "Legit Tech"</strong> — SaaS credibility. Inter 800. Dark nav + hero. Data-driven. Feels like Jobber or ServiceTitan.</div>
+
+  <nav class="nav-a">
+    <div class="nav-a-inner">
+      <div class="nav-a-logo">Roof<span>Ready</span></div>
+      <ul class="nav-a-links">
+        <li><a href="#">Features</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Demo</a></li>
+        <li><a href="#">Login</a></li>
+      </ul>
+      <a href="#" class="nav-a-cta">Start Free</a>
+    </div>
+  </nav>
+
+  <section class="hero-a">
+    <div class="hero-a-inner">
+      <div>
+        <div class="hero-a-badge"><span class="dot"></span> Now with instant estimate widget</div>
+        <h1>The roofing website that <span class="gradient">actually gets leads.</span></h1>
+        <p class="sub">Free professional website. Instant estimate widget. Lead dashboard. Built for roofers who want to grow — not wrestle with technology.</p>
+        <div class="hero-a-btns">
+          <button class="btn-a-primary">Get Your Free Website</button>
+          <button class="btn-a-secondary">See Live Demo</button>
+        </div>
+        <div class="hero-a-stats">
+          <div><div class="hero-a-stat-num">2 min</div><div class="hero-a-stat-label">Setup time</div></div>
+          <div><div class="hero-a-stat-num">$0</div><div class="hero-a-stat-label">Website cost</div></div>
+          <div><div class="hero-a-stat-num">3x</div><div class="hero-a-stat-label">More leads</div></div>
+        </div>
+      </div>
+      <div class="hero-a-visual">
+        <div class="dash-header">
+          <div class="dash-title">Lead Dashboard</div>
+          <div class="dash-badge">+12 this week</div>
+        </div>
+        <div class="dash-metric">
+          <div class="dash-metric-label">Total Leads This Month</div>
+          <div class="dash-metric-value">47</div>
+        </div>
+        <div class="dash-bar-row">
+          <div class="dash-bar" style="flex:4;"></div>
+          <div class="dash-bar" style="flex:3;"></div>
+          <div class="dash-bar" style="flex:2;"></div>
+          <div class="dash-bar" style="flex:1;"></div>
+        </div>
+        <div class="dash-leads">
+          <div class="dash-lead">
+            <div class="dash-lead-name">Mike R.</div>
+            <div class="dash-lead-detail">Roof Replacement</div>
+            <div class="dash-lead-status status-new">New Lead</div>
+          </div>
+          <div class="dash-lead">
+            <div class="dash-lead-name">Sarah T.</div>
+            <div class="dash-lead-detail">Estimate: $12,400</div>
+            <div class="dash-lead-status status-hot">Hot Lead</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features-a">
+    <div class="features-a-inner">
+      <div class="features-a-header">
+        <div class="tag">Everything you need</div>
+        <h2>One platform. Zero headaches.</h2>
+        <p>Free website, lead capture, instant estimates, and a dashboard to manage it all.</p>
+      </div>
+      <div class="features-a-grid">
+        <div class="feature-card-a">
+          <div class="feature-icon-a"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+          <h3>Professional Website</h3>
+          <p>Premium template, your branding, live in 2 minutes. Looks like you paid thousands.</p>
+          <span class="price-tag price-free">Free forever</span>
+        </div>
+        <div class="feature-card-a">
+          <div class="feature-icon-a"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <h3>Instant Estimate Widget</h3>
+          <p>Homeowners get a ballpark price in 2 minutes. You get their contact info + roof data.</p>
+          <span class="price-tag price-paid">$99/mo</span>
+        </div>
+        <div class="feature-card-a">
+          <div class="feature-icon-a"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <h3>Lead Dashboard</h3>
+          <p>Every lead in one place. See who visited, who wants an estimate, and who's ready to close.</p>
+          <span class="price-tag price-free">Included</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

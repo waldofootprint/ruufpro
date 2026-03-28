@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direction B — "Built for Roofers" Empathetic & Approachable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; background: #FAFBFC; }
+    :root {
+      --teal: #0D9488; --teal-dark: #0F766E; --teal-light: #F0FDFA;
+      --warm-bg: #FAFBFC; --white: #FFFFFF;
+      --text-dark: #1A202C; --text-mid: #4A5568; --text-muted: #A0AEC0;
+      --border: #E2E8F0; --orange: #E8720C; --green: #16A34A;
+    }
+    .label { background: var(--teal-light); color: var(--teal); padding: 12px 24px; font-size: 12px; text-align: center; font-weight: 600; border-bottom: 1px solid #D1FAE5; }
+
+    /* NAV */
+    .nav-b { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; }
+    .nav-b-inner { max-width: 1200px; margin: 0 auto; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-b-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; }
+    .nav-b-logo span { color: var(--teal); }
+    .nav-b-links { display: flex; gap: 28px; list-style: none; }
+    .nav-b-links a { font-size: 14px; font-weight: 500; color: var(--text-mid); text-decoration: none; }
+    .nav-b-links a:hover { color: var(--text-dark); }
+    .nav-b-cta { padding: 9px 22px; border-radius: 10px; background: var(--teal); color: white; font-size: 14px; font-weight: 700; text-decoration: none; }
+
+    /* HERO */
+    .hero-b { background: var(--warm-bg); padding: 80px 24px 100px; }
+    .hero-b-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .hero-b-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--teal-light); border: 1px solid #CCFBF1; border-radius: 10px; padding: 7px 16px; font-size: 13px; font-weight: 600; color: var(--teal); margin-bottom: 20px; }
+    .hero-b h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 46px; font-weight: 800; color: var(--text-dark); line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .hero-b .sub { font-size: 17px; color: var(--text-mid); line-height: 1.7; margin-bottom: 32px; max-width: 460px; }
+    .hero-b-btns { display: flex; gap: 12px; margin-bottom: 32px; }
+    .btn-b-primary { padding: 14px 28px; border-radius: 12px; background: var(--teal); color: white; font-size: 15px; font-weight: 700; border: none; cursor: pointer; }
+    .btn-b-secondary { padding: 14px 28px; border-radius: 12px; background: white; border: 1.5px solid var(--border); color: var(--text-dark); font-size: 15px; font-weight: 600; cursor: pointer; }
+    .hero-b-trust { display: flex; gap: 20px; flex-wrap: wrap; }
+    .hero-b-trust-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-mid); }
+    .hero-b-trust-item svg { width: 18px; height: 18px; fill: var(--green); flex-shrink: 0; }
+
+    /* Hero right: phone mockup with website preview */
+    .hero-b-visual { display: flex; justify-content: center; position: relative; }
+    .phone-mockup { width: 300px; background: white; border-radius: 28px; border: 8px solid #1A202C; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.12); }
+    .phone-notch { width: 120px; height: 24px; background: #1A202C; border-radius: 0 0 14px 14px; margin: 0 auto; }
+    .phone-screen { padding: 16px; }
+    .phone-hero { background: #0D9488; border-radius: 12px; padding: 20px; margin-bottom: 12px; color: white; }
+    .phone-hero-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .phone-hero-sub { font-size: 11px; color: rgba(255,255,255,0.7); }
+    .phone-btn { background: white; color: var(--teal); font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 8px; display: inline-block; margin-top: 10px; }
+    .phone-cards { display: flex; flex-direction: column; gap: 8px; }
+    .phone-card { background: #F7FAFC; border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 10px; }
+    .phone-card-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--teal-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .phone-card-icon svg { width: 16px; height: 16px; stroke: var(--teal); fill: none; stroke-width: 2; }
+    .phone-card-title { font-size: 12px; font-weight: 700; color: var(--text-dark); }
+    .phone-card-desc { font-size: 10px; color: var(--text-muted); }
+
+    /* Float badge */
+    .float-review { position: absolute; top: 20px; right: -20px; background: white; border-radius: 14px; padding: 12px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-dark); }
+    .float-review .stars { display: flex; gap: 1px; }
+    .float-review .stars svg { width: 14px; height: 14px; fill: #F59E0B; }
+
+    /* FEATURES */
+    .features-b { background: white; padding: 100px 24px; }
+    .features-b-inner { max-width: 1100px; margin: 0 auto; }
+    .features-b-header { margin-bottom: 56px; }
+    .features-b-header .tag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .features-b-header h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 40px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; margin-bottom: 12px; }
+    .features-b-header p { font-size: 16px; color: var(--text-mid); max-width: 500px; line-height: 1.65; }
+
+    /* How it works — Option C vertical steps */
+    .hiw-c { background: white; padding: 100px 24px; }
+    .hiw-c-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+    .hiw-c-left {}
+    .hiw-c-left .tag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .hiw-c-left h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 40px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; margin-bottom: 16px; line-height: 1.1; }
+    .hiw-c-left > p { font-size: 16px; color: var(--text-mid); line-height: 1.65; margin-bottom: 32px; }
+    .hiw-c-total { display: inline-flex; align-items: center; gap: 10px; background: var(--teal-light); border: 1px solid #CCFBF1; border-radius: 12px; padding: 12px 20px; }
+    .hiw-c-total-label { font-size: 13px; color: var(--text-mid); }
+    .hiw-c-total-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; font-weight: 800; color: var(--teal); }
+    .hiw-c-steps { display: flex; flex-direction: column; gap: 0; }
+    .hiw-c-step { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--border); cursor: default; transition: all 0.2s; }
+    .hiw-c-step:first-child { padding-top: 0; }
+    .hiw-c-step:last-child { border-bottom: none; }
+    .hiw-c-step:hover { padding-left: 8px; }
+    .step-line { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 40px; }
+    .step-dot { width: 40px; height: 40px; border-radius: 12px; background: var(--teal-light); border: 1.5px solid #CCFBF1; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800; color: var(--teal); flex-shrink: 0; }
+    .step-connector { flex: 1; width: 2px; background: var(--border); margin: 4px 0; min-height: 20px; }
+    .hiw-c-step:last-child .step-connector { display: none; }
+    .step-content { flex: 1; padding-top: 6px; }
+    .step-content h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+    .step-content p { font-size: 14px; color: var(--text-mid); line-height: 1.6; }
+    .step-content .step-time { font-size: 12px; font-weight: 600; color: var(--teal); margin-top: 6px; }
+
+    /* Rotating word */
+    .rotate-word {
+      display: inline;
+      color: var(--teal);
+    }
+    .rotate-word.fade-out {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.25s ease-in;
+    }
+    .rotate-word.fade-in {
+      opacity: 1;
+      transform: translateY(0);
+      transition: all 0.3s ease-out;
+    }
+
+    @media (max-width: 768px) {
+      .hero-b-inner { grid-template-columns: 1fr; }
+      .hero-b h1 { font-size: 34px; }
+      .float-review { display: none; }
+      .hiw-c-inner { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="label"><strong>Direction B: "Built for Roofers"</strong> — Empathetic, approachable. Plus Jakarta Sans. Teal accent. Phone mockup. Speaks to pain points.</div>
+
+  <nav class="nav-b">
+    <div class="nav-b-inner">
+      <div class="nav-b-logo">Roof<span>Ready</span></div>
+      <ul class="nav-b-links">
+        <li><a href="#">How It Works</a></li>
+        <li><a href="#">Features</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Login</a></li>
+      </ul>
+      <a href="#" class="nav-b-cta">Get Your Free Site</a>
+    </div>
+  </nav>
+
+  <section class="hero-b">
+    <div class="hero-b-inner">
+      <div>
+        <div class="hero-b-tag">Built specifically for roofers</div>
+        <h1>You handle the roofs.<br>We'll handle the<br><span class="rotate-word" id="rotateWord">website.</span></h1>
+        <p class="sub">A free, professional website that makes your phone ring. Set it up in 2 minutes between jobs — no tech skills needed.</p>
+        <div class="hero-b-btns">
+          <button class="btn-b-primary">Build My Free Website</button>
+          <button class="btn-b-secondary">See Examples</button>
+        </div>
+        <div class="hero-b-trust">
+          <span class="hero-b-trust-item">
+            <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+            No credit card
+          </span>
+          <span class="hero-b-trust-item">
+            <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+            Setup in 2 minutes
+          </span>
+          <span class="hero-b-trust-item">
+            <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+            Free forever
+          </span>
+        </div>
+      </div>
+
+      <div class="hero-b-visual">
+        <div class="phone-mockup">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-hero">
+              <div class="phone-hero-title">Summit Roofing Co.</div>
+              <div class="phone-hero-sub">Trusted roofing in Denver</div>
+              <div class="phone-btn">Get Free Estimate</div>
+            </div>
+            <div class="phone-cards">
+              <div class="phone-card">
+                <div class="phone-card-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg></div>
+                <div><div class="phone-card-title">Roof Replacement</div><div class="phone-card-desc">Premium materials, expert crew</div></div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-card-icon"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+                <div><div class="phone-card-title">Roof Repair</div><div class="phone-card-desc">Fast fix, lasting results</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="float-review">
+          <div class="stars">
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          "Love my new site!"
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hiw-c">
+    <div class="hiw-c-inner">
+      <div class="hiw-c-left">
+        <div class="tag">How it works</div>
+        <h2>From zero to<br>live website in<br>2 minutes.</h2>
+        <p>No designers. No developers. No waiting weeks. Just answer 3 questions and your professional roofing website is ready.</p>
+        <div class="hiw-c-total">
+          <div>
+            <div class="hiw-c-total-label">Total setup time</div>
+            <div class="hiw-c-total-value">~2 min</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hiw-c-steps">
+        <div class="hiw-c-step">
+          <div class="step-line">
+            <div class="step-dot">1</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>Enter your business info</h3>
+            <p>Name, phone, city — that's all. We handle the rest: copy, SEO, design, hosting.</p>
+            <div class="step-time">~30 seconds</div>
+          </div>
+        </div>
+        <div class="hiw-c-step">
+          <div class="step-line">
+            <div class="step-dot">2</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>Pick your design style</h3>
+            <p>Modern, bold, or warm — choose the look that fits your brand. Change it anytime.</p>
+            <div class="step-time">~15 seconds</div>
+          </div>
+        </div>
+        <div class="hiw-c-step">
+          <div class="step-line">
+            <div class="step-dot">3</div>
+          </div>
+          <div class="step-content">
+            <h3>Hit publish — you're live</h3>
+            <p>Your website goes live instantly at yourname.roofready.com. Share it, add it to Google, start getting leads.</p>
+            <div class="step-time">Instant</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+<script>
+  const words = ['website.', 'leads.', 'growth.'];
+  let current = 0;
+  const el = document.getElementById('rotateWord');
+  el.classList.add('fade-in');
+
+  setInterval(() => {
+    el.classList.remove('fade-in');
+    el.classList.add('fade-out');
+
+    setTimeout(() => {
+      current = (current + 1) % words.length;
+      el.textContent = words[current];
+      el.classList.remove('fade-out');
+      el.classList.add('fade-in');
+    }, 250);
+  }, 2500);
+</script>
+</body>
+</html>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoofReady — Free Professional Websites for Roofers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; background: #FAFBFC; overflow-x: hidden; }
+    :root {
+      --teal: #0D9488; --teal-dark: #0F766E; --teal-light: #F0FDFA; --teal-xlight: #F7FFFE;
+      --dark: #0F172A; --warm-bg: #FAFBFC; --white: #FFFFFF;
+      --text-dark: #1A202C; --text-mid: #4A5568; --text-muted: #A0AEC0; --text-dim: #CBD5E0;
+      --border: #E2E8F0; --green: #16A34A; --red: #EF4444; --gold: #F59E0B;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+    .animate-in { animation: fadeInUp 0.6s ease-out forwards; }
+    .animate-delay-1 { animation-delay: 0.1s; opacity: 0; }
+    .animate-delay-2 { animation-delay: 0.2s; opacity: 0; }
+    .animate-delay-3 { animation-delay: 0.3s; opacity: 0; }
+
+    /* ===== NAV ===== */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226,232,240,0.6); transition: all 0.3s; }
+    .nav-inner { max-width: 1200px; margin: 0 auto; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+    .nav-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; text-decoration: none; }
+    .nav-logo span { color: var(--teal); }
+    .nav-links { display: flex; gap: 28px; list-style: none; }
+    .nav-links a { font-size: 14px; font-weight: 500; color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text-dark); }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-login { font-size: 14px; font-weight: 600; color: var(--text-mid); text-decoration: none; }
+    .nav-cta { padding: 9px 22px; border-radius: 10px; background: var(--teal); color: white; font-size: 14px; font-weight: 700; text-decoration: none; transition: background 0.2s; }
+    .nav-cta:hover { background: var(--teal-dark); }
+
+    /* ===== HERO ===== */
+    .hero { background: var(--warm-bg); padding: 140px 24px 100px; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -200px; right: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(13,148,136,0.06) 0%, transparent 70%); pointer-events: none; }
+    .hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .hero-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--teal-light); border: 1px solid #CCFBF1; border-radius: 10px; padding: 7px 16px; font-size: 13px; font-weight: 600; color: var(--teal); margin-bottom: 20px; animation: fadeInUp 0.5s ease-out; }
+    .hero-tag .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    .hero h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 48px; font-weight: 800; color: var(--text-dark); line-height: 1.08; letter-spacing: -0.035em; margin-bottom: 20px; }
+    .hero h1 .rotate-word { color: var(--teal); display: inline; transition: all 0.3s; }
+    .hero .sub { font-size: 17px; color: var(--text-mid); line-height: 1.7; margin-bottom: 32px; max-width: 460px; }
+    .hero-btns { display: flex; gap: 12px; margin-bottom: 32px; }
+    .btn-primary { padding: 14px 28px; border-radius: 12px; background: var(--teal); color: white; font-size: 15px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary:hover { background: var(--teal-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,148,136,0.25); }
+    .btn-primary svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .btn-secondary { padding: 14px 28px; border-radius: 12px; background: white; border: 1.5px solid var(--border); color: var(--text-dark); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary:hover { border-color: #CBD5E0; background: #F7FAFC; }
+    .hero-trust { display: flex; gap: 20px; flex-wrap: wrap; }
+    .hero-trust-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+    .hero-trust-item svg { width: 16px; height: 16px; fill: var(--green); flex-shrink: 0; }
+
+    /* Phone mockup */
+    .hero-visual { display: flex; justify-content: center; position: relative; }
+    .phone { width: 300px; background: white; border-radius: 32px; border: 6px solid var(--dark); overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.06); animation: float 4s ease-in-out infinite; }
+    .phone-notch { width: 100px; height: 22px; background: var(--dark); border-radius: 0 0 12px 12px; margin: 0 auto; }
+    .phone-screen { padding: 14px; }
+    .phone-site-hero { background: var(--teal); border-radius: 14px; padding: 20px; margin-bottom: 10px; color: white; }
+    .phone-site-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800; margin-bottom: 3px; }
+    .phone-site-sub { font-size: 10px; color: rgba(255,255,255,0.7); margin-bottom: 10px; }
+    .phone-site-btn { background: white; color: var(--teal); font-size: 10px; font-weight: 700; padding: 6px 14px; border-radius: 8px; display: inline-block; }
+    .phone-cards { display: flex; flex-direction: column; gap: 6px; }
+    .phone-card { background: #F7FAFC; border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 10px; }
+    .phone-card-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--teal-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .phone-card-icon svg { width: 14px; height: 14px; stroke: var(--teal); fill: none; stroke-width: 2; }
+    .phone-card-title { font-size: 11px; font-weight: 700; color: var(--text-dark); }
+    .phone-card-desc { font-size: 9px; color: var(--text-muted); }
+
+    /* Floating elements around phone */
+    .float-badge { position: absolute; background: white; border-radius: 14px; padding: 12px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); font-size: 13px; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
+    .float-badge.top-right { top: 10px; right: -30px; animation: float 3.5s ease-in-out infinite 0.5s; }
+    .float-badge.bottom-left { bottom: 40px; left: -40px; animation: float 4s ease-in-out infinite 1s; }
+    .float-stars { display: flex; gap: 1px; }
+    .float-stars svg { width: 13px; height: 13px; fill: var(--gold); }
+    .float-badge .badge-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: var(--teal); line-height: 1; }
+    .float-badge .badge-label { font-size: 11px; color: var(--text-muted); }
+
+    /* ===== SOCIAL PROOF BAR ===== */
+    .proof-bar { background: white; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 20px 24px; }
+    .proof-bar-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap; }
+    .proof-stat { text-align: center; }
+    .proof-stat-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; font-weight: 800; color: var(--text-dark); }
+    .proof-stat-label { font-size: 12px; color: var(--text-muted); }
+    .proof-divider { width: 1px; height: 32px; background: var(--border); }
+
+    /* ===== PROBLEM SECTION (Google filter) ===== */
+    .problem { background: white; padding: 120px 24px; }
+    .problem-inner { max-width: 1000px; margin: 0 auto; text-align: center; }
+    .problem .tag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--red); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+    .problem h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 42px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; margin-bottom: 16px; line-height: 1.1; }
+    .problem > p { font-size: 17px; color: var(--text-mid); line-height: 1.7; max-width: 640px; margin: 0 auto 48px; }
+    .problem-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 800px; margin: 0 auto; }
+    .problem-card { border-radius: 16px; padding: 32px; text-align: left; }
+    .problem-card.before { background: #FEF2F2; border: 1.5px solid #FECACA; }
+    .problem-card.after { background: var(--teal-light); border: 1.5px solid #99F6E4; }
+    .problem-card .card-label { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+    .problem-card.before .card-label { color: var(--red); }
+    .problem-card.after .card-label { color: var(--teal); }
+    .problem-card ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .problem-card li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text-mid); line-height: 1.5; }
+    .problem-card li svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    .problem-card.before li svg { fill: var(--red); }
+    .problem-card.after li svg { fill: var(--teal); }
+    .problem-stat { margin-top: 48px; display: flex; justify-content: center; gap: 48px; }
+    .problem-stat-item { text-align: center; }
+    .problem-stat-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 36px; font-weight: 800; color: var(--text-dark); }
+    .problem-stat-label { font-size: 13px; color: var(--text-muted); max-width: 160px; margin: 0 auto; }
+
+    /* ===== FEATURES ===== */
+    .features { background: var(--warm-bg); padding: 120px 24px; }
+    .features-inner { max-width: 1100px; margin: 0 auto; }
+    .features-header { text-align: center; margin-bottom: 64px; }
+    .features-header .tag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .features-header h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 42px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; margin-bottom: 12px; }
+    .features-header p { font-size: 17px; color: var(--text-mid); max-width: 520px; margin: 0 auto; line-height: 1.6; }
+
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .feature-card { background: white; border: 1.5px solid var(--border); border-radius: 20px; padding: 32px; transition: all 0.3s; position: relative; overflow: hidden; }
+    .feature-card:hover { border-color: var(--teal); box-shadow: 0 8px 32px rgba(13,148,136,0.08); transform: translateY(-4px); }
+    .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--teal); opacity: 0; transition: opacity 0.3s; }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card.featured { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; border-color: var(--teal); background: linear-gradient(135deg, var(--teal-xlight), white); }
+    .feature-card.featured::before { opacity: 1; }
+    .feature-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--teal-light); border: 1px solid #CCFBF1; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .feature-icon svg { width: 22px; height: 22px; stroke: var(--teal); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .feature-card h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-mid); line-height: 1.65; }
+    .feature-tag { display: inline-block; margin-top: 14px; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .tag-free { background: rgba(13,148,136,0.1); color: var(--teal); }
+    .tag-pro { background: rgba(245,158,11,0.1); color: #D97706; }
+
+    /* Featured card visual mockup */
+    .feature-visual { background: white; border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .feature-visual-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .feature-visual-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 700; color: var(--text-dark); }
+    .feature-visual-badge { font-size: 10px; font-weight: 600; color: var(--green); background: rgba(22,163,74,0.1); padding: 3px 8px; border-radius: 6px; }
+    .feature-visual-metric { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 28px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+    .feature-visual-label { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+    .feature-visual-bars { display: flex; gap: 3px; align-items: flex-end; height: 48px; }
+    .fv-bar { width: 16px; border-radius: 4px 4px 0 0; background: var(--teal); opacity: 0.2; }
+    .fv-bar:nth-child(1) { height: 30%; opacity: 0.3; }
+    .fv-bar:nth-child(2) { height: 45%; opacity: 0.4; }
+    .fv-bar:nth-child(3) { height: 35%; opacity: 0.35; }
+    .fv-bar:nth-child(4) { height: 60%; opacity: 0.5; }
+    .fv-bar:nth-child(5) { height: 50%; opacity: 0.45; }
+    .fv-bar:nth-child(6) { height: 75%; opacity: 0.6; }
+    .fv-bar:nth-child(7) { height: 65%; opacity: 0.55; }
+    .fv-bar:nth-child(8) { height: 90%; opacity: 0.8; }
+    .fv-bar:nth-child(9) { height: 100%; opacity: 1; }
+
+    /* ===== HOW IT WORKS ===== */
+    .hiw { background: white; padding: 120px 24px; }
+    .hiw-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+    .hiw-left .tag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .hiw-left h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 40px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; margin-bottom: 16px; line-height: 1.1; }
+    .hiw-left > p { font-size: 16px; color: var(--text-mid); line-height: 1.65; margin-bottom: 32px; }
+    .hiw-total { display: inline-flex; align-items: center; gap: 10px; background: var(--teal-light); border: 1px solid #CCFBF1; border-radius: 12px; padding: 12px 20px; }
+    .hiw-total-label { font-size: 13px; color: var(--text-mid); }
+    .hiw-total-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; font-weight: 800; color: var(--teal); }
+    .hiw-steps { display: flex; flex-direction: column; }
+    .hiw-step { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--border); transition: all 0.2s; }
+    .hiw-step:first-child { padding-top: 0; }
+    .hiw-step:last-child { border-bottom: none; }
+    .hiw-step:hover { padding-left: 8px; }
+    .step-line { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 40px; }
+    .step-dot { width: 40px; height: 40px; border-radius: 12px; background: var(--teal-light); border: 1.5px solid #CCFBF1; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800; color: var(--teal); flex-shrink: 0; transition: all 0.2s; }
+    .hiw-step:hover .step-dot { background: var(--teal); color: white; }
+    .step-connector { flex: 1; width: 2px; background: var(--border); margin: 4px 0; min-height: 20px; }
+    .hiw-step:last-child .step-connector { display: none; }
+    .step-content { flex: 1; padding-top: 6px; }
+    .step-content h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+    .step-content p { font-size: 14px; color: var(--text-mid); line-height: 1.6; }
+    .step-time { font-size: 12px; font-weight: 600; color: var(--teal); margin-top: 6px; }
+
+    /* ===== COMPARISON ===== */
+    .comparison { background: var(--warm-bg); padding: 120px 24px; }
+    .comparison-inner { max-width: 900px; margin: 0 auto; }
+    .comparison-header { text-align: center; margin-bottom: 48px; }
+    .comparison-header .tag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .comparison-header h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 40px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; }
+    .comp-table { background: white; border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; }
+    .comp-row { display: grid; grid-template-columns: 2fr 1.2fr 1fr 1fr; padding: 16px 24px; align-items: center; border-bottom: 1px solid #F1F5F9; transition: background 0.2s; }
+    .comp-row:last-child { border-bottom: none; }
+    .comp-row:hover { background: #FAFBFD; }
+    .comp-row.header { background: #F8FAFC; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 14px 24px; }
+    .comp-row.header .comp-us { color: var(--teal); }
+    .comp-feature { font-size: 14px; font-weight: 600; color: var(--text-dark); }
+    .comp-us { font-size: 14px; font-weight: 700; color: var(--teal); }
+    .comp-them { font-size: 13px; color: var(--text-muted); }
+    .comp-check { width: 20px; height: 20px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
+    .comp-check.yes { background: rgba(13,148,136,0.1); }
+    .comp-check.yes svg { width: 14px; height: 14px; fill: var(--teal); }
+    .comp-check.no { background: rgba(239,68,68,0.06); }
+    .comp-check.no svg { width: 14px; height: 14px; fill: #FCA5A5; }
+
+    /* ===== PRICING ===== */
+    .pricing { background: white; padding: 120px 24px; }
+    .pricing-inner { max-width: 900px; margin: 0 auto; }
+    .pricing-header { text-align: center; margin-bottom: 56px; }
+    .pricing-header .tag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .pricing-header h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 42px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; margin-bottom: 12px; }
+    .pricing-header p { font-size: 17px; color: var(--text-mid); }
+    .pricing-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .price-card { border: 1.5px solid var(--border); border-radius: 20px; padding: 36px; background: white; position: relative; transition: all 0.3s; }
+    .price-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.06); }
+    .price-card.popular { border-color: var(--teal); }
+    .price-card.popular::after { content: 'Most Popular'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--teal); color: white; font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .price-plan { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+    .price-amount { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 48px; font-weight: 800; color: var(--text-dark); line-height: 1; margin-bottom: 4px; }
+    .price-period { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .price-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+    .price-features li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-mid); }
+    .price-features li svg { width: 18px; height: 18px; fill: var(--teal); flex-shrink: 0; }
+    .price-features li.disabled { color: var(--text-dim); }
+    .price-features li.disabled svg { fill: var(--text-dim); }
+    .price-btn { display: block; width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; text-align: center; cursor: pointer; transition: all 0.2s; border: none; }
+    .price-btn.primary { background: var(--teal); color: white; }
+    .price-btn.primary:hover { background: var(--teal-dark); }
+    .price-btn.outline { background: white; border: 1.5px solid var(--border); color: var(--text-dark); }
+    .price-btn.outline:hover { border-color: var(--teal); color: var(--teal); }
+
+    /* ===== FAQ ===== */
+    .faq { background: var(--warm-bg); padding: 120px 24px; }
+    .faq-inner { max-width: 700px; margin: 0 auto; }
+    .faq-header { text-align: center; margin-bottom: 48px; }
+    .faq-header h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 40px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; margin-bottom: 8px; }
+    .faq-header p { font-size: 16px; color: var(--text-mid); }
+    .faq-item { background: white; border: 1.5px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; transition: border-color 0.2s; }
+    .faq-item:hover { border-color: #CBD5E0; }
+    .faq-q { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; cursor: pointer; font-size: 15px; font-weight: 700; color: var(--text-dark); }
+    .faq-q svg { width: 20px; height: 20px; stroke: var(--text-muted); fill: none; stroke-width: 2; transition: transform 0.2s; flex-shrink: 0; }
+    .faq-item.open .faq-q svg { transform: rotate(45deg); }
+    .faq-a { padding: 0 24px 18px; font-size: 14px; color: var(--text-mid); line-height: 1.7; display: none; }
+    .faq-item.open .faq-a { display: block; }
+
+    /* ===== FINAL CTA ===== */
+    .final-cta { background: var(--dark); padding: 100px 24px; position: relative; overflow: hidden; }
+    .final-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(13,148,136,0.1) 0%, transparent 60%); }
+    .final-cta-inner { max-width: 700px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
+    .final-cta h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 40px; font-weight: 800; color: white; letter-spacing: -0.03em; margin-bottom: 16px; line-height: 1.1; }
+    .final-cta p { font-size: 17px; color: rgba(255,255,255,0.5); margin-bottom: 32px; line-height: 1.6; }
+    .final-cta .btn-primary { font-size: 16px; padding: 16px 36px; }
+
+    /* ===== FOOTER ===== */
+    .footer { background: var(--dark); padding: 48px 24px 32px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .footer-inner { max-width: 1100px; margin: 0 auto; }
+    .footer-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .footer-brand .name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: white; margin-bottom: 6px; }
+    .footer-brand .name span { color: var(--teal); }
+    .footer-brand p { font-size: 13px; color: rgba(255,255,255,0.4); max-width: 260px; line-height: 1.5; }
+    .footer-links { display: flex; gap: 48px; }
+    .footer-col h4 { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .footer-col ul { list-style: none; }
+    .footer-col li { margin-bottom: 8px; }
+    .footer-col a { font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; transition: color 0.2s; }
+    .footer-col a:hover { color: white; }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; }
+    .footer-bottom p { font-size: 12px; color: rgba(255,255,255,0.25); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .hero-inner, .hiw-inner { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 36px; }
+      .hero-btns { flex-direction: column; }
+      .features-grid { grid-template-columns: 1fr; }
+      .feature-card.featured { grid-column: span 1; grid-template-columns: 1fr; }
+      .problem-cards { grid-template-columns: 1fr; }
+      .problem-stat { flex-direction: column; gap: 20px; }
+      .comp-row { grid-template-columns: 1.5fr 1fr 1fr; }
+      .comp-row > :last-child { display: none; }
+      .pricing-cards { grid-template-columns: 1fr; }
+      .footer-top { flex-direction: column; }
+      .footer-links { flex-direction: column; gap: 24px; }
+      .nav-links { display: none; }
+      .float-badge { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">Roof<span>Ready</span></a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How It Works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      <div class="nav-right">
+        <a href="#" class="nav-login">Login</a>
+        <a href="#" class="nav-cta">Get Your Free Site</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-tag"><span class="pulse-dot"></span> Built specifically for roofers</div>
+        <h1>You handle the roofs.<br>We'll handle the<br><span class="rotate-word" id="rotateWord">website.</span></h1>
+        <p class="sub">A free, professional website that makes your phone ring. Set it up in 2 minutes between jobs — no tech skills needed.</p>
+        <div class="hero-btns">
+          <button class="btn-primary">Build My Free Website <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+          <button class="btn-secondary">See Examples</button>
+        </div>
+        <div class="hero-trust">
+          <span class="hero-trust-item"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> No credit card</span>
+          <span class="hero-trust-item"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Setup in 2 min</span>
+          <span class="hero-trust-item"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Free forever</span>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-site-hero">
+              <div class="phone-site-title">Summit Roofing Co.</div>
+              <div class="phone-site-sub">Trusted roofing in Denver</div>
+              <div class="phone-site-btn">Get Free Estimate</div>
+            </div>
+            <div class="phone-cards">
+              <div class="phone-card"><div class="phone-card-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg></div><div><div class="phone-card-title">Roof Replacement</div><div class="phone-card-desc">Premium materials, expert crew</div></div></div>
+              <div class="phone-card"><div class="phone-card-icon"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div><div><div class="phone-card-title">Roof Repair</div><div class="phone-card-desc">Fast fix, lasting results</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="float-badge top-right">
+          <div class="float-stars"><svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg><svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg><svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg><svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg><svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></div>
+          "Love my new site!"
+        </div>
+        <div class="float-badge bottom-left">
+          <div><div class="badge-num">$0</div><div class="badge-label">Setup cost</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF BAR -->
+  <div class="proof-bar">
+    <div class="proof-bar-inner">
+      <div class="proof-stat"><div class="proof-stat-num">2 min</div><div class="proof-stat-label">Average setup</div></div>
+      <div class="proof-divider"></div>
+      <div class="proof-stat"><div class="proof-stat-num">$0</div><div class="proof-stat-label">Forever free</div></div>
+      <div class="proof-divider"></div>
+      <div class="proof-stat"><div class="proof-stat-num">100%</div><div class="proof-stat-label">Your branding</div></div>
+      <div class="proof-divider"></div>
+      <div class="proof-stat"><div class="proof-stat-num">24/7</div><div class="proof-stat-label">Always online</div></div>
+    </div>
+  </div>
+
+  <!-- PROBLEM: GOOGLE FILTER -->
+  <section class="problem" id="problem">
+    <div class="problem-inner">
+      <div class="tag">The problem</div>
+      <h2>Google is hiding roofers<br>without online estimates.</h2>
+      <p>In December 2025, Google added an "Online Estimates" filter to search. Homeowners can now filter out roofers who don't show pricing. If you don't have it, you're invisible.</p>
+
+      <div class="problem-cards">
+        <div class="problem-card before">
+          <div class="card-label">Without RoofReady</div>
+          <ul>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg> Filtered out of Google search</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg> Homeowners skip to competitors</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg> Losing jobs you never knew existed</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg> No website or an outdated one</li>
+          </ul>
+        </div>
+        <div class="problem-card after">
+          <div class="card-label">With RoofReady</div>
+          <ul>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Visible in Google with online estimates</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Homeowners find and contact you</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Leads come to you while you work</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Professional site that builds trust</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="problem-stat">
+        <div class="problem-stat-item"><div class="problem-stat-num">78%</div><div class="problem-stat-label">of homeowners want pricing before calling</div></div>
+        <div class="problem-stat-item"><div class="problem-stat-num">76%</div><div class="problem-stat-label">of roofers don't show any pricing online</div></div>
+        <div class="problem-stat-item"><div class="problem-stat-num">3x</div><div class="problem-stat-label">more leads for roofers with online estimates</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="features-inner">
+      <div class="features-header">
+        <div class="tag">Everything you need</div>
+        <h2>Built to get you leads,<br>not give you homework.</h2>
+        <p>Every feature works out of the box. No plugins, no coding, no 40-page setup guides.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card featured">
+          <div>
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+            <h3>Professional Website</h3>
+            <p>Premium design with your branding, optimized for your city. Looks like you paid a designer thousands. Live in 2 minutes.</p>
+            <span class="feature-tag tag-free">Free forever</span>
+          </div>
+          <div class="feature-visual">
+            <div class="feature-visual-bar"><div class="feature-visual-title">Monthly Leads</div><div class="feature-visual-badge">+23%</div></div>
+            <div class="feature-visual-metric">47</div>
+            <div class="feature-visual-label">leads this month</div>
+            <div class="feature-visual-bars"><div class="fv-bar"></div><div class="fv-bar"></div><div class="fv-bar"></div><div class="fv-bar"></div><div class="fv-bar"></div><div class="fv-bar"></div><div class="fv-bar"></div><div class="fv-bar"></div><div class="fv-bar"></div></div>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <h3>Instant Estimate Widget</h3>
+          <p>Homeowners get a ballpark price using satellite roof data. You get warm leads with their address and material preferences.</p>
+          <span class="feature-tag tag-pro">$99/mo add-on</span>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <h3>Lead Dashboard</h3>
+          <p>Every lead in one place. See who contacted you, who wants an estimate, and follow up fast.</p>
+          <span class="feature-tag tag-free">Included</span>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <h3>Email Notifications</h3>
+          <p>Get emailed the moment a homeowner reaches out. Never miss a lead again — even from the roof.</p>
+          <span class="feature-tag tag-free">Included</span>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <h3>SEO Optimized</h3>
+          <p>Built to rank for "[your city] roofing" searches. We handle meta tags, schema markup, and local SEO automatically.</p>
+          <span class="feature-tag tag-free">Automatic</span>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+          <h3>Mobile-First Design</h3>
+          <p>Looks perfect on every phone — because that's where homeowners are searching when they need a roofer.</p>
+          <span class="feature-tag tag-free">Built in</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="hiw" id="how">
+    <div class="hiw-inner">
+      <div class="hiw-left">
+        <div class="tag">How it works</div>
+        <h2>From zero to<br>live website in<br>2 minutes.</h2>
+        <p>No designers. No developers. No waiting weeks. Just answer 3 questions and your professional roofing website is ready.</p>
+        <div class="hiw-total"><div><div class="hiw-total-label">Total setup time</div><div class="hiw-total-value">~2 min</div></div></div>
+      </div>
+      <div class="hiw-steps">
+        <div class="hiw-step"><div class="step-line"><div class="step-dot">1</div><div class="step-connector"></div></div><div class="step-content"><h3>Enter your business info</h3><p>Name, phone, city — that's all. We handle the rest: copy, SEO, design, hosting.</p><div class="step-time">~30 seconds</div></div></div>
+        <div class="hiw-step"><div class="step-line"><div class="step-dot">2</div><div class="step-connector"></div></div><div class="step-content"><h3>Pick your design style</h3><p>Modern, bold, or warm — choose the look that fits your brand. Change it anytime.</p><div class="step-time">~15 seconds</div></div></div>
+        <div class="hiw-step"><div class="step-line"><div class="step-dot">3</div></div><div class="step-content"><h3>Hit publish — you're live</h3><p>Your website goes live instantly at yourname.roofready.com. Share it, add it to Google, start getting leads.</p><div class="step-time">Instant</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section class="comparison">
+    <div class="comparison-inner">
+      <div class="comparison-header">
+        <div class="tag">Why RoofReady</div>
+        <h2>How we compare.</h2>
+      </div>
+      <div class="comp-table">
+        <div class="comp-row header"><div></div><div class="comp-us">RoofReady</div><div>Roofle</div><div>Agency</div></div>
+        <div class="comp-row"><div class="comp-feature">Professional website</div><div class="comp-us"><span class="comp-check yes"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg></span> Free</div><div class="comp-them">$350/mo</div><div class="comp-them">$3-5K</div></div>
+        <div class="comp-row"><div class="comp-feature">Setup time</div><div class="comp-us">2 minutes</div><div class="comp-them">2-4 weeks</div><div class="comp-them">4-8 weeks</div></div>
+        <div class="comp-row"><div class="comp-feature">Instant estimate widget</div><div class="comp-us">$99/mo</div><div class="comp-them">$350/mo</div><div class="comp-them">Custom build</div></div>
+        <div class="comp-row"><div class="comp-feature">Lead dashboard</div><div class="comp-us"><span class="comp-check yes"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg></span> Included</div><div class="comp-them"><span class="comp-check no"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg></span></div><div class="comp-them">Extra cost</div></div>
+        <div class="comp-row"><div class="comp-feature">SEO optimization</div><div class="comp-us"><span class="comp-check yes"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg></span> Auto</div><div class="comp-them">Basic</div><div class="comp-them">$500+/mo</div></div>
+        <div class="comp-row"><div class="comp-feature">Email notifications</div><div class="comp-us"><span class="comp-check yes"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg></span> Included</div><div class="comp-them"><span class="comp-check no"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg></span></div><div class="comp-them">Varies</div></div>
+        <div class="comp-row"><div class="comp-feature">Setup fee</div><div class="comp-us">$0</div><div class="comp-them">$2,000</div><div class="comp-them">$3,000+</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing" id="pricing">
+    <div class="pricing-inner">
+      <div class="pricing-header">
+        <div class="tag">Simple pricing</div>
+        <h2>Free to start. Grow when ready.</h2>
+        <p>No contracts. No hidden fees. Cancel anytime.</p>
+      </div>
+      <div class="pricing-cards">
+        <div class="price-card">
+          <div class="price-plan">Starter</div>
+          <div class="price-amount">$0</div>
+          <div class="price-period">Free forever</div>
+          <ul class="price-features">
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Professional roofing website</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Lead capture contact form</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Lead dashboard</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Email notifications</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> SEO optimization</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Mobile-responsive design</li>
+          </ul>
+          <button class="price-btn outline">Get Started Free</button>
+        </div>
+        <div class="price-card popular">
+          <div class="price-plan">Pro</div>
+          <div class="price-amount">$99</div>
+          <div class="price-period">per month</div>
+          <ul class="price-features">
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Everything in Starter</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Instant estimate widget</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Satellite roof measurements</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Warm leads with roof data</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> PDF estimate reports</li>
+            <li><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg> Google "Online Estimates" ready</li>
+          </ul>
+          <button class="price-btn primary">Start Pro — $99/mo</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="faq-inner">
+      <div class="faq-header">
+        <h2>Questions? Answers.</h2>
+        <p>The stuff roofers actually want to know.</p>
+      </div>
+      <div class="faq-item open"><div class="faq-q">Is it really free? What's the catch? <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="faq-a">Really free. No credit card, no trial period, no "free for 14 days" games. Your website is free forever. We make money when roofers choose to add the instant estimate widget ($99/mo) — but you never have to. The free site is fully functional on its own.</div></div>
+      <div class="faq-item"><div class="faq-q">How long does setup actually take? <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="faq-a">About 2 minutes. We need your business name, phone number, and city. That's it. We auto-generate everything else — the design, the copy, the SEO, the contact form. You can customize it later from your dashboard, but most roofers are live in under 2 minutes.</div></div>
+      <div class="faq-item"><div class="faq-q">Can I use my own domain name? <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="faq-a">Coming soon. Right now your site lives at yourname.roofready.com, which works great for getting started. Custom domain support is on our roadmap.</div></div>
+      <div class="faq-item"><div class="faq-q">What if I already have a website? <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="faq-a">You can still use the estimate widget on your existing site — it embeds anywhere. Or try our free site alongside yours and see which gets more leads. No risk either way.</div></div>
+      <div class="faq-item"><div class="faq-q">How does the instant estimate widget work? <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="faq-a">Homeowners enter their address, and we use satellite imagery to measure their roof. They pick their preferred material, and our calculator generates a ballpark estimate based on YOUR pricing. You set the prices — we just do the math and deliver the lead.</div></div>
+      <div class="faq-item"><div class="faq-q">Will this work in my area? <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="faq-a">Yes. RoofReady works anywhere in the US. The satellite roof data covers all 50 states. Your website will be optimized for your specific city and service area.</div></div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final-cta">
+    <div class="final-cta-inner">
+      <h2>Your competitors have<br>websites. Do you?</h2>
+      <p>Every day without an online presence is a day homeowners choose someone else. Your free website takes 2 minutes — and it's yours forever.</p>
+      <button class="btn-primary">Build My Free Website <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="name">Roof<span>Ready</span></div>
+          <p>Free professional websites and lead tools for roofing contractors.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col"><h4>Product</h4><ul><li><a href="#">Features</a></li><li><a href="#">Pricing</a></li><li><a href="#">Examples</a></li><li><a href="#">Estimate Widget</a></li></ul></div>
+          <div class="footer-col"><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Contact</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div>
+        </div>
+      </div>
+      <div class="footer-bottom"><p>&copy; 2026 RoofReady. All rights reserved.</p></div>
+    </div>
+  </footer>
+
+<script>
+  // Rotating hero word
+  const words = ['website.', 'leads.', 'growth.'];
+  let current = 0;
+  const el = document.getElementById('rotateWord');
+  setInterval(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+    setTimeout(() => {
+      current = (current + 1) % words.length;
+      el.textContent = words[current];
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }, 250);
+  }, 2500);
+  el.style.transition = 'all 0.3s ease';
+
+  // FAQ accordion
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.parentElement;
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+</script>
+</body>
+</html>

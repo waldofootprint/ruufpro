@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direction C — "Premium Free" Shock Value</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; background: #0A0A0A; }
+    :root {
+      --gold: #D4A843; --gold-light: #F5DEB3; --gold-dark: #B8942E;
+      --dark: #0A0A0A; --dark-card: #141414; --dark-border: #222222;
+      --white: #FFFFFF; --light: #F5F5F0;
+      --text-white: #FFFFFF; --text-gray: #888888; --text-dim: #555555;
+    }
+    .label { background: #141414; color: var(--gold); padding: 12px 24px; font-size: 12px; text-align: center; font-weight: 600; border-bottom: 1px solid #222; }
+
+    /* NAV */
+    .nav-c { padding: 0 24px; position: absolute; top: 0; left: 0; right: 0; z-index: 50; }
+    .nav-c-inner { max-width: 1200px; margin: 0 auto; height: 72px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--dark-border); }
+    .nav-c-logo { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; color: white; letter-spacing: -0.03em; }
+    .nav-c-logo span { color: var(--gold); }
+    .nav-c-links { display: flex; gap: 32px; list-style: none; }
+    .nav-c-links a { font-size: 13px; font-weight: 500; color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+    .nav-c-links a:hover { color: white; }
+    .nav-c-cta { padding: 9px 22px; border-radius: 8px; background: var(--gold); color: #0A0A0A; font-size: 13px; font-weight: 700; text-decoration: none; }
+
+    /* HERO */
+    .hero-c { background: var(--dark); padding: 160px 24px 120px; position: relative; overflow: hidden; text-align: center; }
+    .hero-c::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 30%, rgba(212,168,67,0.06) 0%, transparent 60%); }
+    .hero-c-inner { max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
+    .hero-c-free-tag {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(212,168,67,0.08); border: 1px solid rgba(212,168,67,0.2);
+      border-radius: 8px; padding: 8px 20px;
+      font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700; color: var(--gold);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 32px;
+    }
+    .hero-c h1 {
+      font-family: 'Sora', sans-serif; font-size: 62px; font-weight: 800;
+      color: white; line-height: 1.04; letter-spacing: -0.04em; margin-bottom: 24px;
+    }
+    .hero-c h1 .gold { color: var(--gold); }
+    .hero-c h1 .strikethrough {
+      text-decoration: line-through; text-decoration-color: #EF4444;
+      text-decoration-thickness: 3px; color: var(--text-dim);
+    }
+    .hero-c .sub { font-size: 18px; color: var(--text-gray); line-height: 1.7; margin-bottom: 40px; max-width: 560px; margin-left: auto; margin-right: auto; }
+    .hero-c-btns { display: flex; justify-content: center; gap: 14px; margin-bottom: 48px; }
+    .btn-c-primary {
+      padding: 16px 36px; border-radius: 10px; background: var(--gold); color: #0A0A0A;
+      font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 700;
+      border: none; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-c-primary:hover { background: var(--gold-light); }
+    .btn-c-secondary {
+      padding: 16px 36px; border-radius: 10px; background: transparent;
+      border: 1.5px solid var(--dark-border); color: white;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Value comparison */
+    .hero-c-value { display: flex; justify-content: center; gap: 48px; }
+    .hero-c-value-item { text-align: center; }
+    .hero-c-value-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .hero-c-value-price { font-family: 'Sora', sans-serif; font-size: 28px; font-weight: 800; }
+    .hero-c-value-price.them { color: var(--text-dim); text-decoration: line-through; }
+    .hero-c-value-price.us { color: var(--gold); }
+    .hero-c-value-note { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .hero-c-value-vs { display: flex; align-items: center; font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-dim); }
+
+    /* FEATURES */
+    .features-c { background: var(--dark); padding: 100px 24px; }
+    .features-c-inner { max-width: 1100px; margin: 0 auto; }
+    .features-c-header { text-align: center; margin-bottom: 60px; }
+    .features-c-header h2 { font-family: 'Sora', sans-serif; font-size: 42px; font-weight: 800; color: white; letter-spacing: -0.035em; margin-bottom: 12px; }
+    .features-c-header p { font-size: 16px; color: var(--text-gray); max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+    .features-c-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .feature-card-c {
+      background: var(--dark-card); border: 1px solid var(--dark-border);
+      border-radius: 16px; padding: 32px; transition: all 0.3s;
+    }
+    .feature-card-c:hover { border-color: rgba(212,168,67,0.3); }
+    .feature-card-c:first-child { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+    .feature-icon-c {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: rgba(212,168,67,0.08); border: 1px solid rgba(212,168,67,0.15);
+      display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+    }
+    .feature-icon-c svg { width: 22px; height: 22px; stroke: var(--gold); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .feature-card-c h3 { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; color: white; margin-bottom: 8px; }
+    .feature-card-c p { font-size: 14px; color: var(--text-gray); line-height: 1.65; }
+    .feature-card-c .tag-free {
+      display: inline-block; margin-top: 14px; font-family: 'Sora', sans-serif;
+      font-size: 11px; font-weight: 700; color: var(--gold);
+      background: rgba(212,168,67,0.1); padding: 4px 12px; border-radius: 6px;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    /* Featured card visual */
+    .featured-visual { background: #1A1A1A; border-radius: 12px; padding: 24px; }
+    .featured-visual-title { font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+    .featured-bars { display: flex; flex-direction: column; gap: 8px; }
+    .featured-bar { display: flex; align-items: center; gap: 12px; }
+    .featured-bar-label { font-size: 12px; color: var(--text-gray); width: 100px; text-align: right; }
+    .featured-bar-track { flex: 1; height: 24px; background: #222; border-radius: 6px; overflow: hidden; }
+    .featured-bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; font-size: 11px; font-weight: 700; color: #0A0A0A; }
+    .fill-us { background: var(--gold); }
+    .fill-them { background: #444; color: var(--text-gray); }
+
+    @media (max-width: 768px) {
+      .hero-c h1 { font-size: 38px; }
+      .hero-c { padding: 140px 20px 80px; }
+      .features-c-grid { grid-template-columns: 1fr; }
+      .feature-card-c:first-child { grid-column: span 1; grid-template-columns: 1fr; }
+      .hero-c-value { flex-direction: column; gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="label"><strong>Direction C: "Premium Free"</strong> — Shock value. Sora 800. Dark + Gold. "This is free?!" Bold, dramatic, Hormozi energy.</div>
+
+  <nav class="nav-c">
+    <div class="nav-c-inner">
+      <div class="nav-c-logo">Roof<span>Ready</span></div>
+      <ul class="nav-c-links">
+        <li><a href="#">Features</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Examples</a></li>
+        <li><a href="#">Login</a></li>
+      </ul>
+      <a href="#" class="nav-c-cta">Start Free</a>
+    </div>
+  </nav>
+
+  <section class="hero-c">
+    <div class="hero-c-inner">
+      <div class="hero-c-free-tag">100% Free — No Catch</div>
+      <h1>Stop paying <span class="strikethrough">$2,000</span><br>for a roofing website.</h1>
+      <p class="sub">Other companies charge thousands for what we give away for free. A professional roofing website with your branding, your services, and a contact form that actually works.</p>
+      <div class="hero-c-btns">
+        <button class="btn-c-primary">Get Your Free Website Now</button>
+        <button class="btn-c-secondary">See Live Examples</button>
+      </div>
+
+      <div class="hero-c-value">
+        <div class="hero-c-value-item">
+          <div class="hero-c-value-label">Roofle / Agencies</div>
+          <div class="hero-c-value-price them">$350/mo</div>
+          <div class="hero-c-value-note">+ $2K setup fee</div>
+        </div>
+        <div class="hero-c-value-vs">vs</div>
+        <div class="hero-c-value-item">
+          <div class="hero-c-value-label">RoofReady</div>
+          <div class="hero-c-value-price us">$0/mo</div>
+          <div class="hero-c-value-note">Free forever. Really.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features-c">
+    <div class="features-c-inner">
+      <div class="features-c-header">
+        <h2>What you get — for <span style="color:var(--gold);">$0</span></h2>
+        <p>Everything a roofer needs to look professional online and start getting leads today.</p>
+      </div>
+
+      <div class="features-c-grid">
+        <!-- Featured large card -->
+        <div class="feature-card-c">
+          <div>
+            <div class="feature-icon-c"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+            <h3>Professional Roofing Website</h3>
+            <p>Premium design, your branding, SEO-optimized for your city. Looks like you paid a designer thousands. Live in 2 minutes.</p>
+            <span class="tag-free">Free forever</span>
+          </div>
+          <div class="featured-visual">
+            <div class="featured-visual-title">How we compare</div>
+            <div class="featured-bars">
+              <div class="featured-bar">
+                <div class="featured-bar-label">Design quality</div>
+                <div class="featured-bar-track"><div class="featured-bar-fill fill-us" style="width:92%;">RoofReady</div></div>
+              </div>
+              <div class="featured-bar">
+                <div class="featured-bar-label"></div>
+                <div class="featured-bar-track"><div class="featured-bar-fill fill-them" style="width:70%;">Roofle</div></div>
+              </div>
+              <div class="featured-bar" style="margin-top:8px;">
+                <div class="featured-bar-label">Setup time</div>
+                <div class="featured-bar-track"><div class="featured-bar-fill fill-us" style="width:15%;">2 min</div></div>
+              </div>
+              <div class="featured-bar">
+                <div class="featured-bar-label"></div>
+                <div class="featured-bar-track"><div class="featured-bar-fill fill-them" style="width:85%;">2 weeks</div></div>
+              </div>
+              <div class="featured-bar" style="margin-top:8px;">
+                <div class="featured-bar-label">Monthly cost</div>
+                <div class="featured-bar-track"><div class="featured-bar-fill fill-us" style="width:5%;">$0</div></div>
+              </div>
+              <div class="featured-bar">
+                <div class="featured-bar-label"></div>
+                <div class="featured-bar-track"><div class="featured-bar-fill fill-them" style="width:65%;">$350</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-card-c">
+          <div class="feature-icon-c"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <h3>Lead Dashboard</h3>
+          <p>Every contact form submission in one place. See who's interested, follow up fast, close more jobs.</p>
+          <span class="tag-free">Included free</span>
+        </div>
+
+        <div class="feature-card-c">
+          <div class="feature-icon-c"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <h3>Instant Estimate Widget</h3>
+          <p>Homeowners get a ballpark price using satellite roof data. You get warm leads with their address and preferences.</p>
+          <span class="tag-free" style="background:rgba(212,168,67,0.2);">$99/mo add-on</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>
