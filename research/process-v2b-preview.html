@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Clean — Our Process Section</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; background: #fff; }
+    :root {
+      --primary: #1E3A5F; --accent: #E8720C;
+      --bg-warm: #FAFAF8; --bg-white: #FFFFFF; --bg-ice: #EFF6FF;
+      --text-primary: #1A1A2E; --text-secondary: #5A5A6E; --text-muted: #8A8A9A;
+      --border: #EAEAE6;
+    }
+    .preview-label { background: #f0f0ee; padding: 12px 24px; font-size: 12px; color: #6b7280; text-align: center; border-bottom: 1px solid #e0e0dc; }
+    .preview-label strong { color: #111827; }
+
+    .process { background: var(--bg-white); padding: 100px 24px; }
+    .process-inner { max-width: 1100px; margin: 0 auto; }
+
+    .process-header {
+      text-align: center; margin-bottom: 60px;
+    }
+    .process-header h2 {
+      font-family: 'DM Serif Display', serif; font-size: 42px; font-weight: 400;
+      color: var(--text-primary); margin-bottom: 10px; letter-spacing: -0.02em;
+    }
+    .process-header p {
+      font-size: 16px; color: var(--text-secondary); max-width: 440px; margin: 0 auto; line-height: 1.6;
+    }
+
+    .process-steps {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+      position: relative;
+    }
+
+    /* Connecting line */
+    .process-steps::before {
+      content: '';
+      position: absolute;
+      top: 32px;
+      left: calc(12.5% + 16px);
+      right: calc(12.5% + 16px);
+      height: 2px;
+      background: var(--border);
+      z-index: 0;
+    }
+
+    .process-step {
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      padding: 0 12px;
+    }
+
+    .step-number {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--bg-warm);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      color: var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .process-step:hover .step-number {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .process-step h3 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 17px; font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .process-step p {
+      font-size: 14px; color: var(--text-muted);
+      line-height: 1.6; max-width: 220px; margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
+      .process { padding: 64px 20px; }
+      .process-header h2 { font-size: 32px; }
+      .process-steps { grid-template-columns: 1fr 1fr; gap: 40px 20px; }
+      .process-steps::before { display: none; }
+    }
+    @media (max-width: 480px) {
+      .process-steps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-label"><strong>Our Process Section</strong> — 4 steps with connecting line, numbered circles</div>
+
+  <section class="process">
+    <div class="process-inner">
+      <div class="process-header">
+        <h2>How it works</h2>
+        <p>From first call to final cleanup — here's what to expect when you work with us.</p>
+      </div>
+
+      <div class="process-steps">
+        <div class="process-step">
+          <div class="step-number">1</div>
+          <h3>Free Inspection</h3>
+          <p>We come to you, assess your roof, and explain what we find. No pressure, no obligation.</p>
+        </div>
+
+        <div class="process-step">
+          <div class="step-number">2</div>
+          <h3>Detailed Estimate</h3>
+          <p>You get a clear, written estimate with material options and pricing. No surprises.</p>
+        </div>
+
+        <div class="process-step">
+          <div class="step-number">3</div>
+          <h3>Expert Installation</h3>
+          <p>Our skilled crew handles the job from start to finish. We protect your property throughout.</p>
+        </div>
+
+        <div class="process-step">
+          <div class="step-number">4</div>
+          <h3>Final Walkthrough</h3>
+          <p>We inspect the work with you, clean up completely, and make sure you're 100% satisfied.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

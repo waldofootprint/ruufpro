@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Clean — About Section</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; background: #fff; }
+    :root {
+      --primary: #1E3A5F; --accent: #E8720C; --accent-hover: #C75F0A;
+      --bg-warm: #FAFAF8; --bg-white: #FFFFFF;
+      --text-primary: #1A1A2E; --text-secondary: #5A5A6E; --text-muted: #8A8A9A;
+      --border: #EAEAE6;
+    }
+    .preview-label { background: #f0f0ee; padding: 12px 24px; font-size: 12px; color: #6b7280; text-align: center; border-bottom: 1px solid #e0e0dc; }
+    .preview-label strong { color: #111827; }
+
+    .about { background: var(--bg-white); padding: 100px 24px; }
+    .about-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+
+    .about-image-wrap { position: relative; }
+    .about-image {
+      width: 100%; height: 420px; object-fit: cover;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .about-image-accent {
+      position: absolute; bottom: -12px; right: -12px;
+      width: 120px; height: 120px; border-radius: 16px;
+      background: var(--accent); display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(232,114,12,0.25);
+    }
+    .about-image-accent .number {
+      font-family: 'DM Serif Display', serif; font-size: 36px; color: white; line-height: 1;
+    }
+    .about-image-accent .label {
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .about-content {}
+    .about-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 16px;
+    }
+    .about-content h2 {
+      font-family: 'DM Serif Display', serif; font-size: 38px; font-weight: 400;
+      color: var(--text-primary); line-height: 1.15; margin-bottom: 20px; letter-spacing: -0.02em;
+    }
+    .about-content p {
+      font-size: 16px; color: var(--text-secondary); line-height: 1.75; margin-bottom: 16px;
+    }
+    .about-values {
+      display: flex; gap: 24px; margin-top: 28px; padding-top: 28px;
+      border-top: 1px solid var(--border);
+    }
+    .about-value { flex: 1; }
+    .about-value h4 {
+      font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;
+    }
+    .about-value p { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; }
+
+    @media (max-width: 768px) {
+      .about { padding: 64px 20px; }
+      .about-inner { grid-template-columns: 1fr; gap: 40px; }
+      .about-content h2 { font-size: 30px; }
+      .about-values { flex-direction: column; gap: 16px; }
+      .about-image-accent { bottom: -8px; right: -8px; width: 100px; height: 100px; }
+      .about-image-accent .number { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-label"><strong>About Section</strong> — Image left, story right, values bar at bottom</div>
+
+  <section class="about">
+    <div class="about-inner">
+      <div class="about-image-wrap">
+        <img class="about-image" src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80&auto=format" alt="Roofing crew at work" />
+        <div class="about-image-accent">
+          <span class="number">15+</span>
+          <span class="label">Years</span>
+        </div>
+      </div>
+
+      <div class="about-content">
+        <div class="about-tag">About us</div>
+        <h2>Built on trust, one roof at a time</h2>
+        <p>Summit Roofing has proudly served Denver homeowners with quality roof installations and repairs. We believe in doing the job right the first time — using premium materials, skilled crews, and standing behind every project with our workmanship warranty.</p>
+        <p>As a locally owned business, we treat every home like it's our own. No shortcuts, no surprises — just honest work from a team that cares.</p>
+
+        <div class="about-values">
+          <div class="about-value">
+            <h4>Premium Materials</h4>
+            <p>Only top-tier shingles and underlayment from trusted manufacturers.</p>
+          </div>
+          <div class="about-value">
+            <h4>Clean Job Sites</h4>
+            <p>We protect your landscaping and leave your property spotless.</p>
+          </div>
+          <div class="about-value">
+            <h4>Clear Pricing</h4>
+            <p>Detailed written estimates with no hidden fees or surprise charges.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

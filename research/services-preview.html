@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Clean — Services Grid Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: #fff;
+    }
+
+    :root {
+      --primary: #1E3A5F;
+      --primary-light: #2D5A8E;
+      --accent: #E8720C;
+      --accent-hover: #C75F0A;
+      --bg-1: #FFFFFF;
+      --bg-2: #F8FAFC;
+      --text-primary: #1A1A2E;
+      --text-secondary: #4A5568;
+      --text-muted: #94A3B8;
+      --border: #E2E8F0;
+    }
+
+    .preview-label {
+      background: #f9fafb;
+      padding: 12px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .preview-label strong { color: #111827; }
+
+    /* ===== SERVICES SECTION ===== */
+    .services {
+      background: var(--bg-1);
+      padding: 80px 24px;
+    }
+
+    .services-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .services-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .services-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 38px;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      font-weight: 400;
+    }
+
+    .services-header p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .service-card {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      transition: border-color 0.2s;
+    }
+
+    .service-card:hover {
+      border-color: #cbd5e1;
+    }
+
+    .service-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #EFF6FF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .service-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--primary);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .service-card h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      font-weight: 400;
+    }
+
+    .service-card p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .services { padding: 56px 20px; }
+      .services-header h2 { font-size: 30px; }
+      .services-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-label">
+    <strong>Modern Clean Template</strong> — Services Grid Preview
+  </div>
+
+  <section class="services">
+    <div class="services-inner">
+
+      <div class="services-header">
+        <h2>What We Do</h2>
+        <p>Professional roofing solutions for Denver homeowners — from small repairs to full replacements.</p>
+      </div>
+
+      <div class="services-grid">
+
+        <!-- Roof Replacement -->
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <h3>Roof Replacement</h3>
+          <p>Complete roof replacement with premium materials and expert installation. We handle everything from tear-off to cleanup, leaving you with a roof built to last.</p>
+        </div>
+
+        <!-- Roof Repair -->
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </div>
+          <h3>Roof Repair</h3>
+          <p>Leaks, missing shingles, flashing issues — we diagnose the problem and fix it right the first time. Fast response, lasting results.</p>
+        </div>
+
+        <!-- Roof Inspections -->
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <h3>Roof Inspections</h3>
+          <p>Thorough inspections to assess your roof's condition. Ideal before buying or selling a home, or after severe weather.</p>
+        </div>
+
+        <!-- Gutters -->
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+            </svg>
+          </div>
+          <h3>Gutters</h3>
+          <p>Protect your foundation with properly installed gutters and downspouts. We ensure proper drainage to prevent water damage.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

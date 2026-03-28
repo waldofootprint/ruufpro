@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Clean — Hero V3 Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== COLOR PALETTE: Classic Contractor (Navy + Orange) ===== */
+    :root {
+      --primary: #1E3A5F;
+      --primary-light: #2D5A8E;
+      --accent: #E8720C;
+      --accent-hover: #C75F0A;
+      --bg-1: #FFFFFF;
+      --bg-2: #F8FAFC;
+      --bg-3: #EFF6FF;
+      --text-primary: #1A1A2E;
+      --text-secondary: #4A5568;
+      --text-on-dark: #FFFFFF;
+      --text-muted-dark: #94A3B8;
+      --border: #E2E8F0;
+      --success: #16A34A;
+      --star: #F59E0B;
+    }
+
+    /* ===== NAV BAR — Glassmorphism ===== */
+    .nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-glass {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 48px);
+      max-width: 1200px;
+      height: 52px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      z-index: -1;
+    }
+
+    .nav-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      color: white;
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-center {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-center a {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.65);
+      text-decoration: none;
+      transition: color 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-center a:hover {
+      color: white;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-phone {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+
+    .nav-phone:hover { color: white; }
+
+    .nav-phone svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .nav-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 18px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .nav-cta-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    /* ===== HERO SECTION ===== */
+    .hero {
+      position: relative;
+      background: var(--primary);
+      color: white;
+      min-height: 620px;
+      overflow: hidden;
+    }
+
+    .hero-inner {
+      position: relative;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      min-height: 620px;
+      gap: 48px;
+    }
+
+    .hero-content {
+      padding: 120px 0 80px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .biz-name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted-dark);
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 52px;
+      font-weight: 400;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      color: var(--text-on-dark);
+    }
+
+    .hero .subheadline {
+      font-size: 17px;
+      color: var(--text-muted-dark);
+      margin-bottom: 32px;
+      line-height: 1.65;
+      max-width: 460px;
+    }
+
+    .hero .btns {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 13px 28px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 28px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.05);
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .btn-secondary svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .badges {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: var(--text-muted-dark);
+    }
+
+    .badge svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--success);
+      flex-shrink: 0;
+    }
+
+    /* ===== HERO IMAGE ===== */
+    .hero-image {
+      position: relative;
+      height: 100%;
+      min-height: 620px;
+    }
+
+    .hero-image img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Gradient blend on left edge */
+    .hero-image::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(to right, var(--primary) 0%, rgba(30,58,95,0.6) 25%, rgba(30,58,95,0.15) 60%, transparent 100%);
+    }
+
+    /* Light tint overlay for color consistency */
+    .hero-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(30, 58, 95, 0.1);
+    }
+
+    /* ===== ACCENT STRIPE (hero to content transition) ===== */
+    .accent-stripe {
+      height: 3px;
+      background: var(--accent);
+    }
+
+    /* ===== PLACEHOLDER SECTION (to show transition) ===== */
+    .next-section {
+      background: var(--bg-1);
+      padding: 64px 24px;
+      text-align: center;
+    }
+
+    .next-section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 36px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .next-section p {
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .hero-inner {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+      .hero-content {
+        padding: 100px 0 40px;
+      }
+      .hero h1 {
+        font-size: 36px;
+      }
+      .hero .subheadline {
+        font-size: 16px;
+      }
+      .btns {
+        flex-direction: column;
+      }
+      .btn-primary, .btn-secondary {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+      }
+      .hero-image {
+        min-height: 280px;
+      }
+      .nav-center {
+        display: none;
+      }
+      .nav-glass {
+        width: calc(100% - 32px);
+      }
+    }
+
+    /* ===== PREVIEW LABEL ===== */
+    .preview-label {
+      background: #f9fafb;
+      padding: 12px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .preview-label strong { color: #111827; }
+
+    .preview-note {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin: 16px auto;
+      max-width: 800px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: #92400E;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-label">
+    <strong>Modern Clean Template V3</strong> — Glassmorphism Nav + Navy/Orange Palette + Split Hero
+    <div class="preview-note">
+      <strong>About the image:</strong> Using a placeholder stock photo. For production, we should either:
+      (1) Source 3-4 high-quality residential roof photos from a premium stock site,
+      (2) Generate custom images via AI (Midjourney, DALL-E), or
+      (3) Use a stylized illustration/graphic instead of a photo.
+      The image needs to show a beautiful home with a clean, new-looking roof — aspirational, not documentary.
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-glass"></div>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">Summit Roofing</a>
+      <ul class="nav-center">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#reviews">Reviews</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="nav-right">
+        <a href="tel:3035550123" class="nav-phone">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+          </svg>
+          (303) 555-0123
+        </a>
+        <a href="#contact" class="nav-cta-btn">Free Estimate</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+
+      <!-- Left: Copy -->
+      <div class="hero-content">
+        <p class="biz-name">Summit Roofing Co.</p>
+
+        <h1>Trusted Roofing in Denver</h1>
+
+        <p class="subheadline">
+          Quality roof replacement & repair you can count on. Locally owned, fully insured, and committed to doing the job right the first time.
+        </p>
+
+        <div class="btns">
+          <button class="btn-primary">Get Your Free Estimate</button>
+          <button class="btn-secondary">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+            Call Now
+          </button>
+        </div>
+
+        <div class="badges">
+          <span class="badge">
+            <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+            Licensed & Insured
+          </span>
+          <span class="badge">
+            <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+            15+ Years Experience
+          </span>
+          <span class="badge">
+            <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+            GAF Master Elite
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: Image -->
+      <div class="hero-image">
+        <img
+          src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&q=85&auto=format"
+          alt="Beautiful residential home with a quality roof"
+          loading="eager"
+        />
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Accent stripe transition -->
+  <div class="accent-stripe"></div>
+
+  <!-- Placeholder next section to show the transition -->
+  <section class="next-section">
+    <h2>Our Services</h2>
+    <p>Professional solutions for every roofing need</p>
+  </section>
+
+</body>
+</html>

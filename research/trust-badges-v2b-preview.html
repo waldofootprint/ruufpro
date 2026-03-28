@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Clean — Why Choose Us (Archio-inspired)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: #fff;
+    }
+
+    :root {
+      --primary: #1E3A5F;
+      --accent: #E8720C;
+      --bg-warm: #FAFAF8;
+      --bg-white: #FFFFFF;
+      --text-primary: #1A1A2E;
+      --text-secondary: #5A5A6E;
+      --text-muted: #8A8A9A;
+      --border: #EAEAE6;
+      --success: #16A34A;
+    }
+
+    .preview-label {
+      background: #f0f0ee;
+      padding: 12px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+      border-bottom: 1px solid #e0e0dc;
+    }
+    .preview-label strong { color: #111827; }
+
+    /* ===== WHY CHOOSE US ===== */
+    .why-us {
+      background: var(--bg-warm);
+      padding: 100px 24px;
+    }
+
+    .why-us-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .why-us-header {
+      margin-bottom: 56px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+    }
+
+    .why-us-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 42px;
+      color: var(--text-primary);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .why-us-header p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 380px;
+      line-height: 1.65;
+      text-align: right;
+    }
+
+    /* Badge grid — 3 columns on desktop, flexible */
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .badge-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.25s ease;
+    }
+
+    .badge-card:hover {
+      border-color: #d0d0cc;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      transform: translateY(-2px);
+    }
+
+    .badge-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .badge-icon.green {
+      background: #ECFDF5;
+    }
+
+    .badge-icon.blue {
+      background: #EFF6FF;
+    }
+
+    .badge-icon.amber {
+      background: #FFFBEB;
+    }
+
+    .badge-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .badge-icon.green svg { stroke: #059669; }
+    .badge-icon.blue svg { stroke: var(--primary); }
+    .badge-icon.amber svg { stroke: #D97706; }
+
+    .badge-card h3 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    .badge-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Featured stat card — spans full width at bottom */
+    .stat-banner {
+      margin-top: 16px;
+      background: var(--primary);
+      border-radius: 16px;
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .stat-banner-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      color: white;
+      font-weight: 400;
+      line-height: 1.3;
+    }
+
+    .stat-banner-text span {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .stat-banner-items {
+      display: flex;
+      gap: 40px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-item-number {
+      font-family: 'DM Serif Display', serif;
+      font-size: 36px;
+      color: white;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-item-label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    @media (max-width: 768px) {
+      .why-us { padding: 64px 20px; }
+      .why-us-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .why-us-header p { text-align: left; }
+      .why-us-header h2 { font-size: 32px; }
+      .badge-grid {
+        grid-template-columns: 1fr;
+      }
+      .stat-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 28px;
+      }
+      .stat-banner-items { gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-label">
+    <strong>Why Choose Us</strong> — Archio-inspired: warm bg, white badge cards, navy stat banner
+  </div>
+
+  <section class="why-us">
+    <div class="why-us-inner">
+
+      <div class="why-us-header">
+        <h2>Why homeowners<br>choose us</h2>
+        <p>We don't just fix roofs — we earn trust through transparency, quality materials, and doing things right.</p>
+      </div>
+
+      <div class="badge-grid">
+
+        <!-- Licensed -->
+        <div class="badge-card">
+          <div class="badge-icon green">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3>Licensed & Insured</h3>
+          <p>Fully licensed contractor with general liability and workers' compensation coverage.</p>
+        </div>
+
+        <!-- GAF Master Elite -->
+        <div class="badge-card">
+          <div class="badge-icon blue">
+            <svg viewBox="0 0 24 24">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </div>
+          <h3>GAF Master Elite</h3>
+          <p>Top 2% of roofing contractors nationwide. Factory-certified for the highest quality installations.</p>
+        </div>
+
+        <!-- Warranty -->
+        <div class="badge-card">
+          <div class="badge-icon amber">
+            <svg viewBox="0 0 24 24">
+              <path d="M9 12l2 2 4-4"/>
+              <circle cx="12" cy="12" r="10"/>
+            </svg>
+          </div>
+          <h3>10-Year Warranty</h3>
+          <p>Every project backed by our workmanship guarantee. Peace of mind that lasts.</p>
+        </div>
+
+        <!-- Financing -->
+        <div class="badge-card">
+          <div class="badge-icon green">
+            <svg viewBox="0 0 24 24">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </div>
+          <h3>Financing Available</h3>
+          <p>Flexible payment options so a new roof fits your budget. Ask about $0 down plans.</p>
+        </div>
+
+        <!-- BBB -->
+        <div class="badge-card">
+          <div class="badge-icon blue">
+            <svg viewBox="0 0 24 24">
+              <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/>
+              <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/>
+            </svg>
+          </div>
+          <h3>BBB Accredited</h3>
+          <p>A+ rating with the Better Business Bureau. Trusted and verified by a third party.</p>
+        </div>
+
+        <!-- Locally Owned -->
+        <div class="badge-card">
+          <div class="badge-icon amber">
+            <svg viewBox="0 0 24 24">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <h3>Locally Owned</h3>
+          <p>Not a franchise — we live and work in Denver. Your neighbors are our customers.</p>
+        </div>
+
+      </div>
+
+      <!-- Stats banner -->
+      <div class="stat-banner">
+        <div class="stat-banner-text">
+          Trusted by Denver homeowners <span>for over a decade.</span>
+        </div>
+        <div class="stat-banner-items">
+          <div class="stat-item">
+            <div class="stat-item-number">500+</div>
+            <div class="stat-item-label">Roofs completed</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-item-number">4.9</div>
+            <div class="stat-item-label">Google rating</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-item-number">15+</div>
+            <div class="stat-item-label">Years in business</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</body>
+</html>

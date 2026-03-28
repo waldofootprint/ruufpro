@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Clean — Services V2B (Archio-inspired)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: #FFFFFF;
+    }
+
+    :root {
+      --primary: #1E3A5F;
+      --accent: #E8720C;
+      --bg-warm: #FAFAF8;
+      --bg-white: #FFFFFF;
+      --text-primary: #1A1A2E;
+      --text-secondary: #5A5A6E;
+      --text-muted: #8A8A9A;
+      --border: #EAEAE6;
+    }
+
+    .preview-label {
+      background: #f0f0ee;
+      padding: 12px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+      border-bottom: 1px solid #e0e0dc;
+    }
+    .preview-label strong { color: #111827; }
+
+    /* ===== SERVICES — Archio-inspired ===== */
+    .services {
+      background: var(--bg-white);
+      padding: 100px 24px;
+    }
+
+    .services-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .services-header {
+      margin-bottom: 56px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+    }
+
+    .services-header-left h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 42px;
+      color: var(--text-primary);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .services-header-right {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 380px;
+      line-height: 1.65;
+      text-align: right;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .service-card-b {
+      background: var(--bg-warm);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      transition: all 0.25s ease;
+      cursor: default;
+    }
+
+    .service-card-b:hover {
+      border-color: #d0d0cc;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      transform: translateY(-2px);
+    }
+
+    .service-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .service-icon-b {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: white;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .service-icon-b svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--primary);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .service-number {
+      font-family: 'DM Serif Display', serif;
+      font-size: 48px;
+      color: var(--border);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .service-card-b h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      font-weight: 400;
+    }
+
+    .service-card-b p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .service-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .service-link svg {
+      width: 14px; height: 14px;
+      stroke: currentColor; fill: none;
+      transition: transform 0.2s;
+    }
+
+    .service-link:hover svg {
+      transform: translateX(3px);
+    }
+
+    @media (max-width: 640px) {
+      .services { padding: 64px 20px; }
+      .services-header { flex-direction: column; align-items: flex-start; }
+      .services-header-right { text-align: left; }
+      .services-header-left h2 { font-size: 32px; }
+      .services-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-label">
+    <strong>Services V2B</strong> — Archio-inspired: warm bg cards, large faded numbers, split header, learn more links
+  </div>
+
+  <section class="services">
+    <div class="services-inner">
+
+      <div class="services-header">
+        <div class="services-header-left">
+          <h2>What we do</h2>
+        </div>
+        <div class="services-header-right">
+          From small repairs to complete replacements — professional roofing for Denver homeowners.
+        </div>
+      </div>
+
+      <div class="services-grid">
+
+        <div class="service-card-b">
+          <div class="service-card-top">
+            <div class="service-icon-b">
+              <svg viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <span class="service-number">01</span>
+          </div>
+          <h3>Roof Replacement</h3>
+          <p>Complete roof replacement with premium materials and expert installation. We handle everything from tear-off to cleanup, leaving you with a roof built to last.</p>
+          <a href="#contact" class="service-link">
+            Get a free estimate
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+
+        <div class="service-card-b">
+          <div class="service-card-top">
+            <div class="service-icon-b">
+              <svg viewBox="0 0 24 24">
+                <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+              </svg>
+            </div>
+            <span class="service-number">02</span>
+          </div>
+          <h3>Roof Repair</h3>
+          <p>Leaks, missing shingles, flashing issues — we diagnose the problem and fix it right the first time. Fast response, lasting results.</p>
+          <a href="#contact" class="service-link">
+            Get a free estimate
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+
+        <div class="service-card-b">
+          <div class="service-card-top">
+            <div class="service-icon-b">
+              <svg viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </div>
+            <span class="service-number">03</span>
+          </div>
+          <h3>Roof Inspections</h3>
+          <p>Thorough inspections to assess your roof's condition. Ideal before buying or selling a home, or after severe weather.</p>
+          <a href="#contact" class="service-link">
+            Schedule inspection
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+
+        <div class="service-card-b">
+          <div class="service-card-top">
+            <div class="service-icon-b">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+              </svg>
+            </div>
+            <span class="service-number">04</span>
+          </div>
+          <h3>Gutters</h3>
+          <p>Protect your foundation with properly installed gutters and downspouts. We ensure proper drainage to prevent water damage.</p>
+          <a href="#contact" class="service-link">
+            Get a free estimate
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

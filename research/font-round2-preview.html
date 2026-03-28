@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Font Round 2 — Bold & Confident Options</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; background: #F7F8FA; }
+
+    :root {
+      --primary: #1E3A5F;
+      --accent: #E8720C;
+      --text-primary: #1A1A2E;
+      --text-secondary: #5A5A6E;
+      --text-muted: #8A8A9A;
+      --border: #EAEAE6;
+    }
+
+    .page-header {
+      text-align: center; padding: 48px 24px 16px;
+    }
+    .page-header h1 {
+      font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700;
+      color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+    }
+    .page-header p { font-size: 14px; color: var(--text-muted); }
+
+    .grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+      max-width: 1200px; margin: 0 auto; padding: 24px;
+    }
+
+    .option {
+      background: white; border: 2px solid var(--border); border-radius: 16px;
+      overflow: hidden; transition: border-color 0.2s;
+    }
+    .option:hover { border-color: var(--accent); }
+
+    .option-header {
+      padding: 16px 24px; border-bottom: 1px solid #f0f0ee;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .option-label {
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 800;
+      color: white; background: var(--text-primary); padding: 4px 12px;
+      border-radius: 8px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .option-fonts {
+      font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-muted);
+    }
+
+    /* Hero mock */
+    .mock-hero {
+      background: var(--primary); padding: 40px 28px 32px; color: white;
+    }
+    .mock-biz {
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #94A3B8; margin-bottom: 12px;
+    }
+    .mock-h1 { font-size: 34px; line-height: 1.08; margin-bottom: 10px; color: white; }
+    .mock-sub { font-size: 14px; color: #94A3B8; line-height: 1.6; margin-bottom: 20px; }
+    .mock-btn {
+      display: inline-block; padding: 10px 22px; border-radius: 10px;
+      background: var(--accent); color: white; font-size: 13px; font-weight: 700;
+    }
+
+    /* Body mock */
+    .mock-body { padding: 28px; }
+    .mock-h2 { font-size: 28px; line-height: 1.15; color: var(--text-primary); margin-bottom: 8px; }
+    .mock-p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 16px; }
+
+    .mock-card {
+      border: 1.5px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 12px;
+    }
+    .mock-card-title { font-size: 16px; color: var(--text-primary); margin-bottom: 4px; }
+    .mock-card-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+    /* Description */
+    .option-desc {
+      padding: 20px 24px; border-top: 1px solid #f0f0ee; background: #FAFBFC;
+    }
+    .option-desc .vibe {
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+      color: var(--text-primary); margin-bottom: 4px;
+    }
+    .option-desc .detail {
+      font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-secondary); line-height: 1.55;
+    }
+    .option-desc .rec {
+      display: inline-block; margin-top: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700;
+      color: #2563eb; background: #EFF6FF; padding: 3px 10px; border-radius: 8px;
+    }
+
+    /* Current (DM Serif + DM Sans for comparison) */
+    .font-current .mock-h1 { font-family: 'DM Serif Display', serif; font-weight: 400; }
+    .font-current .mock-h2 { font-family: 'DM Serif Display', serif; font-weight: 400; }
+    .font-current .mock-biz,
+    .font-current .mock-sub,
+    .font-current .mock-btn,
+    .font-current .mock-p,
+    .font-current .mock-card-title,
+    .font-current .mock-card-desc { font-family: 'DM Sans', sans-serif; }
+
+    /* Option A: Sora */
+    .font-a .mock-h1 { font-family: 'Sora', sans-serif; font-weight: 800; letter-spacing: -0.03em; }
+    .font-a .mock-h2 { font-family: 'Sora', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+    .font-a .mock-biz { font-family: 'Sora', sans-serif; font-weight: 600; }
+    .font-a .mock-sub,
+    .font-a .mock-p,
+    .font-a .mock-card-desc { font-family: 'DM Sans', sans-serif; }
+    .font-a .mock-btn { font-family: 'Sora', sans-serif; font-weight: 700; }
+    .font-a .mock-card-title { font-family: 'Sora', sans-serif; font-weight: 700; }
+
+    /* Option B: Plus Jakarta Sans */
+    .font-b .mock-h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -0.03em; }
+    .font-b .mock-h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -0.02em; }
+    .font-b .mock-biz { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; }
+    .font-b .mock-sub,
+    .font-b .mock-p,
+    .font-b .mock-card-desc { font-family: 'DM Sans', sans-serif; }
+    .font-b .mock-btn { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+    .font-b .mock-card-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+
+    /* Option C: Montserrat */
+    .font-c .mock-h1 { font-family: 'Montserrat', sans-serif; font-weight: 800; letter-spacing: -0.03em; }
+    .font-c .mock-h2 { font-family: 'Montserrat', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+    .font-c .mock-biz { font-family: 'Montserrat', sans-serif; font-weight: 600; }
+    .font-c .mock-sub,
+    .font-c .mock-p,
+    .font-c .mock-card-desc { font-family: 'DM Sans', sans-serif; }
+    .font-c .mock-btn { font-family: 'Montserrat', sans-serif; font-weight: 700; }
+    .font-c .mock-card-title { font-family: 'Montserrat', sans-serif; font-weight: 700; }
+
+    /* Option D: Outfit */
+    .font-d .mock-h1 { font-family: 'Outfit', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+    .font-d .mock-h2 { font-family: 'Outfit', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+    .font-d .mock-biz { font-family: 'Outfit', sans-serif; font-weight: 600; }
+    .font-d .mock-sub,
+    .font-d .mock-p,
+    .font-d .mock-card-desc { font-family: 'DM Sans', sans-serif; }
+    .font-d .mock-btn { font-family: 'Outfit', sans-serif; font-weight: 700; }
+    .font-d .mock-card-title { font-family: 'Outfit', sans-serif; font-weight: 600; }
+
+    /* Option E: Manrope */
+    .font-e .mock-h1 { font-family: 'Manrope', sans-serif; font-weight: 800; letter-spacing: -0.03em; }
+    .font-e .mock-h2 { font-family: 'Manrope', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+    .font-e .mock-biz { font-family: 'Manrope', sans-serif; font-weight: 600; }
+    .font-e .mock-sub,
+    .font-e .mock-p,
+    .font-e .mock-card-desc { font-family: 'DM Sans', sans-serif; }
+    .font-e .mock-btn { font-family: 'Manrope', sans-serif; font-weight: 700; }
+    .font-e .mock-card-title { font-family: 'Manrope', sans-serif; font-weight: 700; }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>Font Round 2</h1>
+    <p>Bold, professional, confident heading fonts — all paired with DM Sans body text</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- CURRENT: DM Serif Display + DM Sans -->
+    <div class="option font-current">
+      <div class="option-header">
+        <span class="option-label">Current</span>
+        <span class="option-fonts">DM Serif Display + DM Sans</span>
+      </div>
+      <div class="mock-hero">
+        <p class="mock-biz">Summit Roofing Co.</p>
+        <h1 class="mock-h1">Denver's trusted roofing experts.</h1>
+        <p class="mock-sub">Quality roof replacement & repair you can count on.</p>
+        <span class="mock-btn">Get Your Free Estimate</span>
+      </div>
+      <div class="mock-body">
+        <h2 class="mock-h2">What we do</h2>
+        <p class="mock-p">Professional roofing solutions for Denver homeowners.</p>
+        <div class="mock-card">
+          <div class="mock-card-title">Roof Replacement</div>
+          <div class="mock-card-desc">Complete replacement with premium materials and expert installation.</div>
+        </div>
+      </div>
+      <div class="option-desc">
+        <p class="vibe">Elegant, refined (current choice)</p>
+        <p class="detail">Serif headlines feel established and warm. But the serif can read as soft or editorial rather than bold and confident.</p>
+      </div>
+    </div>
+
+    <!-- A: Sora + DM Sans -->
+    <div class="option font-a">
+      <div class="option-header">
+        <span class="option-label">A</span>
+        <span class="option-fonts">Sora (800) + DM Sans</span>
+      </div>
+      <div class="mock-hero">
+        <p class="mock-biz">Summit Roofing Co.</p>
+        <h1 class="mock-h1">Denver's trusted roofing experts.</h1>
+        <p class="mock-sub">Quality roof replacement & repair you can count on.</p>
+        <span class="mock-btn">Get Your Free Estimate</span>
+      </div>
+      <div class="mock-body">
+        <h2 class="mock-h2">What we do</h2>
+        <p class="mock-p">Professional roofing solutions for Denver homeowners.</p>
+        <div class="mock-card">
+          <div class="mock-card-title">Roof Replacement</div>
+          <div class="mock-card-desc">Complete replacement with premium materials and expert installation.</div>
+        </div>
+      </div>
+      <div class="option-desc">
+        <p class="vibe">Technical, strong, modern</p>
+        <p class="detail">Geometric with sharp clarity. Feels like a company that uses satellite tech and data. The extra-bold weight at 800 commands attention without shouting.</p>
+        <span class="rec">Best for "honest + modern"</span>
+      </div>
+    </div>
+
+    <!-- B: Plus Jakarta Sans + DM Sans -->
+    <div class="option font-b">
+      <div class="option-header">
+        <span class="option-label">B</span>
+        <span class="option-fonts">Plus Jakarta Sans (800) + DM Sans</span>
+      </div>
+      <div class="mock-hero">
+        <p class="mock-biz">Summit Roofing Co.</p>
+        <h1 class="mock-h1">Denver's trusted roofing experts.</h1>
+        <p class="mock-sub">Quality roof replacement & repair you can count on.</p>
+        <span class="mock-btn">Get Your Free Estimate</span>
+      </div>
+      <div class="mock-body">
+        <h2 class="mock-h2">What we do</h2>
+        <p class="mock-p">Professional roofing solutions for Denver homeowners.</p>
+        <div class="mock-card">
+          <div class="mock-card-title">Roof Replacement</div>
+          <div class="mock-card-desc">Complete replacement with premium materials and expert installation.</div>
+        </div>
+      </div>
+      <div class="option-desc">
+        <p class="vibe">Premium, confident, slightly warm</p>
+        <p class="detail">A fresh geometric sans with subtle warmth in the curves. Reads as professional and premium without being cold. Popular with modern startups and service brands.</p>
+        <span class="rec">Recommended</span>
+      </div>
+    </div>
+
+    <!-- C: Montserrat + DM Sans -->
+    <div class="option font-c">
+      <div class="option-header">
+        <span class="option-label">C</span>
+        <span class="option-fonts">Montserrat (800) + DM Sans</span>
+      </div>
+      <div class="mock-hero">
+        <p class="mock-biz">Summit Roofing Co.</p>
+        <h1 class="mock-h1">Denver's trusted roofing experts.</h1>
+        <p class="mock-sub">Quality roof replacement & repair you can count on.</p>
+        <span class="mock-btn">Get Your Free Estimate</span>
+      </div>
+      <div class="mock-body">
+        <h2 class="mock-h2">What we do</h2>
+        <p class="mock-p">Professional roofing solutions for Denver homeowners.</p>
+        <div class="mock-card">
+          <div class="mock-card-title">Roof Replacement</div>
+          <div class="mock-card-desc">Complete replacement with premium materials and expert installation.</div>
+        </div>
+      </div>
+      <div class="option-desc">
+        <p class="vibe">Bold, geometric, proven</p>
+        <p class="detail">The industry workhorse for bold headings. Confident and strong. Very widely used which means it's proven — but also less unique. Construction firms love it.</p>
+      </div>
+    </div>
+
+    <!-- D: Outfit + DM Sans -->
+    <div class="option font-d">
+      <div class="option-header">
+        <span class="option-label">D</span>
+        <span class="option-fonts">Outfit (700) + DM Sans</span>
+      </div>
+      <div class="mock-hero">
+        <p class="mock-biz">Summit Roofing Co.</p>
+        <h1 class="mock-h1">Denver's trusted roofing experts.</h1>
+        <p class="mock-sub">Quality roof replacement & repair you can count on.</p>
+        <span class="mock-btn">Get Your Free Estimate</span>
+      </div>
+      <div class="mock-body">
+        <h2 class="mock-h2">What we do</h2>
+        <p class="mock-p">Professional roofing solutions for Denver homeowners.</p>
+        <div class="mock-card">
+          <div class="mock-card-title">Roof Replacement</div>
+          <div class="mock-card-desc">Complete replacement with premium materials and expert installation.</div>
+        </div>
+      </div>
+      <div class="option-desc">
+        <p class="vibe">Clean, balanced, understated confidence</p>
+        <p class="detail">Geometric but with softer geometry than Montserrat. Doesn't try as hard — confidence through restraint. Feels like a company that lets their work speak.</p>
+      </div>
+    </div>
+
+    <!-- E: Manrope + DM Sans -->
+    <div class="option font-e">
+      <div class="option-header">
+        <span class="option-label">E</span>
+        <span class="option-fonts">Manrope (800) + DM Sans</span>
+      </div>
+      <div class="mock-hero">
+        <p class="mock-biz">Summit Roofing Co.</p>
+        <h1 class="mock-h1">Denver's trusted roofing experts.</h1>
+        <p class="mock-sub">Quality roof replacement & repair you can count on.</p>
+        <span class="mock-btn">Get Your Free Estimate</span>
+      </div>
+      <div class="mock-body">
+        <h2 class="mock-h2">What we do</h2>
+        <p class="mock-p">Professional roofing solutions for Denver homeowners.</p>
+        <div class="mock-card">
+          <div class="mock-card-title">Roof Replacement</div>
+          <div class="mock-card-desc">Complete replacement with premium materials and expert installation.</div>
+        </div>
+      </div>
+      <div class="option-desc">
+        <p class="vibe">Sturdy, grounded, no-nonsense</p>
+        <p class="detail">Semi-condensed with slightly rounded terminals. Feels solid and grounded — like a handshake. More character than Inter, less flashy than Montserrat. Pairs naturally with DM Sans.</p>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

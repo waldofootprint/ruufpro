@@ -9,4 +9,8 @@
   --color-brand-600: #2563eb;
   --color-brand-700: #1d4ed8;
   --color-brand-900: #1e3a5f;
+
+  /* Contractor template fonts — loaded via next/font in layout.tsx */
+  --font-heading: var(--font-dm-serif);
+  --font-body: var(--font-dm-sans);
 }

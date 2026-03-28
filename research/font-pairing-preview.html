@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoofReady — Contractor Template Font Pairing Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #f8f9fa;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6b7280;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .page-subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 60px;
+    }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .option-card {
+      background: white;
+      border-radius: 16px;
+      border: 2px solid #e5e7eb;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .option-card:hover {
+      border-color: #3b82f6;
+    }
+
+    .option-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .option-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      background: #111827;
+      padding: 4px 12px;
+      border-radius: 100px;
+    }
+
+    .option-fonts {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    /* ===== HERO PREVIEW ===== */
+    .hero-preview {
+      background: #1e293b;
+      padding: 48px 32px;
+      color: white;
+    }
+
+    .hero-preview .biz-name {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+
+    .hero-preview h1 {
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    .hero-preview .sub {
+      font-size: 16px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .hero-preview .btns {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .hero-preview .btn-primary {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      background: #3b82f6;
+      color: white;
+    }
+
+    .hero-preview .btn-secondary {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 2px solid rgba(255,255,255,0.25);
+      background: transparent;
+      color: white;
+      cursor: pointer;
+    }
+
+    .hero-preview .badges {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .hero-preview .badge {
+      font-size: 13px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hero-preview .badge svg {
+      width: 16px;
+      height: 16px;
+      fill: #3b82f6;
+    }
+
+    /* ===== BODY PREVIEW ===== */
+    .body-preview {
+      padding: 32px;
+      background: white;
+    }
+
+    .body-preview h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .body-preview .section-sub {
+      font-size: 15px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+
+    .body-preview p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: #4b5563;
+      margin-bottom: 20px;
+    }
+
+    .service-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .service-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .service-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .service-card p {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #6b7280;
+      margin-bottom: 0;
+    }
+
+    /* ===== REVIEW PREVIEW ===== */
+    .review-preview {
+      padding: 24px 32px 32px;
+      background: #f9fafb;
+      border-top: 1px solid #f3f4f6;
+    }
+
+    .review-card {
+      background: white;
+      border: 1px solid #f3f4f6;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .stars {
+      color: #facc15;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .review-card .quote {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #4b5563;
+      margin-bottom: 8px;
+      font-style: italic;
+    }
+
+    .review-card .author {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    /* ===== FONT FAMILY ASSIGNMENTS ===== */
+
+    /* Option A: DM Serif Display + DM Sans */
+    .font-a .hero-preview h1 { font-family: 'DM Serif Display', serif; }
+    .font-a .hero-preview .biz-name,
+    .font-a .hero-preview .sub,
+    .font-a .hero-preview .btn-primary,
+    .font-a .hero-preview .btn-secondary,
+    .font-a .hero-preview .badge { font-family: 'DM Sans', sans-serif; }
+    .font-a .body-preview h2 { font-family: 'DM Serif Display', serif; }
+    .font-a .body-preview,
+    .font-a .body-preview p,
+    .font-a .service-card h3,
+    .font-a .service-card p,
+    .font-a .body-preview .section-sub { font-family: 'DM Sans', sans-serif; }
+    .font-a .review-preview,
+    .font-a .review-card .quote,
+    .font-a .review-card .author { font-family: 'DM Sans', sans-serif; }
+
+    /* Option B: Inter + DM Serif Display */
+    .font-b .hero-preview h1 { font-family: 'DM Serif Display', serif; }
+    .font-b .hero-preview .biz-name,
+    .font-b .hero-preview .sub,
+    .font-b .hero-preview .btn-primary,
+    .font-b .hero-preview .btn-secondary,
+    .font-b .hero-preview .badge { font-family: 'Inter', sans-serif; }
+    .font-b .body-preview h2 { font-family: 'DM Serif Display', serif; }
+    .font-b .body-preview,
+    .font-b .body-preview p,
+    .font-b .service-card h3,
+    .font-b .service-card p,
+    .font-b .body-preview .section-sub { font-family: 'Inter', sans-serif; }
+    .font-b .review-preview,
+    .font-b .review-card .quote,
+    .font-b .review-card .author { font-family: 'Inter', sans-serif; }
+
+    /* Option C: Nunito Sans + Lora */
+    .font-c .hero-preview h1 { font-family: 'Lora', serif; }
+    .font-c .hero-preview .biz-name,
+    .font-c .hero-preview .sub,
+    .font-c .hero-preview .btn-primary,
+    .font-c .hero-preview .btn-secondary,
+    .font-c .hero-preview .badge { font-family: 'Nunito Sans', sans-serif; }
+    .font-c .body-preview h2 { font-family: 'Lora', serif; }
+    .font-c .body-preview,
+    .font-c .body-preview p,
+    .font-c .service-card h3,
+    .font-c .service-card p,
+    .font-c .body-preview .section-sub { font-family: 'Nunito Sans', sans-serif; }
+    .font-c .review-preview,
+    .font-c .review-card .quote,
+    .font-c .review-card .author { font-family: 'Nunito Sans', sans-serif; }
+
+    /* Option D: Manrope + Inter */
+    .font-d .hero-preview h1 { font-family: 'Manrope', sans-serif; }
+    .font-d .hero-preview .biz-name,
+    .font-d .hero-preview .sub,
+    .font-d .hero-preview .btn-primary,
+    .font-d .hero-preview .btn-secondary,
+    .font-d .hero-preview .badge { font-family: 'Inter', sans-serif; }
+    .font-d .body-preview h2 { font-family: 'Manrope', sans-serif; font-weight: 800; }
+    .font-d .body-preview,
+    .font-d .body-preview p,
+    .font-d .service-card h3,
+    .font-d .service-card p,
+    .font-d .body-preview .section-sub { font-family: 'Inter', sans-serif; }
+    .font-d .review-preview,
+    .font-d .review-card .quote,
+    .font-d .review-card .author { font-family: 'Inter', sans-serif; }
+
+    /* ===== DESCRIPTION SECTION ===== */
+    .option-description {
+      padding: 20px 24px;
+      border-top: 1px solid #f3f4f6;
+      background: #fafbfc;
+    }
+
+    .option-description .vibe {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+
+    .option-description .detail {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    .option-description .rec {
+      display: inline-block;
+      margin-top: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: #2563eb;
+      background: #eff6ff;
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p class="page-title">Contractor Template</p>
+    <p class="page-subtitle">Font Pairing Preview</p>
+
+    <div class="grid">
+
+      <!-- OPTION A: DM Serif Display + DM Sans -->
+      <div class="option-card font-a">
+        <div class="option-header">
+          <span class="option-label">Option A</span>
+          <span class="option-fonts">DM Serif Display + DM Sans</span>
+        </div>
+
+        <div class="hero-preview">
+          <p class="biz-name">Summit Roofing Co.</p>
+          <h1>Trusted Roofing<br>in Denver</h1>
+          <p class="sub">Quality roof replacement & repair you can count on</p>
+          <div class="btns">
+            <button class="btn-primary">Get Your Free Estimate</button>
+            <button class="btn-secondary">Call: (303) 555-0123</button>
+          </div>
+          <div class="badges">
+            <span class="badge">
+              <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+              Licensed & Insured
+            </span>
+            <span class="badge">
+              <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+              15+ Years Experience
+            </span>
+          </div>
+        </div>
+
+        <div class="body-preview">
+          <h2>Our Services</h2>
+          <p class="section-sub">Professional solutions for every roofing need</p>
+          <div class="service-cards">
+            <div class="service-card">
+              <h3>Roof Replacement</h3>
+              <p>Complete roof replacement with premium materials and expert installation.</p>
+            </div>
+            <div class="service-card">
+              <h3>Roof Repair</h3>
+              <p>Leaks, missing shingles, flashing issues — we fix problems fast.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-preview">
+          <div class="review-card">
+            <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="quote">"Summit did an amazing job on our roof. Professional crew, cleaned up everything, and finished ahead of schedule."</p>
+            <p class="author">— Mike R.</p>
+          </div>
+        </div>
+
+        <div class="option-description">
+          <p class="vibe">Polished, confident, premium local business</p>
+          <p class="detail">Serif headlines say "established & trustworthy." Sans body stays clean. Both from the same DM family so they harmonize naturally. Stands out from the all-sans-serif roofing template crowd.</p>
+          <span class="rec">Recommended for Modern Clean</span>
+        </div>
+      </div>
+
+      <!-- OPTION B: Inter + DM Serif Display -->
+      <div class="option-card font-b">
+        <div class="option-header">
+          <span class="option-label">Option B</span>
+          <span class="option-fonts">DM Serif Display + Inter</span>
+        </div>
+
+        <div class="hero-preview">
+          <p class="biz-name">Summit Roofing Co.</p>
+          <h1>Trusted Roofing<br>in Denver</h1>
+          <p class="sub">Quality roof replacement & repair you can count on</p>
+          <div class="btns">
+            <button class="btn-primary">Get Your Free Estimate</button>
+            <button class="btn-secondary">Call: (303) 555-0123</button>
+          </div>
+          <div class="badges">
+            <span class="badge">
+              <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+              Licensed & Insured
+            </span>
+            <span class="badge">
+              <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+              15+ Years Experience
+            </span>
+          </div>
+        </div>
+
+        <div class="body-preview">
+          <h2>Our Services</h2>
+          <p class="section-sub">Professional solutions for every roofing need</p>
+          <div class="service-cards">
+            <div class="service-card">
+              <h3>Roof Replacement</h3>
+              <p>Complete roof replacement with premium materials and expert installation.</p>
+            </div>
+            <div class="service-card">
+              <h3>Roof Repair</h3>
+              <p>Leaks, missing shingles, flashing issues — we fix problems fast.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-preview">
+          <div class="review-card">
+            <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="quote">"Summit did an amazing job on our roof. Professional crew, cleaned up everything, and finished ahead of schedule."</p>
+            <p class="author">— Mike R.</p>
+          </div>
+        </div>
+
+        <div class="option-description">
+          <p class="vibe">Modern and clean with a touch of elegance</p>
+          <p class="detail">Inter is the gold standard for web body text — battle-tested across GitHub, Figma, etc. Same serif headlines as Option A. The "safe but still distinctive" choice with maximum readability.</p>
+        </div>
+      </div>
+
+      <!-- OPTION C: Nunito Sans + Lora -->
+      <div class="option-card font-c">
+        <div class="option-header">
+          <span class="option-label">Option C</span>
+          <span class="option-fonts">Lora + Nunito Sans</span>
+        </div>
+
+        <div class="hero-preview">
+          <p class="biz-name">Summit Roofing Co.</p>
+          <h1>Trusted Roofing<br>in Denver</h1>
+          <p class="sub">Quality roof replacement & repair you can count on</p>
+          <div class="btns">
+            <button class="btn-primary">Get Your Free Estimate</button>
+            <button class="btn-secondary">Call: (303) 555-0123</button>
+          </div>
+          <div class="badges">
+            <span class="badge">
+              <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+              Licensed & Insured
+            </span>
+            <span class="badge">
+              <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+              15+ Years Experience
+            </span>
+          </div>
+        </div>
+
+        <div class="body-preview">
+          <h2>Our Services</h2>
+          <p class="section-sub">Professional solutions for every roofing need</p>
+          <div class="service-cards">
+            <div class="service-card">
+              <h3>Roof Replacement</h3>
+              <p>Complete roof replacement with premium materials and expert installation.</p>
+            </div>
+            <div class="service-card">
+              <h3>Roof Repair</h3>
+              <p>Leaks, missing shingles, flashing issues — we fix problems fast.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-preview">
+          <div class="review-card">
+            <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="quote">"Summit did an amazing job on our roof. Professional crew, cleaned up everything, and finished ahead of schedule."</p>
+            <p class="author">— Mike R.</p>
+          </div>
+        </div>
+
+        <div class="option-description">
+          <p class="vibe">Warm, friendly, approachable</p>
+          <p class="detail">Nunito Sans has rounded terminals that feel soft and human. Lora's calligraphic roots add warmth without being formal. The "friendly neighborhood roofer" pairing. Could save for the Warm & Trustworthy template.</p>
+        </div>
+      </div>
+
+      <!-- OPTION D: Manrope + Inter -->
+      <div class="option-card font-d">
+        <div class="option-header">
+          <span class="option-label">Option D</span>
+          <span class="option-fonts">Manrope + Inter</span>
+        </div>
+
+        <div class="hero-preview">
+          <p class="biz-name">Summit Roofing Co.</p>
+          <h1>Trusted Roofing<br>in Denver</h1>
+          <p class="sub">Quality roof replacement & repair you can count on</p>
+          <div class="btns">
+            <button class="btn-primary">Get Your Free Estimate</button>
+            <button class="btn-secondary">Call: (303) 555-0123</button>
+          </div>
+          <div class="badges">
+            <span class="badge">
+              <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+              Licensed & Insured
+            </span>
+            <span class="badge">
+              <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+              15+ Years Experience
+            </span>
+          </div>
+        </div>
+
+        <div class="body-preview">
+          <h2>Our Services</h2>
+          <p class="section-sub">Professional solutions for every roofing need</p>
+          <div class="service-cards">
+            <div class="service-card">
+              <h3>Roof Replacement</h3>
+              <p>Complete roof replacement with premium materials and expert installation.</p>
+            </div>
+            <div class="service-card">
+              <h3>Roof Repair</h3>
+              <p>Leaks, missing shingles, flashing issues — we fix problems fast.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-preview">
+          <div class="review-card">
+            <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="quote">"Summit did an amazing job on our roof. Professional crew, cleaned up everything, and finished ahead of schedule."</p>
+            <p class="author">— Mike R.</p>
+          </div>
+        </div>
+
+        <div class="option-description">
+          <p class="vibe">All sans-serif, geometric, ultra-modern</p>
+          <p class="detail">No serifs at all — pure modern energy. Manrope is geometric with a slightly rounded, distinctive feel. Inter handles all body text. Closest to a SaaS look. Risk: could feel too techy for homeowners.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
