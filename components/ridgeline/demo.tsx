@@ -4,7 +4,7 @@ import EstimateWidgetV4 from "@/components/estimate-widget-v4";
 
 export default function RidgelineDemo() {
   return (
-    <section className="relative bg-[#FAFAF7] overflow-hidden">
+    <section id="demo" className="relative bg-[#FAFAF7] overflow-hidden">
       {/* Subtle grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1B3A4B08_1px,transparent_1px),linear-gradient(to_bottom,#1B3A4B08_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none z-0" />
 

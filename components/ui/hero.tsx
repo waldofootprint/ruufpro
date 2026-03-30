@@ -77,17 +77,22 @@ export const Component = () => {
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center space-x-2">
-          {['Features', 'Pricing', 'Demo', 'Contact'].map((item) => (
-            <a key={item} href="#" className="px-4 py-1.5 rounded-full border border-white/20 text-white text-xs font-semibold hover:bg-white/10 transition-colors">
-              {item}
+          {[
+            { label: 'Features', href: '#features' },
+            { label: 'Pricing', href: '#pricing' },
+            { label: 'Demo', href: '#demo' },
+            { label: 'FAQ', href: '#faq' },
+          ].map((item) => (
+            <a key={item.label} href={item.href} className="px-4 py-1.5 rounded-full border border-white/20 text-white text-xs font-semibold hover:bg-white/10 transition-colors">
+              {item.label}
             </a>
           ))}
         </div>
 
         {/* CTA Button */}
-        <button className="px-6 py-2 rounded-full border border-white text-white text-xs md:text-sm font-semibold hover:bg-white hover:text-[#1B3A4B] transition-colors">
+        <a href="/signup" className="px-6 py-2 rounded-full border border-white text-white text-xs md:text-sm font-semibold hover:bg-white hover:text-[#1B3A4B] transition-colors">
           Get Started Free
-        </button>
+        </a>
       </nav>
 
       {/* Hero Section */}

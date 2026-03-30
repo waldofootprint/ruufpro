@@ -66,7 +66,7 @@ const scaleIn = {
 
 export default function RidgelineGoogleFilter() {
   return (
-    <section className="relative bg-[#1B3A4B] overflow-hidden">
+    <section id="features" className="relative bg-[#1B3A4B] overflow-hidden">
       {/* Grid background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none z-0" />
 
