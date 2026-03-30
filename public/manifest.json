@@ -1,6 +1,6 @@
 {
-  "name": "RoofReady Dashboard",
-  "short_name": "RoofReady",
+  "name": "RuufPro Dashboard",
+  "short_name": "RuufPro",
   "description": "Manage your roofing leads and estimates",
   "start_url": "/dashboard",
   "display": "standalone",

@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "magic": {
+      "command": "npx",
+      "args": ["-y", "@21st-dev/magic@0.1.0"],
+      "env": {
+        "API_KEY": "acc0400ae06892869862d7de282ef3f0475777e7bf992dcd35a6b0319eb1d584"
+      }
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/brave-search-mcp@latest"],
+      "env": {
+        "BRAVE_API_KEY": "BSARzeN9qk323lhLqBD8lAcEN6NF0me"
+      }
+    }
+  }
+}

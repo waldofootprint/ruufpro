@@ -61,6 +61,7 @@ export interface EstimateResult {
   priceHigh: number;
   roofAreaSqft: number;
   pitchDegrees: number;
+  numSegments: number;
   isFromSatellite: boolean; // true = Solar API, false = manual estimate
 
   // Breakdown (useful for debugging and for showing the homeowner)
@@ -81,7 +82,7 @@ export interface EstimateResult {
 
 // Pitch multiplier: steeper roofs cost more in labor (harder to walk on,
 // need safety equipment, take longer)
-function getPitchMultiplier(pitchDegrees: number): number {
+export function getPitchMultiplier(pitchDegrees: number): number {
   if (pitchDegrees <= 18) return 1.0; // Low slope — easy to walk
   if (pitchDegrees <= 22) return 1.05;
   if (pitchDegrees <= 26) return 1.1; // Standard walkable
@@ -113,7 +114,7 @@ function crossCheckPitch(
 
 // Waste factor: more complex roofs (more segments) need more extra material
 // because of cuts at hips, valleys, and edges
-function getWasteFactor(numSegments: number): number {
+export function getWasteFactor(numSegments: number): number {
   if (numSegments <= 2) return 1.1; // Simple gable: 10% waste
   if (numSegments <= 4) return 1.15; // Moderate: 15%
   if (numSegments <= 6) return 1.18; // Complex: 18%
@@ -262,6 +263,7 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
     priceHigh,
     roofAreaSqft: Math.round(roofAreaSqft),
     pitchDegrees: Math.round(pitchDegrees * 10) / 10,
+    numSegments,
     isFromSatellite,
     breakdown: {
       materialCostLow: Math.round(materialCostLow),

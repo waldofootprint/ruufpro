@@ -305,8 +305,8 @@ export default function EstimateWidget({
 
             <p className="mt-8 text-xs text-gray-400">
               Powered by{" "}
-              <a href="https://roofready.com" className="text-brand-500 hover:underline">
-                RoofReady
+              <a href="https://ruufpro.com" className="text-brand-500 hover:underline">
+                RuufPro
               </a>
             </p>
           </div>
@@ -713,7 +713,7 @@ export default function EstimateWidget({
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
-                  a.download = `RoofReady-Estimate-${name}.pdf`;
+                  a.download = `RuufPro-Estimate-${name}.pdf`;
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
@@ -749,8 +749,8 @@ export default function EstimateWidget({
 
             <p className="text-center text-xs text-gray-400 pt-2">
               Powered by{" "}
-              <a href="https://roofready.com" className="text-brand-500 hover:underline">
-                RoofReady
+              <a href="https://ruufpro.com" className="text-brand-500 hover:underline">
+                RuufPro
               </a>
             </p>
           </div>

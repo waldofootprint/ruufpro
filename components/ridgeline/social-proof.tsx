@@ -40,7 +40,7 @@ const fadeUp = {
     y: 0,
     transition: { type: "spring", stiffness: 300, damping: 25 },
   },
-};
+} as const;
 
 export default function RidgelineSocialProof() {
   return (

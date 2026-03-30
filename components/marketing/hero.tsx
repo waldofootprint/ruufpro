@@ -1,4 +1,4 @@
-// Marketing hero section for roofready.com
+// Marketing hero section for ruufpro.com
 // Features: rotating headline, homes illustration with price estimates,
 // two CTAs, and trust badges.
 

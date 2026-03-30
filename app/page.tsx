@@ -15,7 +15,7 @@ export default function Home() {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
           <a href="/" className="text-xl font-bold text-gray-900 tracking-tight">
-            RoofReady
+            RuufPro
           </a>
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-600">
             <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
@@ -52,7 +52,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div>
-              <p className="text-gray-900 font-bold text-lg">RoofReady</p>
+              <p className="text-gray-900 font-bold text-lg">RuufPro</p>
               <p className="text-sm mt-1">Free roofing websites + satellite-powered estimates</p>
             </div>
             <div className="flex gap-8 text-sm">
@@ -64,7 +64,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-100 mt-8 pt-8 text-sm text-center text-gray-400">
-            &copy; {new Date().getFullYear()} RoofReady. All rights reserved.
+            &copy; {new Date().getFullYear()} RuufPro. All rights reserved.
           </div>
         </div>
       </footer>

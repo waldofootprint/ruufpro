@@ -10,6 +10,12 @@ export type LeadSource = "contact_form" | "estimate_widget" | "external_widget";
 
 export type LeadStatus = "new" | "contacted" | "quoted" | "won" | "lost";
 
+export type LeadTimeline = "no_timeline" | "1_3_months" | "now";
+
+export type FinancingInterest = "yes" | "no" | "maybe";
+
+export type LeadTemperature = "hot" | "warm" | "browsing";
+
 export interface Contractor {
   id: string;
   user_id: string;
@@ -107,6 +113,17 @@ export interface Lead {
   estimate_high: number | null;
   estimate_material: string | null;
   estimate_roof_sqft: number | null;
+
+  // Lead qualification (from widget)
+  timeline: LeadTimeline | null;
+  financing_interest: FinancingInterest | null;
+
+  // Speed-to-lead tracking
+  contacted_at: string | null;
+
+  // Roof intel (from estimate engine)
+  estimate_pitch_degrees: number | null;
+  estimate_segments: number | null;
 
   created_at: string;
 }

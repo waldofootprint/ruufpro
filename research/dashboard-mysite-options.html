@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Website Section — Dashboard Options</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #eeeef0;
+      color: #1a1a1a;
+      -webkit-font-smoothing: antialiased;
+      padding: 48px 20px;
+    }
+
+    .page-header { text-align: center; margin-bottom: 48px; }
+    .page-header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .page-header p { color: #6e6e73; font-size: 15px; max-width: 620px; margin: 0 auto; line-height: 1.5; }
+
+    .option-wrapper { max-width: 1060px; margin: 0 auto 72px; }
+    .option-tag {
+      display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.5px; padding: 5px 14px; border-radius: 6px; margin-bottom: 12px;
+    }
+    .option-title { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 4px; }
+    .option-desc { font-size: 14px; color: #6e6e73; line-height: 1.6; margin-bottom: 20px; max-width: 700px; }
+
+    .mockup-frame {
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+      background: #f4f5f7;
+    }
+
+    /* Shared card styles */
+    .card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; }
+    .card-title { font-size: 13px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-body { padding: 20px; }
+    .card-badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
+
+    /* Form elements */
+    .form-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; display: block; }
+    .form-input {
+      width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0;
+      font-size: 14px; color: #1e293b; font-family: inherit; background: #fff;
+    }
+    .form-input:focus { border-color: #94a3b8; outline: none; box-shadow: 0 0 0 3px rgba(148,163,184,0.1); }
+    .form-input::placeholder { color: #cbd5e1; }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-group { margin-bottom: 16px; }
+    .form-hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+    .btn {
+      padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      font-family: inherit; cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .btn-primary { background: #334155; color: #fff; }
+    .btn-primary:hover { background: #1e293b; }
+    .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-sm { padding: 6px 14px; font-size: 12px; }
+
+    .toggle-track {
+      width: 40px; height: 22px; border-radius: 11px; background: #cbd5e1;
+      position: relative; cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-track.on { background: #22c55e; }
+    .toggle-thumb {
+      width: 18px; height: 18px; border-radius: 50%; background: #fff;
+      position: absolute; top: 2px; left: 2px; transition: left 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .toggle-track.on .toggle-thumb { left: 20px; }
+
+    /* ====================================================
+       OPTION A: Simple Settings Panels
+    ==================================================== */
+    .opt-a-layout { padding: 24px; max-width: 640px; margin: 0 auto; }
+    .opt-a-layout .card { margin-bottom: 16px; }
+
+    .live-banner {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;
+      padding: 14px 20px; margin-bottom: 20px;
+    }
+    .live-banner-text { font-size: 13px; font-weight: 600; color: #16a34a; display: flex; align-items: center; gap: 8px; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .color-swatches { display: flex; gap: 8px; }
+    .color-swatch {
+      width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+      border: 2px solid transparent; transition: all 0.15s;
+    }
+    .color-swatch.selected { border-color: #1e293b; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1e293b; }
+    .color-swatch:hover { transform: scale(1.1); }
+
+    /* Template selector */
+    .template-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .template-card {
+      border-radius: 10px; border: 2px solid #e2e8f0; overflow: hidden;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .template-card.selected { border-color: #334155; box-shadow: 0 0 0 2px rgba(51,65,85,0.15); }
+    .template-card:hover { border-color: #94a3b8; }
+    .template-preview {
+      height: 80px; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .template-name { padding: 8px 10px; font-size: 12px; font-weight: 600; color: #1e293b; text-align: center; border-top: 1px solid #f1f5f9; }
+
+    /* Service tags */
+    .service-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .service-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; font-weight: 500; color: #475569;
+      background: #f1f5f9; border-radius: 6px; padding: 5px 10px;
+    }
+    .service-tag-remove { color: #94a3b8; cursor: pointer; font-size: 14px; }
+    .service-tag-remove:hover { color: #ef4444; }
+
+    /* ====================================================
+       OPTION B: Live Preview + Side Panel
+    ==================================================== */
+    .opt-b-layout { display: grid; grid-template-columns: 360px 1fr; min-height: 620px; }
+    .opt-b-panel {
+      background: #fff; border-right: 1px solid #e2e8f0;
+      overflow-y: auto; padding: 20px;
+    }
+    .opt-b-preview { padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+
+    .panel-section { margin-bottom: 20px; }
+    .panel-section-title {
+      font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+      letter-spacing: 0.8px; margin-bottom: 10px;
+    }
+
+    /* Fake browser chrome */
+    .browser-frame {
+      width: 100%; max-width: 560px; border-radius: 10px; overflow: hidden;
+      border: 1px solid #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .browser-bar {
+      background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    }
+    .browser-dots { display: flex; gap: 5px; }
+    .browser-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .browser-url {
+      flex: 1; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;
+      padding: 4px 10px; font-size: 11px; color: #64748b; font-family: monospace;
+    }
+    .browser-content { background: #fff; min-height: 400px; }
+
+    /* Fake website inside preview */
+    .fake-site-hero {
+      padding: 32px 24px; text-align: center;
+    }
+    .fake-site-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .fake-site-tagline { font-size: 13px; color: #64748b; margin-bottom: 16px; }
+    .fake-site-cta {
+      display: inline-block; padding: 10px 24px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: #fff;
+    }
+    .fake-site-services {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+      padding: 0 24px 24px;
+    }
+    .fake-site-service {
+      background: #f8fafc; border-radius: 8px; padding: 12px;
+      font-size: 11px; font-weight: 600; color: #475569; text-align: center;
+    }
+
+    /* ====================================================
+       OPTION C: Section-Based Editor
+    ==================================================== */
+    .opt-c-layout { padding: 24px; }
+    .opt-c-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .opt-c-title { font-size: 18px; font-weight: 800; color: #1e293b; }
+
+    .section-list { display: flex; flex-direction: column; gap: 10px; max-width: 700px; margin: 0 auto; }
+    .section-row {
+      display: flex; align-items: center; gap: 12px; background: #fff;
+      border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px;
+      transition: all 0.15s;
+    }
+    .section-row:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .section-drag {
+      color: #cbd5e1; cursor: grab; font-size: 16px; flex-shrink: 0;
+    }
+    .section-icon {
+      width: 36px; height: 36px; border-radius: 8px; display: flex;
+      align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+    }
+    .section-info { flex: 1; }
+    .section-name { font-size: 14px; font-weight: 700; color: #1e293b; }
+    .section-desc { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+    .section-actions { display: flex; align-items: center; gap: 8px; }
+    .section-status {
+      font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px;
+    }
+
+    /* ====================================================
+       OPTION D: Tab-Based Dashboard
+    ==================================================== */
+    .opt-d-layout { padding: 24px; max-width: 800px; margin: 0 auto; }
+    .opt-d-tabs {
+      display: flex; gap: 2px; background: #f1f5f9; border-radius: 10px; padding: 3px;
+      margin-bottom: 20px;
+    }
+    .opt-d-tab {
+      flex: 1; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      text-align: center; cursor: pointer; color: #64748b; transition: all 0.15s;
+    }
+    .opt-d-tab.active { background: #fff; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .opt-d-tab:hover:not(.active) { color: #1e293b; }
+
+    .opt-d-content .card { margin-bottom: 16px; }
+
+    /* Photo grid */
+    .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .photo-thumb {
+      aspect-ratio: 1; border-radius: 8px; background: #f1f5f9;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: #cbd5e1; cursor: pointer; transition: all 0.15s;
+      border: 1px solid #e2e8f0;
+    }
+    .photo-thumb:hover { border-color: #94a3b8; background: #e2e8f0; }
+    .photo-add {
+      border: 2px dashed #e2e8f0; background: transparent;
+      font-size: 24px; color: #cbd5e1;
+    }
+    .photo-add:hover { border-color: #94a3b8; color: #94a3b8; }
+
+    /* Review cards */
+    .review-card { background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+    .review-stars { color: #f59e0b; font-size: 12px; margin-bottom: 4px; }
+    .review-text { font-size: 13px; color: #475569; line-height: 1.4; margin-bottom: 6px; }
+    .review-author { font-size: 11px; color: #94a3b8; font-weight: 600; }
+
+    /* Comparison table */
+    .compare-section { max-width: 900px; margin: 0 auto 60px; padding: 0 20px; }
+    .compare-title { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 24px; letter-spacing: -0.3px; }
+    .compare-table {
+      width: 100%; border-collapse: collapse; background: #fff;
+      border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;
+    }
+    .compare-table th {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+      color: #94a3b8; padding: 12px 14px; text-align: left; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+    }
+    .compare-table td { font-size: 13px; padding: 10px 14px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .star { color: #f59e0b; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>My Website — Dashboard Options</h1>
+    <p>What should roofers be able to customize about their free website? Four different approaches from simple to powerful.</p>
+  </div>
+
+  <!-- ====================================================
+       OPTION A: Simple Settings Panels
+  ==================================================== -->
+  <div class="option-wrapper">
+    <span class="option-tag" style="background: #eef6ff; color: #2563eb;">Option A</span>
+    <div class="option-title">Simple Settings Panels</div>
+    <div class="option-desc">
+      Stacked cards, one topic per card. The roofer scrolls through and edits what they want. No preview, no drag-and-drop — just clear, labeled fields. Like filling out a profile. Lowest complexity, easiest to build, hardest to mess up.
+    </div>
+
+    <div class="mockup-frame">
+      <div class="opt-a-layout">
+
+        <!-- Live status -->
+        <div class="live-banner">
+          <div class="live-banner-text"><span class="live-dot"></span> Your site is live</div>
+          <a href="#" style="font-size: 12px; font-weight: 600; color: #334155; text-decoration: none;">Visit site &rarr;</a>
+        </div>
+
+        <!-- Business Info -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Business Info</div>
+            <span class="card-badge" style="background: #f0fdf4; color: #16a34a;">Live</span>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Business Name</label>
+              <input class="form-input" value="Smith Roofing Co" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input class="form-input" value="(555) 234-5678" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tagline</label>
+              <input class="form-input" value="Dallas's Most Trusted Roofers Since 2019" />
+              <p class="form-hint">Shows below your business name in the hero section</p>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Service Area</label>
+              <input class="form-input" value="Dallas, Plano, Frisco, McKinney" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Design -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Design</div>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Template</label>
+              <div class="template-grid">
+                <div class="template-card selected">
+                  <div class="template-preview" style="background: linear-gradient(135deg, #f8fafc, #e2e8f0);">Preview</div>
+                  <div class="template-name">Modern Clean</div>
+                </div>
+                <div class="template-card">
+                  <div class="template-preview" style="background: linear-gradient(135deg, #1e293b, #334155);">
+                    <span style="color: #94a3b8;">Preview</span>
+                  </div>
+                  <div class="template-name">Bold & Confident</div>
+                </div>
+                <div class="template-card">
+                  <div class="template-preview" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">Preview</div>
+                  <div class="template-name">Warm & Trusty</div>
+                </div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Accent Color</label>
+              <div class="color-swatches">
+                <div class="color-swatch" style="background: #E8720C;" title="Orange"></div>
+                <div class="color-swatch selected" style="background: #1e3a5f;" title="Navy"></div>
+                <div class="color-swatch" style="background: #16a34a;" title="Green"></div>
+                <div class="color-swatch" style="background: #dc2626;" title="Red"></div>
+                <div class="color-swatch" style="background: #7c3aed;" title="Purple"></div>
+                <div class="color-swatch" style="background: #0891b2;" title="Teal"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Services -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Services</div>
+          </div>
+          <div class="card-body">
+            <div class="service-tags">
+              <span class="service-tag">Roof Replacement <span class="service-tag-remove">&times;</span></span>
+              <span class="service-tag">Roof Repair <span class="service-tag-remove">&times;</span></span>
+              <span class="service-tag">Inspections <span class="service-tag-remove">&times;</span></span>
+              <span class="service-tag">Gutters <span class="service-tag-remove">&times;</span></span>
+              <span class="service-tag">Emergency Tarping <span class="service-tag-remove">&times;</span></span>
+            </div>
+            <input class="form-input" placeholder="Add a service..." style="margin-top: 10px;" />
+          </div>
+        </div>
+
+        <!-- About -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">About</div>
+          </div>
+          <div class="card-body">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">About Your Business</label>
+              <textarea class="form-input form-textarea">Smith Roofing has been serving the Dallas-Fort Worth area since 2019. We specialize in residential roof replacement and repair, using only premium materials backed by manufacturer warranties.</textarea>
+              <p class="form-hint">This appears in the "About" section of your website</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px;">
+          <button class="btn btn-secondary">Discard Changes</button>
+          <button class="btn btn-primary">Save & Publish</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       OPTION B: Live Preview + Side Panel
+  ==================================================== -->
+  <div class="option-wrapper">
+    <span class="option-tag" style="background: #fef3c7; color: #b45309;">Option B</span>
+    <div class="option-title">Live Preview + Side Panel</div>
+    <div class="option-desc">
+      Edit on the left, see changes on the right in a real browser preview. The roofer types their tagline and watches it update live. Like Squarespace/Wix but way simpler. More complex to build but much more satisfying to use.
+    </div>
+
+    <div class="mockup-frame">
+      <div class="opt-b-layout">
+        <!-- Edit Panel -->
+        <div class="opt-b-panel">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <span style="font-size: 15px; font-weight: 800; color: #1e293b;">Edit Website</span>
+            <button class="btn btn-primary btn-sm">Publish</button>
+          </div>
+
+          <div class="panel-section">
+            <div class="panel-section-title">Business Info</div>
+            <div class="form-group">
+              <label class="form-label">Business Name</label>
+              <input class="form-input" value="Smith Roofing Co" style="font-size: 13px;" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tagline</label>
+              <input class="form-input" value="Dallas's Most Trusted Roofers" style="font-size: 13px;" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input class="form-input" value="(555) 234-5678" style="font-size: 13px;" />
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <div class="panel-section-title">Accent Color</div>
+            <div class="color-swatches">
+              <div class="color-swatch selected" style="background: #1e3a5f; width: 30px; height: 30px;"></div>
+              <div class="color-swatch" style="background: #E8720C; width: 30px; height: 30px;"></div>
+              <div class="color-swatch" style="background: #16a34a; width: 30px; height: 30px;"></div>
+              <div class="color-swatch" style="background: #dc2626; width: 30px; height: 30px;"></div>
+              <div class="color-swatch" style="background: #7c3aed; width: 30px; height: 30px;"></div>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <div class="panel-section-title">Services</div>
+            <div class="service-tags">
+              <span class="service-tag" style="font-size: 11px; padding: 4px 8px;">Roof Replacement <span class="service-tag-remove">&times;</span></span>
+              <span class="service-tag" style="font-size: 11px; padding: 4px 8px;">Repair <span class="service-tag-remove">&times;</span></span>
+              <span class="service-tag" style="font-size: 11px; padding: 4px 8px;">Inspections <span class="service-tag-remove">&times;</span></span>
+              <span class="service-tag" style="font-size: 11px; padding: 4px 8px;">Gutters <span class="service-tag-remove">&times;</span></span>
+            </div>
+            <input class="form-input" placeholder="Add service..." style="margin-top: 8px; font-size: 12px;" />
+          </div>
+
+          <div class="panel-section">
+            <div class="panel-section-title">About</div>
+            <textarea class="form-input form-textarea" style="font-size: 12px; min-height: 60px;">Smith Roofing has been serving the Dallas-Fort Worth area since 2019.</textarea>
+          </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="opt-b-preview">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; align-self: flex-start;">
+            <span style="font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px;">Live Preview</span>
+            <span style="font-size: 10px; font-weight: 600; color: #16a34a; background: #f0fdf4; padding: 2px 8px; border-radius: 4px;">Auto-updating</span>
+          </div>
+          <div class="browser-frame">
+            <div class="browser-bar">
+              <div class="browser-dots">
+                <span class="browser-dot" style="background: #fca5a5;"></span>
+                <span class="browser-dot" style="background: #fde68a;"></span>
+                <span class="browser-dot" style="background: #86efac;"></span>
+              </div>
+              <div class="browser-url">smith-roofing.ruufpro.com</div>
+            </div>
+            <div class="browser-content">
+              <div class="fake-site-hero" style="background: linear-gradient(135deg, #1e3a5f, #2d5a7b);">
+                <div class="fake-site-name" style="color: #fff;">Smith Roofing Co</div>
+                <div class="fake-site-tagline" style="color: rgba(255,255,255,0.7);">Dallas's Most Trusted Roofers</div>
+                <span class="fake-site-cta" style="background: #E8720C;">Get Free Estimate</span>
+              </div>
+              <div class="fake-site-services">
+                <div class="fake-site-service">Roof Replacement</div>
+                <div class="fake-site-service">Repair</div>
+                <div class="fake-site-service">Inspections</div>
+              </div>
+              <div style="padding: 0 24px 24px;">
+                <div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">About</div>
+                <div style="font-size: 11px; color: #64748b; line-height: 1.5;">Smith Roofing has been serving the Dallas-Fort Worth area since 2019.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       OPTION C: Section-Based Editor
+  ==================================================== -->
+  <div class="option-wrapper">
+    <span class="option-tag" style="background: #f3e8ff; color: #7c3aed;">Option C</span>
+    <div class="option-title">Section-Based Editor</div>
+    <div class="option-desc">
+      Each website section is a draggable row. Toggle sections on/off, reorder them, click to edit. Gives roofers control over their page structure without overwhelming them with a full page builder. Think Notion's block-based approach.
+    </div>
+
+    <div class="mockup-frame">
+      <div class="opt-c-layout">
+        <div class="opt-c-top">
+          <div>
+            <div class="opt-c-title">Website Sections</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Drag to reorder. Click to edit. Toggle to show/hide.</div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <a href="#" class="btn btn-secondary btn-sm">Preview Site &rarr;</a>
+            <button class="btn btn-primary btn-sm">Publish Changes</button>
+          </div>
+        </div>
+
+        <div class="section-list">
+          <div class="section-row">
+            <span class="section-drag">&#8942;&#8942;</span>
+            <div class="section-icon" style="background: #dbeafe; color: #2563eb;">&#127968;</div>
+            <div class="section-info">
+              <div class="section-name">Hero</div>
+              <div class="section-desc">Business name, tagline, CTA button, background image</div>
+            </div>
+            <div class="section-actions">
+              <span class="section-status" style="background: #f0fdf4; color: #16a34a;">Live</span>
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+
+          <div class="section-row">
+            <span class="section-drag">&#8942;&#8942;</span>
+            <div class="section-icon" style="background: #fef3c7; color: #b45309;">&#11088;</div>
+            <div class="section-info">
+              <div class="section-name">Social Proof</div>
+              <div class="section-desc">Trust badges — Licensed, Insured, years in business</div>
+            </div>
+            <div class="section-actions">
+              <span class="section-status" style="background: #f0fdf4; color: #16a34a;">Live</span>
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+
+          <div class="section-row">
+            <span class="section-drag">&#8942;&#8942;</span>
+            <div class="section-icon" style="background: #e0e7ff; color: #4f46e5;">&#128736;</div>
+            <div class="section-info">
+              <div class="section-name">Services</div>
+              <div class="section-desc">Grid of services you offer — 5 services listed</div>
+            </div>
+            <div class="section-actions">
+              <span class="section-status" style="background: #f0fdf4; color: #16a34a;">Live</span>
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+
+          <div class="section-row">
+            <span class="section-drag">&#8942;&#8942;</span>
+            <div class="section-icon" style="background: #dcfce7; color: #16a34a;">&#128200;</div>
+            <div class="section-info">
+              <div class="section-name">Estimate Widget</div>
+              <div class="section-desc">Instant estimate calculator — requires $99/mo plan</div>
+            </div>
+            <div class="section-actions">
+              <span class="section-status" style="background: #fef3c7; color: #b45309;">Paid</span>
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+
+          <div class="section-row">
+            <span class="section-drag">&#8942;&#8942;</span>
+            <div class="section-icon" style="background: #fce7f3; color: #db2777;">&#128100;</div>
+            <div class="section-info">
+              <div class="section-name">About</div>
+              <div class="section-desc">Your story, values, team photo</div>
+            </div>
+            <div class="section-actions">
+              <span class="section-status" style="background: #f0fdf4; color: #16a34a;">Live</span>
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+
+          <div class="section-row">
+            <span class="section-drag">&#8942;&#8942;</span>
+            <div class="section-icon" style="background: #f1f5f9; color: #64748b;">&#127775;</div>
+            <div class="section-info">
+              <div class="section-name">Reviews</div>
+              <div class="section-desc">Customer testimonials — 0 reviews added</div>
+            </div>
+            <div class="section-actions">
+              <span class="section-status" style="background: #fef2f2; color: #dc2626;">Empty</span>
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+
+          <div class="section-row">
+            <span class="section-drag">&#8942;&#8942;</span>
+            <div class="section-icon" style="background: #f1f5f9; color: #64748b;">&#128231;</div>
+            <div class="section-info">
+              <div class="section-name">Contact Form</div>
+              <div class="section-desc">Name, email, phone, message — sends to your dashboard</div>
+            </div>
+            <div class="section-actions">
+              <span class="section-status" style="background: #f0fdf4; color: #16a34a;">Live</span>
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+
+          <div class="section-row">
+            <span class="section-drag">&#8942;&#8942;</span>
+            <div class="section-icon" style="background: #f1f5f9; color: #64748b;">&#128907;</div>
+            <div class="section-info">
+              <div class="section-name">Footer</div>
+              <div class="section-desc">Business info, links, RuufPro attribution</div>
+            </div>
+            <div class="section-actions">
+              <span class="section-status" style="background: #f0fdf4; color: #16a34a;">Live</span>
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       OPTION D: Tab-Based Dashboard
+  ==================================================== -->
+  <div class="option-wrapper">
+    <span class="option-tag" style="background: #f0fdf4; color: #16a34a;">Option D</span>
+    <div class="option-title">Tab-Based Dashboard</div>
+    <div class="option-desc">
+      Content, Design, Photos, and Reviews as separate tabs. Each tab is a focused editor for one concern. Scales well as you add more features. Clean separation. Think WordPress admin but way simpler.
+    </div>
+
+    <div class="mockup-frame">
+      <div class="opt-d-layout">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <div>
+            <div style="font-size: 18px; font-weight: 800; color: #1e293b;">My Website</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">smith-roofing.ruufpro.com</div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <a href="#" class="btn btn-secondary btn-sm">View Live Site &rarr;</a>
+            <button class="btn btn-primary btn-sm">Save Changes</button>
+          </div>
+        </div>
+
+        <div class="opt-d-tabs">
+          <div class="opt-d-tab active">Content</div>
+          <div class="opt-d-tab">Design</div>
+          <div class="opt-d-tab">Photos</div>
+          <div class="opt-d-tab">Reviews</div>
+          <div class="opt-d-tab">SEO</div>
+        </div>
+
+        <div class="opt-d-content">
+          <!-- Content tab shown -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Hero Section</div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Headline</label>
+                <input class="form-input" value="Dallas's Most Trusted Roofers Since 2019" />
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">CTA Button Text</label>
+                <input class="form-input" value="Get Your Free Estimate" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Services</div>
+              <button class="btn btn-secondary btn-sm">+ Add Service</button>
+            </div>
+            <div class="card-body">
+              <div class="service-tags">
+                <span class="service-tag">Roof Replacement <span class="service-tag-remove">&times;</span></span>
+                <span class="service-tag">Roof Repair <span class="service-tag-remove">&times;</span></span>
+                <span class="service-tag">Inspections <span class="service-tag-remove">&times;</span></span>
+                <span class="service-tag">Gutters <span class="service-tag-remove">&times;</span></span>
+                <span class="service-tag">Emergency Tarping <span class="service-tag-remove">&times;</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">About</div>
+            </div>
+            <div class="card-body">
+              <textarea class="form-input form-textarea">Smith Roofing has been serving the Dallas-Fort Worth area since 2019. We specialize in residential roof replacement and repair, using only premium materials backed by manufacturer warranties.</textarea>
+            </div>
+          </div>
+
+          <!-- Photos preview -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Photos</div>
+              <span style="font-size: 11px; color: #94a3b8;">3 of 12 used</span>
+            </div>
+            <div class="card-body">
+              <div class="photo-grid">
+                <div class="photo-thumb">&#127968;</div>
+                <div class="photo-thumb">&#128247;</div>
+                <div class="photo-thumb">&#128736;</div>
+                <div class="photo-thumb photo-add">+</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reviews preview -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Reviews</div>
+              <button class="btn btn-secondary btn-sm">+ Add Review</button>
+            </div>
+            <div class="card-body">
+              <div class="review-card">
+                <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <div class="review-text">"Mike and his team replaced our entire roof in one day. Professional, clean, and the price was fair. Highly recommend!"</div>
+                <div class="review-author">— Sarah J., Dallas</div>
+              </div>
+              <div class="review-card">
+                <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <div class="review-text">"Best roofing experience we've ever had. They showed up on time and did incredible work."</div>
+                <div class="review-author">— David M., Plano</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       COMPARISON
+  ==================================================== -->
+  <div class="compare-section">
+    <div class="compare-title">Quick Comparison</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>A: Simple Panels</th>
+          <th>B: Live Preview</th>
+          <th>C: Section Editor</th>
+          <th>D: Tab-Based</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Build complexity</strong></td>
+          <td><span class="star">&#9733;</span> Lowest</td>
+          <td>Highest</td>
+          <td>Medium</td>
+          <td>Medium-Low</td>
+        </tr>
+        <tr>
+          <td><strong>User experience</strong></td>
+          <td>Good</td>
+          <td><span class="star">&#9733;</span> Best</td>
+          <td>Great</td>
+          <td>Good</td>
+        </tr>
+        <tr>
+          <td><strong>Mobile-friendly</strong></td>
+          <td><span class="star">&#9733;</span> Yes</td>
+          <td>Desktop only</td>
+          <td><span class="star">&#9733;</span> Yes</td>
+          <td><span class="star">&#9733;</span> Yes</td>
+        </tr>
+        <tr>
+          <td><strong>Customization power</strong></td>
+          <td>Basic</td>
+          <td>Medium</td>
+          <td><span class="star">&#9733;</span> Most</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><strong>Scales to future features</strong></td>
+          <td>Limited</td>
+          <td>Medium</td>
+          <td><span class="star">&#9733;</span> Best</td>
+          <td>Good</td>
+        </tr>
+        <tr>
+          <td><strong>Wow factor</strong></td>
+          <td>Low</td>
+          <td><span class="star">&#9733;</span> High</td>
+          <td>Medium-High</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><strong>Best analogy</strong></td>
+          <td>Profile settings</td>
+          <td>Squarespace</td>
+          <td>Notion blocks</td>
+          <td>WordPress admin</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Recommendation -->
+  <div class="option-wrapper" style="max-width: 700px;">
+    <div style="text-align: center; margin-bottom: 16px;">
+      <span class="option-tag" style="background: #f1f5f9; color: #64748b;">My Take</span>
+    </div>
+    <div style="font-size: 14px; color: #6e6e73; line-height: 1.7;">
+      <p style="margin-bottom: 12px;"><strong>Option C (Section Editor)</strong> is the strongest choice. It gives roofers real control (reorder, toggle, edit per-section) without the complexity of a live preview. It's mobile-friendly, scales as you add more section types, and the toggle/reorder pattern is instantly intuitive. It also naturally shows which sections are empty — nudging roofers to complete their site.</p>
+      <p style="margin-bottom: 12px;"><strong>Option A</strong> is the fastest to build and would work fine for launch — but it'll feel limited quickly. <strong>Option B</strong> is the dream UX but the preview panel is a significant engineering investment and doesn't work on mobile. <strong>Option D</strong> is clean but tabs fragment the experience — roofers want to see everything at once, not hunt through tabs.</p>
+      <p><strong>Hybrid idea:</strong> Start with <strong>C as the main view</strong> (section list with toggles + reorder), and when they click "Edit" on a section, open <strong>A-style form fields</strong> inline or in a slide-over panel. Best of both worlds — overview + focused editing.</p>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chalkboard Template — Font Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredericka+the+Great&family=Kalam:wght@400;700&family=Shadows+Into+Light+Two&family=Caveat:wght@400;700&family=Architects+Daughter&family=Patrick+Hand&family=Amatic+SC:wght@400;700&family=Permanent+Marker&family=Cabin+Sketch:wght@400;700&family=Rock+Salt&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&family=Nunito+Sans:wght@400;600;700&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a1a; color: #fff; padding: 40px 24px; }
+
+  .header { text-align: center; margin-bottom: 48px; }
+  .header h1 { font-family: 'Inter', sans-serif; font-size: 28px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+  .header p { font-family: 'Inter', sans-serif; font-size: 15px; color: #999; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+
+  .current-label {
+    display: inline-block; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #F6C453; background: rgba(246,196,83,0.12);
+    padding: 4px 10px; border-radius: 4px; margin-bottom: 32px;
+  }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 1200px; margin: 0 auto; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+  .option {
+    background: #2A2D2A;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #3a3d3a;
+    transition: border-color 0.3s;
+  }
+  .option:hover { border-color: #F6C453; }
+
+  .option-header {
+    padding: 16px 24px;
+    background: #232623;
+    border-bottom: 1px solid #3a3d3a;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .option-number {
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: #F6C453;
+  }
+  .font-names {
+    font-family: 'Inter', sans-serif; font-size: 11px; color: #888;
+    text-align: right; line-height: 1.4;
+  }
+
+  .option-body { padding: 32px 28px; }
+
+  .preview-hero { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 2px dashed #3a3d3a; }
+  .preview-hero h2 { font-size: 36px; color: #fff; margin-bottom: 8px; line-height: 1.15; }
+  .preview-hero .tagline { font-size: 17px; color: #b8b8b0; margin-bottom: 16px; line-height: 1.5; }
+  .preview-hero .btn {
+    display: inline-block; padding: 12px 28px; background: #F6C453; color: #2A2D2A;
+    border-radius: 6px; font-size: 16px; font-weight: 600; text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+
+  .preview-services { margin-bottom: 24px; }
+  .preview-services h3 { font-size: 24px; color: #F6C453; margin-bottom: 12px; }
+  .preview-services p { font-size: 15px; color: #b8b8b0; line-height: 1.6; }
+
+  .preview-card {
+    background: #323532; border-radius: 8px; padding: 20px;
+    border: 1px dashed #4a4d4a;
+  }
+  .preview-card h4 { font-size: 18px; color: #fff; margin-bottom: 6px; }
+  .preview-card p { font-size: 14px; color: #999; line-height: 1.5; }
+
+  .vibe {
+    margin-top: 16px; font-family: 'Inter', sans-serif; font-size: 12px;
+    color: #777; font-style: italic; text-align: center; padding-top: 16px;
+    border-top: 1px solid #3a3d3a;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Chalkboard Template — Font Exploration</h1>
+  <p>Same dark green-gray palette + yellow chalk accent. Each option shows a different display + body font combo. Looking for the right balance: character without sloppiness, contrast without chaos.</p>
+</div>
+
+<div style="text-align:center;">
+  <span class="current-label">Current: Fredericka the Great + Kalam</span>
+</div>
+
+<div class="grid">
+
+  <!-- Option A: Cabin Sketch + DM Sans -->
+  <div class="option">
+    <div class="option-header">
+      <span class="option-number">Option A</span>
+      <span class="font-names">Cabin Sketch (display)<br>DM Sans (body)</span>
+    </div>
+    <div class="option-body">
+      <div class="preview-hero">
+        <h2 style="font-family: 'Cabin Sketch', cursive; font-weight: 700;">Your Roof. Our Craft.</h2>
+        <p class="tagline" style="font-family: 'DM Sans', sans-serif;">Trusted roofing for Austin homeowners — licensed, insured, and built to last.</p>
+        <span class="btn" style="font-family: 'Cabin Sketch', cursive;">Get Free Estimate</span>
+      </div>
+      <div class="preview-services">
+        <h3 style="font-family: 'Cabin Sketch', cursive; font-weight: 700;">Our Services</h3>
+        <p style="font-family: 'DM Sans', sans-serif;">From storm damage repair to full tear-offs, we handle every roof in Central Texas with the same care we'd give our own home.</p>
+      </div>
+      <div class="preview-card">
+        <h4 style="font-family: 'Cabin Sketch', cursive; font-weight: 700;">Roof Replacement</h4>
+        <p style="font-family: 'DM Sans', sans-serif;">Complete tear-off and installation with GAF-certified shingles. 25-year workmanship warranty included.</p>
+      </div>
+      <p class="vibe">Sketchy character + clean readability. The "drawn" look without handwriting body text.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Permanent Marker + Inter -->
+  <div class="option">
+    <div class="option-header">
+      <span class="option-number">Option B</span>
+      <span class="font-names">Permanent Marker (display)<br>Inter (body)</span>
+    </div>
+    <div class="option-body">
+      <div class="preview-hero">
+        <h2 style="font-family: 'Permanent Marker', cursive;">Your Roof. Our Craft.</h2>
+        <p class="tagline" style="font-family: 'Inter', sans-serif;">Trusted roofing for Austin homeowners — licensed, insured, and built to last.</p>
+        <span class="btn" style="font-family: 'Permanent Marker', cursive;">Get Free Estimate</span>
+      </div>
+      <div class="preview-services">
+        <h3 style="font-family: 'Permanent Marker', cursive;">Our Services</h3>
+        <p style="font-family: 'Inter', sans-serif;">From storm damage repair to full tear-offs, we handle every roof in Central Texas with the same care we'd give our own home.</p>
+      </div>
+      <div class="preview-card">
+        <h4 style="font-family: 'Permanent Marker', cursive;">Roof Replacement</h4>
+        <p style="font-family: 'Inter', sans-serif;">Complete tear-off and installation with GAF-certified shingles. 25-year workmanship warranty included.</p>
+      </div>
+      <p class="vibe">Bold, confident marker strokes. No-nonsense energy — feels like a contractor actually wrote it.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Amatic SC + Work Sans -->
+  <div class="option">
+    <div class="option-header">
+      <span class="option-number">Option C</span>
+      <span class="font-names">Amatic SC (display)<br>Work Sans (body)</span>
+    </div>
+    <div class="option-body">
+      <div class="preview-hero">
+        <h2 style="font-family: 'Amatic SC', cursive; font-weight: 700; font-size: 42px; letter-spacing: 0.02em;">Your Roof. Our Craft.</h2>
+        <p class="tagline" style="font-family: 'Work Sans', sans-serif;">Trusted roofing for Austin homeowners — licensed, insured, and built to last.</p>
+        <span class="btn" style="font-family: 'Amatic SC', cursive; font-weight: 700; font-size: 18px; letter-spacing: 0.03em;">Get Free Estimate</span>
+      </div>
+      <div class="preview-services">
+        <h3 style="font-family: 'Amatic SC', cursive; font-weight: 700; font-size: 30px; letter-spacing: 0.02em;">Our Services</h3>
+        <p style="font-family: 'Work Sans', sans-serif;">From storm damage repair to full tear-offs, we handle every roof in Central Texas with the same care we'd give our own home.</p>
+      </div>
+      <div class="preview-card">
+        <h4 style="font-family: 'Amatic SC', cursive; font-weight: 700; font-size: 22px;">Roof Replacement</h4>
+        <p style="font-family: 'Work Sans', sans-serif;">Complete tear-off and installation with GAF-certified shingles. 25-year workmanship warranty included.</p>
+      </div>
+      <p class="vibe">Tall, narrow chalk letters. Quirky and approachable — more "local shop sign" than handwriting.</p>
+    </div>
+  </div>
+
+  <!-- Option D: Shadows Into Light Two + Source Sans 3 -->
+  <div class="option">
+    <div class="option-header">
+      <span class="option-number">Option D</span>
+      <span class="font-names">Shadows Into Light Two (display)<br>Source Sans 3 (body)</span>
+    </div>
+    <div class="option-body">
+      <div class="preview-hero">
+        <h2 style="font-family: 'Shadows Into Light Two', cursive; font-size: 38px;">Your Roof. Our Craft.</h2>
+        <p class="tagline" style="font-family: 'Source Sans 3', sans-serif;">Trusted roofing for Austin homeowners — licensed, insured, and built to last.</p>
+        <span class="btn" style="font-family: 'Shadows Into Light Two', cursive; font-size: 17px;">Get Free Estimate</span>
+      </div>
+      <div class="preview-services">
+        <h3 style="font-family: 'Shadows Into Light Two', cursive; font-size: 26px;">Our Services</h3>
+        <p style="font-family: 'Source Sans 3', sans-serif;">From storm damage repair to full tear-offs, we handle every roof in Central Texas with the same care we'd give our own home.</p>
+      </div>
+      <div class="preview-card">
+        <h4 style="font-family: 'Shadows Into Light Two', cursive; font-size: 20px;">Roof Replacement</h4>
+        <p style="font-family: 'Source Sans 3', sans-serif;">Complete tear-off and installation with GAF-certified shingles. 25-year workmanship warranty included.</p>
+      </div>
+      <p class="vibe">Relaxed and personal. Like someone wrote it with a nice pen — legible but warm.</p>
+    </div>
+  </div>
+
+  <!-- Option E: Patrick Hand + Lexend -->
+  <div class="option">
+    <div class="option-header">
+      <span class="option-number">Option E</span>
+      <span class="font-names">Patrick Hand (display)<br>Lexend (body)</span>
+    </div>
+    <div class="option-body">
+      <div class="preview-hero">
+        <h2 style="font-family: 'Patrick Hand', cursive; font-size: 38px;">Your Roof. Our Craft.</h2>
+        <p class="tagline" style="font-family: 'Lexend', sans-serif;">Trusted roofing for Austin homeowners — licensed, insured, and built to last.</p>
+        <span class="btn" style="font-family: 'Patrick Hand', cursive; font-size: 17px;">Get Free Estimate</span>
+      </div>
+      <div class="preview-services">
+        <h3 style="font-family: 'Patrick Hand', cursive; font-size: 26px;">Our Services</h3>
+        <p style="font-family: 'Lexend', sans-serif;">From storm damage repair to full tear-offs, we handle every roof in Central Texas with the same care we'd give our own home.</p>
+      </div>
+      <div class="preview-card">
+        <h4 style="font-family: 'Patrick Hand', cursive; font-size: 20px;">Roof Replacement</h4>
+        <p style="font-family: 'Lexend', sans-serif;">Complete tear-off and installation with GAF-certified shingles. 25-year workmanship warranty included.</p>
+      </div>
+      <p class="vibe">Friendly and neat handwriting. Approachable without being messy. Lexend body is ultra-readable.</p>
+    </div>
+  </div>
+
+  <!-- Option F: Rock Salt + Nunito Sans -->
+  <div class="option">
+    <div class="option-header">
+      <span class="option-number">Option F</span>
+      <span class="font-names">Rock Salt (display)<br>Nunito Sans (body)</span>
+    </div>
+    <div class="option-body">
+      <div class="preview-hero">
+        <h2 style="font-family: 'Rock Salt', cursive; font-size: 28px; line-height: 1.3;">Your Roof. Our Craft.</h2>
+        <p class="tagline" style="font-family: 'Nunito Sans', sans-serif;">Trusted roofing for Austin homeowners — licensed, insured, and built to last.</p>
+        <span class="btn" style="font-family: 'Rock Salt', cursive; font-size: 14px;">Get Free Estimate</span>
+      </div>
+      <div class="preview-services">
+        <h3 style="font-family: 'Rock Salt', cursive; font-size: 22px;">Our Services</h3>
+        <p style="font-family: 'Nunito Sans', sans-serif;">From storm damage repair to full tear-offs, we handle every roof in Central Texas with the same care we'd give our own home.</p>
+      </div>
+      <div class="preview-card">
+        <h4 style="font-family: 'Rock Salt', cursive; font-size: 16px;">Roof Replacement</h4>
+        <p style="font-family: 'Nunito Sans', sans-serif;">Complete tear-off and installation with GAF-certified shingles. 25-year workmanship warranty included.</p>
+      </div>
+      <p class="vibe">Raw and scratchy — true chalk energy. Reads smaller, so best for short headlines. Most "chalkboard" of all options.</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align: center; margin-top: 48px; padding: 24px; max-width: 700px; margin-left: auto; margin-right: auto;">
+  <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #777; line-height: 1.7;">
+    <strong style="color: #F6C453;">Key pattern:</strong> Every option pairs a character display font (headlines, buttons) with a clean sans-serif body font (paragraphs, descriptions). This keeps the chalkboard personality in the headlines while making the actual content easy to read — the main issue with the current Fredericka + Kalam combo.
+  </p>
+</div>
+
+</body>
+</html>

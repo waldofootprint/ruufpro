@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Final Direction — RuufPro</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #eeeef0;
+      color: #1a1a1a;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ========== PAGE HEADER ========== */
+    .page-header {
+      text-align: center;
+      padding: 48px 20px 20px;
+    }
+    .page-header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .page-header p { color: #6e6e73; font-size: 15px; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+
+    .section-divider {
+      max-width: 1200px;
+      margin: 48px auto 32px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #d4d4d8;
+    }
+    .section-divider-text {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #86868b;
+      white-space: nowrap;
+    }
+
+    .mockup-wrapper {
+      max-width: 1200px;
+      margin: 0 auto 24px;
+      padding: 0 20px;
+    }
+    .mockup-desc {
+      font-size: 13px;
+      color: #6e6e73;
+      line-height: 1.6;
+      max-width: 700px;
+      margin-bottom: 20px;
+    }
+    .mockup-frame {
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
+    /* ========== NEUTRAL COLOR SYSTEM ========== */
+    :root {
+      --bg-page: #f4f4f5;
+      --bg-card: #ffffff;
+      --bg-sidebar: #18181b;
+      --bg-hover: #f9f9fa;
+      --bg-muted: #f4f4f5;
+      --text-primary: #18181b;
+      --text-secondary: #52525b;
+      --text-tertiary: #a1a1aa;
+      --border: #e4e4e7;
+      --border-light: #f0f0f2;
+      --accent-hot: #ef4444;
+      --accent-warm: #f59e0b;
+      --accent-ok: #22c55e;
+      --accent-info: #6366f1;
+      --accent-neutral: #71717a;
+    }
+
+    /* ====================================================
+       DESKTOP — COMMAND CENTER (Bento Grid)
+    ==================================================== */
+    .desk-shell {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: 760px;
+      background: var(--bg-page);
+    }
+
+    /* Sidebar */
+    .desk-sidebar {
+      background: var(--bg-sidebar);
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .desk-logo { padding: 0 18px; margin-bottom: 28px; }
+    .desk-logo-text { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+    .desk-logo-sub { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .desk-nav { list-style: none; }
+    .desk-nav li {
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.45);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 2px solid transparent;
+    }
+    .desk-nav li:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.04); }
+    .desk-nav li.active {
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border-left-color: #fff;
+    }
+    .desk-nav-badge {
+      margin-left: auto;
+      background: var(--accent-hot);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+    .desk-sidebar-footer {
+      margin-top: auto;
+      padding: 14px 18px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .desk-sidebar-footer p { font-size: 11px; color: rgba(255,255,255,0.25); }
+
+    /* Main */
+    .desk-main { padding: 24px 28px; overflow-y: auto; }
+    .desk-greeting { margin-bottom: 20px; }
+    .desk-greeting h1 { font-size: 20px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px; }
+    .desk-greeting p { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; }
+
+    /* Bento grid */
+    .desk-bento {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 14px;
+    }
+    .desk-card {
+      background: var(--bg-card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 18px;
+    }
+    .desk-card-lg { grid-column: span 2; }
+    .desk-card-full { grid-column: span 3; }
+
+    /* Stat cards */
+    .desk-stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .desk-stat-value { font-size: 28px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; line-height: 1.1; }
+    .desk-stat-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 3px; }
+    .desk-stat-up { color: var(--accent-ok); font-size: 12px; font-weight: 600; margin-top: 3px; }
+
+    /* Lead rows */
+    .desk-lead-row {
+      display: grid;
+      grid-template-columns: 8px 1fr auto auto auto;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .desk-lead-row:last-child { border-bottom: none; }
+    .desk-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .desk-dot-hot { background: var(--accent-hot); box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    .desk-dot-warm { background: var(--accent-warm); }
+    .desk-dot-ok { background: var(--accent-ok); }
+    .desk-dot-neutral { background: var(--accent-neutral); }
+    .desk-lead-info {}
+    .desk-lead-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .desk-lead-detail { font-size: 12px; color: var(--text-tertiary); }
+    .desk-lead-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .tag-hot { background: #fef2f2; color: var(--accent-hot); }
+    .tag-warm { background: #fffbeb; color: #b45309; }
+    .tag-browsing { background: var(--bg-muted); color: var(--text-tertiary); }
+    .desk-lead-estimate { font-size: 13px; font-weight: 700; color: var(--text-primary); text-align: right; }
+    .desk-lead-time { font-size: 11px; color: var(--text-tertiary); text-align: right; white-space: nowrap; }
+    .desk-lead-call {
+      font-size: 11px; font-weight: 600; color: var(--text-primary);
+      background: var(--bg-muted); border: 1px solid var(--border);
+      padding: 5px 12px; border-radius: 8px; cursor: pointer;
+      font-family: inherit; transition: all 0.15s; white-space: nowrap;
+    }
+    .desk-lead-call:hover { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
+
+    .desk-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .desk-section-title { font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .desk-section-link { font-size: 12px; font-weight: 600; color: var(--text-tertiary); cursor: pointer; }
+    .desk-section-link:hover { color: var(--text-primary); }
+
+    /* Speed badge */
+    .speed-badge-desk {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-ok);
+      background: #f0fdf4;
+      border-radius: 6px;
+      padding: 4px 10px;
+    }
+
+    /* Roof Intel preview */
+    .intel-preview {
+      background: var(--bg-muted);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 10px;
+    }
+    .intel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .intel-item {}
+    .intel-item-label { font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+    .intel-item-value { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-top: 2px; }
+    .intel-disclaimer {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      line-height: 1.4;
+    }
+
+    /* Revenue card */
+    .desk-revenue { font-size: 32px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+
+    /* ====================================================
+       MOBILE — SPEED DIAL
+    ==================================================== */
+    .mob-shell {
+      max-width: 390px;
+      margin: 0 auto;
+      background: var(--bg-page);
+      min-height: 844px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    /* Status bar fake */
+    .mob-statusbar {
+      background: var(--bg-card);
+      padding: 8px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Top bar */
+    .mob-topbar {
+      padding: 12px 20px 14px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+    }
+    .mob-topbar-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mob-topbar-title { font-size: 24px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+    .mob-topbar-avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: var(--text-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff;
+    }
+    .mob-topbar-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+
+    /* Alert banner */
+    .mob-alert {
+      background: var(--text-primary);
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mob-alert-left { display: flex; align-items: center; gap: 10px; }
+    .mob-alert-dot {
+      width: 10px; height: 10px; border-radius: 50%; background: var(--accent-hot);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.3);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(239,68,68,0.3); }
+      50% { box-shadow: 0 0 0 6px rgba(239,68,68,0.15); }
+    }
+    .mob-alert-text { font-size: 14px; font-weight: 700; }
+    .mob-alert-sub { font-size: 11px; opacity: 0.6; }
+    .mob-alert-arrow { font-size: 16px; opacity: 0.4; }
+
+    /* Content */
+    .mob-content {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      padding-bottom: 72px;
+    }
+
+    /* Stats strip */
+    .mob-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .mob-stat-card {
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid var(--border);
+    }
+    .mob-stat-num { font-size: 24px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px; }
+    .mob-stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+    .mob-stat-sub { font-size: 11px; color: var(--accent-ok); font-weight: 600; margin-top: 2px; }
+
+    /* Section labels */
+    .mob-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-tertiary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mob-section-count {
+      background: var(--accent-hot);
+      color: #fff;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+
+    /* Lead cards — big, tappable */
+    .mob-lead-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+    }
+    .mob-lead-card.new-hot {
+      border-left: 4px solid var(--accent-hot);
+    }
+    .mob-lead-card.new-warm {
+      border-left: 4px solid var(--accent-warm);
+    }
+    .mob-lead-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+    .mob-lead-name { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .mob-lead-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .mob-lead-details {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+    .mob-lead-estimate {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+      letter-spacing: -0.3px;
+    }
+
+    /* Big call button */
+    .mob-call-btn {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--text-primary);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-height: 52px;
+    }
+    .mob-call-btn:active { transform: scale(0.97); opacity: 0.9; }
+    .mob-call-sub {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    /* Roof Intel expandable */
+    .mob-intel {
+      background: var(--bg-muted);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .mob-intel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .mob-intel-title { font-size: 12px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .mob-intel-toggle { font-size: 12px; color: var(--text-tertiary); }
+    .mob-intel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .mob-intel-item-label { font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px; }
+    .mob-intel-item-value { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-top: 1px; }
+    .mob-intel-disclaimer {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      margin-top: 10px;
+      line-height: 1.4;
+      font-style: italic;
+    }
+
+    /* Contacted cards */
+    .mob-contacted-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mob-contacted-left {}
+    .mob-contacted-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .mob-contacted-detail { font-size: 12px; color: var(--text-tertiary); }
+    .mob-contacted-right { text-align: right; }
+    .mob-contacted-estimate { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .mob-contacted-speed {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent-ok);
+      margin-top: 2px;
+    }
+
+    /* Bottom tab bar */
+    .mob-tabs {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 6px 0 16px;
+    }
+    .mob-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      position: relative;
+    }
+    .mob-tab.active { color: var(--text-primary); }
+    .mob-tab-icon { font-size: 20px; }
+    .mob-tab-badge {
+      position: absolute;
+      top: -2px;
+      right: calc(50% - 18px);
+      background: var(--accent-hot);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 8px;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    /* ====================================================
+       FEATURE CALLOUTS
+    ==================================================== */
+    .features-section {
+      max-width: 900px;
+      margin: 0 auto 60px;
+      padding: 0 20px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .feature-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #e4e4e7;
+      padding: 20px;
+    }
+    .feature-card-icon { font-size: 24px; margin-bottom: 10px; }
+    .feature-card-title { font-size: 14px; font-weight: 700; color: #18181b; margin-bottom: 4px; }
+    .feature-card-desc { font-size: 13px; color: #6e6e73; line-height: 1.5; }
+    .feature-card-note { font-size: 11px; color: #a1a1aa; margin-top: 8px; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>Dashboard — Final Direction</h1>
+    <p>Command Center on desktop, Speed Dial on mobile. Neutral colors. Every feature included at $99/mo. Free website is the lead magnet.</p>
+  </div>
+
+  <!-- ====================================================
+       DESKTOP VIEW
+  ==================================================== -->
+  <div class="section-divider">
+    <span class="section-divider-text">Desktop View — Command Center</span>
+  </div>
+
+  <div class="mockup-wrapper">
+    <div class="mockup-desc">
+      Bento grid layout. The roofer sits down at the kitchen table after dinner and sees their entire business at a glance — new leads with priority tags, response speed, revenue, and instant roof intel on every lead.
+    </div>
+    <div class="mockup-frame">
+      <div class="desk-shell">
+        <div class="desk-sidebar">
+          <div class="desk-logo">
+            <div class="desk-logo-text">RuufPro</div>
+            <div class="desk-logo-sub">Smith Roofing Co</div>
+          </div>
+          <ul class="desk-nav">
+            <li class="active">
+              &#9711;&nbsp; Dashboard
+            </li>
+            <li>
+              &#9993;&nbsp; Leads
+              <span class="desk-nav-badge">2</span>
+            </li>
+            <li>&#9881;&nbsp; Widget Settings</li>
+            <li>&#127760;&nbsp; My Website</li>
+            <li>&#128276;&nbsp; Notifications</li>
+            <li>&#9783;&nbsp; Settings</li>
+          </ul>
+          <div class="desk-sidebar-footer">
+            <p>&#128994; Notifications on</p>
+          </div>
+        </div>
+
+        <div class="desk-main">
+          <div class="desk-greeting">
+            <h1>Good evening, Mike</h1>
+            <p>Tuesday, March 29 &middot; 2 new leads waiting</p>
+          </div>
+
+          <div class="desk-bento">
+            <!-- Row 1: Stats -->
+            <div class="desk-card">
+              <div class="desk-stat-label">New Leads</div>
+              <div class="desk-stat-value">2</div>
+              <div class="desk-stat-up">&#9650; 1 more than last week</div>
+            </div>
+            <div class="desk-card">
+              <div class="desk-stat-label">Avg Response</div>
+              <div class="desk-stat-value">4m</div>
+              <div class="desk-stat-sub">You're faster than 90% of roofers</div>
+              <div class="speed-badge-desk" style="margin-top: 8px;">&#9889; Top 10%</div>
+            </div>
+            <div class="desk-card">
+              <div class="desk-stat-label">Revenue (Won)</div>
+              <div class="desk-revenue">$47,200</div>
+              <div class="desk-stat-sub">6 closed jobs through RuufPro</div>
+            </div>
+
+            <!-- Row 2: Leads (large) -->
+            <div class="desk-card desk-card-lg">
+              <div class="desk-section-header">
+                <div class="desk-section-title">Recent Leads</div>
+                <div class="desk-section-link">View all &rarr;</div>
+              </div>
+
+              <!-- Lead 1 — Hot -->
+              <div class="desk-lead-row">
+                <div class="desk-dot desk-dot-hot"></div>
+                <div class="desk-lead-info">
+                  <div class="desk-lead-name">John Smith</div>
+                  <div class="desk-lead-detail">2,400 sqft &middot; Asphalt &middot; 123 Oak Ln, Dallas</div>
+                </div>
+                <span class="desk-lead-tag tag-hot">Hot</span>
+                <div class="desk-lead-estimate">$9,800 - $14,200</div>
+                <div class="desk-lead-time">3m ago</div>
+              </div>
+
+              <!-- Lead 2 — Warm -->
+              <div class="desk-lead-row">
+                <div class="desk-dot desk-dot-warm"></div>
+                <div class="desk-lead-info">
+                  <div class="desk-lead-name">Sarah Johnson</div>
+                  <div class="desk-lead-detail">1,800 sqft &middot; Metal &middot; 456 Pine Dr, Plano</div>
+                </div>
+                <span class="desk-lead-tag tag-warm">Warm</span>
+                <div class="desk-lead-estimate">$14,500 - $19,800</div>
+                <div class="desk-lead-time">1h ago</div>
+              </div>
+
+              <!-- Lead 3 — Contacted -->
+              <div class="desk-lead-row">
+                <div class="desk-dot desk-dot-ok"></div>
+                <div class="desk-lead-info">
+                  <div class="desk-lead-name">David Martinez</div>
+                  <div class="desk-lead-detail">3,100 sqft &middot; Tile &middot; 789 Elm St, Fort Worth</div>
+                </div>
+                <span class="speed-badge-desk">&#9889; 4m</span>
+                <div class="desk-lead-estimate">$28,200 - $38,400</div>
+                <div class="desk-lead-time">Yesterday</div>
+              </div>
+
+              <!-- Lead 4 — Won -->
+              <div class="desk-lead-row">
+                <div class="desk-dot desk-dot-ok"></div>
+                <div class="desk-lead-info">
+                  <div class="desk-lead-name">Lisa Thompson</div>
+                  <div class="desk-lead-detail">2,200 sqft &middot; Asphalt &middot; 321 Maple Ave, Arlington</div>
+                </div>
+                <span class="desk-lead-tag" style="background: #f0fdf4; color: #16a34a;">Won</span>
+                <div class="desk-lead-estimate" style="color: var(--accent-ok);">$11,200</div>
+                <div class="desk-lead-time">Last week</div>
+              </div>
+            </div>
+
+            <!-- Roof Intel panel -->
+            <div class="desk-card">
+              <div class="desk-stat-label">Roof Intel — John Smith</div>
+              <div class="intel-preview">
+                <div class="intel-grid">
+                  <div class="intel-item">
+                    <div class="intel-item-label">Total Area</div>
+                    <div class="intel-item-value">2,400 sqft</div>
+                  </div>
+                  <div class="intel-item">
+                    <div class="intel-item-label">Pitch</div>
+                    <div class="intel-item-value">6/12</div>
+                  </div>
+                  <div class="intel-item">
+                    <div class="intel-item-label">Facets</div>
+                    <div class="intel-item-value">8 segments</div>
+                  </div>
+                  <div class="intel-item">
+                    <div class="intel-item-label">Complexity</div>
+                    <div class="intel-item-value">Medium</div>
+                  </div>
+                  <div class="intel-item">
+                    <div class="intel-item-label">Est. Bundles</div>
+                    <div class="intel-item-value">~45</div>
+                  </div>
+                  <div class="intel-item">
+                    <div class="intel-item-label">Ridge Cap</div>
+                    <div class="intel-item-value">~84 LF</div>
+                  </div>
+                  <div class="intel-item">
+                    <div class="intel-item-label">Waste Factor</div>
+                    <div class="intel-item-value">12%</div>
+                  </div>
+                  <div class="intel-item">
+                    <div class="intel-item-label">Source</div>
+                    <div class="intel-item-value">Satellite</div>
+                  </div>
+                </div>
+                <div class="intel-disclaimer">
+                  Satellite-estimated. Verify with professional measurement before ordering materials.
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick actions row -->
+            <div class="desk-card desk-card-full" style="padding: 14px 18px;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                  <div>
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px;">Pipeline Value</span>
+                    <span style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-left: 8px;">$91,500</span>
+                  </div>
+                  <div style="width: 1px; height: 24px; background: var(--border);"></div>
+                  <div>
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px;">Close Rate</span>
+                    <span style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-left: 8px;">67%</span>
+                  </div>
+                  <div style="width: 1px; height: 24px; background: var(--border);"></div>
+                  <div>
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px;">Widget Views</span>
+                    <span style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-left: 8px;">14 this week</span>
+                  </div>
+                </div>
+                <button class="desk-lead-call" style="padding: 8px 16px;">Share Widget Link</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       MOBILE VIEW
+  ==================================================== -->
+  <div class="section-divider">
+    <span class="section-divider-text">Mobile View — Speed Dial</span>
+  </div>
+
+  <div class="mockup-wrapper" style="max-width: 430px; margin-left: auto; margin-right: auto;">
+    <div class="mockup-desc">
+      Notification buzzes. Roofer climbs down, pulls off a glove, taps phone. Giant call button, hot/warm tags, roof intel expandable under each lead. 5 seconds to callback.
+    </div>
+    <div class="mockup-frame">
+      <div class="mob-shell">
+        <div class="mob-statusbar">
+          <span>9:41</span>
+          <span>&#128267; &#128246;</span>
+        </div>
+
+        <div class="mob-topbar">
+          <div class="mob-topbar-row">
+            <div>
+              <div class="mob-topbar-title">Leads</div>
+              <div class="mob-topbar-sub">Smith Roofing Co</div>
+            </div>
+            <div class="mob-topbar-avatar">MS</div>
+          </div>
+        </div>
+
+        <!-- Alert banner -->
+        <div class="mob-alert">
+          <div class="mob-alert-left">
+            <div class="mob-alert-dot"></div>
+            <div>
+              <div class="mob-alert-text">2 New Leads</div>
+              <div class="mob-alert-sub">1 hot &middot; 1 warm</div>
+            </div>
+          </div>
+          <div class="mob-alert-arrow">&#8595;</div>
+        </div>
+
+        <div class="mob-content">
+          <!-- Stats -->
+          <div class="mob-stats">
+            <div class="mob-stat-card">
+              <div class="mob-stat-num">$47.2K</div>
+              <div class="mob-stat-label">Won Revenue</div>
+              <div class="mob-stat-sub">&#9650; $11.2K this month</div>
+            </div>
+            <div class="mob-stat-card">
+              <div class="mob-stat-num">4 min</div>
+              <div class="mob-stat-label">Avg Response</div>
+              <div class="mob-stat-sub">&#9889; Top 10% of roofers</div>
+            </div>
+          </div>
+
+          <!-- New leads -->
+          <div class="mob-section-label">
+            New — Action Needed
+            <span class="mob-section-count">2</span>
+          </div>
+
+          <!-- Lead 1 — Hot -->
+          <div class="mob-lead-card new-hot">
+            <div class="mob-lead-top">
+              <div class="mob-lead-name">John Smith</div>
+              <span class="mob-lead-tag tag-hot">Hot &middot; ASAP</span>
+            </div>
+            <div class="mob-lead-details">
+              2,400 sqft &middot; Asphalt shingles &middot; Financing interested
+            </div>
+            <div class="mob-lead-estimate">$9,800 - $14,200</div>
+
+            <button class="mob-call-btn">
+              &#128222;&nbsp; Call John — (555) 234-5678
+            </button>
+            <div class="mob-call-sub">Tapping calls John and marks as Contacted</div>
+
+            <!-- Roof Intel expandable -->
+            <div class="mob-intel">
+              <div class="mob-intel-header">
+                <div class="mob-intel-title">&#128225; Roof Intel</div>
+                <div class="mob-intel-toggle">&#9660;</div>
+              </div>
+              <div class="mob-intel-grid">
+                <div>
+                  <div class="mob-intel-item-label">Total Area</div>
+                  <div class="mob-intel-item-value">2,400 sqft</div>
+                </div>
+                <div>
+                  <div class="mob-intel-item-label">Pitch</div>
+                  <div class="mob-intel-item-value">6/12</div>
+                </div>
+                <div>
+                  <div class="mob-intel-item-label">~Bundles</div>
+                  <div class="mob-intel-item-value">~45</div>
+                </div>
+                <div>
+                  <div class="mob-intel-item-label">Complexity</div>
+                  <div class="mob-intel-item-value">Medium</div>
+                </div>
+                <div>
+                  <div class="mob-intel-item-label">Ridge Cap</div>
+                  <div class="mob-intel-item-value">~84 LF</div>
+                </div>
+                <div>
+                  <div class="mob-intel-item-label">Waste</div>
+                  <div class="mob-intel-item-value">12%</div>
+                </div>
+              </div>
+              <div class="mob-intel-disclaimer">
+                Satellite-estimated. Verify before ordering materials.
+              </div>
+            </div>
+          </div>
+
+          <!-- Lead 2 — Warm -->
+          <div class="mob-lead-card new-warm">
+            <div class="mob-lead-top">
+              <div class="mob-lead-name">Sarah Johnson</div>
+              <span class="mob-lead-tag tag-warm">Warm &middot; 1-3mo</span>
+            </div>
+            <div class="mob-lead-details">
+              1,800 sqft &middot; Metal standing seam &middot; No financing
+            </div>
+            <div class="mob-lead-estimate">$14,500 - $19,800</div>
+
+            <button class="mob-call-btn">
+              &#128222;&nbsp; Call Sarah — (555) 876-1234
+            </button>
+            <div class="mob-call-sub">Tapping calls Sarah and marks as Contacted</div>
+          </div>
+
+          <!-- Contacted section -->
+          <div class="mob-section-label" style="margin-top: 20px;">
+            Contacted
+          </div>
+
+          <div class="mob-contacted-card">
+            <div class="mob-contacted-left">
+              <div class="mob-contacted-name">David Martinez</div>
+              <div class="mob-contacted-detail">3,100 sqft &middot; Tile &middot; Yesterday</div>
+            </div>
+            <div class="mob-contacted-right">
+              <div class="mob-contacted-estimate">$28.2K - $38.4K</div>
+              <div class="mob-contacted-speed">&#9889; 4m response</div>
+            </div>
+          </div>
+
+          <div class="mob-contacted-card">
+            <div class="mob-contacted-left">
+              <div class="mob-contacted-name">Emily Chen</div>
+              <div class="mob-contacted-detail">2,800 sqft &middot; Asphalt &middot; 2 days ago</div>
+            </div>
+            <div class="mob-contacted-right">
+              <div class="mob-contacted-estimate">$10.6K - $15.4K</div>
+              <div class="mob-contacted-speed">&#9889; 12m response</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom tabs -->
+        <div class="mob-tabs">
+          <div class="mob-tab active">
+            <span class="mob-tab-icon">&#128101;</span>
+            Leads
+            <span class="mob-tab-badge">2</span>
+          </div>
+          <div class="mob-tab">
+            <span class="mob-tab-icon">&#128200;</span>
+            Widget
+          </div>
+          <div class="mob-tab">
+            <span class="mob-tab-icon">&#127760;</span>
+            My Site
+          </div>
+          <div class="mob-tab">
+            <span class="mob-tab-icon">&#9783;</span>
+            More
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       FEATURE CALLOUTS
+  ==================================================== -->
+  <div class="section-divider">
+    <span class="section-divider-text">Feature Breakdown — All Included at $99/mo</span>
+  </div>
+
+  <div class="features-section">
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128222;</div>
+        <div class="feature-card-title">One-Tap Call + Auto-Status</div>
+        <div class="feature-card-desc">Tap the call button and the lead automatically moves from "New" to "Contacted." No extra steps. No competitor does this.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#9889;</div>
+        <div class="feature-card-title">Speed-to-Lead Tracking</div>
+        <div class="feature-card-desc">Records time between lead arrival and first call. Shows "You responded in 4 minutes" and ranks you against other roofers. First to call wins 78% of jobs.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128176;</div>
+        <div class="feature-card-title">Revenue Counter</div>
+        <div class="feature-card-desc">Running total of won jobs: "$47,200 closed through RuufPro." The number they'll screenshot and show their buddy.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128276;</div>
+        <div class="feature-card-title">Smart Push Notifications</div>
+        <div class="feature-card-desc">Not just "new lead" — the notification says "John Smith, 2,400 sqft asphalt, $9,800-$14,200, ASAP." Enough info to decide if it's worth climbing down from the ladder.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128293;</div>
+        <div class="feature-card-title">Hot / Warm / Browsing Tags</div>
+        <div class="feature-card-desc">Auto-tags leads based on timeline. ASAP = Hot (red, sorted to top). 1-3 months = Warm. "Just exploring" = Browsing. The roofer knows who to call first.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128225;</div>
+        <div class="feature-card-title">Instant Roof Intel</div>
+        <div class="feature-card-desc">Every lead shows satellite-estimated roof data: area, pitch, facet count, material quantities, waste factor, complexity rating. Instant — no $13-40 report fee.</div>
+        <div class="feature-card-note">Disclaimer: "Satellite-estimated. Verify with professional measurement before ordering materials."</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128241;</div>
+        <div class="feature-card-title">Mobile-First PWA</div>
+        <div class="feature-card-desc">Install from browser, works like a native app. Bottom tab bar on mobile, sidebar on desktop. Giant touch targets for dusty gloves. Offline lead cache for spotty cell service.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128279;</div>
+        <div class="feature-card-title">Share Widget Link</div>
+        <div class="feature-card-desc">One tap to copy or share the estimate widget URL. Text it to a homeowner, post it on Facebook. Word-of-mouth made easy.</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

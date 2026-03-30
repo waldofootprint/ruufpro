@@ -11,7 +11,7 @@ const supabase = createClient(
 );
 
 webpush.setVapidDetails(
-  "mailto:support@roofready.com",
+  "mailto:support@ruufpro.com",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = JSON.stringify({
-      title: title || "New Lead — RoofReady",
+      title: title || "New Lead — RuufPro",
       body: body || "You have a new lead. Tap to view.",
       url: url || "/dashboard/leads",
     });

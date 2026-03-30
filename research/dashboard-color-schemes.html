@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Color Schemes — RuufPro</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #eeeef0;
+      color: #1a1a1a;
+      -webkit-font-smoothing: antialiased;
+      padding: 48px 20px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .page-header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .page-header p { color: #6e6e73; font-size: 15px; max-width: 560px; margin: 0 auto; line-height: 1.5; }
+
+    .scheme-wrapper {
+      max-width: 1000px;
+      margin: 0 auto 64px;
+    }
+    .scheme-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 5px 14px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .scheme-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+    .scheme-desc {
+      font-size: 14px;
+      color: #6e6e73;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      max-width: 650px;
+    }
+
+    /* Swatch row */
+    .swatches {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .swatch {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 2px solid rgba(0,0,0,0.06);
+      position: relative;
+    }
+    .swatch-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: #86868b;
+      text-align: center;
+      margin-top: 4px;
+      width: 44px;
+    }
+    .swatch-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .mockup-frame {
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
+    /* ========== Shared dashboard structure ========== */
+    .dash {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      min-height: 520px;
+    }
+
+    /* Sidebar */
+    .dash-side {
+      padding: 18px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .dash-logo { padding: 0 16px; margin-bottom: 24px; }
+    .dash-logo-text { font-size: 14px; font-weight: 800; letter-spacing: -0.2px; }
+    .dash-logo-sub { font-size: 10px; margin-top: 2px; }
+    .dash-nav { list-style: none; }
+    .dash-nav li {
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 2px solid transparent;
+    }
+    .dash-nav-badge {
+      margin-left: auto;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    /* Main content */
+    .dash-main { padding: 20px 24px; }
+    .dash-greeting-text { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 16px; }
+
+    /* Stat cards */
+    .dash-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .dash-stat {
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .dash-stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .dash-stat-value { font-size: 24px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.1; }
+    .dash-stat-sub { font-size: 11px; margin-top: 3px; }
+
+    /* Lead rows */
+    .dash-leads {
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .dash-leads-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .dash-lead {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+    }
+    .dash-lead + .dash-lead { border-top-width: 1px; border-top-style: solid; }
+    .dash-lead-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dash-lead-info { flex: 1; }
+    .dash-lead-name { font-size: 13px; font-weight: 700; }
+    .dash-lead-detail { font-size: 11px; }
+    .dash-lead-tag {
+      font-size: 9px; font-weight: 700; padding: 2px 7px;
+      border-radius: 5px; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .dash-lead-est { font-size: 12px; font-weight: 700; }
+    .dash-lead-call {
+      font-size: 10px; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px;
+      cursor: pointer; font-family: inherit;
+      transition: all 0.15s; border: 1px solid;
+    }
+
+    /* ====================================================
+       SCHEME A: Warm Stone
+    ==================================================== */
+    .scheme-a .dash { background: #f8f7f4; }
+    .scheme-a .dash-side { background: #2c2926; }
+    .scheme-a .dash-logo-text { color: #f8f7f4; }
+    .scheme-a .dash-logo-sub { color: rgba(248,247,244,0.35); }
+    .scheme-a .dash-nav li { color: rgba(248,247,244,0.45); }
+    .scheme-a .dash-nav li:hover { color: rgba(248,247,244,0.7); background: rgba(255,255,255,0.04); }
+    .scheme-a .dash-nav li.active { color: #f8f7f4; background: rgba(255,255,255,0.08); border-left-color: #c9a96e; }
+    .scheme-a .dash-nav-badge { background: #c9a96e; color: #2c2926; }
+    .scheme-a .dash-greeting-text { color: #2c2926; }
+    .scheme-a .dash-stat { background: #fff; border: 1px solid #ebe8e2; }
+    .scheme-a .dash-stat-label { color: #9c9488; }
+    .scheme-a .dash-stat-value { color: #2c2926; }
+    .scheme-a .dash-stat-sub { color: #9c9488; }
+    .scheme-a .dash-leads { background: #fff; border: 1px solid #ebe8e2; }
+    .scheme-a .dash-leads-title { color: #2c2926; }
+    .scheme-a .dash-lead + .dash-lead { border-top-color: #f2efe9; }
+    .scheme-a .dash-lead-name { color: #2c2926; }
+    .scheme-a .dash-lead-detail { color: #9c9488; }
+    .scheme-a .dash-lead-est { color: #2c2926; }
+    .scheme-a .tag-hot { background: #fef2f2; color: #dc2626; }
+    .scheme-a .tag-warm { background: #fffbeb; color: #b45309; }
+    .scheme-a .dash-lead-call { background: #2c2926; color: #f8f7f4; border-color: #2c2926; }
+    .scheme-a .dash-lead-call:hover { background: #c9a96e; border-color: #c9a96e; color: #2c2926; }
+    .scheme-a .dot-hot { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+    .scheme-a .dot-warm { background: #d97706; }
+    .scheme-a .dot-ok { background: #16a34a; }
+    .scheme-a .speed-badge { background: #f0fdf4; color: #16a34a; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+
+    /* ====================================================
+       SCHEME B: Cool Slate
+    ==================================================== */
+    .scheme-b .dash { background: #f4f5f7; }
+    .scheme-b .dash-side { background: #334155; }
+    .scheme-b .dash-logo-text { color: #f1f5f9; }
+    .scheme-b .dash-logo-sub { color: rgba(241,245,249,0.35); }
+    .scheme-b .dash-nav li { color: rgba(241,245,249,0.45); }
+    .scheme-b .dash-nav li:hover { color: rgba(241,245,249,0.7); background: rgba(255,255,255,0.05); }
+    .scheme-b .dash-nav li.active { color: #f1f5f9; background: rgba(255,255,255,0.1); border-left-color: #94a3b8; }
+    .scheme-b .dash-nav-badge { background: #ef4444; color: #fff; }
+    .scheme-b .dash-greeting-text { color: #1e293b; }
+    .scheme-b .dash-stat { background: #fff; border: 1px solid #e2e8f0; }
+    .scheme-b .dash-stat-label { color: #94a3b8; }
+    .scheme-b .dash-stat-value { color: #1e293b; }
+    .scheme-b .dash-stat-sub { color: #94a3b8; }
+    .scheme-b .dash-leads { background: #fff; border: 1px solid #e2e8f0; }
+    .scheme-b .dash-leads-title { color: #1e293b; }
+    .scheme-b .dash-lead + .dash-lead { border-top-color: #f1f5f9; }
+    .scheme-b .dash-lead-name { color: #1e293b; }
+    .scheme-b .dash-lead-detail { color: #94a3b8; }
+    .scheme-b .dash-lead-est { color: #1e293b; }
+    .scheme-b .tag-hot { background: #fef2f2; color: #dc2626; }
+    .scheme-b .tag-warm { background: #fffbeb; color: #b45309; }
+    .scheme-b .dash-lead-call { background: #334155; color: #f1f5f9; border-color: #334155; }
+    .scheme-b .dash-lead-call:hover { background: #475569; border-color: #475569; }
+    .scheme-b .dot-hot { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    .scheme-b .dot-warm { background: #f59e0b; }
+    .scheme-b .dot-ok { background: #22c55e; }
+    .scheme-b .speed-badge { background: #f0fdf4; color: #16a34a; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+
+    /* ====================================================
+       SCHEME C: Soft Cloud
+    ==================================================== */
+    .scheme-c .dash { background: #f9fafb; }
+    .scheme-c .dash-side { background: #f9fafb; border-right: 1px solid #e5e7eb; }
+    .scheme-c .dash-logo-text { color: #111827; }
+    .scheme-c .dash-logo-sub { color: #9ca3af; }
+    .scheme-c .dash-nav li { color: #6b7280; }
+    .scheme-c .dash-nav li:hover { color: #111827; background: #f3f4f6; }
+    .scheme-c .dash-nav li.active { color: #111827; background: #e5e7eb; border-left-color: #111827; font-weight: 600; }
+    .scheme-c .dash-nav-badge { background: #ef4444; color: #fff; }
+    .scheme-c .dash-greeting-text { color: #111827; }
+    .scheme-c .dash-stat { background: #fff; border: 1px solid #e5e7eb; }
+    .scheme-c .dash-stat-label { color: #9ca3af; }
+    .scheme-c .dash-stat-value { color: #111827; }
+    .scheme-c .dash-stat-sub { color: #9ca3af; }
+    .scheme-c .dash-leads { background: #fff; border: 1px solid #e5e7eb; }
+    .scheme-c .dash-leads-title { color: #111827; }
+    .scheme-c .dash-lead + .dash-lead { border-top-color: #f3f4f6; }
+    .scheme-c .dash-lead-name { color: #111827; }
+    .scheme-c .dash-lead-detail { color: #9ca3af; }
+    .scheme-c .dash-lead-est { color: #111827; }
+    .scheme-c .tag-hot { background: #fef2f2; color: #dc2626; }
+    .scheme-c .tag-warm { background: #fffbeb; color: #b45309; }
+    .scheme-c .dash-lead-call { background: #111827; color: #fff; border-color: #111827; }
+    .scheme-c .dash-lead-call:hover { background: #374151; border-color: #374151; }
+    .scheme-c .dot-hot { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    .scheme-c .dot-warm { background: #f59e0b; }
+    .scheme-c .dot-ok { background: #22c55e; }
+    .scheme-c .speed-badge { background: #f0fdf4; color: #16a34a; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+
+    /* ====================================================
+       SCHEME D: Midnight Blue
+    ==================================================== */
+    .scheme-d .dash { background: #f0f4f8; }
+    .scheme-d .dash-side { background: #1e3a5f; }
+    .scheme-d .dash-logo-text { color: #e8f0fe; }
+    .scheme-d .dash-logo-sub { color: rgba(232,240,254,0.35); }
+    .scheme-d .dash-nav li { color: rgba(232,240,254,0.45); }
+    .scheme-d .dash-nav li:hover { color: rgba(232,240,254,0.7); background: rgba(255,255,255,0.05); }
+    .scheme-d .dash-nav li.active { color: #e8f0fe; background: rgba(255,255,255,0.1); border-left-color: #60a5fa; }
+    .scheme-d .dash-nav-badge { background: #ef4444; color: #fff; }
+    .scheme-d .dash-greeting-text { color: #1e3a5f; }
+    .scheme-d .dash-stat { background: #fff; border: 1px solid #dbe4ef; }
+    .scheme-d .dash-stat-label { color: #7b96b5; }
+    .scheme-d .dash-stat-value { color: #1e3a5f; }
+    .scheme-d .dash-stat-sub { color: #7b96b5; }
+    .scheme-d .dash-leads { background: #fff; border: 1px solid #dbe4ef; }
+    .scheme-d .dash-leads-title { color: #1e3a5f; }
+    .scheme-d .dash-lead + .dash-lead { border-top-color: #edf2f7; }
+    .scheme-d .dash-lead-name { color: #1e3a5f; }
+    .scheme-d .dash-lead-detail { color: #7b96b5; }
+    .scheme-d .dash-lead-est { color: #1e3a5f; }
+    .scheme-d .tag-hot { background: #fef2f2; color: #dc2626; }
+    .scheme-d .tag-warm { background: #fffbeb; color: #b45309; }
+    .scheme-d .dash-lead-call { background: #1e3a5f; color: #e8f0fe; border-color: #1e3a5f; }
+    .scheme-d .dash-lead-call:hover { background: #60a5fa; border-color: #60a5fa; color: #fff; }
+    .scheme-d .dot-hot { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    .scheme-d .dot-warm { background: #f59e0b; }
+    .scheme-d .dot-ok { background: #22c55e; }
+    .scheme-d .speed-badge { background: #f0fdf4; color: #16a34a; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+
+    /* ====================================================
+       SCHEME E: Sage & Sand
+    ==================================================== */
+    .scheme-e .dash { background: #f5f4ef; }
+    .scheme-e .dash-side { background: #3d4f3e; }
+    .scheme-e .dash-logo-text { color: #f0efe8; }
+    .scheme-e .dash-logo-sub { color: rgba(240,239,232,0.4); }
+    .scheme-e .dash-nav li { color: rgba(240,239,232,0.45); }
+    .scheme-e .dash-nav li:hover { color: rgba(240,239,232,0.75); background: rgba(255,255,255,0.05); }
+    .scheme-e .dash-nav li.active { color: #f0efe8; background: rgba(255,255,255,0.1); border-left-color: #a3b18a; }
+    .scheme-e .dash-nav-badge { background: #d97706; color: #fff; }
+    .scheme-e .dash-greeting-text { color: #2d3b2e; }
+    .scheme-e .dash-stat { background: #fff; border: 1px solid #e2e0d6; }
+    .scheme-e .dash-stat-label { color: #8a8778; }
+    .scheme-e .dash-stat-value { color: #2d3b2e; }
+    .scheme-e .dash-stat-sub { color: #8a8778; }
+    .scheme-e .dash-leads { background: #fff; border: 1px solid #e2e0d6; }
+    .scheme-e .dash-leads-title { color: #2d3b2e; }
+    .scheme-e .dash-lead + .dash-lead { border-top-color: #eeedea; }
+    .scheme-e .dash-lead-name { color: #2d3b2e; }
+    .scheme-e .dash-lead-detail { color: #8a8778; }
+    .scheme-e .dash-lead-est { color: #2d3b2e; }
+    .scheme-e .tag-hot { background: #fef2f2; color: #dc2626; }
+    .scheme-e .tag-warm { background: #fffbeb; color: #b45309; }
+    .scheme-e .dash-lead-call { background: #3d4f3e; color: #f0efe8; border-color: #3d4f3e; }
+    .scheme-e .dash-lead-call:hover { background: #a3b18a; border-color: #a3b18a; color: #2d3b2e; }
+    .scheme-e .dot-hot { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+    .scheme-e .dot-warm { background: #d97706; }
+    .scheme-e .dot-ok { background: #16a34a; }
+    .scheme-e .speed-badge { background: #f0fdf4; color: #16a34a; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+
+    /* ====================================================
+       SCHEME F: All White Minimal
+    ==================================================== */
+    .scheme-f .dash { background: #fafafa; }
+    .scheme-f .dash-side { background: #fafafa; border-right: 1px solid #eaeaea; }
+    .scheme-f .dash-logo-text { color: #171717; }
+    .scheme-f .dash-logo-sub { color: #a3a3a3; }
+    .scheme-f .dash-nav li { color: #737373; }
+    .scheme-f .dash-nav li:hover { color: #171717; background: #f5f5f5; }
+    .scheme-f .dash-nav li.active { color: #171717; background: transparent; border-left-color: #171717; font-weight: 700; }
+    .scheme-f .dash-nav-badge { background: #171717; color: #fff; }
+    .scheme-f .dash-greeting-text { color: #171717; }
+    .scheme-f .dash-stat { background: #fff; border: 1px solid #eaeaea; }
+    .scheme-f .dash-stat-label { color: #a3a3a3; }
+    .scheme-f .dash-stat-value { color: #171717; }
+    .scheme-f .dash-stat-sub { color: #a3a3a3; }
+    .scheme-f .dash-leads { background: #fff; border: 1px solid #eaeaea; }
+    .scheme-f .dash-leads-title { color: #171717; }
+    .scheme-f .dash-lead + .dash-lead { border-top-color: #f5f5f5; }
+    .scheme-f .dash-lead-name { color: #171717; }
+    .scheme-f .dash-lead-detail { color: #a3a3a3; }
+    .scheme-f .dash-lead-est { color: #171717; }
+    .scheme-f .tag-hot { background: #fef2f2; color: #dc2626; }
+    .scheme-f .tag-warm { background: #fffbeb; color: #b45309; }
+    .scheme-f .dash-lead-call { background: #171717; color: #fff; border-color: #171717; }
+    .scheme-f .dash-lead-call:hover { background: #404040; border-color: #404040; }
+    .scheme-f .dot-hot { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    .scheme-f .dot-warm { background: #f59e0b; }
+    .scheme-f .dot-ok { background: #22c55e; }
+    .scheme-f .speed-badge { background: #f0fdf4; color: #16a34a; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>Dashboard Color Schemes</h1>
+    <p>Six options from warm to cool to no-color. Same layout, different personality. The black sidebar from the original is gone.</p>
+  </div>
+
+  <!-- ========== SCHEME A: Warm Stone ========== -->
+  <div class="scheme-wrapper scheme-a">
+    <span class="scheme-tag" style="background: #f5f0e8; color: #8b7355;">Scheme A</span>
+    <div class="scheme-title">Warm Stone</div>
+    <div class="scheme-desc">Charcoal brown sidebar with warm gold accents. Cream page background. Feels like leather and wood — premium but approachable. Think high-end contractor showroom.</div>
+    <div class="swatches">
+      <div class="swatch-group"><div class="swatch" style="background: #2c2926;"></div><div class="swatch-label">Sidebar</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #c9a96e;"></div><div class="swatch-label">Accent</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #f8f7f4;"></div><div class="swatch-label">Page</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #ffffff;"></div><div class="swatch-label">Cards</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #9c9488;"></div><div class="swatch-label">Muted</div></div>
+    </div>
+    <div class="mockup-frame">
+      <div class="dash">
+        <div class="dash-side">
+          <div class="dash-logo"><div class="dash-logo-text">RuufPro</div><div class="dash-logo-sub">Smith Roofing Co</div></div>
+          <ul class="dash-nav">
+            <li class="active">&#9711; Dashboard</li>
+            <li>&#9993; Leads <span class="dash-nav-badge">2</span></li>
+            <li>&#9881; Widget</li>
+            <li>&#127760; My Site</li>
+            <li>&#9783; Settings</li>
+          </ul>
+        </div>
+        <div class="dash-main">
+          <div class="dash-greeting-text">Good evening, Mike</div>
+          <div class="dash-stats">
+            <div class="dash-stat"><div class="dash-stat-label">New Leads</div><div class="dash-stat-value">2</div><div class="dash-stat-sub" style="color: #16a34a;">&#9650; 1 vs last week</div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Avg Response</div><div class="dash-stat-value">4m</div><div class="dash-stat-sub"><span class="speed-badge">&#9889; Top 10%</span></div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Revenue</div><div class="dash-stat-value">$47.2K</div><div class="dash-stat-sub">6 closed jobs</div></div>
+          </div>
+          <div class="dash-leads">
+            <div class="dash-leads-title">Recent Leads</div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-hot"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">John Smith</div><div class="dash-lead-detail">2,400 sqft &middot; Asphalt &middot; 3m ago</div></div>
+              <span class="dash-lead-tag tag-hot">Hot</span>
+              <div class="dash-lead-est">$9.8K-$14.2K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-warm"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">Sarah Johnson</div><div class="dash-lead-detail">1,800 sqft &middot; Metal &middot; 1h ago</div></div>
+              <span class="dash-lead-tag tag-warm">Warm</span>
+              <div class="dash-lead-est">$14.5K-$19.8K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-ok"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">David Martinez</div><div class="dash-lead-detail">3,100 sqft &middot; Tile &middot; Yesterday</div></div>
+              <span class="speed-badge">&#9889; 4m</span>
+              <div class="dash-lead-est">$28.2K-$38.4K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCHEME B: Cool Slate ========== -->
+  <div class="scheme-wrapper scheme-b">
+    <span class="scheme-tag" style="background: #f1f5f9; color: #475569;">Scheme B</span>
+    <div class="scheme-title">Cool Slate</div>
+    <div class="scheme-desc">Blue-gray slate sidebar. Cool and professional without being cold. The sidebar is lighter than black but still provides strong contrast. Think modern SaaS tool.</div>
+    <div class="swatches">
+      <div class="swatch-group"><div class="swatch" style="background: #334155;"></div><div class="swatch-label">Sidebar</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #94a3b8;"></div><div class="swatch-label">Accent</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #f4f5f7;"></div><div class="swatch-label">Page</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #ffffff;"></div><div class="swatch-label">Cards</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #94a3b8;"></div><div class="swatch-label">Muted</div></div>
+    </div>
+    <div class="mockup-frame">
+      <div class="dash">
+        <div class="dash-side">
+          <div class="dash-logo"><div class="dash-logo-text">RuufPro</div><div class="dash-logo-sub">Smith Roofing Co</div></div>
+          <ul class="dash-nav">
+            <li class="active">&#9711; Dashboard</li>
+            <li>&#9993; Leads <span class="dash-nav-badge">2</span></li>
+            <li>&#9881; Widget</li>
+            <li>&#127760; My Site</li>
+            <li>&#9783; Settings</li>
+          </ul>
+        </div>
+        <div class="dash-main">
+          <div class="dash-greeting-text">Good evening, Mike</div>
+          <div class="dash-stats">
+            <div class="dash-stat"><div class="dash-stat-label">New Leads</div><div class="dash-stat-value">2</div><div class="dash-stat-sub" style="color: #22c55e;">&#9650; 1 vs last week</div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Avg Response</div><div class="dash-stat-value">4m</div><div class="dash-stat-sub"><span class="speed-badge">&#9889; Top 10%</span></div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Revenue</div><div class="dash-stat-value">$47.2K</div><div class="dash-stat-sub">6 closed jobs</div></div>
+          </div>
+          <div class="dash-leads">
+            <div class="dash-leads-title">Recent Leads</div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-hot"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">John Smith</div><div class="dash-lead-detail">2,400 sqft &middot; Asphalt &middot; 3m ago</div></div>
+              <span class="dash-lead-tag tag-hot">Hot</span>
+              <div class="dash-lead-est">$9.8K-$14.2K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-warm"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">Sarah Johnson</div><div class="dash-lead-detail">1,800 sqft &middot; Metal &middot; 1h ago</div></div>
+              <span class="dash-lead-tag tag-warm">Warm</span>
+              <div class="dash-lead-est">$14.5K-$19.8K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-ok"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">David Martinez</div><div class="dash-lead-detail">3,100 sqft &middot; Tile &middot; Yesterday</div></div>
+              <span class="speed-badge">&#9889; 4m</span>
+              <div class="dash-lead-est">$28.2K-$38.4K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCHEME C: Soft Cloud ========== -->
+  <div class="scheme-wrapper scheme-c">
+    <span class="scheme-tag" style="background: #f3f4f6; color: #6b7280;">Scheme C</span>
+    <div class="scheme-title">Soft Cloud</div>
+    <div class="scheme-desc">Light sidebar — same color as the page, just divided by a border. No dark surfaces anywhere. Airy and weightless. Think Linear or Notion's lightest mode. The content becomes the focus, not the chrome.</div>
+    <div class="swatches">
+      <div class="swatch-group"><div class="swatch" style="background: #f9fafb; border-color: #d1d5db;"></div><div class="swatch-label">Sidebar</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #111827;"></div><div class="swatch-label">Active</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #f9fafb; border-color: #d1d5db;"></div><div class="swatch-label">Page</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #ffffff;"></div><div class="swatch-label">Cards</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #9ca3af;"></div><div class="swatch-label">Muted</div></div>
+    </div>
+    <div class="mockup-frame">
+      <div class="dash">
+        <div class="dash-side">
+          <div class="dash-logo"><div class="dash-logo-text">RuufPro</div><div class="dash-logo-sub">Smith Roofing Co</div></div>
+          <ul class="dash-nav">
+            <li class="active">&#9711; Dashboard</li>
+            <li>&#9993; Leads <span class="dash-nav-badge">2</span></li>
+            <li>&#9881; Widget</li>
+            <li>&#127760; My Site</li>
+            <li>&#9783; Settings</li>
+          </ul>
+        </div>
+        <div class="dash-main">
+          <div class="dash-greeting-text">Good evening, Mike</div>
+          <div class="dash-stats">
+            <div class="dash-stat"><div class="dash-stat-label">New Leads</div><div class="dash-stat-value">2</div><div class="dash-stat-sub" style="color: #22c55e;">&#9650; 1 vs last week</div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Avg Response</div><div class="dash-stat-value">4m</div><div class="dash-stat-sub"><span class="speed-badge">&#9889; Top 10%</span></div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Revenue</div><div class="dash-stat-value">$47.2K</div><div class="dash-stat-sub">6 closed jobs</div></div>
+          </div>
+          <div class="dash-leads">
+            <div class="dash-leads-title">Recent Leads</div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-hot"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">John Smith</div><div class="dash-lead-detail">2,400 sqft &middot; Asphalt &middot; 3m ago</div></div>
+              <span class="dash-lead-tag tag-hot">Hot</span>
+              <div class="dash-lead-est">$9.8K-$14.2K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-warm"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">Sarah Johnson</div><div class="dash-lead-detail">1,800 sqft &middot; Metal &middot; 1h ago</div></div>
+              <span class="dash-lead-tag tag-warm">Warm</span>
+              <div class="dash-lead-est">$14.5K-$19.8K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-ok"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">David Martinez</div><div class="dash-lead-detail">3,100 sqft &middot; Tile &middot; Yesterday</div></div>
+              <span class="speed-badge">&#9889; 4m</span>
+              <div class="dash-lead-est">$28.2K-$38.4K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCHEME D: Midnight Blue ========== -->
+  <div class="scheme-wrapper scheme-d">
+    <span class="scheme-tag" style="background: #e8f0fe; color: #1e3a5f;">Scheme D</span>
+    <div class="scheme-title">Midnight Blue</div>
+    <div class="scheme-desc">Deep navy sidebar (close to your contractor template palette) with a cool blue-tinted page. Blue accents on active states. Professional and trustworthy without being harsh. Think banking app.</div>
+    <div class="swatches">
+      <div class="swatch-group"><div class="swatch" style="background: #1e3a5f;"></div><div class="swatch-label">Sidebar</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #60a5fa;"></div><div class="swatch-label">Accent</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #f0f4f8;"></div><div class="swatch-label">Page</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #ffffff;"></div><div class="swatch-label">Cards</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #7b96b5;"></div><div class="swatch-label">Muted</div></div>
+    </div>
+    <div class="mockup-frame">
+      <div class="dash">
+        <div class="dash-side">
+          <div class="dash-logo"><div class="dash-logo-text">RuufPro</div><div class="dash-logo-sub">Smith Roofing Co</div></div>
+          <ul class="dash-nav">
+            <li class="active">&#9711; Dashboard</li>
+            <li>&#9993; Leads <span class="dash-nav-badge">2</span></li>
+            <li>&#9881; Widget</li>
+            <li>&#127760; My Site</li>
+            <li>&#9783; Settings</li>
+          </ul>
+        </div>
+        <div class="dash-main">
+          <div class="dash-greeting-text">Good evening, Mike</div>
+          <div class="dash-stats">
+            <div class="dash-stat"><div class="dash-stat-label">New Leads</div><div class="dash-stat-value">2</div><div class="dash-stat-sub" style="color: #22c55e;">&#9650; 1 vs last week</div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Avg Response</div><div class="dash-stat-value">4m</div><div class="dash-stat-sub"><span class="speed-badge">&#9889; Top 10%</span></div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Revenue</div><div class="dash-stat-value">$47.2K</div><div class="dash-stat-sub">6 closed jobs</div></div>
+          </div>
+          <div class="dash-leads">
+            <div class="dash-leads-title">Recent Leads</div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-hot"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">John Smith</div><div class="dash-lead-detail">2,400 sqft &middot; Asphalt &middot; 3m ago</div></div>
+              <span class="dash-lead-tag tag-hot">Hot</span>
+              <div class="dash-lead-est">$9.8K-$14.2K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-warm"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">Sarah Johnson</div><div class="dash-lead-detail">1,800 sqft &middot; Metal &middot; 1h ago</div></div>
+              <span class="dash-lead-tag tag-warm">Warm</span>
+              <div class="dash-lead-est">$14.5K-$19.8K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-ok"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">David Martinez</div><div class="dash-lead-detail">3,100 sqft &middot; Tile &middot; Yesterday</div></div>
+              <span class="speed-badge">&#9889; 4m</span>
+              <div class="dash-lead-est">$28.2K-$38.4K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCHEME E: Sage & Sand ========== -->
+  <div class="scheme-wrapper scheme-e">
+    <span class="scheme-tag" style="background: #ecf0e5; color: #3d4f3e;">Scheme E</span>
+    <div class="scheme-title">Sage & Sand</div>
+    <div class="scheme-desc">Muted forest green sidebar with warm sandy page. Earthy and grounded — feels like a well-built house, not a tech product. Unique in the SaaS world. Think Aesop or outdoor brand.</div>
+    <div class="swatches">
+      <div class="swatch-group"><div class="swatch" style="background: #3d4f3e;"></div><div class="swatch-label">Sidebar</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #a3b18a;"></div><div class="swatch-label">Accent</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #f5f4ef;"></div><div class="swatch-label">Page</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #ffffff;"></div><div class="swatch-label">Cards</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #8a8778;"></div><div class="swatch-label">Muted</div></div>
+    </div>
+    <div class="mockup-frame">
+      <div class="dash">
+        <div class="dash-side">
+          <div class="dash-logo"><div class="dash-logo-text">RuufPro</div><div class="dash-logo-sub">Smith Roofing Co</div></div>
+          <ul class="dash-nav">
+            <li class="active">&#9711; Dashboard</li>
+            <li>&#9993; Leads <span class="dash-nav-badge">2</span></li>
+            <li>&#9881; Widget</li>
+            <li>&#127760; My Site</li>
+            <li>&#9783; Settings</li>
+          </ul>
+        </div>
+        <div class="dash-main">
+          <div class="dash-greeting-text">Good evening, Mike</div>
+          <div class="dash-stats">
+            <div class="dash-stat"><div class="dash-stat-label">New Leads</div><div class="dash-stat-value">2</div><div class="dash-stat-sub" style="color: #16a34a;">&#9650; 1 vs last week</div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Avg Response</div><div class="dash-stat-value">4m</div><div class="dash-stat-sub"><span class="speed-badge">&#9889; Top 10%</span></div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Revenue</div><div class="dash-stat-value">$47.2K</div><div class="dash-stat-sub">6 closed jobs</div></div>
+          </div>
+          <div class="dash-leads">
+            <div class="dash-leads-title">Recent Leads</div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-hot"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">John Smith</div><div class="dash-lead-detail">2,400 sqft &middot; Asphalt &middot; 3m ago</div></div>
+              <span class="dash-lead-tag tag-hot">Hot</span>
+              <div class="dash-lead-est">$9.8K-$14.2K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-warm"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">Sarah Johnson</div><div class="dash-lead-detail">1,800 sqft &middot; Metal &middot; 1h ago</div></div>
+              <span class="dash-lead-tag tag-warm">Warm</span>
+              <div class="dash-lead-est">$14.5K-$19.8K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-ok"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">David Martinez</div><div class="dash-lead-detail">3,100 sqft &middot; Tile &middot; Yesterday</div></div>
+              <span class="speed-badge">&#9889; 4m</span>
+              <div class="dash-lead-est">$28.2K-$38.4K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCHEME F: All White Minimal ========== -->
+  <div class="scheme-wrapper scheme-f">
+    <span class="scheme-tag" style="background: #f5f5f5; color: #737373;">Scheme F</span>
+    <div class="scheme-title">All White Minimal</div>
+    <div class="scheme-desc">No dark surfaces at all. White sidebar, white page, white cards — differentiated only by subtle borders. The content is everything. Think Vercel dashboard or Apple's Settings app. Maximum clarity, zero personality.</div>
+    <div class="swatches">
+      <div class="swatch-group"><div class="swatch" style="background: #fafafa; border-color: #d4d4d4;"></div><div class="swatch-label">Sidebar</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #171717;"></div><div class="swatch-label">Active</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #fafafa; border-color: #d4d4d4;"></div><div class="swatch-label">Page</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #ffffff;"></div><div class="swatch-label">Cards</div></div>
+      <div class="swatch-group"><div class="swatch" style="background: #a3a3a3;"></div><div class="swatch-label">Muted</div></div>
+    </div>
+    <div class="mockup-frame">
+      <div class="dash">
+        <div class="dash-side">
+          <div class="dash-logo"><div class="dash-logo-text">RuufPro</div><div class="dash-logo-sub">Smith Roofing Co</div></div>
+          <ul class="dash-nav">
+            <li class="active">&#9711; Dashboard</li>
+            <li>&#9993; Leads <span class="dash-nav-badge">2</span></li>
+            <li>&#9881; Widget</li>
+            <li>&#127760; My Site</li>
+            <li>&#9783; Settings</li>
+          </ul>
+        </div>
+        <div class="dash-main">
+          <div class="dash-greeting-text">Good evening, Mike</div>
+          <div class="dash-stats">
+            <div class="dash-stat"><div class="dash-stat-label">New Leads</div><div class="dash-stat-value">2</div><div class="dash-stat-sub" style="color: #22c55e;">&#9650; 1 vs last week</div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Avg Response</div><div class="dash-stat-value">4m</div><div class="dash-stat-sub"><span class="speed-badge">&#9889; Top 10%</span></div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Revenue</div><div class="dash-stat-value">$47.2K</div><div class="dash-stat-sub">6 closed jobs</div></div>
+          </div>
+          <div class="dash-leads">
+            <div class="dash-leads-title">Recent Leads</div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-hot"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">John Smith</div><div class="dash-lead-detail">2,400 sqft &middot; Asphalt &middot; 3m ago</div></div>
+              <span class="dash-lead-tag tag-hot">Hot</span>
+              <div class="dash-lead-est">$9.8K-$14.2K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-warm"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">Sarah Johnson</div><div class="dash-lead-detail">1,800 sqft &middot; Metal &middot; 1h ago</div></div>
+              <span class="dash-lead-tag tag-warm">Warm</span>
+              <div class="dash-lead-est">$14.5K-$19.8K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+            <div class="dash-lead">
+              <div class="dash-lead-dot dot-ok"></div>
+              <div class="dash-lead-info"><div class="dash-lead-name">David Martinez</div><div class="dash-lead-detail">3,100 sqft &middot; Tile &middot; Yesterday</div></div>
+              <span class="speed-badge">&#9889; 4m</span>
+              <div class="dash-lead-est">$28.2K-$38.4K</div>
+              <button class="dash-lead-call">&#128222; Call</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

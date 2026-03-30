@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Widget Style Inspiration — RuufPro</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f0f0f3;
+      color: #1d1d1f;
+      padding: 40px 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    .page-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .page-header p {
+      color: #6e6e73;
+      font-size: 15px;
+    }
+
+    .section {
+      max-width: 900px;
+      margin: 0 auto 60px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #86868b;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 6px;
+    }
+    .section-desc {
+      font-size: 14px;
+      color: #6e6e73;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+    /* ========== SECTION 1: Card Containers ========== */
+
+    .card-demo {
+      padding: 32px;
+      border-radius: 16px;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .card-style-a {
+      background: #ffffff;
+      border: 1px solid #e5e5e7;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .card-style-b {
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+
+    .card-style-c {
+      background: #ffffff;
+      border: none;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
+    }
+
+    .card-style-d {
+      background: #1d1d1f;
+      color: #f5f5f7;
+      border: none;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    }
+    .card-style-d .card-subtitle { color: #86868b; }
+
+    .card-tag {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: #f5f5f7;
+      color: #6e6e73;
+    }
+    .card-style-d .card-tag { background: rgba(255,255,255,0.1); color: #86868b; }
+
+    .card-title-text {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+      margin-bottom: 6px;
+    }
+    .card-subtitle {
+      font-size: 13px;
+      color: #6e6e73;
+      line-height: 1.4;
+    }
+
+    /* ========== SECTION 2: Progress Indicators ========== */
+
+    .progress-demo {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 28px 32px;
+      border: 1px solid #e5e5e7;
+    }
+    .progress-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #86868b;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* Style A: Thin bar */
+    .progress-bar-wrap {
+      height: 3px;
+      background: #e5e5e7;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+    .progress-bar-fill.neutral { background: #1d1d1f; }
+    .progress-bar-fill.blue { background: #0071e3; }
+    .progress-bar-fill.gradient { background: linear-gradient(90deg, #0071e3, #34c759); }
+    .progress-step-text {
+      font-size: 12px;
+      color: #86868b;
+    }
+
+    /* Style B: Dot stepper */
+    .dot-stepper {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e5e5e7;
+      transition: all 0.3s ease;
+    }
+    .dot.active { background: #1d1d1f; transform: scale(1.25); }
+    .dot.completed { background: #1d1d1f; }
+
+    /* Style C: Numbered stepper */
+    .numbered-stepper {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 10px;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .step-num.completed { background: #1d1d1f; color: #fff; }
+    .step-num.active { background: #1d1d1f; color: #fff; box-shadow: 0 0 0 3px rgba(29,29,31,0.15); }
+    .step-num.upcoming { background: #f5f5f7; color: #86868b; border: 1px solid #e5e5e7; }
+    .step-line {
+      height: 2px;
+      flex: 1;
+      background: #e5e5e7;
+      margin: 0 4px;
+    }
+    .step-line.completed { background: #1d1d1f; }
+
+    /* Style D: Pill stepper */
+    .pill-stepper {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .pill {
+      height: 4px;
+      flex: 1;
+      border-radius: 2px;
+      background: #e5e5e7;
+      transition: background 0.3s ease;
+    }
+    .pill.active { background: #1d1d1f; }
+    .pill.completed { background: #1d1d1f; }
+
+    /* ========== SECTION 3: Buttons ========== */
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .btn-row-label {
+      font-size: 12px;
+      color: #86868b;
+      font-weight: 500;
+      width: 100%;
+      margin-bottom: -4px;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      letter-spacing: -0.1px;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    /* Primary styles */
+    .btn-solid-dark { background: #1d1d1f; color: #fff; border-radius: 12px; }
+    .btn-solid-dark:hover { background: #333; }
+
+    .btn-solid-pill { background: #1d1d1f; color: #fff; border-radius: 980px; }
+    .btn-solid-pill:hover { background: #333; }
+
+    .btn-solid-blue { background: #0071e3; color: #fff; border-radius: 12px; }
+    .btn-solid-blue:hover { background: #0077ed; }
+
+    .btn-solid-blue-pill { background: #0071e3; color: #fff; border-radius: 980px; }
+    .btn-solid-blue-pill:hover { background: #0077ed; }
+
+    /* Secondary styles */
+    .btn-outline { background: transparent; color: #1d1d1f; border: 1.5px solid #d2d2d7; border-radius: 12px; }
+    .btn-outline:hover { border-color: #1d1d1f; }
+
+    .btn-outline-pill { background: transparent; color: #1d1d1f; border: 1.5px solid #d2d2d7; border-radius: 980px; }
+    .btn-outline-pill:hover { border-color: #1d1d1f; }
+
+    .btn-ghost { background: transparent; color: #6e6e73; border: none; border-radius: 12px; }
+    .btn-ghost:hover { color: #1d1d1f; background: #f5f5f7; }
+
+    .btn-soft { background: #f5f5f7; color: #1d1d1f; border: none; border-radius: 12px; }
+    .btn-soft:hover { background: #e8e8ed; }
+
+    .btn-soft-pill { background: #f5f5f7; color: #1d1d1f; border: none; border-radius: 980px; }
+    .btn-soft-pill:hover { background: #e8e8ed; }
+
+    /* Nav pair */
+    .btn-nav-pair {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+    .btn-back {
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      background: transparent;
+      color: #6e6e73;
+      border: 1.5px solid #e5e5e7;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+    .btn-back:hover { border-color: #1d1d1f; color: #1d1d1f; }
+    .btn-next {
+      flex: 1;
+      padding: 12px 28px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #1d1d1f;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+    .btn-next:hover { background: #333; }
+
+    /* ========== SECTION 4: Inputs ========== */
+
+    .input-demo {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 28px 32px;
+      border: 1px solid #e5e5e7;
+    }
+
+    .input-base {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+      letter-spacing: -0.1px;
+    }
+
+    .input-minimal {
+      border: none;
+      border-bottom: 2px solid #e5e5e7;
+      border-radius: 0;
+      background: transparent;
+      padding: 14px 0;
+    }
+    .input-minimal:focus { border-bottom-color: #1d1d1f; }
+    .input-minimal::placeholder { color: #c7c7cc; }
+
+    .input-bordered {
+      border: 1.5px solid #d2d2d7;
+      border-radius: 12px;
+      background: #fff;
+    }
+    .input-bordered:focus { border-color: #1d1d1f; box-shadow: 0 0 0 3px rgba(29,29,31,0.08); }
+    .input-bordered::placeholder { color: #c7c7cc; }
+
+    .input-filled {
+      border: 1.5px solid transparent;
+      border-radius: 12px;
+      background: #f5f5f7;
+    }
+    .input-filled:focus { border-color: #1d1d1f; background: #fff; box-shadow: 0 0 0 3px rgba(29,29,31,0.08); }
+    .input-filled::placeholder { color: #86868b; }
+
+    /* Floating label */
+    .float-group {
+      position: relative;
+      margin-bottom: 0;
+    }
+    .float-group input {
+      width: 100%;
+      padding: 22px 16px 10px;
+      font-size: 15px;
+      font-family: inherit;
+      border: 1.5px solid #d2d2d7;
+      border-radius: 12px;
+      outline: none;
+      background: #fff;
+      transition: all 0.2s ease;
+    }
+    .float-group input:focus { border-color: #1d1d1f; box-shadow: 0 0 0 3px rgba(29,29,31,0.08); }
+    .float-group label {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: #86868b;
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+    .float-group input:focus + label,
+    .float-group input:not(:placeholder-shown) + label {
+      top: 12px;
+      font-size: 11px;
+      color: #6e6e73;
+      transform: translateY(0);
+    }
+
+    .input-spacer { height: 14px; }
+
+    /* ========== SECTION 5: Selection Cards ========== */
+
+    .select-card {
+      padding: 18px 20px;
+      border-radius: 12px;
+      border: 1.5px solid #e5e5e7;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .select-card:hover { border-color: #86868b; }
+    .select-card.selected { border-color: #1d1d1f; box-shadow: 0 0 0 1px #1d1d1f; background: #fafafa; }
+    .select-card .select-icon { font-size: 28px; margin-bottom: 8px; }
+    .select-card .select-label { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .select-card .select-meta { font-size: 12px; color: #86868b; }
+
+    /* Image selection card */
+    .img-select-card {
+      border-radius: 12px;
+      border: 1.5px solid #e5e5e7;
+      background: #fff;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .img-select-card:hover { border-color: #86868b; }
+    .img-select-card.selected { border-color: #1d1d1f; box-shadow: 0 0 0 1px #1d1d1f; }
+    .img-select-thumb {
+      height: 80px;
+      background: linear-gradient(135deg, #e8e8ed 0%, #f5f5f7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+    .img-select-card.selected .img-select-thumb { background: linear-gradient(135deg, #e8e8ed 0%, #f0f0f2 100%); }
+    .img-select-info { padding: 12px 14px; }
+    .img-select-info .select-label { font-size: 13px; font-weight: 600; }
+    .img-select-info .select-meta { font-size: 11px; color: #86868b; margin-top: 2px; }
+
+    /* Pill selection */
+    .pill-select {
+      display: inline-flex;
+      padding: 10px 20px;
+      border-radius: 980px;
+      border: 1.5px solid #e5e5e7;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .pill-select:hover { border-color: #86868b; }
+    .pill-select.selected { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
+
+    /* Radio row */
+    .radio-row {
+      display: flex;
+      border-radius: 12px;
+      border: 1.5px solid #e5e5e7;
+      overflow: hidden;
+      background: #fff;
+    }
+    .radio-option {
+      flex: 1;
+      padding: 14px 16px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-right: 1px solid #e5e5e7;
+      font-family: inherit;
+      background: transparent;
+      border-top: none;
+      border-bottom: none;
+      border-left: none;
+    }
+    .radio-option:last-child { border-right: none; }
+    .radio-option:hover { background: #f5f5f7; }
+    .radio-option.selected { background: #1d1d1f; color: #fff; }
+
+    /* ========== SECTION 6: Full Widget Mockups ========== */
+
+    .widget-mockup {
+      background: #fff;
+      border-radius: 20px;
+      padding: 36px 32px 32px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .widget-mockup-glass {
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 20px;
+      padding: 36px 32px 32px;
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .mockup-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .widget-step-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #86868b;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+    }
+    .widget-step-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 4px;
+    }
+    .widget-step-desc {
+      font-size: 14px;
+      color: #6e6e73;
+      line-height: 1.4;
+      margin-bottom: 24px;
+    }
+
+    /* Combo tag */
+    .combo-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .combo-a { background: #f5f5f7; color: #6e6e73; }
+    .combo-b { background: #eef6ff; color: #0071e3; }
+    .combo-d { background: #e8e8ed; color: #6e6e73; }
+
+    /* ========== Combo D: 3D / Neumorphic ========== */
+    .neu-bg {
+      background: #e4e4e9;
+      border-radius: 24px;
+      padding: 40px 32px;
+    }
+    .widget-mockup-neu {
+      background: #e4e4e9;
+      border-radius: 24px;
+      padding: 36px 32px 32px;
+      box-shadow:
+        8px 8px 20px rgba(0,0,0,0.08),
+        -8px -8px 20px rgba(255,255,255,0.9);
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .input-neu {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      border: none;
+      border-radius: 12px;
+      background: #e4e4e9;
+      box-shadow:
+        inset 3px 3px 6px rgba(0,0,0,0.08),
+        inset -3px -3px 6px rgba(255,255,255,0.7);
+      color: #1d1d1f;
+      transition: all 0.2s ease;
+      letter-spacing: -0.1px;
+    }
+    .input-neu::placeholder { color: #9a9aa0; }
+    .input-neu:focus {
+      box-shadow:
+        inset 3px 3px 6px rgba(0,0,0,0.1),
+        inset -3px -3px 6px rgba(255,255,255,0.8),
+        0 0 0 2px rgba(29,29,31,0.12);
+    }
+
+    .btn-neu-primary {
+      padding: 13px 28px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #1d1d1f;
+      color: #fff;
+      box-shadow:
+        4px 4px 12px rgba(0,0,0,0.15),
+        -2px -2px 8px rgba(255,255,255,0.5);
+      transition: all 0.2s ease;
+      letter-spacing: -0.1px;
+    }
+    .btn-neu-primary:hover {
+      box-shadow:
+        2px 2px 8px rgba(0,0,0,0.2),
+        -1px -1px 4px rgba(255,255,255,0.4);
+      transform: translateY(1px);
+    }
+    .btn-neu-primary:active { transform: translateY(2px); box-shadow: inset 2px 2px 4px rgba(0,0,0,0.2); }
+
+    .btn-neu-secondary {
+      padding: 13px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #e4e4e9;
+      color: #6e6e73;
+      box-shadow:
+        3px 3px 8px rgba(0,0,0,0.07),
+        -3px -3px 8px rgba(255,255,255,0.8);
+      transition: all 0.2s ease;
+    }
+    .btn-neu-secondary:hover { color: #1d1d1f; }
+    .btn-neu-secondary:active { box-shadow: inset 2px 2px 4px rgba(0,0,0,0.08), inset -2px -2px 4px rgba(255,255,255,0.5); }
+
+    .select-card-neu {
+      padding: 18px 20px;
+      border-radius: 14px;
+      background: #e4e4e9;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      border: none;
+      box-shadow:
+        4px 4px 10px rgba(0,0,0,0.07),
+        -4px -4px 10px rgba(255,255,255,0.8);
+    }
+    .select-card-neu:hover {
+      box-shadow:
+        2px 2px 6px rgba(0,0,0,0.09),
+        -2px -2px 6px rgba(255,255,255,0.7);
+    }
+    .select-card-neu.selected {
+      box-shadow:
+        inset 3px 3px 6px rgba(0,0,0,0.08),
+        inset -3px -3px 6px rgba(255,255,255,0.6);
+      background: #dddde2;
+    }
+    .select-card-neu .select-icon { font-size: 28px; margin-bottom: 8px; }
+    .select-card-neu .select-label { font-size: 14px; font-weight: 600; color: #1d1d1f; margin-bottom: 2px; }
+    .select-card-neu .select-meta { font-size: 12px; color: #86868b; }
+
+    .pill-select-neu {
+      display: inline-flex;
+      padding: 10px 20px;
+      border-radius: 980px;
+      background: #e4e4e9;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      border: none;
+      color: #6e6e73;
+      box-shadow:
+        3px 3px 8px rgba(0,0,0,0.07),
+        -3px -3px 8px rgba(255,255,255,0.8);
+      transition: all 0.2s ease;
+    }
+    .pill-select-neu:hover { color: #1d1d1f; }
+    .pill-select-neu.selected {
+      box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1), inset -2px -2px 5px rgba(255,255,255,0.5);
+      color: #1d1d1f;
+      font-weight: 600;
+      background: #dddde2;
+    }
+
+    .progress-bar-neu-wrap {
+      height: 6px;
+      border-radius: 3px;
+      background: #e4e4e9;
+      box-shadow: inset 2px 2px 4px rgba(0,0,0,0.06), inset -2px -2px 4px rgba(255,255,255,0.6);
+      overflow: hidden;
+    }
+    .progress-bar-neu-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: #1d1d1f;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.15);
+      transition: width 0.5s ease;
+    }
+
+    /* ========== Combo E: Glass + 3D Hybrid ========== */
+    .combo-e { background: linear-gradient(135deg, #1B3A4B, #2d5a6e); color: rgba(255,255,255,0.7); -webkit-background-clip: text; background-clip: text; }
+
+    .widget-mockup-hybrid {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 24px;
+      padding: 36px 32px 32px;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow:
+        0 8px 32px rgba(0,0,0,0.2),
+        inset 0 1px 0 rgba(255,255,255,0.15);
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .input-hybrid {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.08);
+      box-shadow:
+        inset 2px 2px 6px rgba(0,0,0,0.15),
+        inset -1px -1px 3px rgba(255,255,255,0.05);
+      color: #f5f5f7;
+      transition: all 0.25s ease;
+      letter-spacing: -0.1px;
+    }
+    .input-hybrid::placeholder { color: rgba(255,255,255,0.35); }
+    .input-hybrid:focus {
+      border-color: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.12);
+      box-shadow:
+        inset 2px 2px 6px rgba(0,0,0,0.15),
+        0 0 0 3px rgba(255,255,255,0.08);
+    }
+
+    /* Floating label variant for hybrid */
+    .float-group-hybrid {
+      position: relative;
+    }
+    .float-group-hybrid input {
+      width: 100%;
+      padding: 22px 16px 10px;
+      font-size: 15px;
+      font-family: inherit;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      outline: none;
+      background: rgba(255,255,255,0.08);
+      box-shadow: inset 2px 2px 6px rgba(0,0,0,0.15), inset -1px -1px 3px rgba(255,255,255,0.05);
+      color: #f5f5f7;
+      transition: all 0.25s ease;
+    }
+    .float-group-hybrid input:focus {
+      border-color: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.12);
+      box-shadow: inset 2px 2px 6px rgba(0,0,0,0.15), 0 0 0 3px rgba(255,255,255,0.08);
+    }
+    .float-group-hybrid label {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: rgba(255,255,255,0.35);
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+    .float-group-hybrid input:focus + label,
+    .float-group-hybrid input:not(:placeholder-shown) + label {
+      top: 12px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      transform: translateY(0);
+    }
+
+    .btn-hybrid-primary {
+      padding: 13px 28px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.95);
+      color: #1B3A4B;
+      box-shadow:
+        0 4px 16px rgba(0,0,0,0.2),
+        0 1px 3px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,1);
+      transition: all 0.2s ease;
+      letter-spacing: -0.1px;
+    }
+    .btn-hybrid-primary:hover {
+      background: #fff;
+      box-shadow:
+        0 6px 20px rgba(0,0,0,0.25),
+        0 2px 4px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,1);
+      transform: translateY(-1px);
+    }
+    .btn-hybrid-primary:active {
+      transform: translateY(1px);
+      box-shadow:
+        0 2px 8px rgba(0,0,0,0.2),
+        inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .btn-hybrid-secondary {
+      padding: 13px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.6);
+      box-shadow:
+        0 2px 8px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: all 0.2s ease;
+    }
+    .btn-hybrid-secondary:hover {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.85);
+      border-color: rgba(255,255,255,0.3);
+    }
+    .btn-hybrid-secondary:active {
+      box-shadow: inset 2px 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .select-card-hybrid {
+      padding: 18px 20px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow:
+        0 4px 12px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .select-card-hybrid:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 20px rgba(0,0,0,0.18),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .select-card-hybrid.selected {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.35);
+      box-shadow:
+        inset 2px 2px 6px rgba(0,0,0,0.12),
+        inset -1px -1px 3px rgba(255,255,255,0.06),
+        0 0 0 1px rgba(255,255,255,0.15);
+      transform: translateY(0);
+    }
+    .select-card-hybrid .select-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.85; }
+    .select-card-hybrid .select-label { font-size: 14px; font-weight: 600; color: #f5f5f7; margin-bottom: 2px; }
+    .select-card-hybrid .select-meta { font-size: 12px; color: rgba(255,255,255,0.45); }
+
+    .pill-select-hybrid {
+      display: inline-flex;
+      padding: 10px 20px;
+      border-radius: 980px;
+      background: rgba(255,255,255,0.06);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.55);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.2s ease;
+    }
+    .pill-select-hybrid:hover {
+      color: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .pill-select-hybrid.selected {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.3);
+      color: #f5f5f7;
+      font-weight: 600;
+      box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), 0 0 0 1px rgba(255,255,255,0.1);
+    }
+
+    .progress-bar-hybrid-wrap {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      box-shadow: inset 1px 1px 3px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+    .progress-bar-hybrid-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.7);
+      box-shadow: 0 0 8px rgba(255,255,255,0.3);
+      transition: width 0.5s ease;
+    }
+
+    .hybrid-step-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .hybrid-step-title { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 4px; color: #f5f5f7; }
+    .hybrid-step-desc { font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.4; margin-bottom: 24px; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #e5e5e7;
+      margin: 48px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>Widget Style Inspiration</h1>
+    <p>Modern, clean component combinations for the RuufPro estimate widget</p>
+  </div>
+
+  <!-- ============ CARD CONTAINERS ============ -->
+  <div class="section">
+    <div class="section-label">01 &mdash; Containers</div>
+    <div class="section-title">Card Styles</div>
+    <div class="section-desc">Each widget step lives inside a card. These should feel light, recede behind the content, and work on any background color.</div>
+
+    <div class="grid-2">
+      <div class="card-demo card-style-a">
+        <span class="card-tag">Clean</span>
+        <div>
+          <div class="card-title-text">Bordered White</div>
+          <div class="card-subtitle">Subtle 1px border, minimal shadow. Safest option — works everywhere, never clashes. Feels like a native form.</div>
+        </div>
+      </div>
+      <div class="card-demo card-style-b">
+        <span class="card-tag">Glass</span>
+        <div>
+          <div class="card-title-text">Frosted Glass</div>
+          <div class="card-subtitle">Backdrop blur with translucent fill. Premium feel, blends beautifully with hero images. Needs a non-white background to shine.</div>
+        </div>
+      </div>
+      <div class="card-demo card-style-c">
+        <span class="card-tag">Elevated</span>
+        <div>
+          <div class="card-title-text">Shadow Elevated</div>
+          <div class="card-subtitle">No border, soft shadow only. Floats above the page. Modern and clean but watch stacking with other elevated elements.</div>
+        </div>
+      </div>
+      <div class="card-demo card-style-d">
+        <span class="card-tag">Dark</span>
+        <div>
+          <div class="card-title-text">Dark Mode</div>
+          <div class="card-subtitle">Inverted card for high-contrast landing steps. Bold first impression, then transition to light for the form steps.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PROGRESS INDICATORS ============ -->
+  <div class="section">
+    <div class="section-label">02 &mdash; Navigation</div>
+    <div class="section-title">Progress Indicators</div>
+    <div class="section-desc">Users need to know where they are in the flow. These should be informative but never dominating.</div>
+
+    <div class="grid-2">
+      <div class="progress-demo">
+        <div class="progress-label">A &mdash; Thin Bar (Neutral)</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill neutral" style="width: 37.5%"></div>
+        </div>
+        <div class="progress-step-text">Step 3 of 8</div>
+      </div>
+
+      <div class="progress-demo">
+        <div class="progress-label">B &mdash; Thin Bar (Blue)</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill blue" style="width: 62.5%"></div>
+        </div>
+        <div class="progress-step-text">Step 5 of 8</div>
+      </div>
+
+      <div class="progress-demo">
+        <div class="progress-label">C &mdash; Dot Stepper</div>
+        <div class="dot-stepper">
+          <div class="dot completed"></div>
+          <div class="dot completed"></div>
+          <div class="dot active"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+        <div class="progress-step-text">Roof pitch</div>
+      </div>
+
+      <div class="progress-demo">
+        <div class="progress-label">D &mdash; Pill Segments</div>
+        <div class="pill-stepper">
+          <div class="pill completed"></div>
+          <div class="pill completed"></div>
+          <div class="pill completed"></div>
+          <div class="pill active"></div>
+          <div class="pill"></div>
+          <div class="pill"></div>
+          <div class="pill"></div>
+          <div class="pill"></div>
+        </div>
+        <div class="progress-step-text">Step 4 &mdash; Current material</div>
+      </div>
+
+      <div class="progress-demo" style="grid-column: 1 / -1;">
+        <div class="progress-label">E &mdash; Numbered Stepper</div>
+        <div class="numbered-stepper">
+          <div class="step-num completed">&#10003;</div>
+          <div class="step-line completed"></div>
+          <div class="step-num completed">&#10003;</div>
+          <div class="step-line completed"></div>
+          <div class="step-num active">3</div>
+          <div class="step-line"></div>
+          <div class="step-num upcoming">4</div>
+          <div class="step-line"></div>
+          <div class="step-num upcoming">5</div>
+          <div class="step-line"></div>
+          <div class="step-num upcoming">6</div>
+          <div class="step-line"></div>
+          <div class="step-num upcoming">7</div>
+          <div class="step-line"></div>
+          <div class="step-num upcoming">8</div>
+        </div>
+        <div class="progress-step-text">Best for longer flows — gives clear position context. Can feel heavy if the widget is small/embedded.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BUTTONS ============ -->
+  <div class="section">
+    <div class="section-label">03 &mdash; Actions</div>
+    <div class="section-title">Button Styles</div>
+    <div class="section-desc">The widget needs a primary CTA, a back button, and sometimes a skip/secondary action. Buttons should feel tappable and confident.</div>
+
+    <div class="progress-demo" style="display: flex; flex-direction: column; gap: 20px;">
+      <div>
+        <div class="btn-row-label">Primary — Squared (12px radius)</div>
+        <div class="btn-row">
+          <button class="btn btn-solid-dark">Continue</button>
+          <button class="btn btn-solid-blue">Get Estimate</button>
+          <button class="btn btn-soft">Skip</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="btn-row-label">Primary — Pill (full radius)</div>
+        <div class="btn-row">
+          <button class="btn btn-solid-pill">Continue</button>
+          <button class="btn btn-solid-blue-pill">Get Estimate</button>
+          <button class="btn btn-soft-pill">Skip</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="btn-row-label">Secondary & Ghost</div>
+        <div class="btn-row">
+          <button class="btn btn-outline">Back</button>
+          <button class="btn btn-outline-pill">Back</button>
+          <button class="btn btn-ghost">&larr; Back</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="btn-row-label">Navigation Pair — Back + Continue</div>
+        <div class="btn-nav-pair" style="max-width: 360px;">
+          <button class="btn-back">&larr; Back</button>
+          <button class="btn-next">Continue &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ INPUTS ============ -->
+  <div class="section">
+    <div class="section-label">04 &mdash; Forms</div>
+    <div class="section-title">Input Styles</div>
+    <div class="section-desc">Address input and contact form are the most important interactions. Inputs should feel spacious and easy to tap on mobile.</div>
+
+    <div class="grid-2">
+      <div class="input-demo">
+        <div class="progress-label">A &mdash; Minimal (underline)</div>
+        <div class="input-spacer"></div>
+        <input type="text" class="input-base input-minimal" placeholder="Enter your address">
+        <div class="input-spacer"></div>
+        <input type="text" class="input-base input-minimal" placeholder="Full name">
+      </div>
+
+      <div class="input-demo">
+        <div class="progress-label">B &mdash; Bordered</div>
+        <div class="input-spacer"></div>
+        <input type="text" class="input-base input-bordered" placeholder="Enter your address">
+        <div class="input-spacer"></div>
+        <input type="text" class="input-base input-bordered" placeholder="Full name">
+      </div>
+
+      <div class="input-demo">
+        <div class="progress-label">C &mdash; Filled</div>
+        <div class="input-spacer"></div>
+        <input type="text" class="input-base input-filled" placeholder="Enter your address">
+        <div class="input-spacer"></div>
+        <input type="text" class="input-base input-filled" placeholder="Full name">
+      </div>
+
+      <div class="input-demo">
+        <div class="progress-label">D &mdash; Floating Label</div>
+        <div class="input-spacer"></div>
+        <div class="float-group">
+          <input type="text" placeholder=" " value="123 Main Street">
+          <label>Street address</label>
+        </div>
+        <div class="input-spacer"></div>
+        <div class="float-group">
+          <input type="text" placeholder=" ">
+          <label>Full name</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SELECTION CARDS ============ -->
+  <div class="section">
+    <div class="section-label">05 &mdash; Selectors</div>
+    <div class="section-title">Selection Patterns</div>
+    <div class="section-desc">Material picks, timeline, and financing all need selection UI. These should make the choice feel easy and visual.</div>
+
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      <div class="progress-demo">
+        <div class="progress-label">A &mdash; Icon Cards (2x2 grid)</div>
+        <div class="input-spacer"></div>
+        <div class="grid-2" style="max-width: 360px;">
+          <div class="select-card selected">
+            <div class="select-icon">&#9651;</div>
+            <div class="select-label">Low Slope</div>
+            <div class="select-meta">Nearly flat</div>
+          </div>
+          <div class="select-card">
+            <div class="select-icon">&#9651;</div>
+            <div class="select-label">Medium</div>
+            <div class="select-meta">Standard pitch</div>
+          </div>
+          <div class="select-card">
+            <div class="select-icon">&#9651;</div>
+            <div class="select-label">Steep</div>
+            <div class="select-meta">High angle</div>
+          </div>
+          <div class="select-card">
+            <div class="select-icon">&#10068;</div>
+            <div class="select-label">Not Sure</div>
+            <div class="select-meta">We'll estimate</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-demo">
+        <div class="progress-label">B &mdash; Image Cards (3-column)</div>
+        <div class="input-spacer"></div>
+        <div class="grid-3" style="max-width: 480px;">
+          <div class="img-select-card selected">
+            <div class="img-select-thumb">&#9632;</div>
+            <div class="img-select-info">
+              <div class="select-label">Asphalt</div>
+              <div class="select-meta">Most common</div>
+            </div>
+          </div>
+          <div class="img-select-card">
+            <div class="img-select-thumb">&#9632;</div>
+            <div class="img-select-info">
+              <div class="select-label">Metal</div>
+              <div class="select-meta">30-50 year life</div>
+            </div>
+          </div>
+          <div class="img-select-card">
+            <div class="img-select-thumb">&#9632;</div>
+            <div class="img-select-info">
+              <div class="select-label">Tile</div>
+              <div class="select-meta">Premium look</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-demo">
+        <div class="progress-label">C &mdash; Pill Toggles</div>
+        <div class="input-spacer"></div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <div class="pill-select selected">ASAP</div>
+          <div class="pill-select">1-3 Months</div>
+          <div class="pill-select">3-6 Months</div>
+          <div class="pill-select">Just Exploring</div>
+        </div>
+      </div>
+
+      <div class="progress-demo">
+        <div class="progress-label">D &mdash; Segmented Control</div>
+        <div class="input-spacer"></div>
+        <div class="radio-row" style="max-width: 400px;">
+          <button class="radio-option">Yes</button>
+          <button class="radio-option selected">No</button>
+          <button class="radio-option">Maybe</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ============ FULL WIDGET COMBOS ============ -->
+  <div class="section">
+    <div class="section-label">06 &mdash; Combinations</div>
+    <div class="section-title">Full Widget Step Mockups</div>
+    <div class="section-desc">Putting it all together. Each mockup shows one step of the widget with a consistent component combination.</div>
+
+    <!-- COMBO A: Clean Neutral -->
+    <div style="margin-bottom: 48px;">
+      <span class="combo-tag combo-a">Combo A &mdash; Clean Neutral</span>
+      <p style="font-size: 13px; color: #6e6e73; margin-bottom: 20px;">Bordered card + pill progress + squared dark buttons + bordered inputs. Safe, universal, works on any contractor site.</p>
+
+      <div class="mockup-pair">
+        <div class="widget-mockup">
+          <div class="pill-stepper" style="margin-bottom: 24px;">
+            <div class="pill completed"></div>
+            <div class="pill active"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+          </div>
+          <div class="widget-step-label">Step 2 of 8</div>
+          <div class="widget-step-title">Your Address</div>
+          <div class="widget-step-desc">We'll use satellite data to measure your roof.</div>
+          <input type="text" class="input-base input-bordered" placeholder="Enter your home address" style="margin-bottom: 24px;">
+          <div style="height: 120px; background: #f5f5f7; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #86868b; font-size: 13px; margin-bottom: 24px;">Map preview</div>
+          <div class="btn-nav-pair">
+            <button class="btn-back">&larr;</button>
+            <button class="btn-next">Continue</button>
+          </div>
+        </div>
+
+        <div class="widget-mockup">
+          <div class="pill-stepper" style="margin-bottom: 24px;">
+            <div class="pill completed"></div>
+            <div class="pill completed"></div>
+            <div class="pill completed"></div>
+            <div class="pill active"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+          </div>
+          <div class="widget-step-label">Step 4 of 8</div>
+          <div class="widget-step-title">Current Roofing</div>
+          <div class="widget-step-desc">What material is on your roof now?</div>
+          <div class="grid-2" style="margin-bottom: 24px;">
+            <div class="select-card selected">
+              <div class="select-icon">&#9632;</div>
+              <div class="select-label">Asphalt</div>
+            </div>
+            <div class="select-card">
+              <div class="select-icon">&#9632;</div>
+              <div class="select-label">Metal</div>
+            </div>
+            <div class="select-card">
+              <div class="select-icon">&#9632;</div>
+              <div class="select-label">Tile</div>
+            </div>
+            <div class="select-card">
+              <div class="select-icon">&#10068;</div>
+              <div class="select-label">Not Sure</div>
+            </div>
+          </div>
+          <div class="btn-nav-pair">
+            <button class="btn-back">&larr;</button>
+            <button class="btn-next">Continue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMBO B: Elevated Minimal -->
+    <div style="margin-bottom: 48px;">
+      <span class="combo-tag combo-b">Combo B &mdash; Elevated Minimal</span>
+      <p style="font-size: 13px; color: #6e6e73; margin-bottom: 20px;">Shadow card + thin bar progress + pill buttons + filled inputs. Apple-influenced, premium feel, slightly bolder.</p>
+
+      <div class="mockup-pair">
+        <div class="widget-mockup" style="box-shadow: 0 4px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02); border-radius: 24px;">
+          <div class="progress-bar-wrap" style="margin-bottom: 24px;">
+            <div class="progress-bar-fill neutral" style="width: 25%"></div>
+          </div>
+          <div class="widget-step-label">Step 2 of 8</div>
+          <div class="widget-step-title">Your Address</div>
+          <div class="widget-step-desc">We'll use satellite data to measure your roof.</div>
+          <input type="text" class="input-base input-filled" placeholder="Enter your home address" style="margin-bottom: 24px;">
+          <div style="height: 120px; background: #f5f5f7; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #86868b; font-size: 13px; margin-bottom: 24px;">Map preview</div>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-ghost" style="padding: 12px 16px;">&larr; Back</button>
+            <button class="btn btn-solid-pill" style="flex: 1;">Continue</button>
+          </div>
+        </div>
+
+        <div class="widget-mockup" style="box-shadow: 0 4px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02); border-radius: 24px;">
+          <div class="progress-bar-wrap" style="margin-bottom: 24px;">
+            <div class="progress-bar-fill neutral" style="width: 75%"></div>
+          </div>
+          <div class="widget-step-label">Step 6 of 8</div>
+          <div class="widget-step-title">Timeline</div>
+          <div class="widget-step-desc">When are you looking to get this done?</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+            <div class="pill-select selected">ASAP</div>
+            <div class="pill-select">1-3 Months</div>
+            <div class="pill-select">3-6 Months</div>
+            <div class="pill-select">Just Exploring</div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; margin: 20px 0 10px;">Interested in financing?</div>
+          <div class="radio-row" style="margin-bottom: 24px;">
+            <button class="radio-option selected">Yes</button>
+            <button class="radio-option">No</button>
+            <button class="radio-option">Maybe</button>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-ghost" style="padding: 12px 16px;">&larr; Back</button>
+            <button class="btn btn-solid-pill" style="flex: 1;">Continue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMBO C: Glass Premium -->
+    <div style="margin-bottom: 48px; background: linear-gradient(135deg, #1B3A4B 0%, #2d5a6e 100%); border-radius: 24px; padding: 40px 32px;">
+      <span class="combo-tag" style="background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);">Combo C &mdash; Glass Premium</span>
+      <p style="font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 20px;">Frosted glass card + dot progress + blue accent buttons. Best on hero sections or dark backgrounds. The "wow" option.</p>
+
+      <div class="mockup-pair">
+        <div class="widget-mockup-glass">
+          <div class="dot-stepper" style="margin-bottom: 24px;">
+            <div class="dot completed"></div>
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+          <div class="widget-step-label">Step 2 of 8</div>
+          <div class="widget-step-title">Your Address</div>
+          <div class="widget-step-desc">We'll use satellite data to measure your roof.</div>
+          <div class="float-group" style="margin-bottom: 24px;">
+            <input type="text" placeholder=" ">
+            <label>Enter your home address</label>
+          </div>
+          <div style="height: 120px; background: rgba(245,245,247,0.5); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #86868b; font-size: 13px; margin-bottom: 24px; backdrop-filter: blur(8px);">Map preview</div>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-outline" style="padding: 12px 16px;">&larr;</button>
+            <button class="btn btn-solid-blue" style="flex: 1; border-radius: 12px;">Continue</button>
+          </div>
+        </div>
+
+        <div class="widget-mockup-glass">
+          <div class="dot-stepper" style="margin-bottom: 24px;">
+            <div class="dot completed"></div>
+            <div class="dot completed"></div>
+            <div class="dot completed"></div>
+            <div class="dot completed"></div>
+            <div class="dot completed"></div>
+            <div class="dot completed"></div>
+            <div class="dot active"></div>
+            <div class="dot"></div>
+          </div>
+          <div class="widget-step-label">Step 7 of 8</div>
+          <div class="widget-step-title">Almost There</div>
+          <div class="widget-step-desc">Where should we send your estimate?</div>
+          <div class="float-group" style="margin-bottom: 14px;">
+            <input type="text" placeholder=" " value="John Smith">
+            <label>Full name</label>
+          </div>
+          <div class="float-group" style="margin-bottom: 14px;">
+            <input type="text" placeholder=" " value="(555) 123-4567">
+            <label>Phone number</label>
+          </div>
+          <div class="float-group" style="margin-bottom: 24px;">
+            <input type="text" placeholder=" " value="john@email.com">
+            <label>Email address</label>
+          </div>
+          <button class="btn btn-solid-blue" style="width: 100%; border-radius: 12px; padding: 14px;">Get My Estimate &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- COMBO D: 3D Neumorphic -->
+    <div style="margin-bottom: 48px;">
+      <span class="combo-tag combo-d">Combo D &mdash; 3D Neumorphic</span>
+      <p style="font-size: 13px; color: #6e6e73; margin-bottom: 20px;">Soft 3D shadows on a light grey surface. Inputs and cards feel pressed or raised. Tactile, modern, no borders needed.</p>
+
+      <div class="neu-bg">
+        <div class="mockup-pair">
+          <div class="widget-mockup-neu">
+            <div class="progress-bar-neu-wrap" style="margin-bottom: 24px;">
+              <div class="progress-bar-neu-fill" style="width: 25%"></div>
+            </div>
+            <div class="widget-step-label">Step 2 of 8</div>
+            <div class="widget-step-title">Your Address</div>
+            <div class="widget-step-desc">We'll use satellite data to measure your roof.</div>
+            <input type="text" class="input-neu" placeholder="Enter your home address" style="margin-bottom: 24px;">
+            <div style="height: 120px; background: #e4e4e9; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #86868b; font-size: 13px; margin-bottom: 24px; box-shadow: inset 3px 3px 6px rgba(0,0,0,0.06), inset -3px -3px 6px rgba(255,255,255,0.6);">Map preview</div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-neu-secondary">&larr; Back</button>
+              <button class="btn-neu-primary" style="flex: 1;">Continue</button>
+            </div>
+          </div>
+
+          <div class="widget-mockup-neu">
+            <div class="progress-bar-neu-wrap" style="margin-bottom: 24px;">
+              <div class="progress-bar-neu-fill" style="width: 50%"></div>
+            </div>
+            <div class="widget-step-label">Step 4 of 8</div>
+            <div class="widget-step-title">Current Roofing</div>
+            <div class="widget-step-desc">What material is on your roof now?</div>
+            <div class="grid-2" style="margin-bottom: 24px;">
+              <div class="select-card-neu selected">
+                <div class="select-icon">&#9632;</div>
+                <div class="select-label">Asphalt</div>
+                <div class="select-meta">Most common</div>
+              </div>
+              <div class="select-card-neu">
+                <div class="select-icon">&#9632;</div>
+                <div class="select-label">Metal</div>
+                <div class="select-meta">30-50 year life</div>
+              </div>
+              <div class="select-card-neu">
+                <div class="select-icon">&#9632;</div>
+                <div class="select-label">Tile</div>
+                <div class="select-meta">Premium look</div>
+              </div>
+              <div class="select-card-neu">
+                <div class="select-icon">&#10068;</div>
+                <div class="select-label">Not Sure</div>
+                <div class="select-meta">We'll estimate</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-neu-secondary">&larr; Back</button>
+              <button class="btn-neu-primary" style="flex: 1;">Continue</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="height: 32px;"></div>
+
+        <div class="mockup-pair">
+          <div class="widget-mockup-neu">
+            <div class="progress-bar-neu-wrap" style="margin-bottom: 24px;">
+              <div class="progress-bar-neu-fill" style="width: 75%"></div>
+            </div>
+            <div class="widget-step-label">Step 6 of 8</div>
+            <div class="widget-step-title">Timeline</div>
+            <div class="widget-step-desc">When are you looking to get this done?</div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+              <div class="pill-select-neu selected">ASAP</div>
+              <div class="pill-select-neu">1-3 Months</div>
+              <div class="pill-select-neu">3-6 Months</div>
+              <div class="pill-select-neu">Just Exploring</div>
+            </div>
+            <div style="font-size: 14px; font-weight: 600; margin: 8px 0 12px;">Interested in financing?</div>
+            <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+              <div class="pill-select-neu selected">Yes</div>
+              <div class="pill-select-neu">No</div>
+              <div class="pill-select-neu">Maybe</div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-neu-secondary">&larr; Back</button>
+              <button class="btn-neu-primary" style="flex: 1;">Continue</button>
+            </div>
+          </div>
+
+          <div class="widget-mockup-neu">
+            <div class="progress-bar-neu-wrap" style="margin-bottom: 24px;">
+              <div class="progress-bar-neu-fill" style="width: 87.5%"></div>
+            </div>
+            <div class="widget-step-label">Step 7 of 8</div>
+            <div class="widget-step-title">Almost There</div>
+            <div class="widget-step-desc">Where should we send your estimate?</div>
+            <input type="text" class="input-neu" placeholder="Full name" style="margin-bottom: 14px;" value="John Smith">
+            <input type="text" class="input-neu" placeholder="Phone number" style="margin-bottom: 14px;" value="(555) 123-4567">
+            <input type="text" class="input-neu" placeholder="Email address" style="margin-bottom: 24px;" value="john@email.com">
+            <button class="btn-neu-primary" style="width: 100%; padding: 14px;">Get My Estimate &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- COMBO E: Glass + 3D Hybrid -->
+    <div style="margin-bottom: 48px;">
+      <span class="combo-tag" style="background: linear-gradient(135deg, #1B3A4B, #2d5a6e); color: rgba(255,255,255,0.8);">Combo E &mdash; Glass + 3D Hybrid</span>
+      <p style="font-size: 13px; color: #6e6e73; margin-bottom: 20px;">Glass containers from Combo C with tactile 3D depth from Combo D. Cards lift on hover and press inward when selected. Inputs feel carved into the glass. Buttons have physical weight. The premium feel of glass meets the satisfying physicality of neumorphism.</p>
+
+      <div style="background: linear-gradient(145deg, #152e3d 0%, #1B3A4B 30%, #2d5a6e 70%, #1f4458 100%); border-radius: 24px; padding: 40px 32px;">
+        <div class="mockup-pair">
+          <div class="widget-mockup-hybrid">
+            <div class="progress-bar-hybrid-wrap" style="margin-bottom: 24px;">
+              <div class="progress-bar-hybrid-fill" style="width: 25%"></div>
+            </div>
+            <div class="hybrid-step-label">Step 2 of 8</div>
+            <div class="hybrid-step-title">Your Address</div>
+            <div class="hybrid-step-desc">We'll use satellite data to measure your roof.</div>
+            <div class="float-group-hybrid" style="margin-bottom: 24px;">
+              <input type="text" placeholder=" ">
+              <label>Enter your home address</label>
+            </div>
+            <div style="height: 120px; background: rgba(255,255,255,0.05); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.3); font-size: 13px; margin-bottom: 24px; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.15), inset -1px -1px 3px rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">Map preview</div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-hybrid-secondary">&larr; Back</button>
+              <button class="btn-hybrid-primary" style="flex: 1;">Continue</button>
+            </div>
+          </div>
+
+          <div class="widget-mockup-hybrid">
+            <div class="progress-bar-hybrid-wrap" style="margin-bottom: 24px;">
+              <div class="progress-bar-hybrid-fill" style="width: 50%"></div>
+            </div>
+            <div class="hybrid-step-label">Step 4 of 8</div>
+            <div class="hybrid-step-title">Current Roofing</div>
+            <div class="hybrid-step-desc">What material is on your roof now?</div>
+            <div class="grid-2" style="margin-bottom: 24px;">
+              <div class="select-card-hybrid selected">
+                <div class="select-icon">&#9632;</div>
+                <div class="select-label">Asphalt</div>
+                <div class="select-meta">Most common</div>
+              </div>
+              <div class="select-card-hybrid">
+                <div class="select-icon">&#9632;</div>
+                <div class="select-label">Metal</div>
+                <div class="select-meta">30-50 year life</div>
+              </div>
+              <div class="select-card-hybrid">
+                <div class="select-icon">&#9632;</div>
+                <div class="select-label">Tile</div>
+                <div class="select-meta">Premium look</div>
+              </div>
+              <div class="select-card-hybrid">
+                <div class="select-icon">&#10068;</div>
+                <div class="select-label">Not Sure</div>
+                <div class="select-meta">We'll estimate</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-hybrid-secondary">&larr; Back</button>
+              <button class="btn-hybrid-primary" style="flex: 1;">Continue</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="height: 32px;"></div>
+
+        <div class="mockup-pair">
+          <div class="widget-mockup-hybrid">
+            <div class="progress-bar-hybrid-wrap" style="margin-bottom: 24px;">
+              <div class="progress-bar-hybrid-fill" style="width: 75%"></div>
+            </div>
+            <div class="hybrid-step-label">Step 6 of 8</div>
+            <div class="hybrid-step-title">Timeline</div>
+            <div class="hybrid-step-desc">When are you looking to get this done?</div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+              <div class="pill-select-hybrid selected">ASAP</div>
+              <div class="pill-select-hybrid">1-3 Months</div>
+              <div class="pill-select-hybrid">3-6 Months</div>
+              <div class="pill-select-hybrid">Just Exploring</div>
+            </div>
+            <div style="font-size: 14px; font-weight: 600; margin: 8px 0 12px; color: rgba(255,255,255,0.7);">Interested in financing?</div>
+            <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+              <div class="pill-select-hybrid selected">Yes</div>
+              <div class="pill-select-hybrid">No</div>
+              <div class="pill-select-hybrid">Maybe</div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-hybrid-secondary">&larr; Back</button>
+              <button class="btn-hybrid-primary" style="flex: 1;">Continue</button>
+            </div>
+          </div>
+
+          <div class="widget-mockup-hybrid">
+            <div class="progress-bar-hybrid-wrap" style="margin-bottom: 24px;">
+              <div class="progress-bar-hybrid-fill" style="width: 87.5%"></div>
+            </div>
+            <div class="hybrid-step-label">Step 7 of 8</div>
+            <div class="hybrid-step-title">Almost There</div>
+            <div class="hybrid-step-desc">Where should we send your estimate?</div>
+            <div class="float-group-hybrid" style="margin-bottom: 14px;">
+              <input type="text" placeholder=" " value="John Smith">
+              <label>Full name</label>
+            </div>
+            <div class="float-group-hybrid" style="margin-bottom: 14px;">
+              <input type="text" placeholder=" " value="(555) 123-4567">
+              <label>Phone number</label>
+            </div>
+            <div class="float-group-hybrid" style="margin-bottom: 24px;">
+              <input type="text" placeholder=" " value="john@email.com">
+              <label>Email address</label>
+            </div>
+            <button class="btn-hybrid-primary" style="width: 100%; padding: 14px;">Get My Estimate &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RECOMMENDATION ============ -->
+  <div class="section" style="max-width: 640px; margin: 0 auto;">
+    <div class="section-label" style="text-align: center;">Recommendation</div>
+    <div class="section-title" style="text-align: center;">Which Combo?</div>
+    <div style="font-size: 14px; color: #6e6e73; line-height: 1.7; margin-top: 12px;">
+      <p style="margin-bottom: 12px;"><strong>Combo A (Clean Neutral)</strong> is the safest bet for an embeddable widget. It works on any contractor site regardless of their color scheme. No backdrop-filter compatibility issues. Fast to render.</p>
+      <p style="margin-bottom: 12px;"><strong>Combo B (Elevated Minimal)</strong> is a slight upgrade — the pill buttons and filled inputs feel more polished. The shadow card gives it presence without being heavy. Good middle ground.</p>
+      <p style="margin-bottom: 12px;"><strong>Combo C (Glass Premium)</strong> is the most visually striking but only shines on darker/image backgrounds. Could be the default for the dedicated widget section on contractor sites (where you control the background), while A or B handles the embedded/hero version.</p>
+      <p style="margin-bottom: 12px;"><strong>Combo D (3D Neumorphic)</strong> is the most tactile and unique. The raised/pressed effect gives every element physical presence. Works beautifully on light grey backgrounds. Potential concern: the grey surface may feel less "clean" than pure white to some users, and it needs a grey-toned page to blend naturally.</p>
+      <p><strong>Combo E (Glass + 3D Hybrid)</strong> takes the best of both worlds. The frosted glass container from C gives it that premium, floating-on-dark feel, while the 3D depth from D makes every interactive element feel physical — cards lift on hover and press inward when selected, inputs feel carved into glass, buttons have real weight. This is the "have your cake and eat it too" option.</p>
+    </div>
+  </div>
+
+</body>
+</html>

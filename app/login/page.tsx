@@ -18,7 +18,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const { error: loginError } = await supabase.auth.signInWithPassword({
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -29,16 +29,14 @@ export default function LoginPage() {
       return;
     }
 
-    // TODO: redirect to dashboard once it exists
-    // For now, redirect to onboarding (will update later)
-    router.push("/onboarding");
+    window.location.href = "/dashboard";
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-brand-900">RoofReady</h1>
+          <h1 className="text-3xl font-bold text-brand-900">RuufPro</h1>
           <p className="mt-2 text-gray-600">Sign in to manage your site</p>
         </div>
 

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ridgeline Hero — Card Opacity Options</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #111; font-family: system-ui, sans-serif; color: white; padding: 2rem; }
+    h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0.5rem; }
+    p.subtitle { text-align: center; color: #999; font-size: 0.85rem; margin-bottom: 2rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 1400px; margin: 0 auto; }
+    .option { position: relative; border-radius: 1.5rem; overflow: hidden; border: 2px solid #333; }
+    .option:hover { border-color: #D4863E; }
+    .label {
+      position: absolute; top: 1rem; left: 1rem; z-index: 50;
+      background: #D4863E; color: white; font-weight: 800; font-size: 0.75rem;
+      padding: 0.4rem 0.8rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .desc {
+      position: absolute; top: 1rem; right: 1rem; z-index: 50;
+      background: rgba(0,0,0,0.7); color: #ccc; font-size: 0.65rem;
+      padding: 0.35rem 0.7rem; border-radius: 999px; backdrop-filter: blur(4px);
+      max-width: 260px; text-align: right;
+    }
+
+    .hero {
+      position: relative; width: 100%; aspect-ratio: 16/10; background: #1B3A4B; overflow: hidden;
+    }
+    .hero .grid-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                  linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 4rem 4rem; pointer-events: none;
+    }
+
+    .text-stack {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 10; gap: 0.25rem;
+    }
+    .text-stack h2 {
+      font-family: "Arial Black", Impact, sans-serif; font-weight: 900;
+      text-transform: uppercase; letter-spacing: -0.04em; line-height: 0.85; margin: 0;
+    }
+    .line1 {
+      font-size: clamp(2.5rem, 8vw, 4.5rem); color: #D4863E; align-self: center; padding-left: 15%;
+      text-shadow: 1px 1px 0 #0D1F2D, 2px 2px 0 #0D1F2D, 3px 3px 0 #0D1F2D, 4px 4px 0 #0D1F2D, 5px 5px 0 #0D1F2D, 6px 6px 0 #0D1F2D;
+    }
+    .line2 {
+      font-size: clamp(3rem, 10vw, 6.5rem); color: white;
+      text-shadow: 1px 1px 0 #0D1F2D, 2px 2px 0 #0D1F2D, 3px 3px 0 #0D1F2D, 4px 4px 0 #0D1F2D, 5px 5px 0 #0D1F2D, 6px 6px 0 #0D1F2D, 7px 7px 0 #0D1F2D, 8px 8px 0 #0D1F2D;
+    }
+    .line3 {
+      font-size: clamp(2.5rem, 8vw, 4.5rem); color: white; align-self: center; padding-left: 20%;
+      text-shadow: 1px 1px 0 #0D1F2D, 2px 2px 0 #0D1F2D, 3px 3px 0 #0D1F2D, 4px 4px 0 #0D1F2D, 5px 5px 0 #0D1F2D, 6px 6px 0 #0D1F2D;
+    }
+
+    /* Glass card base */
+    .card {
+      position: absolute; z-index: 30; width: 130px; aspect-ratio: 3/3.5;
+      backdrop-filter: blur(12px);
+      border-radius: 1.5rem;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      animation: float 5s ease-in-out infinite;
+    }
+    .card.right { animation: float2 6s ease-in-out infinite; }
+    .card .icon {
+      width: 3rem; height: 3rem; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; margin-bottom: 0.5rem;
+    }
+    .card .icon.dark { background: #2C3E50; border: 2px solid rgba(255,255,255,0.3); }
+    .card .icon.copper { background: #D4863E; border: 2px solid rgba(255,255,255,0.3); }
+    .card .icon svg { width: 1.2rem; height: 1.2rem; stroke: white; fill: none; stroke-width: 2; }
+    .card .name { font-weight: 700; font-size: 0.7rem; color: white; }
+    .card .stat { font-size: 0.55rem; color: rgba(255,255,255,0.6); margin-top: 0.15rem; }
+    .card.left { transform: rotate(-12deg); bottom: 10%; left: 20%; }
+    .card.right { transform: rotate(12deg); top: 15%; right: 22%; }
+
+    /* Spinning badge */
+    .badge {
+      position: absolute; z-index: 40; bottom: -5%; right: 15%;
+      width: 80px; height: 80px; background: #D4863E; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3); transform: rotate(12deg);
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+    .badge .spinner {
+      position: absolute; inset: 3px; animation: spin 10s linear infinite;
+    }
+    .badge .spinner svg { width: 100%; height: 100%; }
+    .badge .arrow-center {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .badge .arrow-center svg { width: 28px; height: 28px; stroke: white; fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+
+    @keyframes float {
+      0%, 100% { translate: 0 0; }
+      50% { translate: 0 -10px; }
+    }
+    @keyframes float2 {
+      0%, 100% { translate: 0 0; }
+      50% { translate: 0 -14px; }
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Ridgeline Hero — Card Opacity Options</h1>
+<p class="subtitle">Same positioning, same layout — just different glass card opacity levels. Hover to highlight.</p>
+
+<div class="grid">
+
+  <!-- OPTION A: Current (15% white bg, full border) -->
+  <div class="option">
+    <div class="label">A — Current (15%)</div>
+    <div class="desc">bg: white/15 · border: white/30 · backdrop-blur: 12px</div>
+    <div class="hero">
+      <div class="grid-bg"></div>
+      <div class="text-stack">
+        <h2 class="line1">SMART</h2>
+        <h2 class="line2">ROOFING</h2>
+        <h2 class="line3">ONLINE</h2>
+      </div>
+      <div class="card left" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.30);">
+        <div class="icon dark"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <div class="name">Summit Roofing</div>
+        <div class="stat">23 New Leads</div>
+      </div>
+      <div class="card right" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.30);">
+        <div class="icon copper"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+        <div class="name">Instant Estimate</div>
+        <div class="stat">$14,200 — 32 sq</div>
+      </div>
+      <div class="badge">
+        <div class="spinner"><svg viewBox="0 0 100 100"><path id="cp1" d="M 50,50 m -36,0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0" fill="none"/><text font-size="11" font-weight="900" letter-spacing="3" text-transform="uppercase" fill="white"><textPath href="#cp1">GET STARTED FOR FREE • GET STARTED FOR FREE •</textPath></text></svg></div>
+        <div class="arrow-center"><svg viewBox="0 0 100 100"><path d="M20,80 Q 40,50 30,30 T 80,20"/><path d="M60,10 L80,20 L70,40"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B: Lighter (10% white bg) -->
+  <div class="option">
+    <div class="label">B — Lighter (10%)</div>
+    <div class="desc">bg: white/10 · border: white/20 · backdrop-blur: 12px</div>
+    <div class="hero">
+      <div class="grid-bg"></div>
+      <div class="text-stack">
+        <h2 class="line1">SMART</h2>
+        <h2 class="line2">ROOFING</h2>
+        <h2 class="line3">ONLINE</h2>
+      </div>
+      <div class="card left" style="background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.20);">
+        <div class="icon dark"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <div class="name">Summit Roofing</div>
+        <div class="stat">23 New Leads</div>
+      </div>
+      <div class="card right" style="background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.20);">
+        <div class="icon copper"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+        <div class="name">Instant Estimate</div>
+        <div class="stat">$14,200 — 32 sq</div>
+      </div>
+      <div class="badge">
+        <div class="spinner"><svg viewBox="0 0 100 100"><path id="cp2" d="M 50,50 m -36,0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0" fill="none"/><text font-size="11" font-weight="900" letter-spacing="3" fill="white"><textPath href="#cp2">GET STARTED FOR FREE • GET STARTED FOR FREE •</textPath></text></svg></div>
+        <div class="arrow-center"><svg viewBox="0 0 100 100"><path d="M20,80 Q 40,50 30,30 T 80,20"/><path d="M60,10 L80,20 L70,40"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION C: Subtle (7% white bg, less blur) -->
+  <div class="option">
+    <div class="label">C — Subtle (7%)</div>
+    <div class="desc">bg: white/7 · border: white/15 · backdrop-blur: 8px</div>
+    <div class="hero">
+      <div class="grid-bg"></div>
+      <div class="text-stack">
+        <h2 class="line1">SMART</h2>
+        <h2 class="line2">ROOFING</h2>
+        <h2 class="line3">ONLINE</h2>
+      </div>
+      <div class="card left" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px);">
+        <div class="icon dark"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <div class="name">Summit Roofing</div>
+        <div class="stat">23 New Leads</div>
+      </div>
+      <div class="card right" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px);">
+        <div class="icon copper"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+        <div class="name">Instant Estimate</div>
+        <div class="stat">$14,200 — 32 sq</div>
+      </div>
+      <div class="badge">
+        <div class="spinner"><svg viewBox="0 0 100 100"><path id="cp3" d="M 50,50 m -36,0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0" fill="none"/><text font-size="11" font-weight="900" letter-spacing="3" fill="white"><textPath href="#cp3">GET STARTED FOR FREE • GET STARTED FOR FREE •</textPath></text></svg></div>
+        <div class="arrow-center"><svg viewBox="0 0 100 100"><path d="M20,80 Q 40,50 30,30 T 80,20"/><path d="M60,10 L80,20 L70,40"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION D: Ghost (5% white bg, minimal blur) -->
+  <div class="option">
+    <div class="label">D — Ghost (5%)</div>
+    <div class="desc">bg: white/5 · border: white/10 · backdrop-blur: 6px</div>
+    <div class="hero">
+      <div class="grid-bg"></div>
+      <div class="text-stack">
+        <h2 class="line1">SMART</h2>
+        <h2 class="line2">ROOFING</h2>
+        <h2 class="line3">ONLINE</h2>
+      </div>
+      <div class="card left" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(6px);">
+        <div class="icon dark"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <div class="name">Summit Roofing</div>
+        <div class="stat">23 New Leads</div>
+      </div>
+      <div class="card right" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(6px);">
+        <div class="icon copper"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+        <div class="name">Instant Estimate</div>
+        <div class="stat">$14,200 — 32 sq</div>
+      </div>
+      <div class="badge">
+        <div class="spinner"><svg viewBox="0 0 100 100"><path id="cp4" d="M 50,50 m -36,0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0" fill="none"/><text font-size="11" font-weight="900" letter-spacing="3" fill="white"><textPath href="#cp4">GET STARTED FOR FREE • GET STARTED FOR FREE •</textPath></text></svg></div>
+        <div class="arrow-center"><svg viewBox="0 0 100 100"><path d="M20,80 Q 40,50 30,30 T 80,20"/><path d="M60,10 L80,20 L70,40"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

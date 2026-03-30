@@ -143,7 +143,7 @@ export default function RidgelineFinalCTA() {
           </div>
 
           <p className="text-xs text-white/30">
-            &copy; {new Date().getFullYear()} RoofReady. All rights reserved.
+            &copy; {new Date().getFullYear()} RuufPro. All rights reserved.
           </p>
 
           <div className="flex items-center gap-6 text-xs text-white/30">

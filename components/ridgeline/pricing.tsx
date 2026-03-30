@@ -142,7 +142,7 @@ export default function RidgelinePricing() {
                   y: 0,
                   scale: plan.highlighted ? 1.03 : 1,
                   transition: {
-                    type: "spring",
+                    type: "spring" as const,
                     stiffness: 300,
                     damping: 25,
                   },

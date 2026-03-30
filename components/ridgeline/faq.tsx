@@ -15,11 +15,11 @@ const FAQS = [
   },
   {
     q: "Can I use the widget on my existing website?",
-    a: "Absolutely. The estimate widget embeds on any website with a single line of code — just paste it and it works. You don't need a RoofReady website to use the widget.",
+    a: "Absolutely. The estimate widget embeds on any website with a single line of code — just paste it and it works. You don't need a RuufPro website to use the widget.",
   },
   {
     q: "Do I own my website if I leave?",
-    a: "Yes. Your website content and leads are yours. If you leave RoofReady, you can export everything.",
+    a: "Yes. Your website content and leads are yours. If you leave RuufPro, you can export everything.",
   },
   {
     q: "How long does setup take?",

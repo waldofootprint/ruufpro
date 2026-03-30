@@ -1,4 +1,4 @@
-# RoofReady — Project Overview
+# RuufPro — Project Overview
 
 ## What We're Building
 A micro-SaaS platform for small roofing contractors (1-10 person crews) that bundles:
@@ -37,7 +37,7 @@ The free website is our lead magnet and main acquisition tool — always free, f
 | Review Automation | $99/mo | Auto-text Google review requests after job completion |
 | Auto-Reply + Follow-Up | $149/mo | Speed-to-lead auto-text + drip sequences |
 | SEO City Pages | $149/mo | Auto-generated "[Service] in [City]" pages |
-| Custom Domain | TBD | Use own domain instead of slug.roofready.com |
+| Custom Domain | TBD | Use own domain instead of slug.ruufpro.com |
 
 ## Phased Roadmap
 | Phase | What | Timeline |

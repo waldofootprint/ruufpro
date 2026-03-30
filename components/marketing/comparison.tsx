@@ -1,4 +1,4 @@
-// Comparison table — RoofReady vs competitors.
+// Comparison table — RuufPro vs competitors.
 // Premium animated table inspired by 21st.dev server management component.
 // Uses framer-motion for staggered row animations and hover effects.
 
@@ -157,7 +157,7 @@ export default function Comparison() {
           <div className="grid grid-cols-12 gap-2 md:gap-4 px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
             <div className="col-span-4">Feature</div>
             <div className="col-span-2 text-center">
-              <span className="text-brand-600 font-bold text-sm normal-case">RoofReady</span>
+              <span className="text-brand-600 font-bold text-sm normal-case">RuufPro</span>
             </div>
             <div className="col-span-2 text-center">Roofle</div>
             <div className="col-span-2 text-center">Roofr</div>

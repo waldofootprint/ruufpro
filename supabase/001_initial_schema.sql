@@ -1,4 +1,4 @@
--- RoofReady Initial Schema
+-- RuufPro Initial Schema
 -- Run this in Supabase SQL Editor (Dashboard → SQL Editor → New query)
 
 -- ============================================================

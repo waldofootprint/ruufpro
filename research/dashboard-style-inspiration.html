@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Style Inspiration — RuufPro</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f0f0f3;
+      color: #1d1d1f;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ========== PAGE CHROME ========== */
+    .page-header {
+      text-align: center;
+      padding: 48px 20px 40px;
+    }
+    .page-header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .page-header p { color: #6e6e73; font-size: 15px; max-width: 520px; margin: 0 auto; line-height: 1.5; }
+
+    .direction-wrapper {
+      max-width: 1100px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
+    }
+    .direction-header {
+      margin-bottom: 24px;
+    }
+    .direction-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 5px 14px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .direction-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      margin-bottom: 6px;
+    }
+    .direction-desc {
+      font-size: 14px;
+      color: #6e6e73;
+      line-height: 1.6;
+      max-width: 700px;
+    }
+    .direction-details {
+      font-size: 13px;
+      color: #86868b;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    .mockup-frame {
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
+    /* Shared utilities */
+    .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+    .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+    .lead-name { font-size: 15px; font-weight: 700; }
+    .lead-meta { font-size: 12px; }
+    .lead-phone { font-weight: 600; cursor: pointer; }
+    .badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .time-ago { font-size: 11px; }
+    .divider-line { border: none; height: 1px; }
+
+    /* ====================================================
+       DIRECTION A: COMMAND CENTER — Bento Grid
+    ==================================================== */
+    .cmd-shell {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 680px;
+      background: #fafaf9;
+    }
+
+    /* Sidebar */
+    .cmd-sidebar {
+      background: #1B3A4B;
+      padding: 24px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .cmd-logo {
+      padding: 0 20px;
+      margin-bottom: 32px;
+    }
+    .cmd-logo-text { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+    .cmd-logo-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .cmd-nav { list-style: none; }
+    .cmd-nav li {
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cmd-nav li:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05); }
+    .cmd-nav li.active { color: #fff; background: rgba(255,255,255,0.1); border-right: 2px solid #D4863E; }
+    .cmd-nav-icon { width: 16px; height: 16px; opacity: 0.6; }
+    .cmd-nav li.active .cmd-nav-icon { opacity: 1; }
+    .cmd-nav-badge {
+      margin-left: auto;
+      background: #D4863E;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+    .cmd-sidebar-footer {
+      margin-top: auto;
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .cmd-sidebar-footer p { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+    /* Main content — bento grid */
+    .cmd-main {
+      padding: 28px;
+      overflow-y: auto;
+    }
+    .cmd-greeting {
+      margin-bottom: 24px;
+    }
+    .cmd-greeting h1 { font-size: 22px; font-weight: 800; color: #1B3A4B; letter-spacing: -0.3px; }
+    .cmd-greeting p { font-size: 13px; color: #86868b; margin-top: 2px; }
+    .cmd-bento {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto auto 1fr;
+      gap: 16px;
+    }
+    .cmd-card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e8e8ed;
+      padding: 20px;
+    }
+    .cmd-card-lg { grid-column: span 2; }
+    .cmd-stat-label { font-size: 11px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+    .cmd-stat-value { font-size: 32px; font-weight: 800; color: #1B3A4B; letter-spacing: -0.5px; }
+    .cmd-stat-change { font-size: 12px; font-weight: 600; margin-top: 4px; }
+    .cmd-stat-up { color: #30d158; }
+    .cmd-stat-sub { font-size: 12px; color: #86868b; margin-top: 2px; }
+
+    /* Lead list inside bento */
+    .cmd-lead-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f2f2f5;
+    }
+    .cmd-lead-row:last-child { border-bottom: none; }
+    .cmd-lead-left { display: flex; flex-direction: column; gap: 2px; }
+    .cmd-lead-name { font-size: 14px; font-weight: 700; color: #1B3A4B; }
+    .cmd-lead-info { font-size: 12px; color: #86868b; }
+    .cmd-lead-right { display: flex; align-items: center; gap: 10px; }
+    .cmd-lead-estimate { font-size: 13px; font-weight: 700; color: #1B3A4B; }
+    .cmd-lead-time { font-size: 11px; color: #b0b0b5; }
+    .cmd-status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .cmd-status-new { background: #D4863E; box-shadow: 0 0 0 3px rgba(212,134,62,0.2); }
+    .cmd-status-contacted { background: #6366f1; }
+    .cmd-status-won { background: #30d158; }
+
+    /* Revenue card */
+    .cmd-revenue { font-size: 36px; font-weight: 800; color: #1B3A4B; letter-spacing: -1px; }
+    .cmd-revenue-sub { font-size: 12px; color: #86868b; margin-top: 4px; }
+
+    /* Speed badge */
+    .cmd-speed {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #16a34a;
+    }
+
+
+    /* ====================================================
+       DIRECTION B: SPEED DIAL — Mobile-First
+    ==================================================== */
+    .speed-shell {
+      max-width: 390px;
+      margin: 0 auto;
+      background: #f5f5f2;
+      min-height: 780px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top bar */
+    .speed-topbar {
+      padding: 16px 20px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+    }
+    .speed-topbar-title { font-size: 18px; font-weight: 800; color: #1B3A4B; }
+    .speed-notif-dot {
+      width: 10px; height: 10px; border-radius: 50%; background: #D4863E;
+      box-shadow: 0 0 0 3px rgba(212,134,62,0.25);
+    }
+
+    /* Alert banner */
+    .speed-alert {
+      background: linear-gradient(135deg, #D4863E, #c47535);
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .speed-alert-text { font-size: 14px; font-weight: 700; }
+    .speed-alert-count { font-size: 12px; opacity: 0.85; }
+    .speed-alert-arrow { font-size: 18px; opacity: 0.7; }
+
+    /* Content */
+    .speed-content {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      padding-bottom: 80px;
+    }
+    .speed-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #86868b;
+      margin-bottom: 10px;
+    }
+
+    /* Lead cards — big, tappable */
+    .speed-lead-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #e8e8ed;
+      position: relative;
+    }
+    .speed-lead-card.new {
+      border-left: 4px solid #D4863E;
+      box-shadow: 0 2px 12px rgba(212,134,62,0.08);
+    }
+    .speed-lead-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .speed-lead-name { font-size: 17px; font-weight: 700; color: #1B3A4B; }
+    .speed-lead-time { font-size: 11px; color: #b0b0b5; }
+    .speed-lead-details {
+      font-size: 13px;
+      color: #6e6e73;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    .speed-lead-estimate {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1B3A4B;
+      margin-bottom: 14px;
+    }
+
+    /* Big call button */
+    .speed-call-btn {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #1B3A4B;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .speed-call-btn:active { transform: scale(0.97); background: #15303f; }
+    .speed-call-btn-icon { font-size: 18px; }
+
+    /* Stats strip */
+    .speed-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .speed-stat-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #e8e8ed;
+    }
+    .speed-stat-num { font-size: 22px; font-weight: 800; color: #1B3A4B; }
+    .speed-stat-label { font-size: 10px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    /* Bottom tab bar */
+    .speed-tabs {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 1px solid #e8e8ed;
+      display: flex;
+      padding: 8px 0 12px;
+    }
+    .speed-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #b0b0b5;
+      cursor: pointer;
+      position: relative;
+    }
+    .speed-tab.active { color: #1B3A4B; }
+    .speed-tab-icon { font-size: 20px; }
+    .speed-tab-badge {
+      position: absolute;
+      top: -2px;
+      right: calc(50% - 16px);
+      background: #D4863E;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 8px;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    /* Speed-to-lead */
+    .speed-response-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #16a34a;
+      background: #f0fdf4;
+      border-radius: 6px;
+      padding: 3px 8px;
+    }
+
+    /* ====================================================
+       DIRECTION C: THE BOARD — Kanban Pipeline
+    ==================================================== */
+    .board-shell {
+      background: #f5f5f2;
+      min-height: 680px;
+    }
+
+    /* Board topbar */
+    .board-topbar {
+      background: #1B3A4B;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .board-topbar-left { display: flex; align-items: center; gap: 16px; }
+    .board-logo { font-size: 16px; font-weight: 800; color: #fff; }
+    .board-topbar-nav { display: flex; gap: 4px; }
+    .board-topbar-link {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.5);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .board-topbar-link:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.08); }
+    .board-topbar-link.active { color: #fff; background: rgba(255,255,255,0.12); }
+    .board-topbar-right { display: flex; align-items: center; gap: 12px; }
+    .board-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #D4863E; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+    }
+
+    /* Pipeline columns */
+    .board-pipeline {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      padding: 24px 20px;
+      min-height: 560px;
+      align-items: flex-start;
+    }
+    .board-col {
+      background: rgba(0,0,0,0.03);
+      border-radius: 14px;
+      padding: 14px 12px;
+      min-height: 400px;
+    }
+    .board-col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+    .board-col-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .board-col-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .board-col-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: #86868b;
+      background: rgba(0,0,0,0.05);
+      padding: 2px 8px;
+      border-radius: 8px;
+    }
+
+    /* Kanban cards */
+    .board-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      border: 1px solid #e8e8ed;
+      cursor: grab;
+      transition: all 0.15s;
+    }
+    .board-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateY(-1px); }
+    .board-card-name { font-size: 14px; font-weight: 700; color: #1B3A4B; margin-bottom: 4px; }
+    .board-card-detail { font-size: 12px; color: #86868b; margin-bottom: 2px; }
+    .board-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #f2f2f5;
+    }
+    .board-card-estimate { font-size: 13px; font-weight: 700; color: #1B3A4B; }
+    .board-card-time { font-size: 11px; color: #b0b0b5; }
+    .board-card-call {
+      font-size: 11px;
+      font-weight: 600;
+      color: #D4863E;
+      background: rgba(212,134,62,0.08);
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+
+    /* Revenue summary bar */
+    .board-summary {
+      background: #fff;
+      border-top: 1px solid #e8e8ed;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .board-summary-item { display: flex; align-items: baseline; gap: 6px; }
+    .board-summary-label { font-size: 11px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .board-summary-value { font-size: 18px; font-weight: 800; color: #1B3A4B; }
+
+    /* ====================================================
+       DIRECTION D: THE FEED — Activity Stream
+    ==================================================== */
+    .feed-shell {
+      display: grid;
+      grid-template-columns: 280px 1fr 300px;
+      min-height: 680px;
+      background: #f5f5f2;
+    }
+
+    /* Feed sidebar — minimal */
+    .feed-sidebar {
+      background: #fff;
+      border-right: 1px solid #e8e8ed;
+      padding: 24px 0;
+    }
+    .feed-logo {
+      padding: 0 20px;
+      margin-bottom: 28px;
+    }
+    .feed-logo-text { font-size: 16px; font-weight: 800; color: #1B3A4B; }
+    .feed-nav { list-style: none; }
+    .feed-nav li {
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #86868b;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .feed-nav li:hover { color: #1B3A4B; background: #fafaf9; }
+    .feed-nav li.active { color: #1B3A4B; background: #f5f5f2; font-weight: 600; }
+    .feed-nav-count { margin-left: auto; font-size: 11px; font-weight: 700; color: #D4863E; }
+
+    /* Main feed column */
+    .feed-main {
+      padding: 28px;
+      overflow-y: auto;
+    }
+    .feed-main-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .feed-main-title { font-size: 20px; font-weight: 800; color: #1B3A4B; }
+    .feed-filter-pills { display: flex; gap: 6px; }
+    .feed-pill {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 980px;
+      border: 1px solid #e8e8ed;
+      background: #fff;
+      color: #86868b;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .feed-pill:hover { border-color: #1B3A4B; color: #1B3A4B; }
+    .feed-pill.active { background: #1B3A4B; color: #fff; border-color: #1B3A4B; }
+
+    /* Activity items */
+    .feed-item {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e8e8ed;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .feed-item.highlight {
+      border-left: 4px solid #D4863E;
+      background: #fffbf5;
+    }
+    .feed-item-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .feed-item-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .feed-item-avatar.lead-new { background: #D4863E; }
+    .feed-item-avatar.status-change { background: #6366f1; }
+    .feed-item-avatar.system { background: #86868b; }
+    .feed-item-avatar.won { background: #30d158; }
+    .feed-item-header { flex: 1; }
+    .feed-item-title { font-size: 14px; font-weight: 600; color: #1B3A4B; }
+    .feed-item-time { font-size: 11px; color: #b0b0b5; }
+    .feed-item-body {
+      font-size: 13px;
+      color: #6e6e73;
+      line-height: 1.5;
+      margin-bottom: 10px;
+      padding-left: 46px;
+    }
+    .feed-item-actions {
+      display: flex;
+      gap: 8px;
+      padding-left: 46px;
+    }
+    .feed-action-btn {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .feed-action-primary { background: #1B3A4B; color: #fff; }
+    .feed-action-primary:hover { background: #15303f; }
+    .feed-action-secondary { background: #f5f5f2; color: #6e6e73; }
+    .feed-action-secondary:hover { background: #eaeae8; color: #1B3A4B; }
+
+    /* Right panel — lead detail */
+    .feed-detail {
+      background: #fff;
+      border-left: 1px solid #e8e8ed;
+      padding: 24px;
+    }
+    .feed-detail-header { margin-bottom: 20px; }
+    .feed-detail-name { font-size: 18px; font-weight: 800; color: #1B3A4B; margin-bottom: 2px; }
+    .feed-detail-sub { font-size: 12px; color: #86868b; }
+    .feed-detail-section {
+      margin-bottom: 20px;
+    }
+    .feed-detail-label { font-size: 11px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+    .feed-detail-value { font-size: 14px; color: #1B3A4B; line-height: 1.4; }
+    .feed-detail-value a { color: #D4863E; font-weight: 600; text-decoration: none; }
+    .feed-detail-estimate {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1B3A4B;
+      letter-spacing: -0.5px;
+    }
+    .feed-detail-call {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: #1B3A4B;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 16px;
+      transition: all 0.15s;
+    }
+    .feed-detail-call:hover { background: #15303f; }
+    .feed-detail-status {
+      display: flex;
+      gap: 6px;
+      margin-top: 16px;
+    }
+    .feed-status-btn {
+      flex: 1;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #e8e8ed;
+      background: #fff;
+      color: #86868b;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .feed-status-btn:hover { border-color: #1B3A4B; color: #1B3A4B; }
+    .feed-status-btn.active { background: #1B3A4B; color: #fff; border-color: #1B3A4B; }
+
+    /* Speed-to-lead in feed */
+    .feed-speed {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-left: 46px;
+      margin-top: 8px;
+    }
+    .feed-speed-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #16a34a;
+      background: #f0fdf4;
+      border-radius: 6px;
+      padding: 3px 8px;
+    }
+
+    /* ====================================================
+       COMPARISON TABLE
+    ==================================================== */
+    .compare-section {
+      max-width: 900px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
+    }
+    .compare-title {
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 24px;
+      letter-spacing: -0.3px;
+    }
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #e8e8ed;
+    }
+    .compare-table th {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #86868b;
+      padding: 14px 16px;
+      text-align: left;
+      background: #fafaf9;
+      border-bottom: 1px solid #e8e8ed;
+    }
+    .compare-table td {
+      font-size: 13px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f2f2f5;
+      color: #1B3A4B;
+    }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-check { color: #30d158; font-weight: 700; }
+    .compare-x { color: #ccc; }
+    .compare-star { color: #D4863E; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>Dashboard Directions</h1>
+    <p>Four drastically different approaches to the RuufPro contractor dashboard. Each optimized for a different workflow.</p>
+  </div>
+
+  <!-- ====================================================
+       DIRECTION A: COMMAND CENTER
+  ==================================================== -->
+  <div class="direction-wrapper">
+    <div class="direction-header">
+      <div class="direction-tag" style="background: #eef6ff; color: #0071e3;">Direction A</div>
+      <div class="direction-title">Command Center</div>
+      <div class="direction-desc">
+        Bento grid layout. Stats-forward, desktop-first. The roofer opens this at the kitchen table after dinner and feels like they're running a real business. Think Stripe meets Notion.
+      </div>
+      <div class="direction-details">
+        <strong>Best for:</strong> Desk sessions, business overview, feeling professional<br>
+        <strong>Navigation:</strong> Sidebar (desktop) + bottom tabs (mobile)<br>
+        <strong>Vibe:</strong> "I run a real operation"
+      </div>
+    </div>
+
+    <div class="mockup-frame">
+      <div class="cmd-shell">
+        <div class="cmd-sidebar">
+          <div class="cmd-logo">
+            <div class="cmd-logo-text">RuufPro</div>
+            <div class="cmd-logo-sub">Smith Roofing Co</div>
+          </div>
+          <ul class="cmd-nav">
+            <li class="active">
+              <span class="cmd-nav-icon">&#9711;</span>
+              Dashboard
+            </li>
+            <li>
+              <span class="cmd-nav-icon">&#9993;</span>
+              Leads
+              <span class="cmd-nav-badge">3</span>
+            </li>
+            <li>
+              <span class="cmd-nav-icon">&#9881;</span>
+              Widget Settings
+            </li>
+            <li>
+              <span class="cmd-nav-icon">&#127760;</span>
+              My Website
+            </li>
+            <li>
+              <span class="cmd-nav-icon">&#9783;</span>
+              Settings
+            </li>
+          </ul>
+          <div class="cmd-sidebar-footer">
+            <p>&#128276; Notifications on</p>
+          </div>
+        </div>
+
+        <div class="cmd-main">
+          <div class="cmd-greeting">
+            <h1>Good evening, Mike</h1>
+            <p>Here's how your business is doing this week.</p>
+          </div>
+
+          <div class="cmd-bento">
+            <!-- Row 1: Stats -->
+            <div class="cmd-card">
+              <div class="cmd-stat-label">New Leads</div>
+              <div class="cmd-stat-value">3</div>
+              <div class="cmd-stat-change cmd-stat-up">&#9650; 2 from last week</div>
+            </div>
+            <div class="cmd-card">
+              <div class="cmd-stat-label">Response Time</div>
+              <div class="cmd-stat-value">4m</div>
+              <div class="cmd-stat-sub">avg this month</div>
+            </div>
+            <div class="cmd-card">
+              <div class="cmd-stat-label">Revenue (Won)</div>
+              <div class="cmd-revenue">$47.2K</div>
+              <div class="cmd-revenue-sub">from 6 closed jobs</div>
+            </div>
+
+            <!-- Row 2: Recent Leads (large) + Speed -->
+            <div class="cmd-card cmd-card-lg">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="cmd-stat-label" style="margin-bottom: 0;">Recent Leads</div>
+                <span style="font-size: 12px; color: #D4863E; font-weight: 600; cursor: pointer;">View all &rarr;</span>
+              </div>
+              <div class="cmd-lead-row">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div class="cmd-status-dot cmd-status-new"></div>
+                  <div class="cmd-lead-left">
+                    <div class="cmd-lead-name">John Smith</div>
+                    <div class="cmd-lead-info">2,400 sqft &middot; Asphalt shingles</div>
+                  </div>
+                </div>
+                <div class="cmd-lead-right">
+                  <div class="cmd-lead-estimate">$9,800 - $14,200</div>
+                  <div class="cmd-lead-time">3m ago</div>
+                </div>
+              </div>
+              <div class="cmd-lead-row">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div class="cmd-status-dot cmd-status-new"></div>
+                  <div class="cmd-lead-left">
+                    <div class="cmd-lead-name">Sarah Johnson</div>
+                    <div class="cmd-lead-info">1,800 sqft &middot; Metal standing seam</div>
+                  </div>
+                </div>
+                <div class="cmd-lead-right">
+                  <div class="cmd-lead-estimate">$14,500 - $19,800</div>
+                  <div class="cmd-lead-time">1h ago</div>
+                </div>
+              </div>
+              <div class="cmd-lead-row">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div class="cmd-status-dot cmd-status-contacted"></div>
+                  <div class="cmd-lead-left">
+                    <div class="cmd-lead-name">David Martinez</div>
+                    <div class="cmd-lead-info">3,100 sqft &middot; Tile</div>
+                  </div>
+                </div>
+                <div class="cmd-lead-right">
+                  <div class="cmd-lead-estimate">$28,200 - $38,400</div>
+                  <div class="cmd-lead-time">Yesterday</div>
+                </div>
+              </div>
+              <div class="cmd-lead-row">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div class="cmd-status-dot cmd-status-won"></div>
+                  <div class="cmd-lead-left">
+                    <div class="cmd-lead-name">Lisa Thompson</div>
+                    <div class="cmd-lead-info">2,200 sqft &middot; Asphalt shingles</div>
+                  </div>
+                </div>
+                <div class="cmd-lead-right">
+                  <div class="cmd-lead-estimate">$8,400 - $12,100</div>
+                  <div class="cmd-lead-time">3 days ago</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cmd-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div class="cmd-stat-label">Speed to Lead</div>
+                <div class="cmd-stat-value" style="margin-top: 8px;">78%</div>
+                <div class="cmd-stat-sub">called back &lt;5 min</div>
+              </div>
+              <div class="cmd-speed" style="margin-top: 16px;">
+                &#9889; Top 10% of roofers
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       DIRECTION B: SPEED DIAL
+  ==================================================== -->
+  <div class="direction-wrapper">
+    <div class="direction-header">
+      <div class="direction-tag" style="background: #fff3e0; color: #D4863E;">Direction B</div>
+      <div class="direction-title">Speed Dial</div>
+      <div class="direction-desc">
+        Mobile-first, notification-driven. Giant touch targets, no chrome. The roofer climbs down from a ladder, pulls off a glove, taps the notification, and is calling the homeowner in 5 seconds flat.
+      </div>
+      <div class="direction-details">
+        <strong>Best for:</strong> Field use, speed-to-lead, one-handed operation<br>
+        <strong>Navigation:</strong> Bottom tab bar (always visible)<br>
+        <strong>Vibe:</strong> "Call this person NOW"
+      </div>
+    </div>
+
+    <div class="mockup-frame" style="max-width: 390px;">
+      <div class="speed-shell">
+        <div class="speed-topbar">
+          <div class="speed-topbar-title">Leads</div>
+          <div class="speed-notif-dot"></div>
+        </div>
+
+        <div class="speed-alert">
+          <div>
+            <div class="speed-alert-text">2 New Leads</div>
+            <div class="speed-alert-count">Tap to call back first</div>
+          </div>
+          <div class="speed-alert-arrow">&darr;</div>
+        </div>
+
+        <div class="speed-content">
+          <div class="speed-stats">
+            <div class="speed-stat-card">
+              <div class="speed-stat-num">2</div>
+              <div class="speed-stat-label">New</div>
+            </div>
+            <div class="speed-stat-card">
+              <div class="speed-stat-num">8</div>
+              <div class="speed-stat-label">This Month</div>
+            </div>
+            <div class="speed-stat-card">
+              <div class="speed-stat-num">$47K</div>
+              <div class="speed-stat-label">Won</div>
+            </div>
+          </div>
+
+          <div class="speed-section-label">New — Action Needed</div>
+
+          <div class="speed-lead-card new">
+            <div class="speed-lead-top">
+              <div class="speed-lead-name">John Smith</div>
+              <div class="speed-lead-time">3 min ago</div>
+            </div>
+            <div class="speed-lead-details">
+              2,400 sqft &middot; Asphalt shingles &middot; ASAP timeline
+            </div>
+            <div class="speed-lead-estimate">$9,800 - $14,200</div>
+            <button class="speed-call-btn">
+              <span class="speed-call-btn-icon">&#128222;</span>
+              Call John — (555) 234-5678
+            </button>
+          </div>
+
+          <div class="speed-lead-card new">
+            <div class="speed-lead-top">
+              <div class="speed-lead-name">Sarah Johnson</div>
+              <div class="speed-lead-time">1 hour ago</div>
+            </div>
+            <div class="speed-lead-details">
+              1,800 sqft &middot; Metal standing seam &middot; 1-3 months
+            </div>
+            <div class="speed-lead-estimate">$14,500 - $19,800</div>
+            <button class="speed-call-btn">
+              <span class="speed-call-btn-icon">&#128222;</span>
+              Call Sarah — (555) 876-1234
+            </button>
+          </div>
+
+          <div class="speed-section-label" style="margin-top: 20px;">Contacted</div>
+
+          <div class="speed-lead-card">
+            <div class="speed-lead-top">
+              <div class="speed-lead-name">David Martinez</div>
+              <div class="speed-lead-time">Yesterday</div>
+            </div>
+            <div class="speed-lead-details">
+              3,100 sqft &middot; Tile &middot; Financing interested
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div class="speed-lead-estimate">$28,200 - $38,400</div>
+              <div class="speed-response-badge">&#9889; 4m response</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="speed-tabs">
+          <div class="speed-tab active">
+            <span class="speed-tab-icon">&#128101;</span>
+            Leads
+            <span class="speed-tab-badge">2</span>
+          </div>
+          <div class="speed-tab">
+            <span class="speed-tab-icon">&#128200;</span>
+            Widget
+          </div>
+          <div class="speed-tab">
+            <span class="speed-tab-icon">&#127760;</span>
+            My Site
+          </div>
+          <div class="speed-tab">
+            <span class="speed-tab-icon">&#9881;</span>
+            Settings
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       DIRECTION C: THE BOARD
+  ==================================================== -->
+  <div class="direction-wrapper">
+    <div class="direction-header">
+      <div class="direction-tag" style="background: #f3e8ff; color: #6366f1;">Direction C</div>
+      <div class="direction-title">The Board</div>
+      <div class="direction-desc">
+        Kanban pipeline. Drag leads through stages like a digital whiteboard. The #1 reason roofers love JobNimbus — a visual board that replaces the sticky notes on their office wall.
+      </div>
+      <div class="direction-details">
+        <strong>Best for:</strong> Pipeline management, visual thinkers, teams<br>
+        <strong>Navigation:</strong> Top bar (always visible)<br>
+        <strong>Vibe:</strong> "I can see my whole pipeline at a glance"
+      </div>
+    </div>
+
+    <div class="mockup-frame">
+      <div class="board-shell">
+        <div class="board-topbar">
+          <div class="board-topbar-left">
+            <div class="board-logo">RuufPro</div>
+            <div class="board-topbar-nav">
+              <div class="board-topbar-link active">Pipeline</div>
+              <div class="board-topbar-link">Widget</div>
+              <div class="board-topbar-link">My Site</div>
+              <div class="board-topbar-link">Settings</div>
+            </div>
+          </div>
+          <div class="board-topbar-right">
+            <div class="board-avatar">MS</div>
+          </div>
+        </div>
+
+        <div class="board-pipeline">
+          <!-- New -->
+          <div class="board-col">
+            <div class="board-col-header">
+              <div class="board-col-title">
+                <span class="board-col-dot" style="background: #D4863E;"></span>
+                New
+              </div>
+              <div class="board-col-count">2</div>
+            </div>
+            <div class="board-card">
+              <div class="board-card-name">John Smith</div>
+              <div class="board-card-detail">2,400 sqft &middot; Asphalt</div>
+              <div class="board-card-detail">&#128205; 123 Oak Lane, Dallas</div>
+              <div class="board-card-footer">
+                <div class="board-card-estimate">$9.8K - $14.2K</div>
+                <button class="board-card-call">&#128222; Call</button>
+              </div>
+              <div class="board-card-time" style="margin-top: 8px;">3 min ago</div>
+            </div>
+            <div class="board-card">
+              <div class="board-card-name">Sarah Johnson</div>
+              <div class="board-card-detail">1,800 sqft &middot; Metal</div>
+              <div class="board-card-detail">&#128205; 456 Pine Dr, Plano</div>
+              <div class="board-card-footer">
+                <div class="board-card-estimate">$14.5K - $19.8K</div>
+                <button class="board-card-call">&#128222; Call</button>
+              </div>
+              <div class="board-card-time" style="margin-top: 8px;">1 hour ago</div>
+            </div>
+          </div>
+
+          <!-- Contacted -->
+          <div class="board-col">
+            <div class="board-col-header">
+              <div class="board-col-title">
+                <span class="board-col-dot" style="background: #6366f1;"></span>
+                Contacted
+              </div>
+              <div class="board-col-count">2</div>
+            </div>
+            <div class="board-card">
+              <div class="board-card-name">David Martinez</div>
+              <div class="board-card-detail">3,100 sqft &middot; Tile</div>
+              <div class="board-card-detail">&#128205; 789 Elm St, Fort Worth</div>
+              <div class="board-card-footer">
+                <div class="board-card-estimate">$28.2K - $38.4K</div>
+                <div class="board-card-time">Yesterday</div>
+              </div>
+            </div>
+            <div class="board-card">
+              <div class="board-card-name">Emily Chen</div>
+              <div class="board-card-detail">2,800 sqft &middot; Asphalt</div>
+              <div class="board-card-footer">
+                <div class="board-card-estimate">$10.6K - $15.4K</div>
+                <div class="board-card-time">2 days ago</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quoted -->
+          <div class="board-col">
+            <div class="board-col-header">
+              <div class="board-col-title">
+                <span class="board-col-dot" style="background: #8b5cf6;"></span>
+                Quoted
+              </div>
+              <div class="board-col-count">1</div>
+            </div>
+            <div class="board-card">
+              <div class="board-card-name">Robert Williams</div>
+              <div class="board-card-detail">2,200 sqft &middot; Asphalt</div>
+              <div class="board-card-footer">
+                <div class="board-card-estimate">$8.4K - $12.1K</div>
+                <div class="board-card-time">3 days ago</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Won -->
+          <div class="board-col">
+            <div class="board-col-header">
+              <div class="board-col-title">
+                <span class="board-col-dot" style="background: #30d158;"></span>
+                Won
+              </div>
+              <div class="board-col-count">2</div>
+            </div>
+            <div class="board-card">
+              <div class="board-card-name">Lisa Thompson</div>
+              <div class="board-card-detail">2,200 sqft &middot; Asphalt</div>
+              <div class="board-card-footer">
+                <div class="board-card-estimate" style="color: #30d158;">$11,200</div>
+                <div class="board-card-time">Last week</div>
+              </div>
+            </div>
+            <div class="board-card">
+              <div class="board-card-name">James Wilson</div>
+              <div class="board-card-detail">3,400 sqft &middot; Metal</div>
+              <div class="board-card-footer">
+                <div class="board-card-estimate" style="color: #30d158;">$36,000</div>
+                <div class="board-card-time">2 weeks ago</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lost -->
+          <div class="board-col">
+            <div class="board-col-header">
+              <div class="board-col-title">
+                <span class="board-col-dot" style="background: #b0b0b5;"></span>
+                Lost
+              </div>
+              <div class="board-col-count">1</div>
+            </div>
+            <div class="board-card" style="opacity: 0.6;">
+              <div class="board-card-name">Karen Davis</div>
+              <div class="board-card-detail">1,600 sqft &middot; Asphalt</div>
+              <div class="board-card-footer">
+                <div class="board-card-estimate">$6.2K - $9.1K</div>
+                <div class="board-card-time">Last week</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="board-summary">
+          <div class="board-summary-item">
+            <span class="board-summary-label">Pipeline Value:</span>
+            <span class="board-summary-value">$91,500</span>
+          </div>
+          <div class="board-summary-item">
+            <span class="board-summary-label">Won This Month:</span>
+            <span class="board-summary-value" style="color: #30d158;">$47,200</span>
+          </div>
+          <div class="board-summary-item">
+            <span class="board-summary-label">Avg Close Rate:</span>
+            <span class="board-summary-value">67%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       DIRECTION D: THE FEED
+  ==================================================== -->
+  <div class="direction-wrapper">
+    <div class="direction-header">
+      <div class="direction-tag" style="background: #f0fdf4; color: #16a34a;">Direction D</div>
+      <div class="direction-title">The Feed</div>
+      <div class="direction-desc">
+        Activity stream like a social media timeline. Everything that happens flows through one scrollable feed — new leads, status changes, milestones. The dashboard feels alive. Lead detail panel stays open on the right.
+      </div>
+      <div class="direction-details">
+        <strong>Best for:</strong> Staying on top of everything, real-time awareness, context<br>
+        <strong>Navigation:</strong> Left sidebar (desktop), bottom tabs (mobile)<br>
+        <strong>Vibe:</strong> "My business has a heartbeat"
+      </div>
+    </div>
+
+    <div class="mockup-frame">
+      <div class="feed-shell">
+        <div class="feed-sidebar">
+          <div class="feed-logo">
+            <div class="feed-logo-text">RuufPro</div>
+          </div>
+          <ul class="feed-nav">
+            <li class="active">
+              &#128200;&nbsp; Activity Feed
+              <span class="feed-nav-count">5</span>
+            </li>
+            <li>&#128101;&nbsp; All Leads</li>
+            <li>&#9881;&nbsp; Widget Settings</li>
+            <li>&#127760;&nbsp; My Website</li>
+            <li>&#128276;&nbsp; Notifications</li>
+            <li>&#9783;&nbsp; Settings</li>
+          </ul>
+        </div>
+
+        <div class="feed-main">
+          <div class="feed-main-header">
+            <div class="feed-main-title">Activity</div>
+            <div class="feed-filter-pills">
+              <button class="feed-pill active">All</button>
+              <button class="feed-pill">Leads</button>
+              <button class="feed-pill">Updates</button>
+            </div>
+          </div>
+
+          <!-- New lead (highlighted) -->
+          <div class="feed-item highlight">
+            <div class="feed-item-top">
+              <div class="feed-item-avatar lead-new">JS</div>
+              <div class="feed-item-header">
+                <div class="feed-item-title">New lead: John Smith</div>
+                <div class="feed-item-time">3 minutes ago</div>
+              </div>
+            </div>
+            <div class="feed-item-body">
+              Requested estimate for <strong>2,400 sqft asphalt shingle</strong> roof at 123 Oak Lane, Dallas. Timeline: ASAP. Estimate: <strong>$9,800 - $14,200</strong>.
+            </div>
+            <div class="feed-item-actions">
+              <button class="feed-action-btn feed-action-primary">&#128222; Call John</button>
+              <button class="feed-action-btn feed-action-secondary">View Details</button>
+            </div>
+          </div>
+
+          <!-- New lead -->
+          <div class="feed-item highlight">
+            <div class="feed-item-top">
+              <div class="feed-item-avatar lead-new">SJ</div>
+              <div class="feed-item-header">
+                <div class="feed-item-title">New lead: Sarah Johnson</div>
+                <div class="feed-item-time">1 hour ago</div>
+              </div>
+            </div>
+            <div class="feed-item-body">
+              Requested estimate for <strong>1,800 sqft metal standing seam</strong> at 456 Pine Dr, Plano. Timeline: 1-3 months. Estimate: <strong>$14,500 - $19,800</strong>.
+            </div>
+            <div class="feed-item-actions">
+              <button class="feed-action-btn feed-action-primary">&#128222; Call Sarah</button>
+              <button class="feed-action-btn feed-action-secondary">View Details</button>
+            </div>
+          </div>
+
+          <!-- Status change -->
+          <div class="feed-item">
+            <div class="feed-item-top">
+              <div class="feed-item-avatar status-change">&#10003;</div>
+              <div class="feed-item-header">
+                <div class="feed-item-title">David Martinez moved to Contacted</div>
+                <div class="feed-item-time">Yesterday at 4:32 PM</div>
+              </div>
+            </div>
+            <div class="feed-speed">
+              <div class="feed-speed-badge">&#9889; Responded in 4 minutes</div>
+            </div>
+          </div>
+
+          <!-- Won -->
+          <div class="feed-item">
+            <div class="feed-item-top">
+              <div class="feed-item-avatar won">$</div>
+              <div class="feed-item-header">
+                <div class="feed-item-title">Lisa Thompson — Job Won!</div>
+                <div class="feed-item-time">3 days ago</div>
+              </div>
+            </div>
+            <div class="feed-item-body">
+              Closed at <strong>$11,200</strong> for asphalt shingle replacement. Your total revenue through RuufPro: <strong>$47,200</strong>.
+            </div>
+          </div>
+
+          <!-- System -->
+          <div class="feed-item">
+            <div class="feed-item-top">
+              <div class="feed-item-avatar system">&#9881;</div>
+              <div class="feed-item-header">
+                <div class="feed-item-title">Widget viewed 14 times this week</div>
+                <div class="feed-item-time">Weekly summary</div>
+              </div>
+            </div>
+            <div class="feed-item-body">
+              Your estimate widget had 14 views and 3 completions this week. Conversion rate: 21% (up from 18%).
+            </div>
+          </div>
+        </div>
+
+        <!-- Right detail panel -->
+        <div class="feed-detail">
+          <div class="feed-detail-header">
+            <div class="feed-detail-name">John Smith</div>
+            <div class="feed-detail-sub">New lead &middot; 3 min ago</div>
+          </div>
+
+          <div class="feed-detail-section">
+            <div class="feed-detail-label">Estimate</div>
+            <div class="feed-detail-estimate">$9,800 - $14,200</div>
+            <div style="font-size: 12px; color: #86868b; margin-top: 4px;">2,400 sqft &middot; Asphalt shingles &middot; Satellite-measured</div>
+          </div>
+
+          <div class="feed-detail-section">
+            <div class="feed-detail-label">Contact</div>
+            <div class="feed-detail-value">
+              <a href="#">(555) 234-5678</a><br>
+              john.smith@email.com
+            </div>
+          </div>
+
+          <div class="feed-detail-section">
+            <div class="feed-detail-label">Address</div>
+            <div class="feed-detail-value">123 Oak Lane, Dallas, TX 75201</div>
+          </div>
+
+          <div class="feed-detail-section">
+            <div class="feed-detail-label">Details</div>
+            <div class="feed-detail-value">
+              Timeline: ASAP<br>
+              Financing: Interested<br>
+              Current roof: Asphalt (aging)
+            </div>
+          </div>
+
+          <button class="feed-detail-call">
+            &#128222;&nbsp; Call John Smith
+          </button>
+
+          <div class="feed-detail-status">
+            <div class="feed-status-btn active">New</div>
+            <div class="feed-status-btn">Contacted</div>
+            <div class="feed-status-btn">Quoted</div>
+            <div class="feed-status-btn">Won</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================
+       COMPARISON TABLE
+  ==================================================== -->
+  <div class="compare-section">
+    <div class="compare-title">Quick Comparison</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>A: Command Center</th>
+          <th>B: Speed Dial</th>
+          <th>C: The Board</th>
+          <th>D: The Feed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Primary platform</strong></td>
+          <td>Desktop</td>
+          <td><span class="compare-star">Mobile &#9733;</span></td>
+          <td>Desktop</td>
+          <td>Both</td>
+        </tr>
+        <tr>
+          <td><strong>Time to call back</strong></td>
+          <td>~10s</td>
+          <td><span class="compare-star">~5s &#9733;</span></td>
+          <td>~8s</td>
+          <td>~6s</td>
+        </tr>
+        <tr>
+          <td><strong>Pipeline visibility</strong></td>
+          <td>Good (list)</td>
+          <td>Minimal</td>
+          <td><span class="compare-star">Best &#9733;</span></td>
+          <td>Good (feed)</td>
+        </tr>
+        <tr>
+          <td><strong>Stats & revenue</strong></td>
+          <td><span class="compare-star">Best &#9733;</span></td>
+          <td>Basic</td>
+          <td>Summary bar</td>
+          <td>In-feed</td>
+        </tr>
+        <tr>
+          <td><strong>Real-time feel</strong></td>
+          <td>Good</td>
+          <td>Good</td>
+          <td>Good</td>
+          <td><span class="compare-star">Best &#9733;</span></td>
+        </tr>
+        <tr>
+          <td><strong>Wow factor</strong></td>
+          <td>Professional</td>
+          <td>Speed</td>
+          <td>Visual clarity</td>
+          <td>Alive feel</td>
+        </tr>
+        <tr>
+          <td><strong>Learning curve</strong></td>
+          <td>Low</td>
+          <td><span class="compare-star">Zero &#9733;</span></td>
+          <td>Low-Medium</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td><strong>Scales to team</strong></td>
+          <td><span class="compare-check">&#10003;</span></td>
+          <td><span class="compare-x">&#10007;</span></td>
+          <td><span class="compare-star">&#10003; &#9733;</span></td>
+          <td><span class="compare-check">&#10003;</span></td>
+        </tr>
+        <tr>
+          <td><strong>Best analogy</strong></td>
+          <td>Stripe Dashboard</td>
+          <td>Uber Driver app</td>
+          <td>Trello / JobNimbus</td>
+          <td>Slack / Twitter feed</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- ====================================================
+       RECOMMENDATION
+  ==================================================== -->
+  <div class="direction-wrapper" style="max-width: 700px;">
+    <div style="text-align: center; margin-bottom: 16px;">
+      <div class="direction-tag" style="background: #f5f5f7; color: #6e6e73;">My Take</div>
+    </div>
+    <div style="font-size: 14px; color: #6e6e73; line-height: 1.7;">
+      <p style="margin-bottom: 12px;"><strong>A (Command Center)</strong> looks the most "professional" and is what roofers expect when they hear "dashboard." Bento grids are trendy and give a great first impression. Best for desk use and impressing during demos.</p>
+      <p style="margin-bottom: 12px;"><strong>B (Speed Dial)</strong> wins the field scenario hands-down. It's designed for the exact moment a push notification buzzes — ladder to phone call in 5 seconds. The giant call buttons and bottom tab bar are backed by hard research data. But it feels thin on desktop.</p>
+      <p style="margin-bottom: 12px;"><strong>C (The Board)</strong> is proven in roofing — JobNimbus built a $100M+ business on this pattern. Roofers who used whiteboards instantly get it. Drag-and-drop is satisfying. But kanban is harder on mobile and adds implementation complexity.</p>
+      <p style="margin-bottom: 12px;"><strong>D (The Feed)</strong> is the most unique option. No roofing competitor does this. The activity stream makes the business feel alive and surfaces context (speed-to-lead, revenue milestones) naturally. The right panel keeps lead details always visible.</p>
+      <p><strong>Hot take:</strong> The strongest approach might be a hybrid — <strong>B's mobile experience</strong> (bottom tabs, giant call buttons, alert banner) with <strong>A or D's desktop layout</strong> (bento grid or feed + detail panel). Same data, completely different layouts per screen size. This is how the best apps work — Uber's driver app on phone looks nothing like their dashboard on desktop.</p>
+    </div>
+  </div>
+
+</body>
+</html>

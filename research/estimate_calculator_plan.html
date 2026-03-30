@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RoofReady — Estimate Calculator Build Plan (Final)</title>
+<title>RuufPro — Estimate Calculator Build Plan (Final)</title>
 <style>
   @media print {
     body { font-size: 10pt; }
@@ -44,11 +44,11 @@
 </head>
 <body>
 
-<h1>RoofReady Estimate Calculator &mdash; Final Build Plan</h1>
+<h1>RuufPro Estimate Calculator &mdash; Final Build Plan</h1>
 <p style="color: #666; margin-top: -8px;">V2 (Google Solar API) + Full Accuracy Stack &bull; Updated 2026-03-27</p>
 
 <div class="highlight">
-<strong>What this is:</strong> The estimate widget is RoofReady's core paid product ($99/mo). Homeowners enter their address, get an instant satellite-measured price range, and become leads. We use every data point from Google's Solar API &mdash; roof area, pitch, segment complexity &mdash; plus geometric inference, weather adjustment, and a calibration loop to match or exceed Roofle's accuracy at a fraction of the cost.
+<strong>What this is:</strong> The estimate widget is RuufPro's core paid product ($99/mo). Homeowners enter their address, get an instant satellite-measured price range, and become leads. We use every data point from Google's Solar API &mdash; roof area, pitch, segment complexity &mdash; plus geometric inference, weather adjustment, and a calibration loop to match or exceed Roofle's accuracy at a fraction of the cost.
 </div>
 
 <hr>
@@ -181,7 +181,7 @@ Same formula as V2 but with estimated roof_sqft from bedroom lookup.
 <h2>How We Compare to Competitors</h2>
 
 <table>
-  <tr><th>Factor</th><th>EagleView ($15-38)</th><th>Roofle ($350/mo)</th><th>RoofReady ($99/mo)</th></tr>
+  <tr><th>Factor</th><th>EagleView ($15-38)</th><th>Roofle ($350/mo)</th><th>RuufPro ($99/mo)</th></tr>
   <tr><td><strong>Roof area</strong></td><td>Exact (HD aerial)</td><td>AI-estimated</td><td>Satellite (Google Solar, &plusmn;2-5%)</td></tr>
   <tr><td><strong>Pitch</strong></td><td>Per facet</td><td>Yes</td><td>Per segment (Solar API)</td></tr>
   <tr><td><strong>Ridge/hip/valley</strong></td><td>Exact measurement</td><td>Estimated</td><td>Inferred from geometry</td></tr>
@@ -197,7 +197,7 @@ Same formula as V2 but with estimated roof_sqft from bedroom lookup.
 
 <h3>Accuracy Over Time</h3>
 <table class="no-break">
-  <tr><th>Timeframe</th><th>EagleView</th><th>Roofle</th><th>RoofReady</th></tr>
+  <tr><th>Timeframe</th><th>EagleView</th><th>Roofle</th><th>RuufPro</th></tr>
   <tr><td><strong>At launch</strong></td><td>&plusmn;2-3%</td><td>&plusmn;10-15%</td><td><strong>&plusmn;8-12%</strong></td></tr>
   <tr><td><strong>At 3 months</strong></td><td>&plusmn;2-3%</td><td>&plusmn;10-15%</td><td><strong>&plusmn;5-10%</strong></td></tr>
   <tr><td><strong>At 12 months</strong></td><td>&plusmn;2-3%</td><td>&plusmn;8-12%</td><td><strong>&plusmn;4-8%</strong></td></tr>
@@ -212,7 +212,7 @@ Same formula as V2 but with estimated roof_sqft from bedroom lookup.
 <h2>Google Cloud Setup (Hannah)</h2>
 <ol>
   <li>Create Google Cloud account (free, $300 credit for new accounts)</li>
-  <li>Create a new project ("RoofReady")</li>
+  <li>Create a new project ("RuufPro")</li>
   <li>Enable: <strong>Solar API</strong> + <strong>Places API (New)</strong></li>
   <li>Create API keys (restrict each to its respective API)</li>
   <li>Add to <code>.env</code>: <code>GOOGLE_SOLAR_API_KEY</code> and <code>GOOGLE_PLACES_API_KEY</code></li>
@@ -292,7 +292,7 @@ Same formula as V2 but with estimated roof_sqft from bedroom lookup.
   <li>Set up test contractor pricing, run estimate &mdash; verify math is correct</li>
   <li>Cross-check 5 real addresses against known roof sizes</li>
   <li>Submit lead through widget &mdash; verify it appears in Supabase with estimate details</li>
-  <li>Test embed on a plain HTML page outside RoofReady</li>
+  <li>Test embed on a plain HTML page outside RuufPro</li>
   <li>Test caching: same address twice &mdash; verify only 1 API call</li>
   <li>Verify Google Places autocomplete returns correct addresses</li>
   <li>Verify regional pricing defaults show for a new roofer</li>
@@ -317,7 +317,7 @@ Same formula as V2 but with estimated roof_sqft from bedroom lookup.
 
 <hr>
 
-<p style="font-size: 11px; color: #888;">RoofReady Estimate Calculator Plan (Final) &bull; 2026-03-27</p>
+<p style="font-size: 11px; color: #888;">RuufPro Estimate Calculator Plan (Final) &bull; 2026-03-27</p>
 
 </body>
 </html>

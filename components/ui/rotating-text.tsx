@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type TargetAndTransition } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
 
 type AnimationMode = "slide" | "fade" | "blur" | "flip" | "drop";
@@ -15,7 +15,7 @@ interface RotatingTextProps {
 
 const animations: Record<
   AnimationMode,
-  { initial: object; animate: object; exit: object }
+  { initial: TargetAndTransition; animate: TargetAndTransition; exit: TargetAndTransition }
 > = {
   slide: {
     initial: { y: "100%", opacity: 0 },

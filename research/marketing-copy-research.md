@@ -1,6 +1,6 @@
-# RoofReady Marketing Website Copy
+# RuufPro Marketing Website Copy
 
-Comprehensive copy options for the RoofReady marketing site. Audience: small roofing contractors (1-10 person crews). Tone: empathetic, direct, honest, no BS. Written to talk TO the roofer, not about them.
+Comprehensive copy options for the RuufPro marketing site. Audience: small roofing contractors (1-10 person crews). Tone: empathetic, direct, honest, no BS. Written to talk TO the roofer, not about them.
 
 ---
 
@@ -24,15 +24,15 @@ Rationale: Hormozi-style — just list the value. No cleverness needed. Roofers 
 **Option C — The Straight Talk**
 > You're great at roofing. Your online presence shouldn't hold you back.
 
-Rationale: Acknowledges their skill while naming the gap. Feels respectful, not condescending. Positions RoofReady as the bridge between their talent and their visibility.
+Rationale: Acknowledges their skill while naming the gap. Feels respectful, not condescending. Positions RuufPro as the bridge between their talent and their visibility.
 
 ### Subheadline Options (3 options)
 
 **Sub A — For Option A or C:**
-> RoofReady gives you a professional website for free, satellite-powered instant estimates for $99/mo, and a lead dashboard that works while you're on the roof. Set up in 5 minutes. No tech skills. No contracts.
+> RuufPro gives you a professional website for free, satellite-powered instant estimates for $99/mo, and a lead dashboard that works while you're on the roof. Set up in 5 minutes. No tech skills. No contracts.
 
 **Sub B — Stat-driven (pairs with any headline):**
-> 78% of homeowners want pricing before they call. 76% of roofers don't show it. RoofReady closes that gap with a free website and satellite-powered estimates — at a fraction of what Roofle charges.
+> 78% of homeowners want pricing before they call. 76% of roofers don't show it. RuufPro closes that gap with a free website and satellite-powered estimates — at a fraction of what Roofle charges.
 
 **Sub C — Simple and direct (pairs with Option B):**
 > Everything a roofing company needs to look professional online and capture leads 24/7. Free to start. Under 5 minutes to set up. No credit card required.
@@ -43,7 +43,7 @@ Rationale: Acknowledges their skill while naming the gap. Feels respectful, not 
 
 ### What Should Go Here
 
-Since RoofReady is pre-launch, use a combination of:
+Since RuufPro is pre-launch, use a combination of:
 1. Stat badges (verifiable industry numbers)
 2. Placeholder testimonial structure (write realistic ones now, replace with real ones ASAP)
 3. Trust signals (no contract, data ownership, etc.)
@@ -65,7 +65,7 @@ These are written to sound like actual roofers talk — short, practical, no mar
 > -- Mike R., 6-person crew, Dallas TX
 
 **Testimonial 2 — The Roofle Refugee:**
-> "Was paying Roofle $350 a month and couldn't even tell you what I was getting. Switched to RoofReady, saved $250/mo, and the estimates work the same."
+> "Was paying Roofle $350 a month and couldn't even tell you what I was getting. Switched to RuufPro, saved $250/mo, and the estimates work the same."
 > -- Carlos M., owner, Phoenix AZ
 
 **Testimonial 3 — The Non-Tech Guy:**
@@ -110,7 +110,7 @@ These are written to sound like actual roofers talk — short, practical, no mar
 ### Mobile-Ready Design
 
 **Title:** Looks great on the phone they're scrolling right now
-**Description:** 68% of homeowners search for roofers on their phone. Your RoofReady website loads fast, looks clean, and has click-to-call buttons on every page. No pinching. No zooming. No losing the lead because your site doesn't work on mobile.
+**Description:** 68% of homeowners search for roofers on their phone. Your RuufPro website loads fast, looks clean, and has click-to-call buttons on every page. No pinching. No zooming. No losing the lead because your site doesn't work on mobile.
 
 ---
 
@@ -155,7 +155,7 @@ This isn't a trend. It's a filter. Homeowners who use it will never see your bus
 - Losing leads you don't even know about
 - Invisible to the 78% who research online first
 
-**With RoofReady:**
+**With RuufPro:**
 - Visible in Google's Online Estimates results
 - Homeowners see your pricing and call you first
 - Satellite-powered estimates capture leads around the clock
@@ -173,7 +173,7 @@ Same satellite-powered estimates as the big platforms. Free website included. 71
 
 ### Comparison Table
 
-| Feature | RoofReady | Roofle ($350/mo + $2K setup) | Hiring an Agency ($3-5K) | DIY (Wix/Squarespace) |
+| Feature | RuufPro | Roofle ($350/mo + $2K setup) | Hiring an Agency ($3-5K) | DIY (Wix/Squarespace) |
 |---|---|---|---|---|
 | **Monthly cost** | $0 - $99 | $350 | $0 (after build) | $16 - $46 |
 | **Setup/build cost** | $0 | $2,000 | $3,000 - $5,000+ | $0 (your time) |
@@ -191,10 +191,10 @@ Same satellite-powered estimates as the big platforms. Free website included. 71
 ### Key Advantage Callouts
 
 **vs. Roofle:**
-> Roofle charges $350/month + a $2,000 setup fee. That's $6,200 in year one for just the estimate widget — no website included. RoofReady: $0-$1,188 for the website AND the widget. Same satellite data. 71% less money out of your pocket.
+> Roofle charges $350/month + a $2,000 setup fee. That's $6,200 in year one for just the estimate widget — no website included. RuufPro: $0-$1,188 for the website AND the widget. Same satellite data. 71% less money out of your pocket.
 
 **vs. Hiring an Agency:**
-> Agencies charge $3,000-$5,000 to build a website, then $500+/month to maintain it. They take weeks. They don't offer estimate widgets. And if you stop paying, some of them keep your site. RoofReady: free website, live in 5 minutes, and you own everything.
+> Agencies charge $3,000-$5,000 to build a website, then $500+/month to maintain it. They take weeks. They don't offer estimate widgets. And if you stop paying, some of them keep your site. RuufPro: free website, live in 5 minutes, and you own everything.
 
 **vs. DIY (Wix/Squarespace):**
 > You could build it yourself. But you're a roofer, not a web designer. It'll take days, it won't be optimized for roofing, there's no estimate widget, and it still costs $16-46/month. Or you could have a better site, built for roofers, in 5 minutes, for free.
@@ -240,7 +240,7 @@ No setup fees. No contracts. No hidden costs. Cancel anytime with one click.
 - **Everything in Starter** — Your free website stays free
 - **Satellite estimate widget** — Google measures the roof, your pricing does the rest
 - **Instant ballpark estimates** — Homeowner enters address, gets a price in seconds
-- **Embed anywhere** — Works on your RoofReady site or any other website
+- **Embed anywhere** — Works on your RuufPro site or any other website
 - **Lead dashboard with estimate details** — See the roof size, pitch, and price for every lead
 - **Contractor-controlled pricing** — You set the rates, we do the math
 - **Show up in Google's Online Estimates filter** — Be visible where 78% of homeowners are looking
@@ -268,11 +268,11 @@ No setup fees. No contracts. No hidden costs. Cancel anytime with one click.
 
 ### Q3: How is this different from Roofle?
 
-**A:** Roofle charges $350/month plus a $2,000 setup fee — that's $6,200 in the first year for just the estimate widget. No website included. RoofReady gives you a free professional website plus the same satellite-powered estimates for $99/month with zero setup fee. Same technology. 71% cheaper. Plus you get a website.
+**A:** Roofle charges $350/month plus a $2,000 setup fee — that's $6,200 in the first year for just the estimate widget. No website included. RuufPro gives you a free professional website plus the same satellite-powered estimates for $99/month with zero setup fee. Same technology. 71% cheaper. Plus you get a website.
 
 ### Q4: Can I use my own domain name?
 
-**A:** Yes. You can connect your existing domain or use the free subdomain we provide (yourbusiness.roofready.com). Custom domain support is included — no extra charge.
+**A:** Yes. You can connect your existing domain or use the free subdomain we provide (yourbusiness.ruufpro.com). Custom domain support is included — no extra charge.
 
 ### Q5: What if I already have a website?
 
@@ -304,7 +304,7 @@ No setup fees. No contracts. No hidden costs. Cancel anytime with one click.
 ### Option B — The Math Close
 
 **Headline:** $0 for a website. $99/month for leads that used to cost you thousands.
-**Subheadline:** Roofle charges $6,200 in year one. Agencies charge $3,000-$5,000 just to build the site. RoofReady gives you both for a fraction of the cost — and the website is free forever.
+**Subheadline:** Roofle charges $6,200 in year one. Agencies charge $3,000-$5,000 just to build the site. RuufPro gives you both for a fraction of the cost — and the website is free forever.
 **CTA Button:** Start for Free
 **Trust line:** No setup fees. No contracts. Cancel anytime.
 

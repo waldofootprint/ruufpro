@@ -123,6 +123,7 @@ export async function POST(request: NextRequest) {
         detail_display: display.detail,
         roof_area_sqft: result.roofAreaSqft,
         pitch_degrees: result.pitchDegrees,
+        num_segments: result.numSegments,
         is_satellite: result.isFromSatellite,
         needs_fallback: needsFallback,
       },

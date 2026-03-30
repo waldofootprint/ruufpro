@@ -11,3 +11,4 @@ create policy "Public can read contractor profiles"
   on contractors for select
   to anon
   using (true);
+

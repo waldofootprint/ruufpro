@@ -85,7 +85,7 @@ export default function GoogleFilter() {
 
         {/* Before/After visual */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-          {/* Without RoofReady */}
+          {/* Without RuufPro */}
           <div className="overflow-hidden rounded-3xl bg-red-50 border border-red-200/60 p-6 shadow-xl">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-2 h-2 rounded-full bg-red-500" />
@@ -108,11 +108,11 @@ export default function GoogleFilter() {
             </ul>
           </div>
 
-          {/* With RoofReady */}
+          {/* With RuufPro */}
           <div className="overflow-hidden rounded-3xl bg-green-50 border border-green-200/60 p-6 shadow-xl">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-sm font-semibold text-green-700">With RoofReady</span>
+              <span className="text-sm font-semibold text-green-700">With RuufPro</span>
             </div>
             <ul className="space-y-3">
               {[

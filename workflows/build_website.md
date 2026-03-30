@@ -89,7 +89,7 @@ Before writing custom UI, check if 21st.dev has a component that fits. Hannah of
 
 ```
 app/
-  page.tsx                    — Marketing site (roofready.com)
+  page.tsx                    — Marketing site (ruufpro.com)
   signup/page.tsx             — Signup
   login/page.tsx              — Login
   onboarding/page.tsx         — Onboarding flow

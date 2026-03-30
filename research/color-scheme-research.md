@@ -302,7 +302,7 @@ The transition from dark hero to white content body is critical:
 
 ---
 
-## 6. Recommendation for RoofReady Default
+## 6. Recommendation for RuufPro Default
 
 **Palette A ("Classic Contractor" — Navy + Orange) should be the default template** for these reasons:
 

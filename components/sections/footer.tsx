@@ -1,6 +1,6 @@
-// Footer — business info + "Powered by RoofReady" link.
+// Footer — business info + "Powered by RuufPro" link.
 // The "Powered by" link is our organic growth engine — every free site
-// advertises RoofReady to visitors.
+// advertises RuufPro to visitors.
 
 interface FooterProps {
   businessName: string;
@@ -43,10 +43,10 @@ export default function Footer({
           <div className="text-sm">
             Powered by{" "}
             <a
-              href="https://roofready.com"
+              href="https://ruufpro.com"
               className="text-brand-500 hover:text-brand-400 transition-colors"
             >
-              RoofReady
+              RuufPro
             </a>
           </div>
         </div>

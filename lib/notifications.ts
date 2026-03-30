@@ -72,21 +72,21 @@ export async function sendLeadNotificationEmail(data: LeadNotificationData) {
         ${estimateSection}
 
         <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #f3f4f6;">
-          <a href="https://roofready.com/dashboard/leads" style="display: inline-block; background: #111827; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
+          <a href="https://ruufpro.com/dashboard/leads" style="display: inline-block; background: #111827; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
             View in Dashboard →
           </a>
         </div>
       </div>
 
       <p style="text-align: center; font-size: 11px; color: #9ca3af; margin-top: 16px;">
-        Sent by RoofReady · You're receiving this because someone submitted a lead on your site.
+        Sent by RuufPro · You're receiving this because someone submitted a lead on your site.
       </p>
     </div>
   `;
 
   try {
     const { error } = await resend.emails.send({
-      from: "RoofReady <onboarding@resend.dev>",
+      from: "RuufPro <onboarding@resend.dev>",
       to: contractorEmail,
       subject: `New lead: ${leadName}${hasEstimate ? ` — $${estimateLow!.toLocaleString()}-$${estimateHigh!.toLocaleString()}` : ""}`,
       html,

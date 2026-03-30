@@ -46,18 +46,27 @@ export async function POST(request: NextRequest) {
       estimateRoofSqft: estimate_roof_sqft || null,
     });
 
-    // Send push notification (fire and forget — don't block the response)
-    const hasEstimate = estimate_low && estimate_high;
-    const pushBody = hasEstimate
-      ? `${lead_name} — $${estimate_low.toLocaleString()}-$${estimate_high.toLocaleString()}`
-      : `${lead_name}${lead_phone ? ` · ${lead_phone}` : ""}`;
+    // Send smart push notification with full lead details
+    const parts: string[] = [lead_name];
+    if (estimate_roof_sqft) parts.push(`${estimate_roof_sqft.toLocaleString()} sqft`);
+    if (estimate_material) parts.push(estimate_material);
+    if (estimate_low && estimate_high) parts.push(`$${estimate_low.toLocaleString()}-$${estimate_high.toLocaleString()}`);
+    if (!estimate_low && lead_phone) parts.push(lead_phone);
+    const pushBody = parts.join(" · ");
 
-    fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL ? request.nextUrl.origin : "http://localhost:3000"}/api/push/send`, {
+    // Include timeline if available for urgency context
+    const timeline = body.timeline;
+    const timelineLabel = timeline === "now" ? " · ASAP" : timeline === "1_3_months" ? " · 1-3mo" : "";
+    const pushTitle = source === "estimate_widget"
+      ? `New Estimate Lead${timelineLabel}`
+      : "New Contact Form Lead";
+
+    fetch(`${request.nextUrl.origin}/api/push/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contractor_id,
-        title: `New Lead from ${source === "estimate_widget" ? "Estimate Widget" : "Contact Form"}`,
+        title: pushTitle,
         body: pushBody,
       }),
     }).catch(() => {});

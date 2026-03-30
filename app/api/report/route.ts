@@ -129,10 +129,10 @@ export async function POST(request: NextRequest) {
 
     const buffer = await renderToBuffer(element as any);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="RoofReady-Estimate-${homeowner_name || "Report"}.pdf"`,
+        "Content-Disposition": `attachment; filename="RuufPro-Estimate-${homeowner_name || "Report"}.pdf"`,
       },
     });
   } catch (err) {

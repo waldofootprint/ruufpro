@@ -1,22 +1,20 @@
-// This page renders a contractor's site.
+// Contractor site page — renders the roofer's website from database data.
 //
-// How the data flows:
-// 1. Visitor goes to "joes-roofing.roofready.com"
+// Flow:
+// 1. Visitor goes to "joes-roofing.ruufpro.com"
 // 2. Middleware rewrites to "/site/joes-roofing"
-// 3. This page receives { params: { slug: "joes-roofing" } }
-// 4. We query Supabase for the site + contractor data matching that slug
-// 5. We merge the data with smart defaults (so the site looks complete
-//    even if the roofer only entered 4 fields during onboarding)
-// 6. We render the appropriate template based on business type
+// 3. This page fetches site + contractor data from Supabase
+// 4. Renders the appropriate template with that data
 
 import { createServerSupabase } from "@/lib/supabase-server";
-import { getSiteContent } from "@/lib/defaults";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import type { Contractor, Site, BusinessType } from "@/lib/types";
-import StormInsuranceTemplate from "@/components/templates/storm-insurance";
+import type { Contractor, Site } from "@/lib/types";
+import ModernCleanTemplate from "@/components/templates/modern-clean";
+import ChalkboardTemplate from "@/components/templates/chalkboard";
+import BlueprintTemplate from "@/components/templates/blueprint";
+import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
-// Generate SEO metadata for each contractor site
 export async function generateMetadata({
   params,
 }: {
@@ -33,16 +31,9 @@ export async function generateMetadata({
   if (!site) return { title: "Site Not Found" };
 
   const contractor = site.contractors as unknown as Contractor;
-  const content = getSiteContent(
-    contractor.business_type as BusinessType,
-    contractor.business_name,
-    contractor.city,
-    { metaTitle: site.meta_title, metaDescription: site.meta_description }
-  );
-
   return {
-    title: content.metaTitle,
-    description: content.metaDescription,
+    title: site.meta_title || `${contractor.business_name} — Roofing in ${contractor.city}, ${contractor.state}`,
+    description: site.meta_description || `Professional roofing services in ${contractor.city}, ${contractor.state}. Free estimates, licensed & insured.`,
   };
 }
 
@@ -53,9 +44,6 @@ export default async function ContractorSite({
 }) {
   const supabase = createServerSupabase();
 
-  // Fetch the site and its contractor data in one query.
-  // The "contractors(*)" part is a Supabase join — it pulls the related
-  // contractor row along with the site row.
   const { data: site } = await supabase
     .from("sites")
     .select("*, contractors(*)")
@@ -63,34 +51,52 @@ export default async function ContractorSite({
     .eq("published", true)
     .single();
 
-  // If no published site exists for this slug, show a 404
   if (!site) {
     notFound();
   }
 
   const contractor = site.contractors as unknown as Contractor;
-  const content = getSiteContent(
-    contractor.business_type as BusinessType,
-    contractor.business_name,
-    contractor.city,
-    {
-      headline: site.hero_headline,
-      ctaText: site.hero_cta_text,
-      aboutText: site.about_text,
-      services: site.services,
-      metaTitle: site.meta_title,
-      metaDescription: site.meta_description,
-    }
-  );
+  const siteData = site as unknown as Site;
 
-  // Render the template. Currently all design styles use the same layout
-  // component — when Hannah's v0 designs are ready, we'll create separate
-  // components for modern_clean, bold_confident, and warm_trustworthy.
-  return (
-    <StormInsuranceTemplate
-      contractor={contractor}
-      site={site as unknown as Site}
-      content={content}
-    />
-  );
+  // Map database fields → template props
+  const templateData: ContractorSiteData = {
+    businessName: contractor.business_name,
+    phone: contractor.phone,
+    city: contractor.city,
+    state: contractor.state,
+    tagline: contractor.tagline,
+    heroHeadline: siteData.hero_headline,
+    heroCta: siteData.hero_cta_text,
+    heroImage: null, // TODO: add hero_image to sites table
+    aboutText: siteData.about_text,
+    services: siteData.services || [],
+    reviews: siteData.reviews || [],
+    isLicensed: contractor.is_licensed,
+    isInsured: contractor.is_insured,
+    gafMasterElite: contractor.gaf_master_elite,
+    owensCorningPreferred: contractor.owens_corning_preferred,
+    certainteedSelect: contractor.certainteed_select,
+    bbbAccredited: contractor.bbb_accredited,
+    bbbRating: contractor.bbb_rating,
+    offersFinancing: contractor.offers_financing,
+    warrantyYears: contractor.warranty_years,
+    yearsInBusiness: contractor.years_in_business,
+    serviceAreaCities: contractor.service_area_cities || [],
+    hasEstimateWidget: contractor.has_estimate_widget,
+    contractorId: contractor.id,
+    slug: params.slug,
+  };
+
+  // Choose template based on site.template field
+  const template = (siteData as any).template || "modern_clean";
+
+  if (template === "chalkboard") {
+    return <ChalkboardTemplate {...templateData} />;
+  }
+
+  if (template === "blueprint") {
+    return <BlueprintTemplate {...templateData} />;
+  }
+
+  return <ModernCleanTemplate {...templateData} />;
 }

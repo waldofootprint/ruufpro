@@ -130,7 +130,7 @@ export default function OnboardingPage() {
     if (siteErr) {
       if (siteErr.message.includes("duplicate")) {
         setError(
-          `The URL "${slug}.roofready.com" is taken. Try a different business name.`
+          `The URL "${slug}.ruufpro.com" is taken. Try a different business name.`
         );
       } else {
         setError(siteErr.message);
@@ -358,7 +358,7 @@ export default function OnboardingPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Your URL</span>
                 <span className="text-sm font-medium text-brand-600">
-                  {generateSlug(businessName)}.roofready.com
+                  {generateSlug(businessName)}.ruufpro.com
                 </span>
               </div>
             </div>

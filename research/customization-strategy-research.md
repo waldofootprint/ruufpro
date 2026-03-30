@@ -1,6 +1,6 @@
 # Customization Strategy Research
 
-What should roofers be able to customize on their RoofReady template site? Tiered by effort vs. impact, informed by competitor analysis.
+What should roofers be able to customize on their RuufPro template site? Tiered by effort vs. impact, informed by competitor analysis.
 
 ---
 
@@ -60,7 +60,7 @@ These use data from onboarding (name, phone, city, state) and smart defaults:
 | About text | Template with [Business] and [City] placeholders |
 | Default services | Roof Replacement, Repair, Inspections, Gutters |
 | Footer | Business name, phone, city, state |
-| "Powered by RoofReady" link | Always present on free tier |
+| "Powered by RuufPro" link | Always present on free tier |
 
 ### Tier 2: Quick Wins (checkbox or single field, big impact)
 These take <1 minute each and significantly improve trust:

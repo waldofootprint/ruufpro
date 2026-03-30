@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roofing Deep Dive — RoofReady Technical Build Plan</title>
+<title>Roofing Deep Dive — RuufPro Technical Build Plan</title>
 <style>
   @media print {
     body { font-size: 11pt; }
@@ -50,7 +50,7 @@
 </head>
 <body>
 
-<h1>Roofle Teardown + Technical Build Plan for RoofReady</h1>
+<h1>Roofle Teardown + Technical Build Plan for RuufPro</h1>
 <p class="subtitle">Prepared 2026-03-26 | Micro SaaS Opportunity Research</p>
 
 <div class="highlight">
@@ -123,12 +123,12 @@
 
 <hr>
 
-<h2>How to Build RoofReady &mdash; Technical Blueprint</h2>
+<h2>How to Build RuufPro &mdash; Technical Blueprint</h2>
 
 <h3>Architecture Overview</h3>
 <pre>
 ┌─────────────────────────────────────────────┐
-│            RoofReady Platform                │
+│            RuufPro Platform                │
 ├──────────┬──────────┬───────────┬───────────┤
 │ Website  │ Estimate │ Lead      │ Review    │
 │ Generator│ Widget   │ Engine    │ Automator │
@@ -153,7 +153,7 @@
   <li>Use Vercel's <strong>Platforms Starter Kit</strong> (open source, built for multi-tenant apps with custom domains)</li>
   <li>3 templates mapped to <strong>business types</strong> (Storm/Insurance, Residential, Full Service) &mdash; not visual styles</li>
   <li>Minimum onboarding input: <strong>business name, phone, city, business type</strong> &mdash; site generates with smart defaults from these 4 fields</li>
-  <li>Site generates in seconds at <code>[company].roofready.com</code></li>
+  <li>Site generates in seconds at <code>[company].ruufpro.com</code></li>
   <li>Custom domain support on paid tier (Vercel or Cloudflare)</li>
 </ul>
 
@@ -197,7 +197,7 @@
   <li><strong>Gallery</strong> &mdash; Shown when roofer uploads photos; hidden by default</li>
   <li><strong>Service Area</strong> &mdash; "Proudly serving [City] and surrounding areas"</li>
   <li><strong>Contact Form + Map</strong> &mdash; Name, phone, email, message. Google Map. Click-to-call.</li>
-  <li><strong>Footer</strong> &mdash; Phone, address, license #, "Powered by RoofReady"</li>
+  <li><strong>Footer</strong> &mdash; Phone, address, license #, "Powered by RuufPro"</li>
 </ol>
 
 <h4>The 2-Second Test (Above the Fold, Mobile)</h4>
@@ -377,7 +377,7 @@ Output:
 
 <h3>Month 2+: Scale</h3>
 <ol start="8">
-  <li><strong>"Powered by RoofReady" footer</strong> on every free site = free advertising</li>
+  <li><strong>"Powered by RuufPro" footer</strong> on every free site = free advertising</li>
   <li><strong>Referral program:</strong> refer a roofer, both get 1 month free</li>
   <li><strong>Supply house partnerships</strong> &mdash; ABC Supply, Beacon, SRS Distribution</li>
 </ol>
@@ -418,7 +418,7 @@ Output:
 <h2>Why This Beats Roofle</h2>
 
 <table>
-  <tr><th>Factor</th><th>Roofle</th><th>RoofReady</th></tr>
+  <tr><th>Factor</th><th>Roofle</th><th>RuufPro</th></tr>
   <tr><td><strong>Website</strong></td><td>None &mdash; widget only</td><td>Free professional site (our lead magnet, always free)</td></tr>
   <tr><td><strong>Setup cost</strong></td><td>$2,000</td><td>$0</td></tr>
   <tr><td><strong>Monthly cost</strong></td><td>$350/mo</td><td>$99/mo per service (widget, reviews, etc. sold independently)</td></tr>

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Template #2 — Style Directions</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Nunito:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Fraunces:wght@400;600;700&family=Geist:wght@400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #eeeef0; color: #1a1a1a; -webkit-font-smoothing: antialiased; padding: 48px 20px; }
+
+    .page-header { text-align: center; margin-bottom: 56px; }
+    .page-header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .page-header p { color: #6e6e73; font-size: 15px; max-width: 620px; margin: 0 auto; line-height: 1.5; }
+
+    .direction { max-width: 1060px; margin: 0 auto 72px; }
+    .dir-tag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; padding: 5px 14px; border-radius: 6px; margin-bottom: 12px; }
+    .dir-title { font-size: 24px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+    .dir-desc { font-size: 14px; color: #6e6e73; line-height: 1.6; margin-bottom: 6px; max-width: 700px; }
+    .dir-meta { font-size: 12px; color: #a1a1aa; line-height: 1.5; margin-bottom: 20px; }
+    .dir-meta strong { color: #6e6e73; }
+
+    .mockup { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04); }
+
+    /* Shared inner structure */
+    .tmpl-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; }
+    .tmpl-hero { padding: 80px 32px; }
+    .tmpl-section { padding: 64px 32px; }
+    .tmpl-footer { padding: 40px 32px 32px; }
+    .tmpl-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    .tmpl-h1 { margin-bottom: 12px; }
+    .tmpl-h2 { margin-bottom: 8px; }
+    .tmpl-sub { margin-bottom: 32px; }
+    .tmpl-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; font-weight: 700; font-size: 15px; text-decoration: none; transition: all 0.2s; cursor: pointer; border: none; font-family: inherit; }
+    .tmpl-btn-sm { padding: 10px 20px; font-size: 13px; }
+    .tmpl-cards { display: grid; gap: 16px; }
+    .tmpl-card { padding: 28px; }
+    .tmpl-stats { display: flex; gap: 32px; }
+    .tmpl-stat-num { font-weight: 800; line-height: 1; }
+    .tmpl-stat-label { font-size: 12px; margin-top: 4px; }
+
+    /* ====================================================
+       1: DARK FORGE
+    ==================================================== */
+    .df { background: #1C1C1E; color: #F5F0EB; }
+    .df .tmpl-nav { border-bottom: 1px solid rgba(201,168,76,0.15); }
+    .df .nav-logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #F5F0EB; }
+    .df .nav-link { font-size: 13px; color: rgba(245,240,235,0.4); text-decoration: none; transition: color 0.2s; }
+    .df .nav-link:hover { color: #C9A84C; }
+    .df .tmpl-hero { padding: 100px 32px 80px; max-width: 720px; }
+    .df .tmpl-tag { color: #C9A84C; font-family: 'Inter', sans-serif; letter-spacing: 0.15em; }
+    .df .tmpl-h1 { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 700; color: #F5F0EB; line-height: 1.1; letter-spacing: -0.5px; }
+    .df .tmpl-sub { font-size: 18px; color: rgba(245,240,235,0.5); line-height: 1.6; font-weight: 300; }
+    .df .tmpl-btn { background: transparent; border: 1px solid #C9A84C; color: #C9A84C; border-radius: 0; letter-spacing: 0.05em; font-size: 13px; }
+    .df .tmpl-btn:hover { background: #C9A84C; color: #1C1C1E; }
+    .df .tmpl-section { border-top: 1px solid rgba(201,168,76,0.12); }
+    .df .tmpl-h2 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 600; color: #F5F0EB; }
+    .df .tmpl-cards { grid-template-columns: 1fr 1fr 1fr; }
+    .df .tmpl-card { background: transparent; border: none; padding: 0; }
+    .df .card-title { font-family: 'Playfair Display', serif; font-size: 18px; color: #F5F0EB; margin-bottom: 8px; }
+    .df .card-desc { font-size: 14px; color: rgba(245,240,235,0.4); line-height: 1.6; font-weight: 300; }
+    .df .tmpl-stat-num { font-size: 48px; color: #C9A84C; font-family: 'Playfair Display', serif; }
+    .df .tmpl-stat-label { color: rgba(245,240,235,0.4); }
+    .df .tmpl-footer { border-top: 1px solid rgba(201,168,76,0.12); color: rgba(245,240,235,0.3); font-size: 13px; }
+    .df .gold-line { width: 40px; height: 1px; background: #C9A84C; margin-bottom: 16px; }
+
+    /* ====================================================
+       2: FIELDWORK
+    ==================================================== */
+    .fw { background: #FAF6F1; color: #3D2E1F; }
+    .fw .tmpl-nav { background: #FAF6F1; }
+    .fw .nav-logo { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: #3D2E1F; }
+    .fw .nav-link { font-size: 13px; color: #8A7B6B; text-decoration: none; font-family: 'Nunito', sans-serif; }
+    .fw .tmpl-hero { padding: 80px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+    .fw .tmpl-tag { color: #C05E3C; font-family: 'Nunito', sans-serif; }
+    .fw .tmpl-h1 { font-family: 'Fraunces', serif; font-size: 48px; font-weight: 700; color: #3D2E1F; line-height: 1.12; }
+    .fw .accent-word { color: #C05E3C; }
+    .fw .tmpl-sub { font-size: 17px; color: #6B5D4F; line-height: 1.6; font-family: 'Nunito', sans-serif; }
+    .fw .tmpl-btn { background: #C05E3C; color: #fff; border-radius: 980px; font-family: 'Nunito', sans-serif; }
+    .fw .tmpl-btn:hover { background: #A84E32; }
+    .fw .tmpl-btn-outline { background: transparent; border: 1.5px solid #D4C4B0; color: #6B5D4F; border-radius: 980px; font-family: 'Nunito', sans-serif; }
+    .fw .hero-img { width: 100%; height: 380px; object-fit: cover; border-radius: 24px; }
+    .fw .tmpl-section { }
+    .fw .tmpl-h2 { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; color: #3D2E1F; }
+    .fw .section-desc { font-size: 16px; color: #8A7B6B; font-family: 'Nunito', sans-serif; line-height: 1.6; }
+    .fw .tmpl-cards { grid-template-columns: 1fr 1fr; }
+    .fw .tmpl-card { background: #fff; border-radius: 20px; box-shadow: 0 2px 16px rgba(107,79,58,0.06); }
+    .fw .card-title { font-family: 'Fraunces', serif; font-size: 18px; color: #3D2E1F; margin-bottom: 6px; }
+    .fw .card-desc { font-size: 14px; color: #8A7B6B; line-height: 1.6; font-family: 'Nunito', sans-serif; }
+    .fw .pill { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #E8DDD0; border-radius: 980px; padding: 6px 14px; font-size: 13px; color: #6B5D4F; font-family: 'Nunito', sans-serif; }
+    .fw .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: #7D8E6E; }
+    .fw .tmpl-footer { background: #3D2E1F; color: rgba(250,246,241,0.5); border-radius: 24px 24px 0 0; }
+    .fw .footer-logo { font-family: 'Fraunces', serif; color: #FAF6F1; font-size: 16px; font-weight: 700; }
+    .fw .tmpl-stat-num { font-size: 36px; color: #C05E3C; font-family: 'Fraunces', serif; }
+    .fw .tmpl-stat-label { color: #8A7B6B; font-family: 'Nunito', sans-serif; }
+
+    /* ====================================================
+       3: BLUEPRINT
+    ==================================================== */
+    .bp { background: #FFFFFF; color: #000; }
+    .bp .tmpl-nav { border: 3px solid #000; margin: 16px; border-radius: 0; }
+    .bp .nav-logo { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .bp .nav-link { font-size: 13px; font-weight: 600; color: #000; text-decoration: none; text-transform: uppercase; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.05em; }
+    .bp .tmpl-hero { padding: 60px 32px 80px; }
+    .bp .tmpl-tag { color: #2563EB; font-family: 'Space Grotesk', sans-serif; font-size: 13px; letter-spacing: 0.1em; }
+    .bp .tmpl-h1 { font-family: 'Space Grotesk', sans-serif; font-size: 80px; font-weight: 700; line-height: 0.95; text-transform: uppercase; letter-spacing: -2px; }
+    .bp .h1-accent { color: #2563EB; }
+    .bp .tmpl-sub { font-size: 18px; color: #666; font-family: 'Space Grotesk', sans-serif; max-width: 500px; }
+    .bp .tmpl-btn { background: #2563EB; color: #fff; border-radius: 0; font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 4px 4px 0 #000; }
+    .bp .tmpl-btn:hover { box-shadow: 2px 2px 0 #000; transform: translate(2px, 2px); }
+    .bp .tmpl-btn-outline { background: #fff; color: #000; border: 3px solid #000; border-radius: 0; box-shadow: 4px 4px 0 #000; font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; }
+    .bp .tmpl-section { border-top: 3px solid #000; }
+    .bp .tmpl-h2 { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; text-transform: uppercase; letter-spacing: -1px; }
+    .bp .tmpl-cards { grid-template-columns: 1fr 1fr; }
+    .bp .tmpl-card { border: 3px solid #000; border-radius: 0; box-shadow: 6px 6px 0 #000; background: #fff; }
+    .bp .card-num { font-family: 'Space Grotesk', sans-serif; font-size: 48px; font-weight: 700; color: #2563EB; line-height: 1; margin-bottom: 8px; }
+    .bp .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
+    .bp .card-desc { font-size: 14px; color: #666; line-height: 1.6; font-family: 'Space Grotesk', sans-serif; }
+    .bp .tmpl-stat-num { font-size: 72px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #000; letter-spacing: -2px; }
+    .bp .tmpl-stat-label { font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; color: #999; }
+    .bp .tmpl-footer { background: #000; color: #fff; }
+    .bp .footer-logo { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ====================================================
+       4: RIDGELINE CLEAN
+    ==================================================== */
+    .rc { background: #FFFFFF; color: #111827; }
+    .rc .tmpl-nav { max-width: 900px; margin: 0 auto; padding: 20px 0; border-bottom: 1px solid #f3f4f6; }
+    .rc .nav-logo { font-size: 16px; font-weight: 600; color: #111827; }
+    .rc .nav-link { font-size: 13px; color: #9ca3af; text-decoration: none; font-weight: 500; }
+    .rc .nav-link:hover { color: #111827; }
+    .rc .tmpl-hero { padding: 100px 32px 80px; text-align: center; max-width: 720px; margin: 0 auto; }
+    .rc .tmpl-tag { color: #6b7280; font-weight: 500; font-size: 13px; letter-spacing: 0; text-transform: none; }
+    .rc .tmpl-h1 { font-size: 48px; font-weight: 700; color: #111827; line-height: 1.12; letter-spacing: -0.5px; }
+    .rc .tmpl-sub { font-size: 18px; color: #6b7280; line-height: 1.6; font-weight: 400; max-width: 520px; margin: 0 auto 32px; }
+    .rc .tmpl-btn { background: #111827; color: #fff; border-radius: 10px; font-weight: 600; font-size: 14px; }
+    .rc .tmpl-btn:hover { background: #1f2937; }
+    .rc .tmpl-btn-ghost { background: transparent; color: #6b7280; font-weight: 500; font-size: 14px; }
+    .rc .tmpl-section { max-width: 900px; margin: 0 auto; padding: 64px 0; border-top: 1px solid #f3f4f6; }
+    .rc .tmpl-h2 { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.3px; }
+    .rc .section-desc { font-size: 15px; color: #9ca3af; line-height: 1.6; }
+    .rc .tmpl-cards { grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .rc .tmpl-card { background: #fafafa; border-radius: 12px; padding: 24px; border: 1px solid #f3f4f6; }
+    .rc .card-title { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+    .rc .card-desc { font-size: 13px; color: #9ca3af; line-height: 1.5; }
+    .rc .tmpl-stat-num { font-size: 36px; color: #111827; font-weight: 700; letter-spacing: -0.5px; }
+    .rc .tmpl-stat-label { color: #9ca3af; font-weight: 500; }
+    .rc .tmpl-footer { max-width: 900px; margin: 0 auto; padding: 32px 0; border-top: 1px solid #f3f4f6; color: #d1d5db; font-size: 13px; display: flex; justify-content: space-between; }
+
+    /* ====================================================
+       5: IRONCLAD
+    ==================================================== */
+    .ic { background: #0F0F0F; color: #fff; }
+    .ic .tmpl-nav { border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .ic .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 0.05em; color: #fff; }
+    .ic .nav-link { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4); text-decoration: none; text-transform: uppercase; letter-spacing: 0.08em; }
+    .ic .nav-link:hover { color: #EA580C; }
+    .ic .tmpl-hero { padding: 100px 32px 80px; }
+    .ic .tmpl-tag { color: #EA580C; font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0.12em; }
+    .ic .tmpl-h1 { font-family: 'Bebas Neue', sans-serif; font-size: 96px; line-height: 0.9; letter-spacing: 1px; color: #fff; text-transform: uppercase; }
+    .ic .h1-thin { font-weight: 400; color: rgba(255,255,255,0.3); }
+    .ic .tmpl-sub { font-size: 17px; color: rgba(255,255,255,0.4); line-height: 1.6; max-width: 480px; }
+    .ic .tmpl-btn { background: #EA580C; color: #fff; border-radius: 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .ic .tmpl-btn:hover { background: #C2410C; }
+    .ic .tmpl-section { border-top: 1px solid rgba(255,255,255,0.06); }
+    .ic .tmpl-h2 { font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: 1px; text-transform: uppercase; }
+    .ic .tmpl-cards { grid-template-columns: 1fr 1fr 1fr; }
+    .ic .tmpl-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 0; }
+    .ic .card-num { font-family: 'Bebas Neue', sans-serif; font-size: 64px; color: #EA580C; line-height: 1; letter-spacing: 1px; }
+    .ic .card-title { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; margin-top: 8px; }
+    .ic .card-desc { font-size: 13px; color: rgba(255,255,255,0.4); line-height: 1.6; }
+    .ic .big-stat { font-family: 'Bebas Neue', sans-serif; font-size: 140px; line-height: 1; color: rgba(255,255,255,0.06); letter-spacing: 2px; position: absolute; right: 32px; top: 50%; transform: translateY(-50%); }
+    .ic .tmpl-stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 56px; color: #EA580C; letter-spacing: 1px; }
+    .ic .tmpl-stat-label { color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; font-weight: 600; }
+    .ic .tmpl-footer { border-top: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.2); font-size: 12px; display: flex; justify-content: space-between; }
+    .ic .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #fff; letter-spacing: 0.05em; }
+    .ic .accent { color: #EA580C; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>Template #2 — Style Directions</h1>
+    <p>Five drastically different approaches. Template #1 (Modern Clean) is navy+orange, Sora+DM Sans, squared-off, corporate-bold. These are all intentionally different.</p>
+  </div>
+
+  <!-- 1: DARK FORGE -->
+  <div class="direction">
+    <div class="dir-tag" style="background: #2C2926; color: #C9A84C;">Direction 1</div>
+    <div class="dir-title">Dark Forge — Luxury Dark Mode</div>
+    <div class="dir-desc">Charcoal black + gold. Serif headlines + light sans body. Borderless cards, ghost buttons, huge whitespace. Quiet confidence — the website says "our work speaks for itself."</div>
+    <div class="dir-meta"><strong>Best for:</strong> Established, premium roofers (slate, copper, metal work) &middot; <strong>Feels like:</strong> Aesop / Four Seasons</div>
+
+    <div class="mockup">
+      <div class="df">
+        <div class="tmpl-nav">
+          <div class="nav-logo">Summit Roofing</div>
+          <div style="display: flex; gap: 24px;">
+            <a class="nav-link" href="#">Services</a>
+            <a class="nav-link" href="#">About</a>
+            <a class="nav-link" href="#">Contact</a>
+          </div>
+        </div>
+        <div class="tmpl-hero">
+          <div class="tmpl-tag">Denver, Colorado</div>
+          <h1 class="tmpl-h1">Crafted roofing for homes that deserve it.</h1>
+          <p class="tmpl-sub">Premium residential roofing with an uncompromising attention to detail. Licensed, insured, and trusted for over 15 years.</p>
+          <div style="display: flex; gap: 14px;">
+            <a class="tmpl-btn" href="#">Request Consultation &rarr;</a>
+          </div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-h2">Our craft</div>
+          <div class="tmpl-cards" style="margin-top: 32px;">
+            <div class="tmpl-card">
+              <div class="gold-line"></div>
+              <div class="card-title">Roof Replacement</div>
+              <div class="card-desc">Complete tear-off and installation using premium materials. Every detail considered, every seam perfect.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="gold-line"></div>
+              <div class="card-title">Restoration</div>
+              <div class="card-desc">Bringing aging roofs back to life. Expert repair work that preserves your home's character and value.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="gold-line"></div>
+              <div class="card-title">Inspections</div>
+              <div class="card-desc">Thorough assessment with a detailed written report. Know exactly where your roof stands.</div>
+            </div>
+          </div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-stats">
+            <div><div class="tmpl-stat-num">15+</div><div class="tmpl-stat-label">Years of craft</div></div>
+            <div><div class="tmpl-stat-num">500+</div><div class="tmpl-stat-label">Roofs completed</div></div>
+            <div><div class="tmpl-stat-num">4.9</div><div class="tmpl-stat-label">Star rating</div></div>
+          </div>
+        </div>
+        <div class="tmpl-footer">
+          <span>&copy; 2026 Summit Roofing</span>
+          <span>Powered by RuufPro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2: FIELDWORK -->
+  <div class="direction">
+    <div class="dir-tag" style="background: #F5EDE3; color: #C05E3C;">Direction 2</div>
+    <div class="dir-title">Fieldwork — Warm Earth Tone Organic</div>
+    <div class="dir-desc">Cream + terracotta + sage. Rounded serif headlines + friendly sans body. Pill buttons, warm shadows, curved shapes. Feels like a Sunday afternoon — warm, trustworthy, human.</div>
+    <div class="dir-meta"><strong>Best for:</strong> Family businesses, suburban/rural, referral-driven roofers &middot; <strong>Feels like:</strong> Patagonia / Magnolia</div>
+
+    <div class="mockup">
+      <div class="fw">
+        <div class="tmpl-nav">
+          <div class="nav-logo">Summit Roofing</div>
+          <div style="display: flex; gap: 24px; align-items: center;">
+            <a class="nav-link" href="#">Services</a>
+            <a class="nav-link" href="#">About</a>
+            <a class="nav-link" href="#">Reviews</a>
+            <a class="tmpl-btn tmpl-btn-sm" href="#" style="background: #C05E3C; color: #fff; border-radius: 980px; font-family: 'Nunito', sans-serif;">Get Estimate</a>
+          </div>
+        </div>
+        <div class="tmpl-hero">
+          <div>
+            <div class="tmpl-tag">Locally owned in Denver</div>
+            <h1 class="tmpl-h1">Your roof, <span class="accent-word">our craft</span>.</h1>
+            <p class="tmpl-sub">Honest roofing for families who care about their home. No surprises, no pressure — just quality work from people you can trust.</p>
+            <div style="display: flex; gap: 12px;">
+              <a class="tmpl-btn" href="#">Get a Free Estimate</a>
+              <a class="tmpl-btn tmpl-btn-outline tmpl-btn-sm" href="#" style="border: 1.5px solid #D4C4B0; color: #6B5D4F; background: transparent;">Call Us</a>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 24px;">
+              <span class="pill"><span class="pill-dot"></span> Licensed</span>
+              <span class="pill"><span class="pill-dot"></span> Insured</span>
+              <span class="pill"><span class="pill-dot"></span> Locally Owned</span>
+            </div>
+          </div>
+          <div>
+            <img class="hero-img" src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80&auto=format" alt="Home" />
+          </div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-tag">What we do</div>
+          <div class="tmpl-h2">Services</div>
+          <div class="tmpl-cards" style="margin-top: 24px;">
+            <div class="tmpl-card">
+              <div class="card-title">Roof Replacement</div>
+              <div class="card-desc">Complete tear-off and installation with premium materials and a warranty you can count on.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-title">Roof Repair</div>
+              <div class="card-desc">Leaks, storm damage, worn shingles — we fix it right the first time.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-title">Inspections</div>
+              <div class="card-desc">Know exactly what your roof needs with a thorough, honest assessment.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-title">Gutters</div>
+              <div class="card-desc">Seamless gutter installation and repair to protect your home from water damage.</div>
+            </div>
+          </div>
+        </div>
+        <div class="tmpl-footer">
+          <div class="footer-logo">Summit Roofing Co.</div>
+          <span style="font-size: 13px;">Powered by RuufPro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3: BLUEPRINT -->
+  <div class="direction">
+    <div class="dir-tag" style="background: #2563EB; color: #fff;">Direction 3</div>
+    <div class="dir-title">Blueprint — Neobrutalist / Bold Graphic</div>
+    <div class="dir-desc">Pure white + black borders + one electric blue accent. Mono/geometric font. Huge type, hard shadows, zero border-radius. The typography IS the design. Nobody scrolls past this.</div>
+    <div class="dir-meta"><strong>Best for:</strong> Young, new roofers wanting to stand out. Urban markets. &middot; <strong>Feels like:</strong> Gumroad / Figma</div>
+
+    <div class="mockup">
+      <div class="bp">
+        <div class="tmpl-nav">
+          <div class="nav-logo">SUMMIT ROOFING</div>
+          <div style="display: flex; gap: 20px; align-items: center;">
+            <a class="nav-link" href="#">SERVICES</a>
+            <a class="nav-link" href="#">ABOUT</a>
+            <a class="nav-link" href="#">CONTACT</a>
+            <a class="tmpl-btn tmpl-btn-sm" href="#" style="background: #2563EB; color: #fff; border-radius: 0; font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 3px 3px 0 #000; padding: 8px 16px;">GET ESTIMATE</a>
+          </div>
+        </div>
+        <div class="tmpl-hero">
+          <div class="tmpl-tag">DENVER, CO</div>
+          <h1 class="tmpl-h1">YOUR<br>NEW <span class="h1-accent">ROOF</span><br>STARTS HERE</h1>
+          <p class="tmpl-sub">Licensed. Insured. Locally owned. We replace and repair roofs for Denver homeowners who want it done right.</p>
+          <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <a class="tmpl-btn" href="#">GET FREE ESTIMATE &rarr;</a>
+            <a class="tmpl-btn tmpl-btn-outline" href="#">CALL NOW</a>
+          </div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-h2">WHAT WE DO</div>
+          <div class="tmpl-cards" style="margin-top: 24px;">
+            <div class="tmpl-card">
+              <div class="card-num">01</div>
+              <div class="card-title">ROOF REPLACEMENT</div>
+              <div class="card-desc">Full tear-off and installation. Premium materials. Manufacturer warranties. Done right.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-num">02</div>
+              <div class="card-title">ROOF REPAIR</div>
+              <div class="card-desc">Leaks, storm damage, missing shingles. Fast response, permanent fixes.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-num">03</div>
+              <div class="card-title">INSPECTIONS</div>
+              <div class="card-desc">Detailed roof assessment with written report. No cost, no obligation.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-num">04</div>
+              <div class="card-title">GUTTERS</div>
+              <div class="card-desc">Seamless gutter systems. Protect your foundation. Look sharp.</div>
+            </div>
+          </div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-stats">
+            <div><div class="tmpl-stat-num">847</div><div class="tmpl-stat-label">ROOFS COMPLETED</div></div>
+            <div><div class="tmpl-stat-num">4.9</div><div class="tmpl-stat-label">STAR RATING</div></div>
+            <div><div class="tmpl-stat-num">15+</div><div class="tmpl-stat-label">YEARS</div></div>
+          </div>
+        </div>
+        <div class="tmpl-footer">
+          <span class="footer-logo">SUMMIT ROOFING</span>
+          <span style="font-size: 12px; font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;">Powered by RuufPro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4: RIDGELINE CLEAN -->
+  <div class="direction">
+    <div class="dir-tag" style="background: #f3f4f6; color: #6b7280;">Direction 4</div>
+    <div class="dir-title">Ridgeline Clean — Apple-Inspired Minimal</div>
+    <div class="dir-desc">Pure white. One font. Maximum whitespace. Every element earns its place. The site says "we're so good we don't need to try hard." Calm, premium, effortless.</div>
+    <div class="dir-meta"><strong>Best for:</strong> High-end architectural roofers, design-build &middot; <strong>Feels like:</strong> Apple / Muji</div>
+
+    <div class="mockup">
+      <div class="rc">
+        <div class="tmpl-nav">
+          <div class="nav-logo">Summit Roofing</div>
+          <div style="display: flex; gap: 24px; align-items: center;">
+            <a class="nav-link" href="#">Services</a>
+            <a class="nav-link" href="#">About</a>
+            <a class="nav-link" href="#">Contact</a>
+          </div>
+        </div>
+        <div class="tmpl-hero">
+          <div class="tmpl-tag">Denver, Colorado</div>
+          <h1 class="tmpl-h1">Roofing done right.</h1>
+          <p class="tmpl-sub">Professional residential roofing in Denver. Licensed, insured, and committed to quality on every project.</p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <a class="tmpl-btn" href="#">Get a free estimate</a>
+            <a class="tmpl-btn tmpl-btn-ghost" href="#">(303) 555-0123</a>
+          </div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-h2">Services</div>
+          <p class="section-desc" style="margin-bottom: 24px;">Everything your roof needs, handled with care.</p>
+          <div class="tmpl-cards">
+            <div class="tmpl-card">
+              <div class="card-title">Roof Replacement</div>
+              <div class="card-desc">Complete installation with premium materials and manufacturer warranties.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-title">Roof Repair</div>
+              <div class="card-desc">Fast, permanent fixes for leaks, storm damage, and wear.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-title">Inspections</div>
+              <div class="card-desc">Honest assessment with a detailed report. No cost.</div>
+            </div>
+          </div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-stats">
+            <div><div class="tmpl-stat-num">500+</div><div class="tmpl-stat-label">Projects</div></div>
+            <div><div class="tmpl-stat-num">4.9</div><div class="tmpl-stat-label">Rating</div></div>
+            <div><div class="tmpl-stat-num">15</div><div class="tmpl-stat-label">Years</div></div>
+          </div>
+        </div>
+        <div class="tmpl-footer">
+          <span>&copy; 2026 Summit Roofing</span>
+          <span>Powered by RuufPro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5: IRONCLAD -->
+  <div class="direction">
+    <div class="dir-tag" style="background: #EA580C; color: #fff;">Direction 5</div>
+    <div class="dir-title">Ironclad — Industrial High-Contrast Editorial</div>
+    <div class="dir-desc">Near-black + condensed tall type + one hot orange accent. Magazine editorial layout. Massive stat numbers as design elements. Data-driven confidence. Feels like walking through a steel shop.</div>
+    <div class="dir-meta"><strong>Best for:</strong> Commercial roofers, storm specialists, high-volume operations &middot; <strong>Feels like:</strong> Caterpillar / Nike ACG</div>
+
+    <div class="mockup">
+      <div class="ic">
+        <div class="tmpl-nav">
+          <div class="nav-logo">SUMMIT ROOFING</div>
+          <div style="display: flex; gap: 20px; align-items: center;">
+            <a class="nav-link" href="#">SERVICES</a>
+            <a class="nav-link" href="#">PROJECTS</a>
+            <a class="nav-link" href="#">CONTACT</a>
+            <a class="tmpl-btn tmpl-btn-sm" href="#" style="background: #EA580C; color: #fff; border-radius: 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">GET ESTIMATE</a>
+          </div>
+        </div>
+        <div class="tmpl-hero" style="position: relative; overflow: hidden;">
+          <div class="tmpl-tag">Denver, Colorado</div>
+          <h1 class="tmpl-h1">BUILT TO<br><span class="accent">LAST.</span></h1>
+          <p class="tmpl-sub">Premium roofing for residential and commercial properties. 500+ projects completed. Licensed, insured, and trusted since 2011.</p>
+          <div style="display: flex; gap: 14px; margin-top: 32px;">
+            <a class="tmpl-btn" href="#">GET FREE ESTIMATE &rarr;</a>
+          </div>
+          <div class="big-stat">847</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-h2">SERVICES</div>
+          <div class="tmpl-cards" style="margin-top: 24px;">
+            <div class="tmpl-card">
+              <div class="card-num">01</div>
+              <div class="card-title">Roof Replacement</div>
+              <div class="card-desc">Complete tear-off and installation. Premium materials backed by manufacturer warranties.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-num">02</div>
+              <div class="card-title">Roof Repair</div>
+              <div class="card-desc">Leaks, storm damage, emergency service. Fast response, permanent solutions.</div>
+            </div>
+            <div class="tmpl-card">
+              <div class="card-num">03</div>
+              <div class="card-title">Commercial</div>
+              <div class="card-desc">Flat roof systems, TPO, EPDM. Built for buildings that work as hard as you do.</div>
+            </div>
+          </div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-stats" style="gap: 48px;">
+            <div><div class="tmpl-stat-num">847</div><div class="tmpl-stat-label">PROJECTS</div></div>
+            <div><div class="tmpl-stat-num">15+</div><div class="tmpl-stat-label">YEARS</div></div>
+            <div><div class="tmpl-stat-num">98%</div><div class="tmpl-stat-label">SATISFACTION</div></div>
+          </div>
+        </div>
+        <div class="tmpl-footer">
+          <span class="footer-logo">SUMMIT ROOFING</span>
+          <span style="font-family: 'Inter', sans-serif; letter-spacing: 0.05em; text-transform: uppercase;">Powered by <span class="accent">RuufPro</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison -->
+  <div style="max-width: 900px; margin: 0 auto 60px; padding: 0 20px;">
+    <h2 style="font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 20px;">At a Glance</h2>
+    <table style="width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e4e4e7; font-size: 13px;">
+      <thead>
+        <tr style="background: #f8fafc;">
+          <th style="padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;"></th>
+          <th style="padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8;">Dark Forge</th>
+          <th style="padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8;">Fieldwork</th>
+          <th style="padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8;">Blueprint</th>
+          <th style="padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8;">Ridgeline</th>
+          <th style="padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8;">Ironclad</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9; font-weight: 600;">Base</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Charcoal</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Warm cream</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">White</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Pure white</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Near-black</td></tr>
+        <tr><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9; font-weight: 600;">Accent</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Gold</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Terracotta</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Electric blue</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Slate (minimal)</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Hot orange</td></tr>
+        <tr><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9; font-weight: 600;">Font vibe</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Serif + light</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Rounded serif</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Mono/geometric</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Single clean</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Condensed tall</td></tr>
+        <tr><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9; font-weight: 600;">Energy</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Quiet luxury</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Warm organic</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Punk graphic</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Calm minimal</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Industrial bold</td></tr>
+        <tr><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9; font-weight: 600;">Best roofer</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Premium est.</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Family/local</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Young standout</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">High-end taste</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Commercial/vol</td></tr>
+        <tr><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9; font-weight: 600;">Analogy</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Aesop</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Patagonia</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Figma</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Apple</td><td style="padding: 10px 14px; border-top: 1px solid #f1f5f9;">Caterpillar</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

@@ -1,16 +1,16 @@
-// Service Worker for RoofReady push notifications.
+// Service Worker for RuufPro push notifications.
 // This runs in the background even when the app is closed.
 // When a push event arrives, it shows a notification on the phone.
 
 self.addEventListener("push", function (event) {
   const data = event.data ? event.data.json() : {};
 
-  const title = data.title || "New Lead — RoofReady";
+  const title = data.title || "New Lead — RuufPro";
   const options = {
     body: data.body || "You have a new lead. Tap to view.",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
-    tag: "roofready-lead",
+    tag: "ruufpro-lead",
     renotify: true,
     data: {
       url: data.url || "/dashboard/leads",

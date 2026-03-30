@@ -1,71 +1,61 @@
-// Dashboard layout — shared sidebar nav for all dashboard pages.
-// Protected: redirects to /login if not authenticated.
+// Dashboard layout — Cool Slate sidebar (desktop) + bottom tab bar (mobile).
+// Auth handled by DashboardContext. No hamburger menu.
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { DashboardProvider, useDashboard } from "./DashboardContext";
 import {
+  LayoutDashboard,
   Users,
   Calculator,
-  LogOut,
-  Menu,
-  X,
+  Globe,
+  MoreHorizontal,
   Bell,
+  LogOut,
+  Settings,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-const NAV_ITEMS = [
-  { href: "/dashboard/leads", label: "Leads", icon: Users },
-  { href: "/dashboard/estimate-settings", label: "Estimate Widget", icon: Calculator },
+// ----- NAV CONFIG -----
+const SIDEBAR_ITEMS = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/leads", label: "Leads", icon: Users, showBadge: true },
+  { href: "/dashboard/estimate-settings", label: "Widget Settings", icon: Calculator },
+  { href: "/dashboard/my-site", label: "My Website", icon: Globe },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const router = useRouter();
+const TAB_ITEMS = [
+  { href: "/dashboard/leads", label: "Leads", icon: Users, showBadge: true },
+  { href: "/dashboard/estimate-settings", label: "Widget", icon: Calculator },
+  { href: "/dashboard/my-site", label: "My Site", icon: Globe },
+  { href: "/dashboard", label: "More", icon: MoreHorizontal, isMore: true },
+];
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <DashboardProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </DashboardProvider>
+  );
+}
+
+function DashboardShell({ children }: { children: React.ReactNode }) {
+  const { businessName, newLeadCount, contractorId, loading } = useDashboard();
   const pathname = usePathname();
-  const [loading, setLoading] = useState(true);
-  const [businessName, setBusinessName] = useState("");
-  const [contractorId, setContractorId] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
-  useEffect(() => {
-    async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      const { data: contractor } = await supabase
-        .from("contractors")
-        .select("id, business_name")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!contractor) {
-        router.push("/onboarding");
-        return;
-      }
-
-      setBusinessName(contractor.business_name);
-      setContractorId(contractor.id);
-      // Check if push is already enabled
-      if ("serviceWorker" in navigator && "PushManager" in window) {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg) {
-          const sub = await reg.pushManager.getSubscription();
-          setPushEnabled(!!sub);
-        }
-      }
-      setLoading(false);
+  // Check push status on mount
+  useState(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window) {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg) reg.pushManager.getSubscription().then((sub) => setPushEnabled(!!sub));
+      });
     }
-    checkAuth();
-  }, [router]);
+  });
 
   async function enablePush() {
     try {
@@ -80,129 +70,231 @@ export default function DashboardLayout({
         body: JSON.stringify({ contractor_id: contractorId, subscription: sub.toJSON() }),
       });
       setPushEnabled(true);
-    } catch (err) {
-      console.error("Push enable failed:", err);
+    } catch {
       alert("Could not enable notifications. Please allow notifications in your browser settings.");
     }
   }
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    router.push("/login");
+    window.location.href = "/login";
   }
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#f4f5f7]">
+        <div className="text-slate-400 text-sm">Loading...</div>
       </div>
     );
   }
 
+  // Check if path matches (exact for /dashboard, startsWith for sub-pages)
+  function isActive(href: string) {
+    if (href === "/dashboard") return pathname === "/dashboard";
+    return pathname.startsWith(href);
+  }
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-100 transform transition-transform duration-200 lg:translate-x-0 lg:static ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo + close button on mobile */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-100">
-            <a href="/" className="text-lg font-bold text-gray-900 tracking-tight">
-              RoofReady
-            </a>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+    <div className="flex min-h-screen bg-[#f4f5f7]">
 
-          {/* Business name */}
-          <div className="px-6 py-4 border-b border-gray-100">
-            <p className="text-sm font-semibold text-gray-900 truncate">{businessName}</p>
-            <p className="text-xs text-gray-400">Dashboard</p>
-          </div>
+      {/* ===== DESKTOP SIDEBAR ===== */}
+      <aside className="hidden lg:flex w-[220px] flex-col bg-[#334155] flex-shrink-0">
+        {/* Logo */}
+        <div className="px-5 pt-5 pb-6">
+          <a href="/" className="text-[15px] font-extrabold text-white tracking-tight">
+            RuufPro
+          </a>
+          <p className="text-[11px] text-white/35 mt-0.5 truncate">{businessName}</p>
+        </div>
 
-          {/* Nav links */}
-          <nav className="flex-1 px-3 py-4 space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-gray-900 text-white shadow-sm"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.label}
-                </a>
-              );
-            })}
-          </nav>
-
-          {/* Push notifications + Logout */}
-          <div className="px-3 py-4 border-t border-gray-100 space-y-1">
-            {!pushEnabled ? (
-              <button
-                onClick={enablePush}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-brand-600 bg-brand-50 hover:bg-brand-100 transition-all w-full"
+        {/* Nav */}
+        <nav className="flex-1 px-3 space-y-0.5">
+          {SIDEBAR_ITEMS.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all border-l-2 ${
+                  active
+                    ? "bg-white/10 text-white border-white/60"
+                    : "text-white/45 hover:bg-white/5 hover:text-white/70 border-transparent"
+                }`}
               >
-                <Bell className="w-4 h-4" />
-                Enable Notifications
-              </button>
-            ) : (
-              <div className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-green-600">
-                <Bell className="w-4 h-4" />
-                Notifications On
-              </div>
-            )}
+                <item.icon className="w-4 h-4" />
+                {item.label}
+                {item.showBadge && newLeadCount > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {newLeadCount}
+                  </span>
+                )}
+              </a>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div className="px-3 py-4 border-t border-white/8 space-y-0.5">
+          {!pushEnabled ? (
             <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all w-full"
+              onClick={enablePush}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-amber-300/80 hover:bg-white/5 transition-all w-full"
             >
-              <LogOut className="w-4 h-4" />
-              Sign out
+              <Bell className="w-4 h-4" />
+              Enable Notifications
             </button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-emerald-400/80">
+              <Bell className="w-4 h-4" />
+              Notifications On
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-white/30 hover:bg-white/5 hover:text-white/50 transition-all w-full"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </button>
         </div>
       </aside>
 
-      {/* Sidebar overlay on mobile */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Main content */}
+      {/* ===== MAIN CONTENT ===== */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
-        <header className="h-16 bg-white border-b border-gray-100 flex items-center px-6 gap-4">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden text-gray-400 hover:text-gray-600"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <h1 className="text-sm font-semibold text-gray-900">
-            {NAV_ITEMS.find((item) => item.href === pathname)?.label || "Dashboard"}
+        {/* Desktop top bar */}
+        <header className="hidden lg:flex h-14 bg-white/60 backdrop-blur-sm border-b border-[#e2e8f0] items-center px-7">
+          <h1 className="text-[13px] font-semibold text-slate-700">
+            {SIDEBAR_ITEMS.find((item) => isActive(item.href))?.label || "Dashboard"}
           </h1>
         </header>
 
+        {/* Mobile top bar */}
+        <header className="lg:hidden bg-white border-b border-[#e2e8f0] px-5 pt-3 pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-[20px] font-extrabold text-slate-800 tracking-tight">
+                {SIDEBAR_ITEMS.find((item) => isActive(item.href))?.label || "Dashboard"}
+              </h1>
+              <p className="text-[11px] text-slate-400 mt-0.5">{businessName}</p>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[11px] font-bold text-white">
+              {businessName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+            </div>
+          </div>
+        </header>
+
+        {/* Mobile: new lead alert banner */}
+        {newLeadCount > 0 && (
+          <a
+            href="/dashboard/leads"
+            className="lg:hidden flex items-center justify-between bg-slate-800 text-white px-5 py-3"
+          >
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+              <div>
+                <span className="text-[14px] font-bold">{newLeadCount} New Lead{newLeadCount > 1 ? "s" : ""}</span>
+                <span className="text-[11px] text-white/50 ml-2">Tap to respond</span>
+              </div>
+            </div>
+            <span className="text-white/40 text-[14px]">&rarr;</span>
+          </a>
+        )}
+
         {/* Page content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-5 lg:p-7 pb-24 lg:pb-7">
           {children}
         </main>
       </div>
+
+      {/* ===== MOBILE BOTTOM TAB BAR ===== */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#e2e8f0] flex">
+        {TAB_ITEMS.map((item) => {
+          const active = isActive(item.href);
+
+          if (item.isMore) {
+            return (
+              <div key="more" className="flex-1 relative">
+                <button
+                  onClick={() => setMoreOpen(!moreOpen)}
+                  className={`w-full flex flex-col items-center gap-0.5 pt-2 pb-3 text-[10px] font-semibold ${
+                    moreOpen ? "text-slate-800" : "text-slate-400"
+                  }`}
+                >
+                  <MoreHorizontal className="w-5 h-5" />
+                  More
+                </button>
+
+                {/* More menu dropdown */}
+                {moreOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setMoreOpen(false)} />
+                    <div className="absolute bottom-full right-0 mb-2 mr-2 w-52 bg-white rounded-xl border border-[#e2e8f0] shadow-lg z-40 overflow-hidden">
+                      <a
+                        href="/dashboard"
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-slate-400" />
+                        Dashboard
+                      </a>
+                      <a
+                        href="/dashboard/settings"
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        <Settings className="w-4 h-4 text-slate-400" />
+                        Settings
+                      </a>
+                      {!pushEnabled ? (
+                        <button
+                          onClick={() => { enablePush(); setMoreOpen(false); }}
+                          className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-amber-600 hover:bg-slate-50 border-t border-slate-100 w-full"
+                        >
+                          <Bell className="w-4 h-4" />
+                          Enable Notifications
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-emerald-600 border-t border-slate-100">
+                          <Bell className="w-4 h-4" />
+                          Notifications On
+                        </div>
+                      )}
+                      <button
+                        onClick={() => { handleLogout(); setMoreOpen(false); }}
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-400 hover:bg-slate-50 border-t border-slate-100 w-full"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign out
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <a
+              key={item.href}
+              href={item.href}
+              className={`flex-1 flex flex-col items-center gap-0.5 pt-2 pb-3 text-[10px] font-semibold relative ${
+                active ? "text-slate-800" : "text-slate-400"
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              {item.label}
+              {item.showBadge && newLeadCount > 0 && (
+                <span className="absolute top-1 right-[calc(50%-16px)] bg-red-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full min-w-[16px] text-center">
+                  {newLeadCount}
+                </span>
+              )}
+            </a>
+          );
+        })}
+      </nav>
     </div>
   );
 }

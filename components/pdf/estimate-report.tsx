@@ -569,7 +569,7 @@ export function EstimateReportPDF(props: EstimateReportProps) {
 
         {/* FOOTER — Page 1 */}
         <View style={s.footer}>
-          <Text>Powered by RoofReady · roofready.com</Text>
+          <Text>Powered by RuufPro · ruufpro.com</Text>
           <Text>Page 1 of 2 · {date}</Text>
         </View>
       </Page>
@@ -647,7 +647,7 @@ export function EstimateReportPDF(props: EstimateReportProps) {
 
         {/* FOOTER — Page 2 */}
         <View style={s.footer}>
-          <Text>Powered by RoofReady · roofready.com</Text>
+          <Text>Powered by RuufPro · ruufpro.com</Text>
           <Text>Page 2 of 2 · {date}</Text>
         </View>
       </Page>

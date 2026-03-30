@@ -1,6 +1,6 @@
 "use client";
 
-import EstimateWidget from "@/components/estimate-widget";
+import EstimateWidgetV4 from "@/components/estimate-widget-v4";
 
 export default function RidgelineDemo() {
   return (
@@ -38,10 +38,10 @@ export default function RidgelineDemo() {
           </p>
         </div>
 
-        {/* Widget container with glass frame */}
+        {/* Widget container — dark background for glass effect */}
         <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-[2rem] border border-[#1B3A4B]/10 shadow-xl p-4 md:p-6">
-            <EstimateWidget
+          <div className="bg-[#1B3A4B] rounded-[2rem] shadow-2xl p-4 md:p-6">
+            <EstimateWidgetV4
               contractorId="c2a1286d-4faa-444a-b5b7-99f592359f80"
               contractorName="Demo Roofing Co"
               contractorPhone="(555) 123-4567"

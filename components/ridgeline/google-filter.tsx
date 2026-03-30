@@ -53,7 +53,7 @@ const fadeUp = {
     y: 0,
     transition: { type: "spring", stiffness: 300, damping: 25 },
   },
-};
+} as const;
 
 const scaleIn = {
   hidden: { opacity: 0, scale: 0.95 },
@@ -62,7 +62,7 @@ const scaleIn = {
     scale: 1,
     transition: { type: "spring", stiffness: 200, damping: 20 },
   },
-};
+} as const;
 
 export default function RidgelineGoogleFilter() {
   return (
@@ -160,7 +160,7 @@ export default function RidgelineGoogleFilter() {
             <ArrowBetween />
           </div>
 
-          {/* With RoofReady card */}
+          {/* With RuufPro card */}
           <motion.div
             variants={scaleIn}
             className="bg-white/15 backdrop-blur-md border border-[#D4863E]/40 rounded-[2rem] p-8 rotate-[1.5deg] hover:rotate-0 transition-transform duration-500 shadow-lg shadow-[#D4863E]/5"
@@ -168,7 +168,7 @@ export default function RidgelineGoogleFilter() {
             <div className="flex items-center gap-2.5 mb-6">
               <div className="w-3 h-3 rounded-full bg-[#D4863E]" />
               <span className="text-sm font-bold text-[#D4863E] uppercase tracking-wider">
-                With RoofReady
+                With RuufPro
               </span>
             </div>
             <ul className="space-y-4">

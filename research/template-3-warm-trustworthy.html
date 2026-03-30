@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Template 3 — Warm & Trustworthy Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; color: #fff; font-family: 'Inter', sans-serif; }
+
+  .page-header {
+    text-align: center; padding: 48px 24px 40px;
+  }
+  .page-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .page-header p { font-size: 14px; color: #888; max-width: 550px; margin: 0 auto; line-height: 1.6; }
+
+  .direction { margin-bottom: 64px; }
+  .direction-label {
+    text-align: center; padding: 16px;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #888; border-bottom: 1px solid #222;
+  }
+  .direction-label span { color: #fff; }
+
+  /* ============================================
+     DIRECTION A — "Hearthstone"
+     Warm slate + forest green accent
+     ============================================ */
+  .dir-a { background: #F8F6F3; color: #2C3E2D; }
+  .dir-a .hero {
+    max-width: 1100px; margin: 0 auto; padding: 80px 32px 64px;
+    display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center;
+  }
+  .dir-a .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #4A7C59; margin-bottom: 16px;
+  }
+  .dir-a .tag::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%; background: #4A7C59;
+  }
+  .dir-a h1 {
+    font-family: 'Libre Franklin', sans-serif; font-size: 52px; font-weight: 800;
+    line-height: 1.05; color: #1A2B1C; margin-bottom: 16px;
+  }
+  .dir-a .sub {
+    font-family: 'DM Sans', sans-serif; font-size: 18px; color: #5A6B5C;
+    line-height: 1.6; margin-bottom: 28px; max-width: 440px;
+  }
+  .dir-a .btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+  .dir-a .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; background: #4A7C59; color: #fff; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .dir-a .btn-primary:hover { background: #3D6A4B; }
+  .dir-a .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border: 2px solid #D4CFC6; color: #2C3E2D; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .dir-a .btn-secondary:hover { border-color: #4A7C59; color: #4A7C59; }
+  .dir-a .trust-row {
+    display: flex; gap: 20px; flex-wrap: wrap;
+  }
+  .dir-a .trust-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: #7A8B7C; font-weight: 500;
+  }
+  .dir-a .trust-item svg { color: #4A7C59; }
+  .dir-a .hero-img {
+    border-radius: 16px; overflow: hidden; position: relative;
+    box-shadow: 0 20px 60px rgba(44,62,45,0.12);
+  }
+  .dir-a .hero-img img { width: 100%; height: 420px; object-fit: cover; display: block; }
+  .dir-a .hero-img .badge {
+    position: absolute; bottom: 16px; left: 16px;
+    background: #fff; border-radius: 12px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+  .dir-a .hero-img .badge .stars { color: #E8A520; font-size: 14px; }
+  .dir-a .hero-img .badge .rating { font-weight: 700; font-size: 14px; color: #1A2B1C; }
+  .dir-a .hero-img .badge .count { font-size: 12px; color: #7A8B7C; }
+
+  /* Services preview */
+  .dir-a .services {
+    max-width: 1100px; margin: 0 auto; padding: 0 32px 64px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .dir-a .service-card {
+    background: #fff; border-radius: 14px; padding: 28px;
+    border: 1px solid #E8E3DA; transition: all 0.2s;
+  }
+  .dir-a .service-card:hover {
+    border-color: #4A7C59; box-shadow: 0 8px 24px rgba(74,124,89,0.08);
+    transform: translateY(-2px);
+  }
+  .dir-a .service-card .icon {
+    width: 44px; height: 44px; border-radius: 10px; background: #EDF5EF;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    color: #4A7C59;
+  }
+  .dir-a .service-card h3 {
+    font-family: 'Libre Franklin', sans-serif; font-size: 17px; font-weight: 700;
+    color: #1A2B1C; margin-bottom: 6px;
+  }
+  .dir-a .service-card p { font-size: 14px; color: #7A8B7C; line-height: 1.5; }
+
+  /* ============================================
+     DIRECTION B — "Fieldstone"
+     Cream + warm brown/copper accent
+     ============================================ */
+  .dir-b { background: #FAF8F5; color: #3B2F24; }
+  .dir-b .hero {
+    max-width: 1100px; margin: 0 auto; padding: 80px 32px 64px;
+    text-align: center;
+  }
+  .dir-b .tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #A0714F; margin-bottom: 20px;
+    padding: 6px 14px; border: 1.5px solid #D4C4B0; border-radius: 20px;
+  }
+  .dir-b h1 {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 56px; font-weight: 800;
+    line-height: 1.05; color: #2A1F14; margin-bottom: 16px; max-width: 700px; margin-left: auto; margin-right: auto;
+  }
+  .dir-b .sub {
+    font-family: 'DM Sans', sans-serif; font-size: 18px; color: #7A6B5C;
+    line-height: 1.6; margin-bottom: 32px; max-width: 520px; margin-left: auto; margin-right: auto;
+  }
+  .dir-b .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
+  .dir-b .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 16px 32px; background: #8B5E3C; color: #fff; border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .dir-b .btn-primary:hover { background: #744D30; }
+  .dir-b .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 16px 32px; border: 2px solid #D4C4B0; color: #3B2F24; border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .dir-b .btn-secondary:hover { border-color: #8B5E3C; color: #8B5E3C; }
+
+  .dir-b .hero-image-row {
+    display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 16px; max-width: 900px; margin: 0 auto;
+  }
+  .dir-b .hero-image-row img {
+    width: 100%; height: 280px; object-fit: cover; border-radius: 16px;
+    border: 1px solid #E8E0D4;
+  }
+  .dir-b .hero-image-row img:nth-child(2) { height: 320px; margin-top: -20px; }
+
+  .dir-b .trust-bar {
+    max-width: 1100px; margin: 0 auto; padding: 32px;
+    display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
+    border-top: 1px solid #E8E0D4;
+  }
+  .dir-b .trust-bar .item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .dir-b .trust-bar .num {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 28px; font-weight: 800; color: #8B5E3C;
+  }
+  .dir-b .trust-bar .label { font-size: 13px; color: #9A8B7C; }
+
+  /* ============================================
+     DIRECTION C — "Blueprint"
+     Cool white + slate blue accent
+     ============================================ */
+  .dir-c { background: #F5F7FA; color: #1E293B; }
+  .dir-c .hero {
+    max-width: 1100px; margin: 0 auto; padding: 80px 32px 64px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center;
+  }
+  .dir-c .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #4A6FA5; margin-bottom: 16px;
+    background: #E8EFF8; padding: 6px 12px; border-radius: 6px;
+  }
+  .dir-c h1 {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 48px; font-weight: 800;
+    line-height: 1.1; color: #0F172A; margin-bottom: 16px;
+  }
+  .dir-c .sub {
+    font-family: 'DM Sans', sans-serif; font-size: 17px; color: #64748B;
+    line-height: 1.6; margin-bottom: 28px; max-width: 460px;
+  }
+  .dir-c .btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+  .dir-c .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; background: #4A6FA5; color: #fff; border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .dir-c .btn-primary:hover { background: #3D5E8C; }
+  .dir-c .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border: 2px solid #CBD5E1; color: #1E293B; border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .dir-c .btn-secondary:hover { border-color: #4A6FA5; color: #4A6FA5; }
+
+  .dir-c .trust-row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .dir-c .trust-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: #94A3B8; font-weight: 500;
+  }
+
+  .dir-c .hero-right { position: relative; }
+  .dir-c .hero-right .main-img {
+    width: 100%; height: 400px; object-fit: cover; border-radius: 20px;
+    border: 1px solid #E2E8F0; box-shadow: 0 20px 60px rgba(15,23,42,0.08);
+  }
+  .dir-c .hero-right .stat-card {
+    position: absolute; bottom: -20px; left: -24px;
+    background: #fff; border-radius: 14px; padding: 16px 20px;
+    box-shadow: 0 8px 32px rgba(15,23,42,0.1); border: 1px solid #E2E8F0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .dir-c .stat-card .icon-wrap {
+    width: 40px; height: 40px; border-radius: 10px; background: #E8EFF8;
+    display: flex; align-items: center; justify-content: center; color: #4A6FA5;
+  }
+  .dir-c .stat-card .num { font-weight: 800; font-size: 20px; color: #0F172A; }
+  .dir-c .stat-card .label { font-size: 12px; color: #94A3B8; }
+
+  .dir-c .features {
+    max-width: 1100px; margin: 0 auto; padding: 0 32px 64px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .dir-c .feature {
+    background: #fff; border-radius: 12px; padding: 24px;
+    border: 1px solid #E2E8F0; text-align: center;
+    transition: all 0.2s;
+  }
+  .dir-c .feature:hover {
+    border-color: #4A6FA5; transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(74,111,165,0.08);
+  }
+  .dir-c .feature .f-icon {
+    width: 40px; height: 40px; border-radius: 10px; background: #E8EFF8;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px; color: #4A6FA5;
+  }
+  .dir-c .feature h4 { font-size: 14px; font-weight: 700; color: #0F172A; margin-bottom: 4px; }
+  .dir-c .feature p { font-size: 12px; color: #94A3B8; line-height: 1.4; }
+
+  /* ============================================
+     DIRECTION D — "Homestead"
+     Warm white + deep sage/olive accent
+     ============================================ */
+  .dir-d { background: #FAFAF6; color: #2D3428; }
+  .dir-d .hero {
+    max-width: 1100px; margin: 0 auto; padding: 80px 32px 48px;
+  }
+  .dir-d .hero-top {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 48px;
+  }
+  .dir-d .tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #6B7F52; margin-bottom: 16px;
+  }
+  .dir-d .tag svg { width: 14px; height: 14px; fill: #6B7F52; }
+  .dir-d h1 {
+    font-family: 'Libre Franklin', sans-serif; font-size: 50px; font-weight: 800;
+    line-height: 1.05; color: #1A1F16; margin-bottom: 16px;
+  }
+  .dir-d h1 span { color: #6B7F52; }
+  .dir-d .sub {
+    font-family: 'DM Sans', sans-serif; font-size: 17px; color: #6B7261;
+    line-height: 1.6; margin-bottom: 28px; max-width: 480px;
+  }
+  .dir-d .btns { display: flex; gap: 12px; flex-wrap: wrap; }
+  .dir-d .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; background: #6B7F52; color: #fff; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .dir-d .btn-primary:hover { background: #5A6C44; }
+  .dir-d .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border: 2px solid #D2CFC4; color: #2D3428; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+  }
+
+  .dir-d .hero-stats {
+    display: flex; gap: 32px; justify-content: flex-end;
+  }
+  .dir-d .hero-stat {
+    text-align: center;
+  }
+  .dir-d .hero-stat .num {
+    font-family: 'Libre Franklin', sans-serif; font-size: 36px; font-weight: 800; color: #6B7F52;
+  }
+  .dir-d .hero-stat .label { font-size: 13px; color: #8A9180; margin-top: 2px; }
+
+  .dir-d .hero-images {
+    display: grid; grid-template-columns: 1.4fr 0.6fr; gap: 16px;
+  }
+  .dir-d .hero-images img {
+    width: 100%; height: 340px; object-fit: cover; border-radius: 16px;
+    border: 1px solid #E4E0D6;
+  }
+  .dir-d .hero-images img:nth-child(2) { height: 340px; }
+
+  .dir-d .trust-strip {
+    max-width: 1100px; margin: 0 auto; padding: 32px;
+    display: flex; gap: 32px; justify-content: center; flex-wrap: wrap;
+    border-top: 1px solid #E4E0D6; border-bottom: 1px solid #E4E0D6;
+  }
+  .dir-d .trust-strip .item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; color: #6B7261; font-weight: 500;
+  }
+  .dir-d .trust-strip .item svg { width: 18px; height: 18px; color: #6B7F52; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .dir-a .hero, .dir-c .hero { grid-template-columns: 1fr; }
+    .dir-a .services { grid-template-columns: 1fr; }
+    .dir-b .hero-image-row { grid-template-columns: 1fr; }
+    .dir-b .hero-image-row img:nth-child(2) { margin-top: 0; }
+    .dir-c .features { grid-template-columns: 1fr 1fr; }
+    .dir-d .hero-top { grid-template-columns: 1fr; }
+    .dir-d .hero-images { grid-template-columns: 1fr; }
+    .dir-a h1 { font-size: 36px; }
+    .dir-b h1 { font-size: 38px; }
+    .dir-c h1 { font-size: 36px; }
+    .dir-d h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Template 3 — Warm & Trustworthy</h1>
+  <p>Light backgrounds, earthy tones, family-owned energy. For the roofer who wants homeowners to feel safe, not impressed.</p>
+</div>
+
+<!-- ==================== DIRECTION A ==================== -->
+<div class="direction">
+  <div class="direction-label"><span>Direction A — "Hearthstone"</span> · Warm slate + forest green · Libre Franklin + DM Sans</div>
+  <div class="dir-a">
+    <div class="hero">
+      <div>
+        <div class="tag">Locally owned in Dallas</div>
+        <h1>Your Roof.<br>Our Promise.</h1>
+        <p class="sub">Honest roofing from people who live right here in Dallas. No corporate nonsense, no surprises — just good work at a fair price.</p>
+        <div class="btns">
+          <a href="#" class="btn-primary">
+            Get a Free Estimate
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#" class="btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            Call Now
+          </a>
+        </div>
+        <div class="trust-row">
+          <span class="trust-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Licensed & Insured
+          </span>
+          <span class="trust-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            5-Star Rated
+          </span>
+          <span class="trust-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>
+            Free Estimates
+          </span>
+        </div>
+      </div>
+      <div class="hero-img">
+        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80" alt="Beautiful home">
+        <div class="badge">
+          <div>
+            <span class="stars">★★★★★</span>
+            <span class="rating">4.9</span>
+          </div>
+          <span class="count">127 reviews</span>
+        </div>
+      </div>
+    </div>
+    <div class="services">
+      <div class="service-card">
+        <div class="icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3>Roof Replacement</h3>
+        <p>Complete tear-off and installation with premium materials and a 25-year warranty.</p>
+      </div>
+      <div class="service-card">
+        <div class="icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        </div>
+        <h3>Repairs</h3>
+        <p>Fast, honest repairs for leaks, storm damage, and worn-out shingles.</p>
+      </div>
+      <div class="service-card">
+        <div class="icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"/><path d="M18 2l4 4-10 10H8v-4L18 2z"/></svg>
+        </div>
+        <h3>Inspections</h3>
+        <p>Thorough inspections with honest assessments — no upselling, guaranteed.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DIRECTION B ==================== -->
+<div class="direction">
+  <div class="direction-label"><span>Direction B — "Fieldstone"</span> · Cream + warm brown/copper · Plus Jakarta Sans + DM Sans</div>
+  <div class="dir-b">
+    <div class="hero">
+      <div class="tag">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Locally owned in Dallas, TX
+      </div>
+      <h1>Roofing You Can Count On</h1>
+      <p class="sub">Family-owned, locally trusted. We treat every roof like it's our own — because your home deserves nothing less.</p>
+      <div class="btns">
+        <a href="#" class="btn-primary">
+          Get a Free Estimate
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#" class="btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          Call (555) 123-4567
+        </a>
+      </div>
+      <div class="hero-image-row">
+        <img src="https://images.unsplash.com/photo-1449844908441-8829872d2607?w=600&q=80" alt="Home exterior">
+        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80" alt="Modern home">
+        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80" alt="House with yard">
+      </div>
+    </div>
+    <div class="trust-bar">
+      <div class="item">
+        <div class="num">15+</div>
+        <div class="label">Years Experience</div>
+      </div>
+      <div class="item">
+        <div class="num">500+</div>
+        <div class="label">Roofs Completed</div>
+      </div>
+      <div class="item">
+        <div class="num">4.9★</div>
+        <div class="label">Average Rating</div>
+      </div>
+      <div class="item">
+        <div class="num">100%</div>
+        <div class="label">Satisfaction</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DIRECTION C ==================== -->
+<div class="direction">
+  <div class="direction-label"><span>Direction C — "Blueprint"</span> · Cool white + slate blue · Plus Jakarta Sans + DM Sans</div>
+  <div class="dir-c">
+    <div class="hero">
+      <div>
+        <div class="tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Licensed & Insured in Dallas
+        </div>
+        <h1>Built Right.<br>Priced Fair.</h1>
+        <p class="sub">Professional roofing services for Dallas homeowners. From inspections to full replacements — done right the first time.</p>
+        <div class="btns">
+          <a href="#" class="btn-primary">
+            Get Free Estimate
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#" class="btn-secondary">Call (555) 123-4567</a>
+        </div>
+        <div class="trust-row">
+          <span class="trust-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color:#4A6FA5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            127 Five-Star Reviews
+          </span>
+          <span class="trust-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#4A6FA5"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>
+            GAF Certified
+          </span>
+        </div>
+      </div>
+      <div class="hero-right">
+        <img class="main-img" src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&q=80" alt="Beautiful home">
+        <div class="stat-card">
+          <div class="icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+          </div>
+          <div>
+            <div class="num">500+</div>
+            <div class="label">Roofs completed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="features">
+      <div class="feature">
+        <div class="f-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h4>Fully Insured</h4>
+        <p>$2M liability coverage on every project</p>
+      </div>
+      <div class="feature">
+        <div class="f-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h4>Same-Day Quotes</h4>
+        <p>Fast response, no waiting around</p>
+      </div>
+      <div class="feature">
+        <div class="f-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <h4>25-Year Warranty</h4>
+        <p>We stand behind our work, period</p>
+      </div>
+      <div class="feature">
+        <div class="f-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <h4>Financing</h4>
+        <p>Flexible payment options available</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DIRECTION D ==================== -->
+<div class="direction">
+  <div class="direction-label"><span>Direction D — "Homestead"</span> · Warm white + sage/olive · Libre Franklin + DM Sans</div>
+  <div class="dir-d">
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="tag">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3" fill="#FAFAF6"/></svg>
+            Dallas, Texas
+          </div>
+          <h1>Roofing Done <span>Right</span>, by People Who <span>Care</span></h1>
+          <p class="sub">We're not a franchise. We're your neighbors. Family-owned roofing with old-school values and modern craftsmanship.</p>
+          <div class="btns">
+            <a href="#" class="btn-primary">
+              Get a Free Estimate
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a href="#" class="btn-secondary">Call (555) 123-4567</a>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="num">15+</div>
+            <div class="label">Years</div>
+          </div>
+          <div class="hero-stat">
+            <div class="num">500+</div>
+            <div class="label">Roofs</div>
+          </div>
+          <div class="hero-stat">
+            <div class="num">4.9</div>
+            <div class="label">Rating</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-images">
+        <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80" alt="Modern home">
+        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=80" alt="House detail">
+      </div>
+    </div>
+    <div class="trust-strip">
+      <span class="item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Licensed & Insured
+      </span>
+      <span class="item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        5-Star Rated
+      </span>
+      <span class="item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>
+        GAF Master Elite
+      </span>
+      <span class="item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Financing Available
+      </span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
