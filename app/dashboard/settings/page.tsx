@@ -52,6 +52,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [passwordSaved, setPasswordSaved] = useState(false);
@@ -110,8 +111,9 @@ export default function SettingsPage() {
     if (!contractorId) return;
     setSaving(true);
     setSaved(false);
+    setSaveError("");
 
-    await supabase.from("contractors").update({
+    const { error } = await supabase.from("contractors").update({
       business_name: profile.business_name,
       phone: profile.phone,
       city: profile.city,
@@ -133,8 +135,13 @@ export default function SettingsPage() {
     }).eq("id", contractorId);
 
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    if (error) {
+      setSaveError("Failed to save. Please try again.");
+      console.error("Settings save error:", error);
+    } else {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    }
   }
 
   async function handlePasswordChange() {
@@ -361,6 +368,11 @@ export default function SettingsPage() {
       </div>
 
       {/* Save + Sign Out */}
+      {saveError && (
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-[13px] text-red-600 font-medium">
+          {saveError}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <button
           onClick={handleLogout}

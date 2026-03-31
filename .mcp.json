@@ -9,9 +9,28 @@
     },
     "brave-search": {
       "command": "npx",
-      "args": ["-y", "@anthropic-ai/brave-search-mcp@latest"],
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
       "env": {
         "BRAVE_API_KEY": "BSARzeN9qk323lhLqBD8lAcEN6NF0me"
+      }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "icons8": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp.icons8.com/mcp/"]
+    },
+    "firecrawl": {
+      "command": "firecrawl-mcp",
+      "args": [],
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-6f7c54f974ac429793060af609372467"
       }
     }
   }

@@ -65,11 +65,13 @@ export interface Contractor {
   updated_at: string;
 }
 
+export type TemplateId = "modern_clean" | "bold_confident" | "warm_trustworthy" | "chalkboard" | "blueprint" | "residential";
+
 export interface Site {
   id: string;
   contractor_id: string;
   slug: string;
-  template: BusinessType;
+  template: TemplateId;
   published: boolean;
 
   // Content (all optional — smart defaults used when empty)

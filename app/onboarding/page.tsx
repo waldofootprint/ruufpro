@@ -29,21 +29,21 @@ const DESIGN_OPTIONS = [
     id: "bold_confident" as DesignStyle,
     name: "Bold & Confident",
     description:
-      "Darker tones, strong contrast, prominent CTAs, bold imagery. Commands authority and trust.",
-    vibe: "Established & powerful",
+      "Dark background with chalk-style accents. Handwritten feel, neighborhood craft vibe. Stands out from every other roofer's site.",
+    vibe: "Craft & character",
     color: "border-gray-300 bg-white",
     selectedColor: "border-gray-800 bg-gray-50 ring-2 ring-gray-800",
-    preview: "bg-gradient-to-br from-gray-800 to-gray-900",
+    preview: "bg-gradient-to-br from-[#2A2D2A] to-[#1f211f]",
   },
   {
     id: "warm_trustworthy" as DesignStyle,
     name: "Warm & Trustworthy",
     description:
-      "Earthy tones, friendly feel, community-oriented. Your local neighborhood roofer.",
-    vibe: "Local & approachable",
+      "Clean white background with soft blue accents. Professional, technical, trustworthy. Feels like a real company.",
+    vibe: "Professional & polished",
     color: "border-gray-300 bg-white",
-    selectedColor: "border-amber-600 bg-amber-50 ring-2 ring-amber-600",
-    preview: "bg-gradient-to-br from-amber-50 to-amber-100",
+    selectedColor: "border-[#4A6FA5] bg-blue-50 ring-2 ring-[#4A6FA5]",
+    preview: "bg-gradient-to-br from-[#F5F7FA] to-[#E8EFF8]",
   },
 ];
 
@@ -79,7 +79,8 @@ export default function OnboardingPage() {
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
-      .trim();
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 63);
   }
 
   async function handlePublish() {

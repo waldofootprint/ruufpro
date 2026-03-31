@@ -26,38 +26,38 @@ interface RegionalRates {
 const REGIONAL_DEFAULTS: Record<string, RegionalRates> = {
   // Southeast / Sun Belt — lower labor costs, high storm demand
   southeast: {
-    asphalt_low: 3.25, asphalt_high: 4.75,
-    metal_low: 6.50,   metal_high: 9.50,
-    tile_low: 7.50,    tile_high: 11.00,
-    flat_low: 3.75,    flat_high: 5.50,
+    asphalt_low: 4.00, asphalt_high: 6.50,
+    metal_low: 8.50,   metal_high: 13.00,
+    tile_low: 10.00,   tile_high: 16.00,
+    flat_low: 4.50,    flat_high: 7.00,
   },
   // Northeast — higher labor costs, seasonal demand
   northeast: {
-    asphalt_low: 4.00, asphalt_high: 6.00,
-    metal_low: 7.50,   metal_high: 11.00,
-    tile_low: 9.00,    tile_high: 13.00,
-    flat_low: 4.50,    flat_high: 6.50,
+    asphalt_low: 5.00, asphalt_high: 8.00,
+    metal_low: 10.00,  metal_high: 15.00,
+    tile_low: 12.00,   tile_high: 18.00,
+    flat_low: 5.50,    flat_high: 8.50,
   },
   // Midwest — moderate costs, storm and winter demand
   midwest: {
-    asphalt_low: 3.50, asphalt_high: 5.25,
-    metal_low: 7.00,   metal_high: 10.00,
-    tile_low: 8.00,    tile_high: 12.00,
-    flat_low: 4.00,    flat_high: 6.00,
+    asphalt_low: 4.50, asphalt_high: 7.00,
+    metal_low: 9.00,   metal_high: 14.00,
+    tile_low: 11.00,   tile_high: 16.50,
+    flat_low: 5.00,    flat_high: 7.50,
   },
   // West — higher costs, fire and earthquake building codes
   west: {
-    asphalt_low: 4.25, asphalt_high: 6.50,
-    metal_low: 8.00,   metal_high: 12.00,
-    tile_low: 9.50,    tile_high: 14.00,
-    flat_low: 5.00,    flat_high: 7.50,
+    asphalt_low: 5.50, asphalt_high: 9.00,
+    metal_low: 10.50,  metal_high: 16.00,
+    tile_low: 13.00,   tile_high: 20.00,
+    flat_low: 6.00,    flat_high: 9.50,
   },
   // Southwest — moderate, high tile demand
   southwest: {
-    asphalt_low: 3.50, asphalt_high: 5.00,
-    metal_low: 7.00,   metal_high: 10.50,
-    tile_low: 8.50,    tile_high: 12.50,
-    flat_low: 4.00,    flat_high: 6.00,
+    asphalt_low: 4.25, asphalt_high: 7.00,
+    metal_low: 9.00,   metal_high: 14.00,
+    tile_low: 11.00,   tile_high: 17.00,
+    flat_low: 5.00,    flat_high: 7.50,
   },
 };
 

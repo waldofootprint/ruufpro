@@ -31,7 +31,7 @@ export default function BlueprintEstimate({ hasEstimateWidget, contractorId, bus
             What will your roof cost?
           </h2>
           <p style={{ fontSize: 16, color: BLUEPRINT.textSecondary, maxWidth: 480, margin: "0 auto", lineHeight: 1.6 }}>
-            Get a ballpark estimate in about 2 minutes — no phone call needed.
+            Get a ballpark estimate in about 2 minutes. We measure your actual roof from satellite imagery and apply our pricing — no phone call, no email, no pressure.
           </p>
           <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 20, flexWrap: "wrap" }}>
             {PERKS.map((p) => (

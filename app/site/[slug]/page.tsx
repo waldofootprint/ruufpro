@@ -6,34 +6,57 @@
 // 3. This page fetches site + contractor data from Supabase
 // 4. Renders the appropriate template with that data
 
-import { createServerSupabase } from "@/lib/supabase-server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import type { Contractor, Site } from "@/lib/types";
+import { getSiteData } from "@/lib/get-site-data";
+import { buildSchemas } from "@/lib/schema";
 import ModernCleanTemplate from "@/components/templates/modern-clean";
 import ChalkboardTemplate from "@/components/templates/chalkboard";
 import BlueprintTemplate from "@/components/templates/blueprint";
-import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 export async function generateMetadata({
   params,
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const supabase = createServerSupabase();
-  const { data: site } = await supabase
-    .from("sites")
-    .select("*, contractors(*)")
-    .eq("slug", params.slug)
-    .eq("published", true)
-    .single();
+  const result = await getSiteData(params.slug);
 
-  if (!site) return { title: "Site Not Found" };
+  if (!result) return { title: "Site Not Found" };
 
-  const contractor = site.contractors as unknown as Contractor;
+  const { site, contractor } = result;
+  const canonicalUrl = `https://${params.slug}.ruufpro.com`;
+
+  // Build a richer fallback description using actual services
+  const serviceSnippet = (site.services || []).slice(0, 3).join(", ");
+  const fallbackDesc = serviceSnippet
+    ? `Professional ${serviceSnippet.toLowerCase()} in ${contractor.city}, ${contractor.state}. Licensed & insured. Free estimates.`
+    : `Professional roofing services in ${contractor.city}, ${contractor.state}. Free estimates, licensed & insured.`;
+
+  const title = site.meta_title || `${contractor.business_name} — Roofing in ${contractor.city}, ${contractor.state}`;
+  const description = site.meta_description || fallbackDesc;
+  const ogImage = contractor.logo_url || `${canonicalUrl}/og-default.png`;
+
   return {
-    title: site.meta_title || `${contractor.business_name} — Roofing in ${contractor.city}, ${contractor.state}`,
-    description: site.meta_description || `Professional roofing services in ${contractor.city}, ${contractor.state}. Free estimates, licensed & insured.`,
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: contractor.business_name,
+      locale: "en_US",
+      type: "website",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `${contractor.business_name} — Roofing in ${contractor.city}` }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
   };
 }
 
@@ -42,61 +65,35 @@ export default async function ContractorSite({
 }: {
   params: { slug: string };
 }) {
-  const supabase = createServerSupabase();
+  const result = await getSiteData(params.slug);
 
-  const { data: site } = await supabase
-    .from("sites")
-    .select("*, contractors(*)")
-    .eq("slug", params.slug)
-    .eq("published", true)
-    .single();
-
-  if (!site) {
+  if (!result) {
     notFound();
   }
 
-  const contractor = site.contractors as unknown as Contractor;
-  const siteData = site as unknown as Site;
+  const { site, templateData } = result;
 
-  // Map database fields → template props
-  const templateData: ContractorSiteData = {
-    businessName: contractor.business_name,
-    phone: contractor.phone,
-    city: contractor.city,
-    state: contractor.state,
-    tagline: contractor.tagline,
-    heroHeadline: siteData.hero_headline,
-    heroCta: siteData.hero_cta_text,
-    heroImage: null, // TODO: add hero_image to sites table
-    aboutText: siteData.about_text,
-    services: siteData.services || [],
-    reviews: siteData.reviews || [],
-    isLicensed: contractor.is_licensed,
-    isInsured: contractor.is_insured,
-    gafMasterElite: contractor.gaf_master_elite,
-    owensCorningPreferred: contractor.owens_corning_preferred,
-    certainteedSelect: contractor.certainteed_select,
-    bbbAccredited: contractor.bbb_accredited,
-    bbbRating: contractor.bbb_rating,
-    offersFinancing: contractor.offers_financing,
-    warrantyYears: contractor.warranty_years,
-    yearsInBusiness: contractor.years_in_business,
-    serviceAreaCities: contractor.service_area_cities || [],
-    hasEstimateWidget: contractor.has_estimate_widget,
-    contractorId: contractor.id,
-    slug: params.slug,
-  };
+  // JSON-LD structured data — RoofingContractor, Service, FAQPage, WebPage
+  const schemas = buildSchemas(result);
 
   // Choose template based on site.template field
-  const template = (siteData as any).template || "modern_clean";
+  // Maps both old names and onboarding design style names to templates
+  const template = site.template || "modern_clean";
 
-  if (template === "chalkboard") {
-    return <ChalkboardTemplate {...templateData} />;
-  }
+  const templateComponent =
+    template === "chalkboard" || template === "bold_confident"
+      ? <ChalkboardTemplate {...templateData} />
+      : template === "blueprint" || template === "warm_trustworthy"
+      ? <BlueprintTemplate {...templateData} />
+      : <ModernCleanTemplate {...templateData} />;
 
-  if (template === "blueprint") {
-    return <BlueprintTemplate {...templateData} />;
-  }
-
-  return <ModernCleanTemplate {...templateData} />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {templateComponent}
+    </>
+  );
 }

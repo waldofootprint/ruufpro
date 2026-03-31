@@ -20,7 +20,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
     if (!form.name) return;
     setSubmitting(true);
 
-    await supabase.from("leads").insert({
+    const { error: leadErr } = await supabase.from("leads").insert({
       contractor_id: contractorId,
       name: form.name,
       phone: form.phone || null,
@@ -29,6 +29,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
       source: "contact_form",
       status: "new",
     });
+    if (leadErr) console.error("Lead insert failed:", leadErr);
 
     // Notify contractor
     fetch("/api/notify", {
@@ -74,14 +75,17 @@ export default function ContactForm({ businessName, phone, city, state, contract
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 64, alignItems: "start" }} className="grid-cols-1! md:grid-cols-[1fr_1.2fr]!">
         {/* Left: contact info */}
         <div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: THEME.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8, fontFamily: THEME.fontDisplay }}>
-            Get in touch
-          </p>
-          <h2 style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 700, color: THEME.textPrimary, lineHeight: 1.15, marginBottom: 12, fontFamily: THEME.fontDisplay }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 3, height: 20, background: THEME.accent, borderRadius: 2, flexShrink: 0 }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: THEME.accent, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: THEME.fontDisplay }}>
+              Get in touch
+            </span>
+          </div>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 12, fontFamily: THEME.fontDisplay }}>
             Let's talk about your roof
           </h2>
           <p style={{ fontSize: 16, color: THEME.textSecondary, lineHeight: 1.6, marginBottom: 32 }}>
-            Fill out the form and we'll get back to you within 24 hours. Or call us directly.
+            Tell us what's going on and we'll get back to you — usually within a few hours. Or just give us a call.
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -187,7 +191,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
                 <textarea
                   value={form.message}
                   onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  placeholder="Tell us about your roofing project..."
+                  placeholder="E.g. 'I have a leak near my chimney' or 'I need a full replacement quote'..."
                   style={{ ...inputStyle, minHeight: 100, resize: "vertical" } as React.CSSProperties}
                   onFocus={(e) => (e.currentTarget.style.borderColor = THEME.primary)}
                   onBlur={(e) => (e.currentTarget.style.borderColor = THEME.border)}

@@ -43,10 +43,10 @@ export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps
             fontFamily: THEME.fontDisplay,
           }}
         >
-          Ready to protect your home?
+          Ready to get your roof handled?
         </h2>
         <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", marginBottom: 32, lineHeight: 1.6 }}>
-          Get a free, no-obligation estimate from {city}'s trusted roofing team. We respond within 24 hours.
+          Free estimate, no obligation, no pressure. We'll come out, look at your roof, and give you an honest answer. Most calls returned same day.
         </p>
 
         <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
@@ -60,7 +60,7 @@ export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps
                 padding: "14px 28px",
                 background: THEME.accent,
                 color: "#fff",
-                borderRadius: 12,
+                borderRadius: 9999,
                 fontWeight: 700,
                 fontSize: 15,
                 textDecoration: "none",
@@ -83,7 +83,7 @@ export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps
                 padding: "14px 28px",
                 background: THEME.accent,
                 color: "#fff",
-                borderRadius: 12,
+                borderRadius: 9999,
                 fontWeight: 700,
                 fontSize: 15,
                 textDecoration: "none",
@@ -106,7 +106,7 @@ export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps
               background: "transparent",
               color: "#fff",
               border: "1.5px solid rgba(255,255,255,0.25)",
-              borderRadius: 12,
+              borderRadius: 9999,
               fontWeight: 600,
               fontSize: 15,
               textDecoration: "none",

@@ -6,11 +6,12 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Download, Info, Check, Phone } from "lucide-react";
+import { usePlacesAutocomplete } from "@/lib/use-places-autocomplete";
 
 // ----- GLASS COLOR SYSTEM -----
 const GLASS = {
@@ -178,6 +179,9 @@ export default function EstimateWidgetV4({
   const [error, setError] = useState("");
 
   const [address, setAddress] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const { suggestions, search: searchPlaces, clearSuggestions, isLoaded: placesLoaded } = usePlacesAutocomplete();
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const [pitchCategory, setPitchCategory] = useState("");
   const [currentMaterial, setCurrentMaterial] = useState("");
   const [desiredMaterial, setDesiredMaterial] = useState("");
@@ -223,7 +227,7 @@ export default function EstimateWidgetV4({
           timeline: timeline || null,
         }),
       }).catch(() => {});
-      await supabase.from("leads").insert({
+      const { error: leadErr } = await supabase.from("leads").insert({
         contractor_id: contractorId, name, email, phone, address,
         source: "estimate_widget", estimate_low: data.price_low,
         estimate_high: data.price_high, estimate_material: desiredMaterial,
@@ -233,6 +237,7 @@ export default function EstimateWidgetV4({
         estimate_pitch_degrees: data.pitch_degrees || null,
         estimate_segments: data.num_segments || null,
       });
+      if (leadErr) console.error("Lead insert failed:", leadErr);
       setDirection(1); setStep(8);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -397,25 +402,65 @@ export default function EstimateWidgetV4({
               </p>
             </div>
 
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="123 Main St, City, State"
-              className="w-full px-4 py-3 rounded-xl text-[17px] outline-none transition-all duration-300 placeholder:text-white/30"
-              style={inputStyle}
-              {...inputFocusHandlers}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setAddress(val);
+                  searchPlaces(val);
+                  setShowSuggestions(true);
+                }}
+                onFocus={(e) => {
+                  if (suggestions.length > 0) setShowSuggestions(true);
+                  e.currentTarget.style.background = GLASS.inputBgFocus;
+                  e.currentTarget.style.borderColor = GLASS.inputBorderFocus;
+                }}
+                onBlur={(e) => {
+                  // Delay hiding so clicks on suggestions register
+                  setTimeout(() => setShowSuggestions(false), 200);
+                  e.currentTarget.style.background = GLASS.inputBg;
+                  e.currentTarget.style.borderColor = GLASS.inputBorder;
+                }}
+                placeholder={placesLoaded ? "Start typing your address..." : "123 Main St, City, State"}
+                className="w-full px-4 py-3 rounded-xl text-[17px] outline-none transition-all duration-300 placeholder:text-white/30"
+                style={inputStyle}
+                autoComplete="off"
+              />
 
-            <div
-              className="rounded-xl overflow-hidden h-36 flex items-center justify-center"
-              style={{
-                background: GLASS.cardBg,
-                border: `1px solid ${GLASS.cardBorder}`,
-                boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.1), inset -1px -1px 3px rgba(255,255,255,0.03)",
-              }}
-            >
-              <p className="text-[12px]" style={{ color: GLASS.textTertiary }}>Map preview</p>
+              {/* Autocomplete dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  ref={suggestionsRef}
+                  className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden"
+                  style={{
+                    background: "rgba(30,30,40,0.95)",
+                    backdropFilter: "blur(20px)",
+                    border: `1px solid ${GLASS.containerBorder}`,
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+                  }}
+                >
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.placeId}
+                      type="button"
+                      onClick={() => {
+                        setAddress(s.description);
+                        setShowSuggestions(false);
+                        clearSuggestions();
+                      }}
+                      className="w-full text-left px-4 py-3 text-[15px] transition-colors duration-150 hover:bg-white/10 flex items-start gap-3"
+                      style={{ color: GLASS.text, borderBottom: `1px solid ${GLASS.separator}` }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+                      </svg>
+                      <span>{s.description}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <motion.button

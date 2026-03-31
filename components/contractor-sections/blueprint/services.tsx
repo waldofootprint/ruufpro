@@ -14,17 +14,17 @@ const ICONS: Record<string, string> = {
 };
 
 const DESCRIPTIONS: Record<string, string> = {
-  "Roof Replacement": "Complete tear-off and installation with premium materials and manufacturer-backed warranty.",
-  "Roof Repair": "Fast, honest repairs for leaks, storm damage, and worn-out shingles.",
-  "Roof Inspection": "Thorough inspections with honest assessments — no upselling, guaranteed.",
-  "Storm Damage": "Emergency response for hail, wind, and storm damage. Insurance claim assistance included.",
-  "Gutter Installation": "Seamless gutter installation and repair to protect your home's foundation.",
+  "Roof Replacement": "Full tear-off down to the deck, new underlayment, flashing, drip edge, and shingle installation. We handle the permit, the dumpster, and the cleanup.",
+  "Roof Repair": "Leaks, missing shingles, cracked flashing, pipe boot failures — we diagnose the actual problem and fix it right. No upselling you a replacement when a repair will do.",
+  "Roof Inspection": "We check your decking, underlayment, flashing, vents, gutters, and shingle condition. Written report with photos and honest recommendations.",
+  "Storm Damage": "Hail, wind, fallen trees — we handle the full restoration and work directly with your insurance adjuster. Documentation, claim paperwork, and rebuild.",
+  "Gutter Installation": "Seamless aluminum gutter installation, downspout routing, gutter guards, and repairs. Properly sized and pitched for your roof's water volume.",
 };
 
-const DEFAULTS = ["Roof Replacement", "Roof Repair", "Roof Inspection"];
+const DEFAULTS = ["Roof Replacement", "Roof Repair", "Roof Inspection", "Storm Damage", "Gutter Installation"];
 
 export default function BlueprintServices({ services }: Props) {
-  const items = services.length > 0 ? services.slice(0, 3) : DEFAULTS;
+  const items = services.length > 0 ? services.slice(0, 6) : DEFAULTS;
 
   return (
     <section id="services" style={{ background: BLUEPRINT.bgWhite, padding: BLUEPRINT.sectionPadding, fontFamily: BLUEPRINT.fontBody }}>
@@ -37,11 +37,11 @@ export default function BlueprintServices({ services }: Props) {
             Our Services
           </h2>
           <p style={{ fontSize: 16, color: BLUEPRINT.textSecondary, maxWidth: 480, margin: "0 auto", lineHeight: 1.6 }}>
-            Quality craftsmanship on every project, backed by warranties you can trust.
+            Whether you need a quick repair or a full tear-off, here's what we can help with.
           </p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="grid-cols-1! md:grid-cols-3!">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="grid-cols-1! sm:grid-cols-2! md:grid-cols-3!">
           {items.map((service) => (
             <div
               key={service}
@@ -78,6 +78,14 @@ export default function BlueprintServices({ services }: Props) {
             </div>
           ))}
         </div>
+
+        {/* Nudge */}
+        <p style={{ textAlign: "center", fontSize: 15, color: BLUEPRINT.textMuted, marginTop: 32, lineHeight: 1.6 }}>
+          Not sure what you need?{" "}
+          <a href="#contact" style={{ color: BLUEPRINT.accent, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
+            Tell us what's going on and we'll figure it out together
+          </a>
+        </p>
       </div>
     </section>
   );

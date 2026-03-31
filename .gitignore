@@ -15,3 +15,13 @@ node_modules/
 
 # OS
 .DS_Store
+.vercel
+
+# Screenshots (dev artifacts)
+*.png
+
+# Claude / Agent tools
+.claude/
+.agents/
+.playwright-mcp/
+skills-lock.json

@@ -8,10 +8,10 @@ import type { ContractorSiteData } from "./types";
 
 type ProofBarProps = Pick<
   ContractorSiteData,
-  "isLicensed" | "isInsured" | "offersFinancing" | "hasEstimateWidget"
+  "isLicensed" | "isInsured" | "offersFinancing" | "hasEstimateWidget" | "yearsInBusiness"
 >;
 
-export default function ProofBar({ isLicensed, isInsured, offersFinancing, hasEstimateWidget }: ProofBarProps) {
+export default function ProofBar({ isLicensed, isInsured, offersFinancing, hasEstimateWidget, yearsInBusiness }: ProofBarProps) {
   // Build pills dynamically from what the roofer has checked
   const pills: string[] = [];
   if (hasEstimateWidget) pills.push("Free Estimates");
@@ -59,6 +59,39 @@ export default function ProofBar({ isLicensed, isInsured, offersFinancing, hasEs
             {pill}
           </div>
         ))}
+      </div>
+
+      {/* Stats strip */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 32,
+          flexWrap: "wrap",
+          marginTop: 24,
+          padding: "20px 0",
+          borderTop: `1px solid ${THEME.border}`,
+          borderBottom: `1px solid ${THEME.border}`,
+        }}
+      >
+        {yearsInBusiness && (
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 28, fontWeight: 800, color: THEME.primary, fontFamily: THEME.fontDisplay, lineHeight: 1 }}>{yearsInBusiness}+</p>
+            <p style={{ fontSize: 12, fontWeight: 600, color: THEME.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>Years in Business</p>
+          </div>
+        )}
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 28, fontWeight: 800, color: THEME.primary, fontFamily: THEME.fontDisplay, lineHeight: 1 }}>5.0</p>
+          <p style={{ fontSize: 12, fontWeight: 600, color: THEME.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>Google Rating</p>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 28, fontWeight: 800, color: THEME.primary, fontFamily: THEME.fontDisplay, lineHeight: 1 }}>100%</p>
+          <p style={{ fontSize: 12, fontWeight: 600, color: THEME.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>Satisfaction</p>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 28, fontWeight: 800, color: THEME.primary, fontFamily: THEME.fontDisplay, lineHeight: 1 }}>Free</p>
+          <p style={{ fontSize: 12, fontWeight: 600, color: THEME.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>Estimates</p>
+        </div>
       </div>
     </section>
   );

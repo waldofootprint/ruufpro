@@ -12,6 +12,7 @@ import EstimateSection from "../contractor-sections/estimate-section";
 import WhyUs from "../contractor-sections/why-us";
 import About from "../contractor-sections/about";
 import Reviews from "../contractor-sections/reviews";
+import FAQ from "../contractor-sections/faq";
 import Process from "../contractor-sections/process";
 import ServiceArea from "../contractor-sections/service-area";
 import CtaBand from "../contractor-sections/cta-band";
@@ -20,11 +21,14 @@ import Footer from "../contractor-sections/footer";
 
 export default function ModernCleanTemplate(props: ContractorSiteData) {
   return (
-    <div style={{ background: "#fff", minHeight: "100vh" }}>
+    <main style={{ background: "#fff", minHeight: "100vh" }}>
       <Nav
         businessName={props.businessName}
         phone={props.phone}
         hasEstimateWidget={props.hasEstimateWidget}
+        services={props.services}
+        serviceAreaCities={props.serviceAreaCities}
+        city={props.city}
       />
       <Hero
         businessName={props.businessName}
@@ -41,6 +45,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         isInsured={props.isInsured}
         offersFinancing={props.offersFinancing}
         hasEstimateWidget={props.hasEstimateWidget}
+        yearsInBusiness={props.yearsInBusiness}
       />
       <Services services={props.services} />
       <EstimateSection
@@ -69,6 +74,19 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         yearsInBusiness={props.yearsInBusiness}
       />
       <Reviews reviews={props.reviews} />
+      <FAQ
+        businessName={props.businessName}
+        city={props.city}
+        state={props.state}
+        services={props.services}
+        serviceAreaCities={props.serviceAreaCities}
+        offersFinancing={props.offersFinancing}
+        isLicensed={props.isLicensed}
+        isInsured={props.isInsured}
+        yearsInBusiness={props.yearsInBusiness}
+        phone={props.phone}
+        theme="modern-clean"
+      />
       <Process />
       <ServiceArea
         city={props.city}
@@ -94,6 +112,6 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         state={props.state}
         services={props.services}
       />
-    </div>
+    </main>
   );
 }

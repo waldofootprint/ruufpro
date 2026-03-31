@@ -1,14 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import { BLUEPRINT } from "../theme-blueprint";
 import type { ContractorSiteData } from "../types";
 
 type Props = Pick<ContractorSiteData, "businessName" | "city" | "aboutText" | "yearsInBusiness">;
 
-const VALUES = ["Honest, upfront pricing", "Clean job sites — every time", "Licensed, insured, locally owned", "We treat your home like our own"];
+const VALUES = ["Written estimates with full line-by-line breakdown", "Clean job sites — tarps down, magnetic nail sweep after", "Licensed, insured, and locally owned", "We treat your home like our own"];
 
 export default function BlueprintAbout({ businessName, city, aboutText, yearsInBusiness }: Props) {
-  const text = aboutText || `${businessName} has been proudly serving ${city} and the surrounding communities${yearsInBusiness ? ` for over ${yearsInBusiness} years` : ""}. We're not a franchise or a national chain — we're your neighbors. Every roof we touch gets the same care and attention we'd give our own home.`;
+  const text = aboutText || `${businessName} is a locally owned roofing company serving homeowners in ${city} and the surrounding area${yearsInBusiness ? ` for over ${yearsInBusiness} years` : ""}. We show up on time, give you an honest assessment of what your roof actually needs, and do the work right. No pressure tactics, no inflated quotes, no disappearing after the check clears.`;
 
   return (
     <section id="about" style={{ background: BLUEPRINT.bgWhite, padding: BLUEPRINT.sectionPadding, fontFamily: BLUEPRINT.fontBody }}>
@@ -17,11 +18,13 @@ export default function BlueprintAbout({ businessName, city, aboutText, yearsInB
         className="grid-cols-1! md:grid-cols-2!"
       >
         {/* Image */}
-        <div>
-          <img
+        <div style={{ position: "relative", width: "100%", height: 380, overflow: "hidden", borderRadius: 16, border: `1px solid ${BLUEPRINT.border}`, boxShadow: "0 12px 40px rgba(15,23,42,0.06)" }}>
+          <Image
             src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80&auto=format"
-            alt={`${businessName} team`}
-            style={{ width: "100%", height: 380, objectFit: "cover", borderRadius: 16, border: `1px solid ${BLUEPRINT.border}`, boxShadow: "0 12px 40px rgba(15,23,42,0.06)" }}
+            alt={`${businessName} roofing team serving ${city}`}
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="(max-width: 768px) 100vw, 50vw"
           />
         </div>
 

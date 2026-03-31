@@ -28,6 +28,9 @@ export const metadata: Metadata = {
   description:
     "Get a professional roofing website in minutes. Free. Add an instant estimate widget for $99/mo.",
   manifest: "/manifest.json",
+};
+
+export const viewport = {
   themeColor: "#111827",
 };
 

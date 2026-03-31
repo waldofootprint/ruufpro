@@ -1,7 +1,7 @@
 // Estimate Report PDF — comprehensive branded document inspired by
 // EagleView's professional layout and Roofr's proposal format.
-// Includes: material comparison, cost breakdown, warranty info,
-// credentials, financing estimate, and clear next steps.
+// Includes: roof measurements, estimate, material comparison,
+// what's included, credentials, and clear next steps.
 
 import {
   Document,
@@ -52,7 +52,7 @@ interface EstimateReportProps {
   date: string;
 }
 
-// Color palette — navy + white, inspired by EagleView's professional style
+// Color palette — navy + white, professional
 const NAVY = "#1e293b";
 const DARK = "#0f172a";
 const BLUE = "#2563eb";
@@ -79,7 +79,6 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
-  headerLeft: {},
   companyName: {
     fontSize: 22,
     fontFamily: "Helvetica-Bold",
@@ -91,9 +90,6 @@ const s = StyleSheet.create({
     color: "#94a3b8",
     marginTop: 4,
     lineHeight: 1.5,
-  },
-  headerRight: {
-    alignItems: "flex-end",
   },
   reportTitle: {
     fontSize: 10,
@@ -120,6 +116,16 @@ const s = StyleSheet.create({
     color: "#ffffff",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+  },
+
+  // ---- MINI HEADER (page 2+) ----
+  miniHeader: {
+    backgroundColor: DARK,
+    paddingHorizontal: 40,
+    paddingVertical: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   // ---- BODY ----
@@ -233,48 +239,13 @@ const s = StyleSheet.create({
     marginTop: 6,
   },
 
-  // ---- MATERIAL COMPARISON ----
-  compTable: {
-    marginBottom: 20,
+  // ---- MATERIAL CARD ----
+  matCard: {
+    marginBottom: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    padding: 10,
   },
-  compHeader: {
-    flexDirection: "row",
-    backgroundColor: DARK,
-    borderRadius: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    marginBottom: 4,
-  },
-  compHeaderText: {
-    fontSize: 7,
-    fontFamily: "Helvetica-Bold",
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
-  },
-  compRow: {
-    flexDirection: "row",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-  },
-  compRowHighlight: {
-    flexDirection: "row",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    backgroundColor: "#f0fdf4",
-    borderRadius: 4,
-  },
-  compCol1: { flex: 2 },
-  compCol2: { flex: 2, alignItems: "center" as const },
-  compCol3: { flex: 1.5, alignItems: "center" as const },
-  compCol4: { flex: 1.5, alignItems: "center" as const },
-  compText: { fontSize: 9, color: NAVY },
-  compTextBold: { fontSize: 9, fontFamily: "Helvetica-Bold", color: NAVY },
-  compTextGray: { fontSize: 8, color: GRAY },
   compBadge: {
     backgroundColor: GREEN,
     paddingHorizontal: 5,
@@ -284,42 +255,30 @@ const s = StyleSheet.create({
   },
   compBadgeText: { fontSize: 6, fontFamily: "Helvetica-Bold", color: "#ffffff" },
 
-  // ---- COST BREAKDOWN ----
-  breakdownRow: {
+  // ---- WHAT'S INCLUDED ----
+  includedGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-  },
-  breakdownLabel: { fontSize: 9, color: NAVY },
-  breakdownValue: { fontSize: 9, color: NAVY },
-  breakdownTotal: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    marginTop: 2,
-    borderTopWidth: 2,
-    borderTopColor: NAVY,
-  },
-  breakdownTotalLabel: { fontSize: 10, fontFamily: "Helvetica-Bold", color: NAVY },
-  breakdownTotalValue: { fontSize: 10, fontFamily: "Helvetica-Bold", color: NAVY },
-
-  // ---- FINANCING ----
-  financingBox: {
-    backgroundColor: "#eff6ff",
-    borderRadius: 6,
-    padding: 12,
+    flexWrap: "wrap",
+    gap: 4,
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#bfdbfe",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
-  financingLabel: { fontSize: 8, color: BLUE },
-  financingValue: { fontSize: 16, fontFamily: "Helvetica-Bold", color: BLUE },
-  financingSub: { fontSize: 7, color: GRAY },
+  includedItem: {
+    width: "48%",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 4,
+    paddingVertical: 3,
+  },
+  checkmark: {
+    fontSize: 9,
+    color: GREEN,
+    fontFamily: "Helvetica-Bold",
+  },
+  includedText: {
+    fontSize: 8,
+    color: NAVY,
+    flex: 1,
+  },
 
   // ---- CREDENTIALS ----
   credGrid: {
@@ -386,6 +345,21 @@ const s = StyleSheet.create({
   },
 });
 
+const INCLUDED_ITEMS = [
+  "Complete tear-off of existing roof",
+  "Deck inspection and repair as needed",
+  "New synthetic underlayment",
+  "New drip edge and flashing",
+  "Ice & water shield (if applicable)",
+  "Ridge vent or ventilation upgrades",
+  "Pipe boot and vent replacement",
+  "New shingle installation",
+  "Clean up and magnetic nail sweep",
+  "Dumpster and debris hauling",
+  "Building permit (where required)",
+  "Final walkthrough with homeowner",
+];
+
 export function EstimateReportPDF(props: EstimateReportProps) {
   const {
     contractorName, contractorPhone, contractorCity, contractorState,
@@ -397,15 +371,15 @@ export function EstimateReportPDF(props: EstimateReportProps) {
 
   const pitchDisplay = `${Math.round(Math.tan((pitchDegrees * Math.PI) / 180) * 12)}/12`;
   const complexity = numSegments <= 2 ? "Simple" : numSegments <= 4 ? "Moderate" : numSegments <= 6 ? "Complex" : "Very Complex";
-  const midPrice = Math.round((priceLow + priceHigh) / 2);
-  const monthlyPayment = Math.round(midPrice / 60); // 60 month estimate
+  const totalPages = materialOptions.length > 2 ? 3 : 2;
 
   return (
     <Document>
+      {/* ===== PAGE 1: Estimate + Roof Details ===== */}
       <Page size="A4" style={s.page}>
         {/* HEADER */}
         <View style={s.header}>
-          <View style={s.headerLeft}>
+          <View>
             <Text style={s.companyName}>{contractorName}</Text>
             <Text style={s.companyInfo}>
               {contractorCity}, {contractorState}
@@ -413,7 +387,7 @@ export function EstimateReportPDF(props: EstimateReportProps) {
               {"\n"}{contractorPhone}
             </Text>
           </View>
-          <View style={s.headerRight}>
+          <View style={{ alignItems: "flex-end" as const }}>
             <Text style={s.reportTitle}>Roof Estimate Report</Text>
             <Text style={s.reportDate}>{date}</Text>
             <View style={s.headerBadge}>
@@ -441,7 +415,7 @@ export function EstimateReportPDF(props: EstimateReportProps) {
             </View>
           </View>
 
-          {/* ROOF DETAILS */}
+          {/* ROOF MEASUREMENTS */}
           <Text style={s.sectionTitle}>Roof Measurements</Text>
           <View style={s.detailsGrid}>
             <View style={s.detailCard}>
@@ -482,9 +456,9 @@ export function EstimateReportPDF(props: EstimateReportProps) {
 
           {/* REPAIR OPTION */}
           {repairOption && (
-            <View style={{ marginBottom: 16 }}>
-              <Text style={s.sectionTitle}>Roof Repair & Maintenance</Text>
-              <View style={{ backgroundColor: "#fffbeb", borderRadius: 6, padding: 12, borderWidth: 1, borderColor: "#fde68a" }}>
+            <View wrap={false}>
+              <Text style={s.sectionTitle}>Repair Alternative</Text>
+              <View style={{ backgroundColor: "#fffbeb", borderRadius: 6, padding: 12, borderWidth: 1, borderColor: "#fde68a", marginBottom: 20 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: NAVY }}>
                     ${repairOption.priceLow.toLocaleString()} – ${repairOption.priceHigh.toLocaleString()}
@@ -496,108 +470,91 @@ export function EstimateReportPDF(props: EstimateReportProps) {
                 <Text style={{ fontSize: 8, color: GRAY, lineHeight: 1.5 }}>
                   {repairOption.description}
                 </Text>
-                <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: BLUE, marginTop: 6 }}>
-                  Interested in repair? Call {contractorPhone}
-                </Text>
               </View>
             </View>
           )}
 
-          {/* MATERIAL COMPARISON — Good/Better/Best */}
-          <Text style={s.sectionTitle}>Full Replacement Options</Text>
-          <View style={s.compTable}>
-            {materialOptions.map((mat) => {
-              const isSelected = mat.name.toLowerCase().includes(selectedMaterial);
-              return (
-                <View
-                  key={mat.name}
-                  style={{
-                    marginBottom: 8,
-                    borderRadius: 6,
-                    borderWidth: 1,
-                    borderColor: isSelected ? "#bbf7d0" : BORDER,
-                    backgroundColor: isSelected ? "#f0fdf4" : LIGHT,
-                    padding: 10,
-                  }}
-                >
-                  {/* Header row: name + price */}
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.name}</Text>
-                      {isSelected && (
-                        <View style={s.compBadge}>
-                          <Text style={s.compBadgeText}>SELECTED</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: NAVY }}>
-                      ${mat.priceLow.toLocaleString()} – ${mat.priceHigh.toLocaleString()}
-                    </Text>
-                  </View>
-
-                  {/* Description */}
-                  <Text style={{ fontSize: 8, color: GRAY, lineHeight: 1.5, marginBottom: 6 }}>
-                    {mat.description}
-                  </Text>
-
-                  {/* Specs row */}
-                  <View style={{ flexDirection: "row", gap: 12 }}>
-                    <View>
-                      <Text style={{ fontSize: 6, color: GRAY, textTransform: "uppercase", letterSpacing: 0.3 }}>Warranty</Text>
-                      <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.warranty}</Text>
-                    </View>
-                    <View>
-                      <Text style={{ fontSize: 6, color: GRAY, textTransform: "uppercase", letterSpacing: 0.3 }}>Wind Rating</Text>
-                      <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.windRating}</Text>
-                    </View>
-                    <View>
-                      <Text style={{ fontSize: 6, color: GRAY, textTransform: "uppercase", letterSpacing: 0.3 }}>Lifespan</Text>
-                      <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.lifespan}</Text>
-                    </View>
-                  </View>
-
-                  {/* Per-material CTA */}
-                  <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: BLUE, marginTop: 6 }}>
-                    Interested in {mat.name.split(" ")[0].toLowerCase()}? Call {contractorPhone} for your exact quote
-                  </Text>
+          {/* WHAT'S INCLUDED IN A FULL REPLACEMENT */}
+          <View wrap={false}>
+            <Text style={s.sectionTitle}>What's Included in Your Replacement</Text>
+            <View style={s.includedGrid}>
+              {INCLUDED_ITEMS.map((item) => (
+                <View key={item} style={s.includedItem}>
+                  <Text style={s.checkmark}>✓</Text>
+                  <Text style={s.includedText}>{item}</Text>
                 </View>
-              );
-            })}
+              ))}
+            </View>
           </View>
-
         </View>
 
-        {/* FOOTER — Page 1 */}
+        {/* FOOTER */}
         <View style={s.footer}>
           <Text>Powered by RuufPro · ruufpro.com</Text>
-          <Text>Page 1 of 2 · {date}</Text>
+          <Text>Page 1 of {totalPages} · {date}</Text>
         </View>
       </Page>
 
-      {/* ===== PAGE 2 ===== */}
+      {/* ===== PAGE 2: Material Comparison ===== */}
       <Page size="A4" style={s.page}>
-        {/* Mini header */}
-        <View style={{ backgroundColor: DARK, paddingHorizontal: 40, paddingVertical: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View style={s.miniHeader}>
           <Text style={{ fontSize: 12, fontFamily: "Helvetica-Bold", color: "#ffffff" }}>{contractorName}</Text>
           <Text style={{ fontSize: 8, color: "#94a3b8" }}>Estimate for {homeownerName} · {date}</Text>
         </View>
 
         <View style={s.body}>
-          {/* FINANCING */}
-          <Text style={s.sectionTitle}>Financing Options</Text>
-          <View style={s.financingBox}>
-            <View>
-              <Text style={s.financingLabel}>Estimated Monthly Payment</Text>
-              <Text style={s.financingSub}>Based on 60-month financing at 0% introductory rate</Text>
-            </View>
-            <View style={{ alignItems: "flex-end" as const }}>
-              <Text style={s.financingValue}>${monthlyPayment}/mo</Text>
-              <Text style={s.financingSub}>Subject to credit approval</Text>
-            </View>
-          </View>
+          {/* MATERIAL COMPARISON */}
+          <Text style={s.sectionTitle}>Material Options Compared</Text>
+          {materialOptions.map((mat) => {
+            const isSelected = mat.name.toLowerCase().includes(selectedMaterial);
+            return (
+              <View
+                key={mat.name}
+                wrap={false}
+                style={{
+                  ...s.matCard,
+                  borderColor: isSelected ? "#bbf7d0" : BORDER,
+                  backgroundColor: isSelected ? "#f0fdf4" : LIGHT,
+                }}
+              >
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.name}</Text>
+                    {isSelected && (
+                      <View style={s.compBadge}>
+                        <Text style={s.compBadgeText}>SELECTED</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: NAVY }}>
+                    ${mat.priceLow.toLocaleString()} – ${mat.priceHigh.toLocaleString()}
+                  </Text>
+                </View>
+
+                <Text style={{ fontSize: 8, color: GRAY, lineHeight: 1.5, marginBottom: 6 }}>
+                  {mat.description}
+                </Text>
+
+                <View style={{ flexDirection: "row", gap: 12 }}>
+                  <View>
+                    <Text style={{ fontSize: 6, color: GRAY, textTransform: "uppercase", letterSpacing: 0.3 }}>Warranty</Text>
+                    <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.warranty}</Text>
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 6, color: GRAY, textTransform: "uppercase", letterSpacing: 0.3 }}>Wind Rating</Text>
+                    <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.windRating}</Text>
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 6, color: GRAY, textTransform: "uppercase", letterSpacing: 0.3 }}>Lifespan</Text>
+                    <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.lifespan}</Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
 
           {/* CREDENTIALS */}
-          <Text style={s.sectionTitle}>About {contractorName}</Text>
+          <Text style={{ ...s.sectionTitle, marginTop: 12 }}>About {contractorName}</Text>
           <View style={s.credGrid}>
             {contractorInsured && (
               <View style={s.credBadge}><Text style={s.credText}>Fully Insured</Text></View>
@@ -614,41 +571,53 @@ export function EstimateReportPDF(props: EstimateReportProps) {
             <View style={s.credBadge}><Text style={s.credText}>Workmanship Warranty Included</Text></View>
           </View>
 
+          {/* FINANCING NOTE */}
+          <View style={{ backgroundColor: "#eff6ff", borderRadius: 6, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: "#bfdbfe" }}>
+            <Text style={{ fontSize: 9, fontFamily: "Helvetica-Bold", color: BLUE, marginBottom: 4 }}>
+              Financing Options Available
+            </Text>
+            <Text style={{ fontSize: 8, color: GRAY, lineHeight: 1.5 }}>
+              We offer flexible payment plans so you can get your roof done now without paying everything upfront.
+              Ask about available financing options when you call — rates and terms depend on your situation.
+            </Text>
+          </View>
+
           {/* DISCLAIMER */}
-          <View style={s.disclaimer}>
+          <View style={s.disclaimer} wrap={false}>
             <Text style={s.disclaimerTitle}>Important Disclaimer</Text>
             <Text style={s.disclaimerText}>
-              This is a ballpark estimate, not a final quote or contract. Your actual price depends on roof condition,
-              number of existing layers, decking integrity, access requirements, code compliance, and other factors
-              that can only be assessed during an in-person inspection. Final pricing may be higher or lower than
-              this range. Material prices are subject to market fluctuations. This estimate is valid for 30 days.
+              This is a ballpark estimate based on {isSatellite ? "satellite imagery" : "the information provided"}, not a final quote or contract.
+              Your actual price depends on roof condition, number of existing layers, decking integrity, access
+              requirements, code compliance, and other factors that can only be assessed during an in-person inspection.
+              Final pricing may be higher or lower than this range. Material prices are subject to market fluctuations.
+              This estimate is valid for 30 days from {date}.
             </Text>
           </View>
 
           {/* NEXT STEPS */}
-          <View style={s.stepsBox}>
+          <View style={s.stepsBox} wrap={false}>
             <Text style={s.stepsTitle}>Next Steps</Text>
             <View style={s.step}>
               <View style={s.stepNum}><Text style={s.stepNumText}>1</Text></View>
-              <Text style={s.stepText}>Schedule your free roof inspection — we assess condition, layers, and access</Text>
+              <Text style={s.stepText}>Schedule your free roof inspection — we check condition, layers, decking, and access</Text>
             </View>
             <View style={s.step}>
               <View style={s.stepNum}><Text style={s.stepNumText}>2</Text></View>
-              <Text style={s.stepText}>Receive your exact quote — detailed pricing based on the inspection findings</Text>
+              <Text style={s.stepText}>Receive your exact quote — line-by-line pricing based on inspection findings</Text>
             </View>
             <View style={s.step}>
               <View style={s.stepNum}><Text style={s.stepNumText}>3</Text></View>
               <Text style={s.stepText}>Choose your start date — we handle permits, materials, and scheduling</Text>
             </View>
             <Text style={s.stepsPhone}>{contractorPhone}</Text>
-            <Text style={s.stepsSub}>Call or text to schedule your free inspection — no obligation</Text>
+            <Text style={s.stepsSub}>Call to schedule your free inspection — no obligation</Text>
           </View>
         </View>
 
-        {/* FOOTER — Page 2 */}
+        {/* FOOTER */}
         <View style={s.footer}>
           <Text>Powered by RuufPro · ruufpro.com</Text>
-          <Text>Page 2 of 2 · {date}</Text>
+          <Text>Page 2 of {totalPages} · {date}</Text>
         </View>
       </Page>
     </Document>

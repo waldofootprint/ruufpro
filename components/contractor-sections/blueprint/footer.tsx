@@ -15,7 +15,7 @@ export default function BlueprintFooter({ businessName, phone, city, state }: Pr
           <div style={{ maxWidth: 280 }}>
             <p style={{ fontFamily: BLUEPRINT.fontDisplay, fontSize: 18, fontWeight: 800, color: BLUEPRINT.text, marginBottom: 8 }}>{businessName}</p>
             <p style={{ fontSize: 14, color: BLUEPRINT.textSecondary, lineHeight: 1.5 }}>
-              Professional roofing for {city} homeowners. Licensed, insured, locally owned.
+              Roof replacements, repairs, and inspections for {city} homeowners. Licensed, insured, and locally owned.
             </p>
           </div>
           <div style={{ display: "flex", gap: 48, flexWrap: "wrap" }}>

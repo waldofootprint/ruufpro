@@ -10,17 +10,17 @@ const STATS = [
 ];
 
 const WITHOUT_ITEMS = [
-  "Hidden from Google's Online Estimates filter",
-  "Homeowners skip you for competitors who show pricing",
+  "Hidden from Google — homeowners never see your name",
+  "Homeowners choose the roofer who shows pricing first",
   "Losing leads you don't even know about",
-  "Invisible to 78% of homeowners researching online",
+  "Invisible to 78% of homeowners before they ever call",
 ];
 
 const WITH_ITEMS = [
   "Visible in Google's Online Estimates filter",
-  "Homeowners see your pricing and call you first",
-  "Satellite-powered estimates capture leads 24/7",
-  "Professional website makes you look established",
+  "Homeowners call you first — they already trust your price",
+  "Every visit captures a lead, even at 2am on a Sunday",
+  "You look as established as the biggest company in town",
 ];
 
 // Hand-drawn arrow pointing right between Before/After cards
@@ -74,7 +74,7 @@ export default function RidgelineGoogleFilter() {
         {/* Header */}
         <div className="text-center mb-16 md:mb-20">
           <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#D4863E] mb-4">
-            Why This Matters Now
+            Why This Matters Right Now
           </p>
           <h2
             className="text-[clamp(2rem,5vw,4rem)] font-black uppercase tracking-tighter text-white mb-6 max-w-4xl mx-auto leading-[0.95]"
@@ -90,6 +90,7 @@ export default function RidgelineGoogleFilter() {
             In December 2025, Google launched an &ldquo;Online Estimates&rdquo;
             filter for roofing searches. Roofers without online pricing are now
             hidden. Most roofers don&apos;t even know it exists.
+            RuufPro&apos;s estimate widget is the fastest way to qualify.
           </p>
         </div>
 
@@ -191,7 +192,7 @@ export default function RidgelineGoogleFilter() {
             href="/signup"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full border-2 border-white text-white text-sm font-bold uppercase tracking-wider hover:bg-white hover:text-[#1B3A4B] transition-colors duration-300"
           >
-            Get Visible on Google — Free
+            Get Visible on Google
             <svg
               viewBox="0 0 24 24"
               className="w-4 h-4 stroke-current"

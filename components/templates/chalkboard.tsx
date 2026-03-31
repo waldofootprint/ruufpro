@@ -12,6 +12,7 @@ import ChalkServices from "../contractor-sections/chalkboard/services";
 import ChalkEstimate from "../contractor-sections/chalkboard/estimate-section";
 import ChalkAbout from "../contractor-sections/chalkboard/about";
 import ChalkReviews from "../contractor-sections/chalkboard/reviews";
+import FAQ from "../contractor-sections/faq";
 import ChalkCta from "../contractor-sections/chalkboard/cta-band";
 import ChalkContact from "../contractor-sections/chalkboard/contact-form";
 import ChalkServiceArea from "../contractor-sections/chalkboard/service-area";
@@ -19,7 +20,7 @@ import ChalkFooter from "../contractor-sections/chalkboard/footer";
 
 export default function ChalkboardTemplate(props: ContractorSiteData) {
   return (
-    <div style={{ background: "#2A2D2A", minHeight: "100vh", position: "relative" }}>
+    <main style={{ background: "#2A2D2A", minHeight: "100vh", position: "relative" }}>
       {/* Chalkboard texture overlay */}
       <div
         style={{
@@ -40,12 +41,25 @@ export default function ChalkboardTemplate(props: ContractorSiteData) {
         <ChalkAbout businessName={props.businessName} city={props.city} aboutText={props.aboutText} yearsInBusiness={props.yearsInBusiness} />
         <ChalkDivider />
         <ChalkReviews reviews={props.reviews} />
+        <FAQ
+          businessName={props.businessName}
+          city={props.city}
+          state={props.state}
+          services={props.services}
+          serviceAreaCities={props.serviceAreaCities}
+          offersFinancing={props.offersFinancing}
+          isLicensed={props.isLicensed}
+          isInsured={props.isInsured}
+          yearsInBusiness={props.yearsInBusiness}
+          phone={props.phone}
+          theme="chalkboard"
+        />
         <ChalkServiceArea city={props.city} state={props.state} serviceAreaCities={props.serviceAreaCities} />
         <ChalkDivider />
         <ChalkCta phone={props.phone} city={props.city} hasEstimateWidget={props.hasEstimateWidget} />
         <ChalkContact businessName={props.businessName} phone={props.phone} city={props.city} state={props.state} contractorId={props.contractorId} />
         <ChalkFooter businessName={props.businessName} phone={props.phone} city={props.city} state={props.state} services={props.services} />
       </div>
-    </div>
+    </main>
   );
 }

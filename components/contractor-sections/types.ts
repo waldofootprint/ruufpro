@@ -39,4 +39,10 @@ export interface ContractorSiteData {
 
   // Site meta
   slug: string;
+
+  // SEO / schema fields (from contractor profile, used for JSON-LD)
+  address: string | null;
+  zip: string | null;
+  logoUrl: string | null;
+  licenseNumber: string | null;
 }

@@ -64,7 +64,7 @@ export default function RidgelineFinalCTA() {
                 "1px 1px 0 #0D1F2D, 2px 2px 0 #0D1F2D, 3px 3px 0 #0D1F2D, 4px 4px 0 #0D1F2D, 5px 5px 0 #0D1F2D, 6px 6px 0 #0D1F2D",
             }}
           >
-            Ready To Get Found Online?
+            Your Next Lead Is One Click Away
           </motion.h2>
 
           {/* Subheadline */}
@@ -75,8 +75,8 @@ export default function RidgelineFinalCTA() {
             transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
             className="text-lg md:text-xl text-white/50 max-w-xl leading-relaxed mb-10"
           >
-            Join roofers getting leads with satellite-powered estimates and
-            professional websites — free to start, no credit card.
+            A professional website and satellite-powered estimates — set up in
+            5 minutes, free to start, no credit card required.
           </motion.p>
 
           {/* CTAs */}
@@ -91,7 +91,7 @@ export default function RidgelineFinalCTA() {
               href="/signup"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold uppercase tracking-wider hover:bg-[#c0763a] transition-colors duration-300 shadow-lg shadow-[#D4863E]/20"
             >
-              Get Your Free Website
+              Start Getting Leads
               <svg
                 viewBox="0 0 24 24"
                 className="w-4 h-4 stroke-current"
@@ -128,32 +128,7 @@ export default function RidgelineFinalCTA() {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="relative z-10 border-t border-white/10">
-        <div className="mx-auto max-w-[1440px] px-6 py-8 md:px-10 flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Logo */}
-          <div className="flex items-center gap-1">
-            <div className="bg-white text-[#1B3A4B] font-black tracking-tight text-[10px] px-2.5 py-1 rounded-xl rounded-bl-sm relative">
-              RIDGE
-              <div className="absolute -bottom-1 left-0 w-2.5 h-2.5 bg-white" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}></div>
-            </div>
-            <div className="bg-[#D4863E] text-white font-black text-[10px] px-2.5 py-1 rounded-full border border-white/20">
-              LINE
-            </div>
-          </div>
-
-          <p className="text-xs text-white/30">
-            &copy; {new Date().getFullYear()} RuufPro. All rights reserved.
-          </p>
-
-          <div className="flex items-center gap-6 text-xs text-white/30">
-            <a href="#features" className="hover:text-white/60 transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-white/60 transition-colors">Pricing</a>
-            <a href="#faq" className="hover:text-white/60 transition-colors">FAQ</a>
-            <a href="/login" className="hover:text-white/60 transition-colors">Log In</a>
-          </div>
-        </div>
-      </div>
+      {/* Footer is now a separate component */}
     </section>
   );
 }

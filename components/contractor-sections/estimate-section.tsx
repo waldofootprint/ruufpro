@@ -1,11 +1,13 @@
 "use client";
 
 // Estimate Widget Section — only renders if contractor has the paid widget.
-// Shows a description + embeds the actual estimate widget component.
-// For free-plan roofers, this section simply doesn't render (clean removal).
+// Imports the widget directly (no iframe) for seamless rendering.
+// Layout: copy + steps on left, widget on right.
 
 import { THEME } from "./theme";
+import { motion } from "framer-motion";
 import type { ContractorSiteData } from "./types";
+import EstimateWidgetV3 from "@/components/estimate-widget-v3";
 
 type EstimateSectionProps = Pick<
   ContractorSiteData,
@@ -18,7 +20,6 @@ export default function EstimateSection({
   businessName,
   phone,
 }: EstimateSectionProps) {
-  // Clean removal — free plan roofers don't see this at all
   if (!hasEstimateWidget) return null;
 
   return (
@@ -31,85 +32,107 @@ export default function EstimateSection({
         fontFamily: THEME.fontBody,
       }}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.5 }}
         style={{
           background: THEME.bgWarm,
-          border: `1.5px solid ${THEME.border}`,
+          border: `1px solid ${THEME.border}`,
           borderRadius: THEME.borderRadiusLg,
           padding: "48px",
           display: "grid",
-          gridTemplateColumns: "1.2fr 0.8fr",
+          gridTemplateColumns: "1fr 1fr",
           gap: 48,
-          alignItems: "start",
+          alignItems: "center",
+          position: "relative",
+          overflow: "hidden",
         }}
-        className="grid-cols-1! md:grid-cols-[1.2fr_0.8fr]!"
+        className="grid-cols-1! md:grid-cols-[1fr_1fr]!"
       >
-        {/* Left: heading + form */}
-        <div>
+        {/* Subtle accent glow */}
+        <div
+          style={{
+            position: "absolute",
+            top: -40,
+            left: -40,
+            width: 200,
+            height: 200,
+            background: "radial-gradient(circle, rgba(232,114,12,0.06) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Left: copy + steps */}
+        <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 3, height: 20, background: THEME.accent, borderRadius: 2, flexShrink: 0 }} />
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: THEME.accent,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                fontFamily: THEME.fontDisplay,
+              }}
+            >
+              Instant estimate
+            </span>
+          </div>
           <h2
             style={{
-              fontSize: "clamp(24px, 4vw, 36px)",
-              fontWeight: 700,
+              fontSize: "clamp(26px, 4vw, 38px)",
+              fontWeight: 800,
               color: THEME.textPrimary,
-              lineHeight: 1.15,
+              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
               marginBottom: 12,
               fontFamily: THEME.fontDisplay,
             }}
           >
-            Curious what a new roof costs?
+            What will your new roof cost?
           </h2>
-          <p style={{ fontSize: 16, color: THEME.textSecondary, lineHeight: 1.6, marginBottom: 32, maxWidth: 480 }}>
-            We believe in transparency. Use our free estimator to get a ballpark price in about 2 minutes — no phone call, no pressure.
+          <p style={{ fontSize: 16, color: THEME.textSecondary, lineHeight: 1.65, marginBottom: 36, maxWidth: 460 }}>
+            Get a ballpark estimate in about 2 minutes. We measure your actual roof from satellite imagery and apply our pricing — no phone call, no email required, no one will pressure you.
           </p>
 
-          {/* The actual widget will be embedded here via iframe or component */}
-          <div
-            style={{
-              background: THEME.primary,
-              borderRadius: THEME.borderRadius,
-              padding: 24,
-              minHeight: 300,
-            }}
-          >
-            <iframe
-              src={`/widget/${contractorId}`}
-              style={{
-                width: "100%",
-                minHeight: 500,
-                border: "none",
-                borderRadius: 12,
-              }}
-              title="Roofing Estimate Calculator"
-            />
-          </div>
-        </div>
-
-        {/* Right: how it works mini-steps */}
-        <div style={{ paddingTop: 16 }}>
+          {/* How it works steps */}
           <p
             style={{
-              fontSize: 13,
-              fontWeight: 600,
+              fontSize: 12,
+              fontWeight: 700,
               color: THEME.textMuted,
               textTransform: "uppercase",
-              letterSpacing: "0.08em",
+              letterSpacing: "0.12em",
               marginBottom: 24,
+              fontFamily: THEME.fontDisplay,
             }}
           >
             How it works
           </p>
 
           {[
-            { step: "1", title: "We measure your roof", desc: "Using satellite imagery for accurate square footage" },
-            { step: "2", title: "You pick your materials", desc: "Compare asphalt, metal, tile, and more" },
-            { step: "3", title: "Get your ballpark price", desc: "A clear estimate range, no surprises" },
-          ].map((item) => (
-            <div key={item.step} style={{ display: "flex", gap: 14, marginBottom: 24 }}>
+            { step: "1", title: "We measure your roof", desc: "Satellite imagery calculates your actual square footage, pitch, and complexity" },
+            { step: "2", title: "We apply our pricing", desc: "Your estimate uses real material and labor costs for this area" },
+            { step: "3", title: "You get a ballpark range", desc: "A realistic starting number — not a binding quote, but close enough to plan around" },
+          ].map((item, i) => (
+            <div
+              key={item.step}
+              style={{
+                display: "flex",
+                gap: 14,
+                marginBottom: i < 2 ? 20 : 0,
+                paddingBottom: i < 2 ? 20 : 0,
+                borderBottom: i < 2 ? `1px solid ${THEME.border}` : "none",
+              }}
+            >
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 9,
                   background: THEME.primary,
                   color: "#fff",
                   display: "flex",
@@ -124,17 +147,50 @@ export default function EstimateSection({
                 {item.step}
               </div>
               <div>
-                <p style={{ fontSize: 15, fontWeight: 600, color: THEME.textPrimary, marginBottom: 2 }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: THEME.textPrimary, marginBottom: 3, fontFamily: THEME.fontDisplay }}>
                   {item.title}
                 </p>
-                <p style={{ fontSize: 13, color: THEME.textMuted, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 13, color: THEME.textMuted, lineHeight: 1.55 }}>
                   {item.desc}
                 </p>
               </div>
             </div>
           ))}
+
+          {/* Trust nudge */}
+          <div
+            style={{
+              background: "#fff",
+              border: `1px solid ${THEME.border}`,
+              borderRadius: 10,
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginTop: 24,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span style={{ fontSize: 13, fontWeight: 600, color: THEME.textMuted }}>
+              Your info stays private — we never share or sell your data
+            </span>
+          </div>
         </div>
-      </div>
+
+        {/* Right: widget directly embedded */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+        >
+          <EstimateWidgetV3
+            contractorId={contractorId}
+            contractorName={businessName}
+            contractorPhone={phone}
+          />
+        </motion.div>
+      </motion.div>
     </section>
   );
 }

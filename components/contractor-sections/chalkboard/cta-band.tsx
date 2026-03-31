@@ -23,10 +23,10 @@ export default function ChalkCta({ phone, city, hasEstimateWidget }: Props) {
       <div style={{ position: "absolute", bottom: 0, left: 32, right: 32, borderBottom: `2px dashed ${CHALK.borderDashed}` }} />
 
       <h2 style={{ fontFamily: CHALK.fontDisplay, fontSize: 36, color: "#fff", marginBottom: 12 }}>
-        Ready to get started?
+        Ready to get your roof handled?
       </h2>
       <p style={{ fontSize: 18, color: CHALK.textMuted, marginBottom: 32, maxWidth: 460, margin: "0 auto 32px" }}>
-        Free estimate, no pressure. Just honest roofing from honest people in {city}.
+        Free estimate, no obligation, no pressure. We'll come out, look at your roof, and give you an honest answer.
       </p>
       <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
         <a
@@ -34,7 +34,7 @@ export default function ChalkCta({ phone, city, hasEstimateWidget }: Props) {
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "14px 32px", background: CHALK.accent, color: CHALK.bg,
-            borderRadius: 6, fontFamily: CHALK.fontDisplay, fontSize: 18,
+            borderRadius: 9999, fontFamily: CHALK.fontDisplay, fontSize: 18,
             textDecoration: "none", transition: "background 0.2s",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.background = CHALK.accentHover)}
@@ -48,7 +48,7 @@ export default function ChalkCta({ phone, city, hasEstimateWidget }: Props) {
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "14px 28px", border: `2px dashed ${CHALK.borderDashed}`,
-            color: CHALK.textMuted, borderRadius: 6, fontFamily: CHALK.fontDisplay, fontSize: 18,
+            color: CHALK.textMuted, borderRadius: 9999, fontFamily: CHALK.fontDisplay, fontSize: 18,
             textDecoration: "none", transition: "all 0.2s",
           }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = CHALK.accent; e.currentTarget.style.color = CHALK.accent; }}

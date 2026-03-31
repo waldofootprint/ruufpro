@@ -26,7 +26,7 @@ const STEPS = [
     title: "Start Getting Leads",
     time: "Instant",
     description:
-      "Homeowners find your site, get instant satellite estimates, and you get notified the moment they reach out.",
+      "Homeowners find your site, get an instant satellite estimate, and you get a text the moment they reach out — no chasing required.",
   },
 ];
 
@@ -133,7 +133,7 @@ export default function RidgelineHowItWorks() {
             href="/signup"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full border-2 border-white text-white text-sm font-bold uppercase tracking-wider hover:bg-white hover:text-[#1B3A4B] transition-colors duration-300"
           >
-            Get Started in 5 Minutes
+            Start Getting Leads
             <svg
               viewBox="0 0 24 24"
               className="w-4 h-4 stroke-current"

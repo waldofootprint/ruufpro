@@ -1,23 +1,31 @@
 // Send push notification to all of a contractor's subscribed devices.
-// Called by the notify endpoint when a new lead comes in.
+// Internal-only: called by /api/notify when a new lead comes in.
+// Protected by X-Internal-Secret header to prevent external abuse.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-webpush.setVapidDetails(
-  "mailto:support@ruufpro.com",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
-
 export async function POST(request: NextRequest) {
+  const INTERNAL_SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  webpush.setVapidDetails(
+    "mailto:support@ruufpro.com",
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
   try {
+    // Only allow internal calls from our own server
+    const secret = request.headers.get("x-internal-secret");
+    if (secret !== INTERNAL_SECRET) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { contractor_id, title, body, url } = await request.json();
 
     if (!contractor_id) {

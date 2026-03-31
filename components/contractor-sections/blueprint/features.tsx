@@ -8,10 +8,10 @@ type Props = Pick<ContractorSiteData, "isInsured" | "offersFinancing" | "warrant
 
 export default function BlueprintFeatures({ warrantyYears, offersFinancing }: Props) {
   const features = [
-    { icon: Shield, title: "Fully Insured", desc: "$2M liability coverage on every project" },
-    { icon: Clock, title: "Same-Day Quotes", desc: "Fast response, no waiting around" },
-    { icon: CheckCircle, title: `${warrantyYears || 25}-Year Warranty`, desc: "We stand behind our work, period" },
-    { icon: CreditCard, title: "Financing", desc: offersFinancing ? "Flexible payment options available" : "Affordable pricing for every budget" },
+    { icon: Shield, title: "Fully Insured", desc: "General liability + workers' comp on every crew member" },
+    { icon: Clock, title: "Same-Day Quotes", desc: "Call in the morning, get a written estimate by end of day" },
+    { icon: CheckCircle, title: `${warrantyYears || 25}-Year Warranty`, desc: "Materials + workmanship, in writing" },
+    { icon: CreditCard, title: "Financing", desc: offersFinancing ? "Monthly payment options — get your roof done now" : "Competitive pricing with no hidden fees" },
   ];
 
   return (

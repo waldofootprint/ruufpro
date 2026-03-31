@@ -208,7 +208,7 @@ export default function EstimateWidget({
       }
 
       // Save the lead to Supabase
-      await supabase.from("leads").insert({
+      const { error: leadErr } = await supabase.from("leads").insert({
         contractor_id: contractorId,
         name,
         email,
@@ -220,6 +220,7 @@ export default function EstimateWidget({
         estimate_material: desiredMaterial,
         estimate_roof_sqft: data.estimate.roof_area_sqft,
       });
+      if (leadErr) console.error("Lead insert failed:", leadErr);
 
       // Send email notification to the contractor (fire and forget)
       fetch("/api/notify", {

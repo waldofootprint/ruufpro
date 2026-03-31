@@ -7,10 +7,10 @@ type Props = Pick<ContractorSiteData, "yearsInBusiness">;
 
 export default function ChalkStats({ yearsInBusiness }: Props) {
   const stats = [
-    { num: "500+", label: "Roofs Completed" },
-    { num: "4.9", label: "Google Rating" },
     ...(yearsInBusiness ? [{ num: `${yearsInBusiness}+`, label: "Years in Business" }] : []),
+    { num: "5.0", label: "Google Rating" },
     { num: "100%", label: "Satisfaction" },
+    { num: "Free", label: "Estimates" },
   ];
 
   return (

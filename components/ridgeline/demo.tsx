@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from 'lucide-react';
 import EstimateWidgetV4 from "@/components/estimate-widget-v4";
 
 export default function RidgelineDemo() {
@@ -30,11 +31,11 @@ export default function RidgelineDemo() {
                 "1px 1px 0 #1B3A4B15, 2px 2px 0 #1B3A4B10, 3px 3px 0 #1B3A4B08",
             }}
           >
-            See It In Action
+            Try It. Enter Any Address.
           </h2>
           <p className="text-lg text-[#1B3A4B]/60 max-w-2xl mx-auto leading-relaxed">
-            This is exactly what your customers see. Enter any address and click
-            through the flow — satellite-measured estimates in seconds.
+            This is exactly what your customers see. Enter any address and watch
+            it work — satellite-measured estimates in seconds.
           </p>
         </div>
 
@@ -47,6 +48,23 @@ export default function RidgelineDemo() {
               contractorPhone="(555) 123-4567"
             />
           </div>
+        </div>
+
+        {/* Guided outcome — closes the loop */}
+        <div className="max-w-2xl mx-auto mt-10 bg-white border border-[#1B3A4B]/10 rounded-[1.5rem] p-6 md:p-8 text-center shadow-sm">
+          <p className="text-[#1B3A4B] font-bold text-base md:text-lg mb-2">
+            That estimate just became a lead in your dashboard.
+          </p>
+          <p className="text-[#1B3A4B]/50 text-sm mb-5">
+            Name, email, phone, roof specs — all captured automatically. Every homeowner who tries it becomes your lead.
+          </p>
+          <a
+            href="/signup"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold hover:bg-[#c0763a] transition-colors shadow-lg hover:shadow-xl"
+          >
+            Start Getting Leads
+            <ArrowRight className="w-4 h-4" />
+          </a>
         </div>
 
         <p className="text-center text-sm text-[#1B3A4B]/40 mt-8">

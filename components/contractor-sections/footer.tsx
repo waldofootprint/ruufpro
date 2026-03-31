@@ -37,7 +37,7 @@ export default function Footer({ businessName, phone, city, state, services }: F
               {businessName}
             </p>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
-              Quality roof replacement & repair for {city} homeowners. Licensed, insured, and locally owned.
+              Roof replacements, repairs, and inspections for {city} homeowners. Licensed, insured, and locally owned.
             </p>
           </div>
 

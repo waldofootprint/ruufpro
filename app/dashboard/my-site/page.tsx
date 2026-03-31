@@ -54,6 +54,7 @@ export default function MySitePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -125,9 +126,10 @@ export default function MySitePage() {
     if (!site || !contractorId) return;
     setSaving(true);
     setSaved(false);
+    setSaveError("");
 
     // Update site content
-    await supabase.from("sites").update({
+    const { error: siteErr } = await supabase.from("sites").update({
       hero_headline: headline || null,
       hero_cta_text: ctaText || null,
       about_text: aboutText || null,
@@ -135,7 +137,7 @@ export default function MySitePage() {
     }).eq("id", site.id);
 
     // Update contractor info + trust signals
-    await supabase.from("contractors").update({
+    const { error: contractorErr } = await supabase.from("contractors").update({
       tagline: tagline || null,
       phone: phone || null,
       service_area_cities: serviceArea ? serviceArea.split(",").map((s) => s.trim()).filter(Boolean) : null,
@@ -143,8 +145,13 @@ export default function MySitePage() {
     }).eq("id", contractorId);
 
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    if (siteErr || contractorErr) {
+      setSaveError("Failed to save. Please try again.");
+      console.error("My site save error:", siteErr || contractorErr);
+    } else {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    }
   }
 
   function addService() {
@@ -529,6 +536,13 @@ export default function MySitePage() {
           );
         })}
       </div>
+
+      {/* Error feedback */}
+      {saveError && (
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-[13px] text-red-600 font-medium mt-4">
+          {saveError}
+        </div>
+      )}
 
       {/* Save bar (sticky on mobile) */}
       <div className="sticky bottom-20 lg:bottom-4 mt-6 flex justify-end">

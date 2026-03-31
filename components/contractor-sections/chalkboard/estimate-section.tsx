@@ -60,13 +60,13 @@ export default function ChalkEstimate({ hasEstimateWidget, contractorId, busines
             className="estimate-fade estimate-delay-1 text-3xl sm:text-4xl lg:text-5xl tracking-tight mb-4"
             style={{ fontFamily: CHALK.fontDisplay, color: CHALK.text }}
           >
-            What's a new roof cost?
+            What will your new roof cost?
           </h2>
           <p
             className="estimate-fade estimate-delay-2 max-w-lg mx-auto text-lg leading-relaxed"
             style={{ fontFamily: CHALK.fontBody, color: CHALK.textMuted }}
           >
-            Use our free estimator — no phone call needed. Get a ballpark price for your roof in about 2 minutes.
+            Get a ballpark estimate in about 2 minutes. We measure your actual roof from satellite imagery and apply our pricing — no phone call, no email, no pressure.
           </p>
 
           {/* Perks row */}

@@ -180,12 +180,13 @@ export default function EstimateWidgetV3({
           estimate_range: data.range_display, material: desiredMaterial,
         }),
       }).catch(() => {});
-      await supabase.from("leads").insert({
+      const { error: leadErr } = await supabase.from("leads").insert({
         contractor_id: contractorId, name, email, phone, address,
         source: "estimate_widget", estimate_low: data.price_low,
         estimate_high: data.price_high, estimate_material: desiredMaterial,
         estimate_roof_sqft: data.roof_area_sqft,
       });
+      if (leadErr) console.error("Lead insert failed:", leadErr);
       setDirection(1); setStep(8);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

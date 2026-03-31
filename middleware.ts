@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const config = {
   matcher: [
     // Match all paths except static files, Next.js internals, and app routes
-    "/((?!api/|_next/|_static/|_vercel|preview/|dashboard/|login/|widget-preview/|[\\w-]+\\.\\w+).*)",
+    "/((?!api/|_next/|_static/|_vercel|preview/|dashboard/|login/|signup/|onboarding/|widget-preview/|sitemap|robots|[\\w-]+\\.\\w+).*)",
   ],
 };
 
@@ -26,7 +26,7 @@ export default function middleware(req: NextRequest) {
 
   // Define which hostnames are "ours" (the main app, not a contractor site).
   // In production, this is "ruufpro.com". In dev, "localhost:3000".
-  const allowedDomains = ["ruufpro.com", "www.ruufpro.com"];
+  const allowedDomains = ["ruufpro.com", "www.ruufpro.com", "ruufpro.vercel.app"];
   const isLocalhost = hostname.includes("localhost");
 
   // Extract the subdomain.

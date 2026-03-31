@@ -1,93 +1,33 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, Calculator, Zap, Check, X } from "lucide-react";
-import { ReactNode } from "react";
+import { Globe, Calculator, Check, X } from "lucide-react";
 
-interface Plan {
-  name: string;
-  icon: ReactNode;
-  badge: string;
-  price: string;
-  period: string;
-  description: string;
-  cta: string;
-  highlighted: boolean;
-  comingSoon: boolean;
-  features: string[];
-  locked: string[];
-}
+const FREE_FEATURES = [
+  "Professional roofing website",
+  "Mobile-first, SEO optimized",
+  "Contact form + lead capture",
+  "Email notifications for new leads",
+  "Click-to-call on every page",
+  "Trust badges auto-generated",
+];
 
-const PLANS: Plan[] = [
-  {
-    name: "Starter",
-    icon: <Globe className="w-4 h-4" />,
-    badge: "Free Forever",
-    price: "$0",
-    period: "/ month",
-    description: "Professional website that gets you found online",
-    cta: "Get Your Free Website",
-    highlighted: false,
-    comingSoon: false,
-    features: [
-      "Professional roofing website",
-      "Mobile-first, SEO optimized",
-      "Contact form + lead capture",
-      "Email notifications",
-      "Click-to-call on every page",
-      "Trust badges auto-generated",
-    ],
-    locked: [
-      "Satellite estimate widget",
-      "Embed on external sites",
-      "Review automation",
-    ],
-  },
-  {
-    name: "Pro",
-    icon: <Calculator className="w-4 h-4" />,
-    badge: "Most Popular",
-    price: "$99",
-    period: "/ month",
-    description: "Satellite-powered estimates that capture leads",
-    cta: "Start Free Trial",
-    highlighted: true,
-    comingSoon: false,
-    features: [
-      "Everything in Starter, plus:",
-      "Satellite estimate widget",
-      "Instant ballpark estimates",
-      "Embed on any website",
-      "Lead dashboard with details",
-      "Contractor-controlled pricing",
-      "Regional pricing suggestions",
-    ],
-    locked: [
-      "Review automation",
-      "Auto-reply & follow-up",
-    ],
-  },
-  {
-    name: "Growth",
-    icon: <Zap className="w-4 h-4" />,
-    badge: "Coming Soon",
-    price: "$149",
-    period: "/ month",
-    description: "Automate reviews, follow-ups, and more",
-    cta: "Coming Soon",
-    highlighted: false,
-    comingSoon: true,
-    features: [
-      "Everything in Pro, plus:",
-      "Review automation",
-      "Auto-reply (60 seconds)",
-      "Follow-up drip sequences",
-      "SEO city pages",
-      "Priority support",
-      "Custom domain",
-    ],
-    locked: [],
-  },
+const FREE_LOCKED = [
+  "Satellite estimate widget",
+  "Embed widget on external sites",
+  "Lead dashboard with insights",
+];
+
+const PRO_FEATURES = [
+  "Everything in Free, plus:",
+  "Satellite estimate widget",
+  "Instant ballpark estimates for visitors",
+  "Embed on any website with one line of code",
+  "Lead dashboard — hot, warm, and browsing tags",
+  "Push notifications for new leads",
+  "PDF estimate reports",
+  "Contractor-controlled pricing",
 ];
 
 const staggerContainer = {
@@ -97,7 +37,39 @@ const staggerContainer = {
   },
 };
 
+const cardVariant = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25,
+    },
+  },
+};
+
+const cardVariantHighlighted = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1.03,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25,
+    },
+  },
+};
+
 export default function RidgelinePricing() {
+  const [annual, setAnnual] = useState(false);
+  const price = annual ? "$79" : "$99";
+  const period = annual ? "/ month, billed yearly" : "/ month";
+
   return (
     <section id="pricing" className="relative bg-[#1B3A4B] overflow-hidden">
       {/* Grid background */}
@@ -119,130 +91,212 @@ export default function RidgelinePricing() {
           >
             Simple, Honest Pricing
           </h2>
-          <p className="text-lg text-white/50 max-w-2xl mx-auto">
-            No setup fees. No contracts. No hidden costs. Cancel anytime.
+          <p className="text-lg text-white/50 max-w-2xl mx-auto mb-8">
+            No setup fees. No contracts. No per-lead charges. Cancel anytime.
           </p>
+
+          {/* Annual toggle */}
+          <div className="inline-flex items-center gap-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-5 py-2.5">
+            <span
+              className={`text-sm font-semibold transition-colors ${
+                !annual ? "text-white" : "text-white/40"
+              }`}
+            >
+              Monthly
+            </span>
+            <button
+              onClick={() => setAnnual(!annual)}
+              className="relative w-12 h-6 rounded-full bg-white/10 transition-colors duration-300 focus:outline-none"
+              aria-label="Toggle annual pricing"
+            >
+              <motion.div
+                className="absolute top-0.5 w-5 h-5 rounded-full bg-[#D4863E]"
+                animate={{ left: annual ? "calc(100% - 1.375rem)" : "0.125rem" }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            </button>
+            <span
+              className={`text-sm font-semibold transition-colors ${
+                annual ? "text-white" : "text-white/40"
+              }`}
+            >
+              Yearly
+            </span>
+            {annual && (
+              <span className="text-[10px] font-bold text-[#D4863E] uppercase tracking-wider">
+                Save $240/yr
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Cards */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto items-start"
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto items-start"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
         >
-          {PLANS.map((plan) => (
-            <motion.div
-              key={plan.name}
-              variants={{
-                hidden: { opacity: 0, y: 30, scale: 0.95 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  scale: plan.highlighted ? 1.03 : 1,
-                  transition: {
-                    type: "spring" as const,
-                    stiffness: 300,
-                    damping: 25,
-                  },
-                },
-              }}
-              className={`rounded-[2rem] overflow-hidden flex flex-col h-full transition-all duration-500 hover:-translate-y-1 ${
-                plan.highlighted
-                  ? "bg-white/15 backdrop-blur-md border-2 border-[#D4863E]/60 shadow-2xl shadow-[#D4863E]/10"
-                  : "bg-white/10 backdrop-blur-md border border-white/20"
-              }`}
-            >
-              {/* Most Popular badge */}
-              {plan.highlighted && (
-                <div className="flex justify-center">
-                  <span className="bg-[#D4863E] text-white text-[10px] font-black uppercase tracking-[0.15em] px-5 py-1.5 rounded-b-xl">
-                    {plan.badge}
-                  </span>
+          {/* Free Card */}
+          <motion.div
+            variants={cardVariant}
+            className="rounded-[2rem] overflow-hidden flex flex-col h-full transition-all duration-500 hover:-translate-y-1 bg-white/10 backdrop-blur-md border border-white/20"
+          >
+            <div className="p-7 pb-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="text-white/50">
+                  <Globe className="w-4 h-4" />
                 </div>
-              )}
-
-              {/* Header */}
-              <div className="p-7 pb-5">
-                {/* Plan name + badge */}
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="text-white/50">{plan.icon}</div>
-                  <span className="text-sm font-semibold text-white/60">{plan.name}</span>
-                  {!plan.highlighted && (
-                    <span className="ml-auto text-[10px] font-bold text-white/40 border border-white/20 rounded-full px-2.5 py-0.5 uppercase tracking-wider">
-                      {plan.badge}
-                    </span>
-                  )}
-                </div>
-
-                {/* Price */}
-                <div className="flex items-end gap-1.5 mb-2">
-                  <span
-                    className="text-4xl font-black tracking-tight text-white"
-                    style={{ fontFamily: '"Arial Black", Impact, sans-serif' }}
-                  >
-                    {plan.price}
-                  </span>
-                  <span className="text-white/40 text-sm pb-1">{plan.period}</span>
-                </div>
-
-                <p className="text-xs text-white/50 mb-6">{plan.description}</p>
-
-                {/* CTA */}
-                {plan.comingSoon ? (
-                  <div className="w-full py-3 rounded-full bg-white/5 text-center text-sm text-white/30 font-semibold">
-                    Coming Soon
-                  </div>
-                ) : (
-                  <a
-                    href="/signup"
-                    className={`block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 ${
-                      plan.highlighted
-                        ? "bg-[#D4863E] text-white hover:bg-[#c0763a]"
-                        : "border-2 border-white/30 text-white hover:bg-white hover:text-[#1B3A4B]"
-                    }`}
-                  >
-                    {plan.cta}
-                  </a>
-                )}
+                <span className="text-sm font-semibold text-white/60">
+                  Free Website
+                </span>
+                <span className="ml-auto text-[10px] font-bold text-white/40 border border-white/20 rounded-full px-2.5 py-0.5 uppercase tracking-wider">
+                  Free Forever
+                </span>
               </div>
 
-              {/* Divider */}
-              <div className="mx-7 h-px bg-white/10" />
-
-              {/* Features */}
-              <div className="p-7 pt-5 flex-1 flex flex-col">
-                <ul className="space-y-3 flex-1">
-                  {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2.5 text-sm text-white/70">
-                      <Check className="w-4 h-4 text-[#D4863E] shrink-0 mt-0.5" strokeWidth={3} />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {plan.locked.length > 0 && (
-                  <>
-                    <div className="flex items-center gap-3 my-4 text-[10px] text-white/20 uppercase tracking-wider">
-                      <span className="h-px flex-1 bg-white/10" />
-                      <span>Upgrade to access</span>
-                      <span className="h-px flex-1 bg-white/10" />
-                    </div>
-                    <ul className="space-y-3">
-                      {plan.locked.map((feat) => (
-                        <li key={feat} className="flex items-start gap-2.5 text-sm text-white/30">
-                          <X className="w-4 h-4 text-white/20 shrink-0 mt-0.5" strokeWidth={2.5} />
-                          <span>{feat}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
+              <div className="flex items-end gap-1.5 mb-2">
+                <span
+                  className="text-4xl font-black tracking-tight text-white"
+                  style={{
+                    fontFamily: '"Arial Black", Impact, sans-serif',
+                  }}
+                >
+                  $0
+                </span>
+                <span className="text-white/40 text-sm pb-1">/ month</span>
               </div>
-            </motion.div>
-          ))}
+
+              <p className="text-xs text-white/50 mb-6">
+                A real website that gets you found online — not a teaser.
+              </p>
+
+              <a
+                href="/signup"
+                className="block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 border-2 border-white/30 text-white hover:bg-white hover:text-[#1B3A4B]"
+              >
+                Start Free
+              </a>
+            </div>
+
+            <div className="mx-7 h-px bg-white/10" />
+
+            <div className="p-7 pt-5 flex-1 flex flex-col">
+              <ul className="space-y-3 flex-1">
+                {FREE_FEATURES.map((feat) => (
+                  <li
+                    key={feat}
+                    className="flex items-start gap-2.5 text-sm text-white/70"
+                  >
+                    <Check
+                      className="w-4 h-4 text-[#D4863E] shrink-0 mt-0.5"
+                      strokeWidth={3}
+                    />
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="flex items-center gap-3 my-4 text-[10px] text-white/20 uppercase tracking-wider">
+                <span className="h-px flex-1 bg-white/10" />
+                <span>Upgrade to access</span>
+                <span className="h-px flex-1 bg-white/10" />
+              </div>
+              <ul className="space-y-3">
+                {FREE_LOCKED.map((feat) => (
+                  <li
+                    key={feat}
+                    className="flex items-start gap-2.5 text-sm text-white/30"
+                  >
+                    <X
+                      className="w-4 h-4 text-white/20 shrink-0 mt-0.5"
+                      strokeWidth={2.5}
+                    />
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+
+          {/* Pro Card */}
+          <motion.div
+            variants={cardVariantHighlighted}
+            className="rounded-[2rem] overflow-hidden flex flex-col h-full transition-all duration-500 hover:-translate-y-1 bg-white/15 backdrop-blur-md border-2 border-[#D4863E]/60 shadow-2xl shadow-[#D4863E]/10"
+          >
+            <div className="flex justify-center">
+              <span className="bg-[#D4863E] text-white text-[10px] font-black uppercase tracking-[0.15em] px-5 py-1.5 rounded-b-xl">
+                Most Popular
+              </span>
+            </div>
+
+            <div className="p-7 pb-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="text-white/50">
+                  <Calculator className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-semibold text-white/60">Pro</span>
+              </div>
+
+              <div className="flex items-end gap-1.5 mb-2">
+                <span
+                  className="text-4xl font-black tracking-tight text-white"
+                  style={{
+                    fontFamily: '"Arial Black", Impact, sans-serif',
+                  }}
+                >
+                  {price}
+                </span>
+                <span className="text-white/40 text-sm pb-1">{period}</span>
+              </div>
+
+              <p className="text-xs text-white/50 mb-6">
+                Satellite-powered estimates that turn visitors into leads.
+              </p>
+
+              <a
+                href="/signup"
+                className="block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 bg-[#D4863E] text-white hover:bg-[#c0763a]"
+              >
+                Start Getting Leads — {price}/mo
+              </a>
+            </div>
+
+            <div className="mx-7 h-px bg-white/10" />
+
+            <div className="p-7 pt-5 flex-1 flex flex-col">
+              <ul className="space-y-3 flex-1">
+                {PRO_FEATURES.map((feat) => (
+                  <li
+                    key={feat}
+                    className="flex items-start gap-2.5 text-sm text-white/70"
+                  >
+                    <Check
+                      className="w-4 h-4 text-[#D4863E] shrink-0 mt-0.5"
+                      strokeWidth={3}
+                    />
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
         </motion.div>
+
+        {/* Bottom transparency note */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="text-center text-sm text-white/30 mt-12 max-w-xl mx-auto"
+        >
+          The free website is genuinely free — no credit card, no trial, no catch.
+          We make money when you choose to add the estimate widget at {price}/mo.
+          That&apos;s it. No per-lead fees, no setup costs, no contracts.
+          No salesperson will ever call you.
+        </motion.p>
       </div>
     </section>
   );

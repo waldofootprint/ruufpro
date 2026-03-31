@@ -82,13 +82,14 @@ export default function RidgelineWhatsTheCatch() {
               Your website is free. We make money when roofers choose to add our
               instant estimate widget — <span className="font-bold text-[#D4863E]">$99/mo</span> — which
               lets homeowners see ballpark pricing on your site using satellite
-              roof data. It&rsquo;s optional. Plenty of roofers use just the free
+              roof data. That&rsquo;s 72% less than Roofle ($350/mo + a $2,000 setup fee).
+              It&rsquo;s optional. Plenty of roofers use just the free
               site and never pay us a dime.
             </p>
             <p className="text-base text-[#1B3A4B]/70 leading-relaxed">
               Why give the website away? Because a great free product is the best
               marketing there is. You tell another roofer. They sign up. We grow
-              by being useful, not by running ads or hiring salespeople.
+              by being useful — not by charging agencies rates or hiring a sales team.
             </p>
           </motion.div>
 

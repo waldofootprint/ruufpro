@@ -17,11 +17,12 @@ export default function ChalkContact({ businessName, phone, city, state, contrac
     e.preventDefault();
     if (!form.name) return;
     setSubmitting(true);
-    await supabase.from("leads").insert({
+    const { error: leadErr } = await supabase.from("leads").insert({
       contractor_id: contractorId, name: form.name,
       phone: form.phone || null, email: form.email || null,
       message: form.message || null, source: "contact_form", status: "new",
     });
+    if (leadErr) console.error("Lead insert failed:", leadErr);
     fetch("/api/notify", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -59,8 +60,9 @@ export default function ChalkContact({ businessName, phone, city, state, contrac
       <p style={{ fontSize: 16, color: CHALK.textMuted, marginBottom: 8 }}>
         {city}, {state} &middot; <a href={`tel:${phoneClean}`} style={{ color: CHALK.accent, textDecoration: "none" }}>{phone}</a>
       </p>
-      <p style={{ fontSize: 14, color: CHALK.textFaint, marginBottom: 32 }}>
-        We respond within 24 hours. No spam, ever.
+      <p style={{ fontSize: 14, color: CHALK.textFaint, marginBottom: 32, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Most messages returned within a few hours
       </p>
 
       {submitted ? (
@@ -92,14 +94,14 @@ export default function ChalkContact({ businessName, phone, city, state, contrac
           </div>
           <div style={{ marginBottom: 24 }}>
             <label style={{ fontSize: 15, fontWeight: 600, color: CHALK.text, display: "block", marginBottom: 6 }}>How can we help?</label>
-            <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell us about your roof..." style={{ ...inputStyle, minHeight: 90, resize: "vertical" } as React.CSSProperties}
+            <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="E.g. 'I have a leak near my chimney' or 'I need a full replacement quote'..." style={{ ...inputStyle, minHeight: 90, resize: "vertical" } as React.CSSProperties}
               onFocus={(e) => (e.currentTarget.style.borderColor = CHALK.accent)}
               onBlur={(e) => (e.currentTarget.style.borderColor = CHALK.border)} />
           </div>
           <button type="submit" disabled={submitting}
             style={{
               width: "100%", padding: "14px 28px", background: CHALK.accent, color: CHALK.bg,
-              border: "none", borderRadius: 6, fontFamily: CHALK.fontDisplay, fontSize: 18,
+              border: "none", borderRadius: 9999, fontFamily: CHALK.fontDisplay, fontSize: 18,
               cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
               transition: "background 0.2s",
             }}

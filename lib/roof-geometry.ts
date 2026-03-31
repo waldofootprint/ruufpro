@@ -126,7 +126,7 @@ export function inferRoofGeometry(roofData: RoofData): RoofGeometry {
   // estimate, we can use the roof area directly and assume a rectangular
   // footprint with a typical aspect ratio.
   const footprintSqft =
-    roofData.roofAreaSqft /
+    roofData.roofAreaSqft *
     Math.cos((roofData.pitchDegrees * Math.PI) / 180);
   const footprintSide = Math.sqrt(footprintSqft);
   // Typical house is roughly 1.5:1 aspect ratio

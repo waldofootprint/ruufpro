@@ -294,7 +294,7 @@ export default function EstimateWidgetV2({
         }),
       }).catch(() => {});
 
-      await supabase.from("leads").insert({
+      const { error: leadErr } = await supabase.from("leads").insert({
         contractor_id: contractorId,
         name, email, phone, address,
         source: "estimate_widget",
@@ -303,6 +303,7 @@ export default function EstimateWidgetV2({
         estimate_material: desiredMaterial,
         estimate_roof_sqft: data.roof_area_sqft,
       });
+      if (leadErr) console.error("Lead insert failed:", leadErr);
 
       setStep(8);
     } catch (err: unknown) {

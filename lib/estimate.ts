@@ -241,19 +241,21 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   const bufferMultiplier = 1 + (input.bufferPercent || 0) / 100;
 
   // Assemble final price
+  // Pitch multiplier applies to material, tear-off, and penetration costs
+  // (steep roofs make all labor harder, not just shingle installation)
   const priceLow = Math.round(
     (materialCostLow * pitchMultiplier +
       accessoryCostLow +
-      tearoffCostLow +
-      penetration.low) *
+      tearoffCostLow * pitchMultiplier +
+      penetration.low * pitchMultiplier) *
       weatherSurge
   );
 
   const priceHigh = Math.round(
     (materialCostHigh * pitchMultiplier +
       accessoryCostHigh +
-      tearoffCostHigh +
-      penetration.high) *
+      tearoffCostHigh * pitchMultiplier +
+      penetration.high * pitchMultiplier) *
       weatherSurge *
       bufferMultiplier // buffer only affects the high end
   );

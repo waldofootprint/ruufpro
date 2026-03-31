@@ -100,6 +100,12 @@ export default async function ProspectPreview({
     hasEstimateWidget: true, // Show widget — this is what we're selling
     contractorId: contractor.id,
     slug: params.slug,
+
+    // SEO / schema fields
+    address: contractor.address,
+    zip: contractor.zip,
+    logoUrl: contractor.logo_url,
+    licenseNumber: contractor.license_number,
   };
 
   const template = (siteData as any).template || "modern_clean";

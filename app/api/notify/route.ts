@@ -1,16 +1,18 @@
 // Notification endpoint — called after a lead is created.
 // Looks up the contractor's email and sends a notification.
+// Public endpoint: called from the estimate widget and contact forms
+// on the contractor's public site (visitors are not logged in).
+// Validates contractor_id exists before sending.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendLeadNotificationEmail } from "@/lib/notifications";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export async function POST(request: NextRequest) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   try {
     const body = await request.json();
     const { contractor_id, lead_name, lead_phone, lead_email, lead_address, lead_message, source, estimate_low, estimate_high, estimate_material, estimate_roof_sqft } = body;
@@ -63,7 +65,10 @@ export async function POST(request: NextRequest) {
 
     fetch(`${request.nextUrl.origin}/api/push/send`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-secret": process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      },
       body: JSON.stringify({
         contractor_id,
         title: pushTitle,

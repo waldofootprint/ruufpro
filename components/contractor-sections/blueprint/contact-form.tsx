@@ -21,7 +21,7 @@ export default function BlueprintContact({ businessName, phone, city, state, con
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
-      await supabase.from("leads").insert({
+      const { error: leadErr } = await supabase.from("leads").insert({
         contractor_id: contractorId,
         name: form.name,
         email: form.email || null,
@@ -29,6 +29,7 @@ export default function BlueprintContact({ businessName, phone, city, state, con
         message: form.message || null,
         source: "contact_form",
       });
+      if (leadErr) console.error("Lead insert failed:", leadErr);
       await fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,7 +102,7 @@ export default function BlueprintContact({ businessName, phone, city, state, con
               onBlur={(e) => (e.currentTarget.style.borderColor = BLUEPRINT.border)}
             />
             <textarea
-              placeholder="Tell us about your project..."
+              placeholder="E.g. 'I have a leak near my chimney' or 'I need a full replacement quote'..."
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
               rows={4}
@@ -117,7 +118,7 @@ export default function BlueprintContact({ businessName, phone, city, state, con
                 padding: "14px",
                 background: sending ? BLUEPRINT.textMuted : BLUEPRINT.accent,
                 color: "#fff",
-                borderRadius: 10,
+                borderRadius: 9999,
                 fontSize: 15,
                 fontWeight: 700,
                 fontFamily: BLUEPRINT.fontBody,
@@ -128,6 +129,10 @@ export default function BlueprintContact({ businessName, phone, city, state, con
             >
               {sending ? "Sending..." : "Send Message"}
             </button>
+            <p style={{ textAlign: "center", fontSize: 12, color: BLUEPRINT.textMuted, marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Most messages returned within a few hours
+            </p>
           </div>
         )}
       </div>

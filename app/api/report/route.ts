@@ -1,4 +1,7 @@
 // Generate a PDF estimate report with full details.
+// Public endpoint: called from the estimate widget when a homeowner
+// downloads their estimate (visitors are not logged in).
+// Validates contractor_id exists before generating.
 
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -6,12 +9,11 @@ import { EstimateReportPDF } from "@/components/pdf/estimate-report";
 import { createClient } from "@supabase/supabase-js";
 import React from "react";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export async function POST(request: NextRequest) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   try {
     const body = await request.json();
     const {

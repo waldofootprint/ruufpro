@@ -86,6 +86,7 @@ export default function ServiceAreaMap({
 
   return (
     <section
+      id="service-area"
       style={{
         padding: "72px 32px",
         maxWidth: 1060,
@@ -170,16 +171,15 @@ export default function ServiceAreaMap({
                     left: dot.left,
                     zIndex: 1,
                     cursor: "default",
-                    transition: "transform 0.25s ease",
                   }}
                   onMouseEnter={() => setHoveredCity(c)}
                   onMouseLeave={() => setHoveredCity(null)}
                 >
-                  {/* The dot */}
+                  {/* The dot — centered exactly on the ring line */}
                   <div
                     style={{
-                      width: isActive ? 16 : 10,
-                      height: isActive ? 16 : 10,
+                      width: isActive ? 14 : 10,
+                      height: isActive ? 14 : 10,
                       borderRadius: "50%",
                       background: isActive ? accent : text,
                       border: isActive ? `3px solid ${bg}` : `2px solid ${bg}`,
@@ -187,15 +187,15 @@ export default function ServiceAreaMap({
                         ? `0 2px 8px ${accentFaded}`
                         : `0 1px 4px rgba(0,0,0,0.15)`,
                       transition: "all 0.25s ease",
-                      margin: isActive ? "-3px 0 0 -3px" : "0",
+                      transform: "translate(-50%, -50%)",
                     }}
                   />
-                  {/* Label */}
+                  {/* Label — offset from the dot */}
                   <span
                     style={{
                       position: "absolute",
-                      left: 16,
-                      top: -3,
+                      left: 10,
+                      top: -8,
                       fontSize: 12,
                       fontWeight: isActive ? 700 : 600,
                       color: isActive ? accent : textMuted,

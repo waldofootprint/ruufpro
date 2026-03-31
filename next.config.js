@@ -4,6 +4,13 @@ const nextConfig = {
   // In production, requests to "joes-roofing.ruufpro.com" get rewritten
   // to our app, and we read the subdomain to look up the right contractor's site.
   // For local development, we'll use "joes-roofing.localhost:3000" instead.
+
+  // Allow next/image to optimize external images from these domains.
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
+  },
 };
 
 module.exports = nextConfig;

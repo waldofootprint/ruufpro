@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import {
   ArrowRight,
   Phone,
@@ -55,14 +56,14 @@ export default function ChalkHero({
   yearsInBusiness,
 }: Props) {
   const phoneClean = phone.replace(/\D/g, "");
-  const headline = heroHeadline || "Your Roof. Our Craft.";
+  const headline = heroHeadline || "Your Roof.\nDone Right.";
   const sub =
     tagline ||
-    `Honest roofing from people who live right here in ${city}. No corporate nonsense, no surprises — just good work at a fair price.`;
+    `Roof replacements, repairs, and inspections from a local crew that shows up on time, gives you a straight answer, and does the work right. Serving ${city} and surrounding areas.`;
   const cta = heroCta || "Get a Free Estimate";
   const bgImg =
     heroImage ||
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80";
+    "https://images.unsplash.com/photo-1635424710928-0544e8512eae?w=1920&q=80";
 
   return (
     <section id="hero" className="relative w-full overflow-hidden" style={{ background: CHALK.bg }}>
@@ -100,6 +101,15 @@ export default function ChalkHero({
           WebkitMaskImage:
             "linear-gradient(180deg, transparent, black 0%, black 70%, transparent)",
         }}
+      />
+      {/* Hidden semantic image for SEO — CSS backgroundImage is not crawlable */}
+      <Image
+        src={bgImg}
+        alt={`${businessName} - professional roofing services in ${city}`}
+        width={1}
+        height={1}
+        className="sr-only"
+        aria-hidden="false"
       />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-12 sm:px-6 md:pt-36 md:pb-20 lg:px-8">
@@ -183,6 +193,18 @@ export default function ChalkHero({
                 <Phone className="w-4 h-4" />
                 Call {phone}
               </a>
+            </div>
+
+            {/* Social proof line */}
+            <div className="chalk-fade-in chalk-delay-5 flex flex-wrap gap-5">
+              <span className="flex items-center gap-2 text-sm" style={{ color: CHALK.textFaint }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Most calls returned same day
+              </span>
+              <span className="flex items-center gap-1.5 text-sm" style={{ color: CHALK.textFaint }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill={CHALK.accent} stroke={CHALK.accent} strokeWidth="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                5-star rated on Google
+              </span>
             </div>
           </div>
 

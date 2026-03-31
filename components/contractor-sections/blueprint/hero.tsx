@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { ArrowRight, Phone, Star, CheckCircle, Home } from "lucide-react";
 import { BLUEPRINT } from "../theme-blueprint";
 import type { ContractorSiteData } from "../types";
@@ -9,9 +10,9 @@ type Props = Pick<ContractorSiteData, "businessName" | "city" | "phone" | "heroH
 export default function BlueprintHero({ businessName, city, phone, heroHeadline, tagline, heroCta, heroImage, hasEstimateWidget, yearsInBusiness }: Props) {
   const phoneClean = phone.replace(/\D/g, "");
   const headline = heroHeadline || "Built Right.\nPriced Fair.";
-  const sub = tagline || `Professional roofing services for ${city} homeowners. From inspections to full replacements — done right the first time.`;
+  const sub = tagline || `Roof replacements, repairs, and inspections for ${city} homeowners. Upfront pricing, clean job sites, and work that's done right the first time.`;
   const cta = heroCta || "Get Free Estimate";
-  const imgSrc = heroImage || "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&q=80";
+  const imgSrc = heroImage || "https://images.unsplash.com/photo-1635424710928-0544e8512eae?w=800&q=80";
 
   return (
     <section id="hero" style={{ background: BLUEPRINT.bg, fontFamily: BLUEPRINT.fontBody }}>
@@ -56,7 +57,7 @@ export default function BlueprintHero({ businessName, city, phone, heroHeadline,
           <div className="bp-fade bp-d4" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 28 }}>
             <a
               href={hasEstimateWidget ? "#estimate" : "#contact"}
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 28px", background: BLUEPRINT.accent, color: "#fff", borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: "none", transition: "background 0.2s" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 28px", background: BLUEPRINT.accent, color: "#fff", borderRadius: 9999, fontSize: 15, fontWeight: 700, textDecoration: "none", transition: "background 0.2s" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = BLUEPRINT.accentHover)}
               onMouseLeave={(e) => (e.currentTarget.style.background = BLUEPRINT.accent)}
             >
@@ -65,7 +66,7 @@ export default function BlueprintHero({ businessName, city, phone, heroHeadline,
             </a>
             <a
               href={`tel:${phoneClean}`}
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 28px", border: `2px solid ${BLUEPRINT.border}`, color: BLUEPRINT.text, borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: "none", transition: "all 0.2s" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 28px", border: `2px solid ${BLUEPRINT.border}`, color: BLUEPRINT.text, borderRadius: 9999, fontSize: 15, fontWeight: 700, textDecoration: "none", transition: "all 0.2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = BLUEPRINT.accent; e.currentTarget.style.color = BLUEPRINT.accent; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = BLUEPRINT.border; e.currentTarget.style.color = BLUEPRINT.text; }}
             >
@@ -76,30 +77,40 @@ export default function BlueprintHero({ businessName, city, phone, heroHeadline,
 
           <div className="bp-fade bp-d5" style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: BLUEPRINT.textMuted, fontWeight: 500 }}>
-              <Star size={14} fill={BLUEPRINT.accent} color={BLUEPRINT.accent} />
-              127 Five-Star Reviews
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Most calls returned same day
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: BLUEPRINT.textMuted, fontWeight: 500 }}>
+              <Star size={14} fill={BLUEPRINT.star} color={BLUEPRINT.star} />
+              5-star rated on Google
             </span>
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: BLUEPRINT.textMuted, fontWeight: 500 }}>
               <CheckCircle size={14} color={BLUEPRINT.accent} />
-              GAF Certified
+              Free estimates
             </span>
           </div>
         </div>
 
         {/* Right */}
         <div className="bp-fade bp-d5" style={{ position: "relative" }}>
-          <img
-            src={imgSrc}
-            alt={`${businessName} — roofing in ${city}`}
-            style={{ width: "100%", height: 400, objectFit: "cover", borderRadius: 20, border: `1px solid ${BLUEPRINT.border}`, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}
-          />
-          {/* Floating stat card */}
+          <div style={{ position: "relative", width: "100%", height: 400, overflow: "hidden", borderRadius: 20, border: `1px solid ${BLUEPRINT.border}`, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
+            <Image
+              src={imgSrc}
+              alt={`${businessName} — roofing in ${city}`}
+              fill
+              style={{ objectFit: "cover" }}
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+            />
+          </div>
+          {/* Floating stat card — hidden on mobile to avoid overflow */}
           <div
+            className="hidden sm:flex"
             style={{
               position: "absolute", bottom: -20, left: -24,
               background: "#fff", borderRadius: 14, padding: "16px 20px",
               boxShadow: "0 8px 32px rgba(15,23,42,0.1)", border: `1px solid ${BLUEPRINT.border}`,
-              display: "flex", alignItems: "center", gap: 12,
+              alignItems: "center", gap: 12,
             }}
           >
             <div style={{ width: 40, height: 40, borderRadius: 10, background: BLUEPRINT.accentLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
