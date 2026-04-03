@@ -45,18 +45,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ? `http://${subdomain}.localhost:3000`
     : `https://${subdomain}.ruufpro.com`;
 
-  // Fetch this site's services to generate service page URLs
+  // Fetch this site's services + contractor's city list for city page URLs
   const { data: siteData } = await supabase
     .from("sites")
-    .select("services")
+    .select("services, contractor_id")
     .eq("slug", subdomain)
     .eq("published", true)
     .single();
 
   const services: string[] = siteData?.services || [];
 
-  // Import service content to resolve slugs
+  // Get contractor's service area cities
+  let cities: string[] = [];
+  if (siteData?.contractor_id) {
+    const { data: contractor } = await supabase
+      .from("contractors")
+      .select("service_area_cities")
+      .eq("id", siteData.contractor_id)
+      .single();
+    cities = contractor?.service_area_cities || [];
+  }
+
+  // Import helpers
   const { getServiceContent } = await import("@/lib/service-page-content");
+  const { cityToSlug } = await import("@/lib/city-page-content");
+
   const serviceEntries = services
     .map((s) => getServiceContent(s))
     .filter(Boolean);
@@ -79,6 +92,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
       priority: 0.8,
+    })),
+    ...cities.map((city) => ({
+      url: `${baseUrl}/${cityToSlug(city)}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
   ];
 }
