@@ -204,6 +204,7 @@ export const INBOX_STATUS_CONFIG = {
 // Tab configuration
 export const TABS = [
   { id: "overview", label: "Overview" },
+  { id: "onboarding", label: "Onboarding" },
   { id: "inbox", label: "Inbox" },
   { id: "todos", label: "To-Do" },
   { id: "plays", label: "Plays" },
@@ -263,6 +264,47 @@ export const TEMPLATE_OPTIONS = [
   { value: "classic", label: "Classic", route: "/demo/classic" },
   { value: "apex", label: "Apex", route: null },
 ];
+
+// Progress log items (DB-backed)
+export interface ProgressLogItem {
+  id: string;
+  title: string;
+  description: string | null;
+  files: { label: string; path: string }[];
+  tags: string[];
+  logged_date: string;
+  created_at: string;
+}
+
+// Sprint items (DB-backed)
+export type SprintStatus = "next" | "in_progress" | "shipped" | "dropped";
+
+export interface SprintItem {
+  id: string;
+  title: string;
+  status: SprintStatus;
+  tags: string[];
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export const SPRINT_STATUS_CONFIG = {
+  next: { label: "Next", color: "rgba(245,158,11,0.12)", text: "#fbbf24", dot: "#f59e0b" },
+  in_progress: { label: "In Progress", color: "rgba(99,102,241,0.12)", text: "#818cf8", dot: "#6366f1" },
+  shipped: { label: "Shipped", color: "rgba(34,197,94,0.12)", text: "#4ade80", dot: "#22c55e" },
+  dropped: { label: "Dropped", color: "rgba(100,116,139,0.12)", text: "#94a3b8", dot: "#64748b" },
+} as const;
+
+// Business metrics (DB-backed key-value)
+export interface BusinessMetric {
+  id: string;
+  metric_key: string;
+  metric_value: number;
+  metric_label: string;
+  category: string;
+  updated_at: string;
+}
 
 // Quick links for the dashboard
 export const QUICK_LINKS = [

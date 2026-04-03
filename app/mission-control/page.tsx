@@ -1,31 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TEMPLATES } from "./template-registry";
-import { getTodayItems, getCompletedItems } from "./progress-log";
-import { WORKFLOWS, PHASE_CONFIG, getPhaseStats, type WorkflowPhase } from "./workflow-registry";
+import { WORKFLOWS, PHASE_CONFIG, getPhaseStats, mergeWithDbState, type WorkflowPhase, type DbWorkflowStatus, type DbStepStatus, type MergedWorkflow } from "./workflow-registry";
 import { FEATURES } from "../command-center/feature/features-data";
 import TemplateCard from "./components/TemplateCard";
-import ProgressCard from "./components/ProgressCard";
 import WorkflowCard from "./components/WorkflowCard";
+import MyQueue from "./components/MyQueue";
+import BusinessPulse from "./components/BusinessPulse";
+import SprintBoard from "./components/SprintBoard";
+import ShortlistWidget from "./components/ShortlistWidget";
+import ActivityFeed from "./components/ActivityFeed";
+import CollapsibleSection from "./components/CollapsibleSection";
 
 // ─── Derived data ───────────────────────────────────────────────
-const todayItems = getTodayItems();
-const completedItems = getCompletedItems();
 const productionTemplates = TEMPLATES.filter((t) => t.status === "production");
-
 const completedFeatures = FEATURES.filter((f) => f.status === "complete");
 const inProgressFeatures = FEATURES.filter((f) => f.status === "in_progress");
 const plannedFeatures = FEATURES.filter((f) => f.status === "planned");
 
 // ─── Types ──────────────────────────────────────────────────────
-type Tab = "today" | "build" | "grow" | "library";
+type Tab = "now" | "build" | "learn" | "grow";
 
 const TABS: { id: Tab; label: string; accent: string }[] = [
-  { id: "today", label: "Today", accent: "#22c55e" },
+  { id: "now", label: "Now", accent: "#22c55e" },
   { id: "build", label: "Build", accent: "#D4863E" },
+  { id: "learn", label: "Learn", accent: "#f59e0b" },
   { id: "grow", label: "Grow", accent: "#6366f1" },
-  { id: "library", label: "Library", accent: "#f59e0b" },
 ];
 
 // ─── Reusable components ────────────────────────────────────────
@@ -45,7 +46,7 @@ function SectionHeader({ title, count, accent }: { title: string; count?: number
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
       {accent && <div style={{ width: 8, height: 8, borderRadius: "50%", background: accent }} />}
-      <h3 style={{ fontSize: 14, fontWeight: 600, color: "#fff", margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>{title}</h3>
+      <h3 style={{ fontSize: 14, fontWeight: 600, color: "#fff", margin: 0, textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-outfit), var(--font-inter), sans-serif" }}>{title}</h3>
       {count !== undefined && <span style={{ fontSize: 11, color: "#555" }}>({count})</span>}
     </div>
   );
@@ -69,43 +70,69 @@ function FeatureMini({ name, status, href }: { name: string; status: string; hre
   );
 }
 
-function SprintItem({ title, status, tags }: { title: string; status: "shipped" | "next"; tags: string[] }) {
-  const dot = status === "shipped" ? "#22c55e" : "#f59e0b";
-  const tagBg = status === "shipped" ? "rgba(34,197,94,0.12)" : "rgba(245,158,11,0.12)";
-  const tagColor = status === "shipped" ? "#4ade80" : "#fbbf24";
-  return (
-    <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "14px 18px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <div style={{ width: 7, height: 7, borderRadius: "50%", background: dot }} />
-        <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{title}</span>
-      </div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {tags.map((tag) => (
-          <span key={tag} style={{ fontSize: 10, background: tagBg, color: tagColor, padding: "2px 8px", borderRadius: 5 }}>{tag}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ═══════════════════════════════════════════════════════════════
 // PAGE
 // ═══════════════════════════════════════════════════════════════
 export default function MissionControlPage() {
-  const [tab, setTab] = useState<Tab>("today");
-  const [progressView, setProgressView] = useState<"today" | "completed">("today");
+  // Persist tab in localStorage
+  const [tab, setTab] = useState<Tab>("now");
 
-  // Workflow data
-  const phaseStats = getPhaseStats();
-  const totalWorkflows = WORKFLOWS.length;
-  const completedWorkflows = WORKFLOWS.filter((w) => w.status === "complete").length;
+  useEffect(() => {
+    const stored = localStorage.getItem("mc-tab");
+    if (stored && ["now", "build", "learn", "grow"].includes(stored)) {
+      setTab(stored as Tab);
+    }
+  }, []);
+
+  function switchTab(t: Tab) {
+    setTab(t);
+    localStorage.setItem("mc-tab", t);
+  }
+
+  // Workflow DB state
+  const [dbWorkflows, setDbWorkflows] = useState<DbWorkflowStatus[]>([]);
+  const [dbSteps, setDbSteps] = useState<DbStepStatus[]>([]);
+  const [workflowsLoading, setWorkflowsLoading] = useState(true);
+
+  const fetchWorkflows = useCallback(async () => {
+    try {
+      const res = await fetch("/api/command-center/workflows");
+      if (res.ok) {
+        const data = await res.json();
+        setDbWorkflows(data.workflows || []);
+        setDbSteps(data.steps || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch workflows:", err);
+    } finally {
+      setWorkflowsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchWorkflows(); }, [fetchWorkflows]);
+
+  // Merge static registry with live DB state
+  const mergedWorkflows: MergedWorkflow[] = mergeWithDbState(dbWorkflows, dbSteps);
+  const phaseStats = getPhaseStats(mergedWorkflows);
+  const totalWorkflows = mergedWorkflows.length;
+  const completedWorkflows = mergedWorkflows.filter((w) => w.dbStatus === "complete").length;
   const phases: WorkflowPhase[] = ["acquire", "convert", "fulfill", "retain"];
+
+  // Workflow action handlers
+  async function handleWorkflowAction(stepId: string, action: string, reviewNotes?: string) {
+    await fetch("/api/command-center/workflows", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stepId, action, reviewNotes }),
+    });
+    fetchWorkflows();
+  }
 
   return (
     <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px 80px" }}>
       {/* ── Header ─────────────────────────────────────────────── */}
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", letterSpacing: "-0.03em", marginBottom: 6 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", letterSpacing: "-0.03em", marginBottom: 6, fontFamily: "var(--font-outfit), var(--font-inter), sans-serif" }}>
           Mission Control
         </h1>
         <p style={{ fontSize: 14, color: "#666", margin: 0 }}>
@@ -113,25 +140,10 @@ export default function MissionControlPage() {
         </p>
       </div>
 
-      {/* ── Quick stats row ────────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
-        {[
-          { value: todayItems.length, label: "Shipped Today", color: "#22c55e" },
-          { value: completedFeatures.length, label: "Features Live", color: "#D4863E" },
-          { value: inProgressFeatures.length + plannedFeatures.length, label: "In Pipeline", color: "#6366f1" },
-          { value: productionTemplates.length, label: "Templates", color: "#f59e0b" },
-        ].map((stat) => (
-          <div key={stat.label} style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px 20px", flex: 1, minWidth: 120 }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: stat.color }}>{stat.value}</div>
-            <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 2 }}>{stat.label}</div>
-          </div>
-        ))}
-      </div>
-
       {/* ── Tab bar ────────────────────────────────────────────── */}
       <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 4, marginBottom: 32 }}>
         {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+          <button key={t.id} onClick={() => switchTab(t.id)} style={{
             flex: 1, fontSize: 13, fontWeight: 600, padding: "10px 0", borderRadius: 8,
             border: "none", cursor: "pointer", transition: "all 0.15s",
             background: tab === t.id ? `${t.accent}20` : "transparent",
@@ -143,108 +155,69 @@ export default function MissionControlPage() {
       </div>
 
       {/* ═════════════════════════════════════════════════════════ */}
-      {/* TODAY TAB                                                 */}
+      {/* NOW TAB                                                    */}
       {/* ═════════════════════════════════════════════════════════ */}
-      {tab === "today" && (
+      {tab === "now" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-          {/* Progress log */}
+          {/* Business Pulse — always visible */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <SectionHeader title="Progress Log" accent="#22c55e" />
-              <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: 2 }}>
-                <button onClick={() => setProgressView("today")} style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 5, border: "none", cursor: "pointer", background: progressView === "today" ? "rgba(34,197,94,0.15)" : "transparent", color: progressView === "today" ? "#4ade80" : "#666" }}>
-                  Today{todayItems.length > 0 && ` (${todayItems.length})`}
-                </button>
-                <button onClick={() => setProgressView("completed")} style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 5, border: "none", cursor: "pointer", background: progressView === "completed" ? "rgba(99,102,241,0.15)" : "transparent", color: progressView === "completed" ? "#a78bfa" : "#666" }}>
-                  Completed{completedItems.length > 0 && ` (${completedItems.length})`}
-                </button>
+            <SectionHeader title="Business Pulse" accent="#22c55e" />
+            <BusinessPulse />
+          </div>
+
+          {/* Attention Queue — always visible when items exist */}
+          <div>
+            <SectionHeader title="Attention Queue" accent="#ef4444" />
+            {!workflowsLoading && (
+              <MyQueue
+                workflows={mergedWorkflows}
+                onApprove={(stepId, notes) => handleWorkflowAction(stepId, "approve", notes)}
+                onSendBack={(stepId, notes) => handleWorkflowAction(stepId, "send_back", notes)}
+                onApproveToStart={(stepId, notes) => handleWorkflowAction(stepId, "approve_to_build", notes)}
+                onSkip={(stepId) => handleWorkflowAction(stepId, "skip")}
+              />
+            )}
+            {workflowsLoading && (
+              <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "20px", textAlign: "center" }}>
+                <p style={{ fontSize: 13, color: "#555", margin: 0 }}>Loading workflows...</p>
+              </div>
+            )}
+          </div>
+
+          {/* Active Sprint */}
+          <div>
+            <SectionHeader title="Active Sprint" accent="#D4863E" />
+            <SprintBoard />
+          </div>
+
+          {/* Shortlist */}
+          <CollapsibleSection id="shortlist" title="Shortlist" accent="#6366f1" defaultOpen={true}>
+            <ShortlistWidget />
+          </CollapsibleSection>
+
+          {/* Inbox */}
+          <CollapsibleSection id="inbox" title="Inbox" accent="#f59e0b" defaultOpen={false}>
+            <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "14px 18px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: "#888" }}>Quick capture — drop ideas, links, screenshots</span>
+                <a href="/command-center?tab=inbox" style={{ fontSize: 12, color: "#f59e0b", textDecoration: "none" }}>Open Full Inbox &rarr;</a>
               </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {progressView === "today" && todayItems.length === 0 && (
-                <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "28px 20px", textAlign: "center" }}>
-                  <p style={{ fontSize: 13, color: "#555", margin: 0 }}>No changes logged today yet.</p>
-                </div>
-              )}
-              {progressView === "today" && todayItems.map((item) => <ProgressCard key={item.id} item={item} />)}
-              {progressView === "completed" && completedItems.length === 0 && (
-                <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "28px 20px", textAlign: "center" }}>
-                  <p style={{ fontSize: 13, color: "#555", margin: 0 }}>Items move here automatically after each day.</p>
-                </div>
-              )}
-              {progressView === "completed" && completedItems.map((item) => <ProgressCard key={item.id} item={item} />)}
-            </div>
-          </div>
+          </CollapsibleSection>
 
-          {/* Current sprint */}
-          <div>
-            <SectionHeader title="Current Sprint" accent="#D4863E" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <SprintItem title="Pricing — Free / $149 Pro / $299 Growth" status="shipped" tags={["3 tiers", "annual toggle", "competitor math", "all components"]} />
-              <SprintItem title="Onboarding v3 — 3-Screen Flow" status="shipped" tags={["magic generation", "live preview", "scroll sync", "edit mode"]} />
-              <SprintItem title="Auth flow — remove bypass, wire signup" status="next" tags={["auth", "critical path"]} />
-              <SprintItem title="Stripe billing — subscription gating" status="next" tags={["payments", "revenue"]} />
-              <SprintItem title="Template auto-defaults" status="next" tags={["reviews", "hours", "FAQ"]} />
-            </div>
-          </div>
-
-          {/* Quick actions */}
-          <div>
-            <SectionHeader title="Quick Actions" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
-              <LinkCard label="Drop something in Inbox" description="Ideas, links, screenshots" href="/command-center?tab=inbox" accent="#6366f1" />
-              <LinkCard label="To-Do List" description="Priorities + shortlist" href="/command-center?tab=todos" accent="#6366f1" />
-              <LinkCard label="Preview Onboarding" description="Test the live flow" href="/onboarding" accent="#D4863E" />
-              <LinkCard label="View Marketing Site" description="ruufpro.com landing page" href="/" accent="#D4863E" />
-            </div>
-          </div>
+          {/* Activity Feed */}
+          <CollapsibleSection id="activity" title="Activity Feed" accent="#22c55e" defaultOpen={true}>
+            <ActivityFeed />
+          </CollapsibleSection>
         </div>
       )}
 
       {/* ═════════════════════════════════════════════════════════ */}
-      {/* BUILD TAB                                                 */}
+      {/* BUILD TAB                                                  */}
       {/* ═════════════════════════════════════════════════════════ */}
       {tab === "build" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-          {/* Feature inventory */}
-          <div>
-            <SectionHeader title="Features — Live" count={completedFeatures.length} accent="#22c55e" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {completedFeatures.map((f) => (
-                <FeatureMini key={f.slug} name={f.name} status={f.status} href={`/command-center/feature/${f.slug}`} />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionHeader title="Features — In Progress" count={inProgressFeatures.length} accent="#f59e0b" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {inProgressFeatures.map((f) => (
-                <FeatureMini key={f.slug} name={f.name} status={f.status} href={`/command-center/feature/${f.slug}`} />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionHeader title="Features — Planned" count={plannedFeatures.length} accent="#6366f1" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {plannedFeatures.map((f) => (
-                <FeatureMini key={f.slug} name={f.name} status={f.status} href={`/command-center/feature/${f.slug}`} />
-              ))}
-            </div>
-          </div>
-
-          {/* Templates */}
-          <div>
-            <SectionHeader title="Templates" count={TEMPLATES.length} accent="#D4863E" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {TEMPLATES.map((t) => (
-                <TemplateCard key={t.id} template={t} />
-              ))}
-            </div>
-          </div>
-
-          {/* Workflows */}
+          {/* Workflow Pipeline */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <SectionHeader title="Automation Workflows" accent="#818cf8" />
@@ -276,45 +249,169 @@ export default function MissionControlPage() {
             </div>
 
             {/* Workflow cards by phase */}
-            {phases.map((phase) => {
+            {workflowsLoading ? (
+              <div style={{ textAlign: "center", padding: 32 }}>
+                <p style={{ fontSize: 13, color: "#555" }}>Loading workflows...</p>
+              </div>
+            ) : phases.map((phase) => {
               const cfg = PHASE_CONFIG[phase];
-              const items = WORKFLOWS.filter((w) => w.phase === phase);
+              const items = mergedWorkflows.filter((w) => w.phase === phase);
               return (
                 <div key={phase} style={{ marginBottom: 28 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                     <div style={{ width: 4, height: 18, borderRadius: 2, background: cfg.color }} />
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: "#fff", margin: 0 }}>{cfg.label}</h3>
-                    <span style={{ fontSize: 11, color: "#555" }}>{items.filter((w) => w.status === "complete").length}/{items.length}</span>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: "#fff", margin: 0, fontFamily: "var(--font-outfit), var(--font-inter), sans-serif" }}>{cfg.label}</h3>
+                    <span style={{ fontSize: 11, color: "#555" }}>{items.filter((w) => w.dbStatus === "complete").length}/{items.length}</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {items.map((w) => <WorkflowCard key={w.id} item={w} />)}
+                    {items.map((w) => (
+                      <WorkflowCard
+                        key={w.id}
+                        item={w}
+                        allWorkflows={mergedWorkflows}
+                        onApproveToStart={(stepId) => handleWorkflowAction(stepId, "approve_to_build")}
+                        onApprove={(stepId) => handleWorkflowAction(stepId, "approve")}
+                        onSendBack={(stepId, notes) => handleWorkflowAction(stepId, "send_back", notes)}
+                        onSkip={(stepId) => handleWorkflowAction(stepId, "skip")}
+                      />
+                    ))}
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Build tools */}
-          <div>
-            <SectionHeader title="Build Tools" />
+          {/* Features */}
+          <CollapsibleSection id="features-live" title="Features — Live" count={completedFeatures.length} accent="#22c55e" defaultOpen={false}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {completedFeatures.map((f) => (
+                <FeatureMini key={f.slug} name={f.name} status={f.status} href={`/command-center/feature/${f.slug}`} />
+              ))}
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection id="features-progress" title="Features — In Progress" count={inProgressFeatures.length} accent="#f59e0b" defaultOpen={true}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {inProgressFeatures.map((f) => (
+                <FeatureMini key={f.slug} name={f.name} status={f.status} href={`/command-center/feature/${f.slug}`} />
+              ))}
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection id="features-planned" title="Features — Planned" count={plannedFeatures.length} accent="#6366f1" defaultOpen={true}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {plannedFeatures.map((f) => (
+                <FeatureMini key={f.slug} name={f.name} status={f.status} href={`/command-center/feature/${f.slug}`} />
+              ))}
+            </div>
+          </CollapsibleSection>
+
+          {/* Templates */}
+          <CollapsibleSection id="templates" title="Templates" count={TEMPLATES.length} accent="#D4863E" defaultOpen={false}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {TEMPLATES.map((t) => (
+                <TemplateCard key={t.id} template={t} />
+              ))}
+            </div>
+          </CollapsibleSection>
+
+          {/* Build Tools */}
+          <CollapsibleSection id="build-tools" title="Build Tools" defaultOpen={false}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
-              <LinkCard label="Onboarding Preview" description="Live iframe of the onboarding flow" href="/command-center?tab=onboarding" accent="#D4863E" />
+              <LinkCard label="Onboarding Preview" description="Live iframe of the onboarding flow" href="/onboarding" accent="#D4863E" />
               <LinkCard label="Site Kanban" description="Track site edits and builds" href="/command-center?tab=sites" accent="#6366f1" />
               <LinkCard label="Demo Templates" description="All template demos" href="/demo" accent="#D4863E" />
               <LinkCard label="Widget Preview" description="Test the estimate widget" href="/widget-preview" accent="#D4863E" />
             </div>
-          </div>
+          </CollapsibleSection>
         </div>
       )}
 
       {/* ═════════════════════════════════════════════════════════ */}
-      {/* GROW TAB                                                  */}
+      {/* LEARN TAB                                                  */}
+      {/* ═════════════════════════════════════════════════════════ */}
+      {tab === "learn" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          {/* Knowledge Vault — hero */}
+          <div>
+            <SectionHeader title="Knowledge Vault" count={54} accent="#f59e0b" />
+            <a href="/command-center?tab=vault" style={{
+              display: "block", background: "#141420", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 12,
+              padding: "20px 24px", textDecoration: "none", transition: "all 0.15s",
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(245,158,11,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(245,158,11,0.2)"; e.currentTarget.style.transform = "translateY(0)"; }}
+            >
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#f59e0b", marginBottom: 6, fontFamily: "var(--font-outfit), var(--font-inter), sans-serif" }}>Open Vault &rarr;</div>
+              <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>
+                54 lessons from Skool mentorship — pricing psychology, Hormozi frameworks, lead gen systems, conversion blueprints, cold email, SEO playbooks.
+              </div>
+            </a>
+          </div>
+
+          {/* Key Frameworks */}
+          <div>
+            <SectionHeader title="Key Frameworks" accent="#f59e0b" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                { entry: "031", title: "$100M Offers — Pricing Psychology", speaker: "Hormozi", hook: "Niching = 100x price. $149 bundle > $99 per feature." },
+                { entry: "025", title: "Grand Slam Offer — Value Equation", speaker: "Hormozi", hook: "Dream outcome × likelihood ÷ (time delay × effort). Position as done-for-you." },
+                { entry: "005", title: "Local Lead Abundance System", speaker: "Jack", hook: "60K pre-scraped leads. Build sites as lead magnet, send via contact forms." },
+                { entry: "023", title: "$40K/mo AI Sales", speaker: "James", hook: "ONE focused offer. Don't feature-sprawl. Sell the outcome." },
+                { entry: "032", title: "ROI Calculator Close", speaker: "Andy Steuer", hook: "$32K/month in missed calls = $999/mo solution is obvious." },
+                { entry: "033", title: "Cold Email at Scale", speaker: "Skool", hook: "1,000/day system. 3x reply rates targeting secondary cities." },
+                { entry: "052", title: "Review Collection + AI Response", speaker: "Skool", hook: "After job → sentiment → SEO review → Google link. Automated." },
+                { entry: "019", title: "Clinic Management Pattern", speaker: "Gal", hook: "Walk in, observe pain, build action dashboard. That's Mission Control." },
+              ].map((fw) => (
+                <a
+                  key={fw.entry}
+                  href={`/command-center/vault/${fw.entry}`}
+                  style={{
+                    display: "block", background: "#141420", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10,
+                    padding: "14px 18px", textDecoration: "none", transition: "border-color 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.3)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.12)", padding: "2px 6px", borderRadius: 4 }}>
+                      {fw.entry}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{fw.title}</span>
+                    <span style={{ fontSize: 10, color: "#555", marginLeft: "auto" }}>{fw.speaker}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#888", lineHeight: 1.4 }}>{fw.hook}</div>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Research & Deep-Dives */}
+          <CollapsibleSection id="research" title="Research & Deep-Dives" accent="#6366f1" defaultOpen={true}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
+              <LinkCard label="Research Docs" description="GTM plan, competitor analysis, copy research, roofer pain points" href="/command-center?tab=research" accent="#6366f1" />
+              <LinkCard label="Feature Deep-Dives" description="Every feature with business context, tech details, and build steps" href="/command-center?tab=project" accent="#6366f1" />
+              <LinkCard label="Positioning" description="Market positioning, Hormozi value equation, competitive framing" href="/command-center?tab=positioning" accent="#6366f1" />
+            </div>
+          </CollapsibleSection>
+
+          {/* Wins & Motivation */}
+          <CollapsibleSection id="wins" title="Wins & Motivation" accent="#22c55e" defaultOpen={false}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
+              <LinkCard label="Wins Board" description="Log milestones, celebrate progress, advisor quotes" href="/command-center?tab=motivation" accent="#22c55e" />
+            </div>
+          </CollapsibleSection>
+        </div>
+      )}
+
+      {/* ═════════════════════════════════════════════════════════ */}
+      {/* GROW TAB                                                   */}
       {/* ═════════════════════════════════════════════════════════ */}
       {tab === "grow" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-          {/* Strategy snapshot */}
+          {/* Revenue Strategy */}
           <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "20px 24px" }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 8 }}>Revenue Strategy</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 8, fontFamily: "var(--font-outfit), var(--font-inter), sans-serif" }}>Revenue Strategy</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
               <div>
                 <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Free</div>
@@ -332,10 +429,11 @@ export default function MissionControlPage() {
                 <div style={{ fontSize: 11, color: "#888" }}>City pages + monitoring</div>
               </div>
             </div>
-            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ fontSize: 11, color: "#555" }}>
-                $50K MRR = ~336 Pro or ~168 Growth or ~250 mixed. Vault 031: $149 bundle &gt; $99 per feature.
-              </div>
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ fontSize: 11, color: "#555" }}>• $50K MRR = ~336 Pro or ~168 Growth or ~250 mixed</div>
+              <div style={{ fontSize: 11, color: "#555" }}>• Vault 031: $149 bundle &gt; $99 per feature</div>
+              <div style={{ fontSize: 11, color: "#555" }}>• Never upsell during onboarding — only after value proven</div>
+              <div style={{ fontSize: 11, color: "#555" }}>• Annual: 20% off ($119 Pro / $239 Growth)</div>
             </div>
           </div>
 
@@ -345,65 +443,18 @@ export default function MissionControlPage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
               <LinkCard label="Plays" description="Active and queued growth plays with step tracking" href="/command-center?tab=plays" accent="#6366f1" />
               <LinkCard label="Outreach Pipeline" description="Cold email, DMs, partnerships — track every touch" href="/command-center?tab=outreach" accent="#6366f1" />
-              <LinkCard label="Positioning" description="Market positioning, Hormozi value equation, competitive framing" href="/command-center?tab=positioning" accent="#6366f1" />
               <LinkCard label="Overview / War Room" description="Advisor notes, approval queue, channel metrics" href="/command-center?tab=overview" accent="#6366f1" />
             </div>
           </div>
 
-          {/* Product pages */}
-          <div>
-            <SectionHeader title="Live Product" accent="#D4863E" />
+          {/* Live Product */}
+          <CollapsibleSection id="live-product" title="Live Product" accent="#D4863E" defaultOpen={false}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
               <LinkCard label="Marketing Site" description="ruufpro.com — the Ridgeline landing page roofers see" href="/" accent="#D4863E" />
               <LinkCard label="Roofer Dashboard" description="What paying roofers use — leads, site editor, SMS, settings" href="/dashboard" accent="#D4863E" />
               <LinkCard label="Onboarding Flow" description="The 3-screen signup experience" href="/onboarding" accent="#D4863E" />
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═════════════════════════════════════════════════════════ */}
-      {/* LIBRARY TAB                                               */}
-      {/* ═════════════════════════════════════════════════════════ */}
-      {tab === "library" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-          {/* Vault */}
-          <div>
-            <SectionHeader title="Knowledge Vault" count={50} accent="#f59e0b" />
-            <p style={{ fontSize: 12, color: "#888", marginBottom: 12, marginTop: -6 }}>
-              50+ lessons from mentorship vault — searchable by topic, speaker, relevance.
-            </p>
-            <a href="/command-center?tab=vault" style={{
-              display: "block", background: "#141420", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 12,
-              padding: "20px 24px", textDecoration: "none", transition: "all 0.15s",
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(245,158,11,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(245,158,11,0.2)"; e.currentTarget.style.transform = "translateY(0)"; }}
-            >
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#f59e0b", marginBottom: 6 }}>Open Vault &rarr;</div>
-              <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>
-                Pricing psychology, Hormozi frameworks, lead gen systems, conversion blueprints, competitive analysis, SEO playbooks, and more.
-              </div>
-            </a>
-          </div>
-
-          {/* Research */}
-          <div>
-            <SectionHeader title="Research & Strategy" accent="#6366f1" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
-              <LinkCard label="Research Docs" description="GTM plan, competitor analysis, copy research, roofer pain points" href="/command-center?tab=research" accent="#6366f1" />
-              <LinkCard label="Feature Deep-Dives" description="Every feature with business context, tech details, and build steps" href="/command-center?tab=project" accent="#6366f1" />
-            </div>
-          </div>
-
-          {/* Wins */}
-          <div>
-            <SectionHeader title="Wins & Motivation" accent="#22c55e" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
-              <LinkCard label="Wins Board" description="Log milestones, celebrate progress, advisor quotes" href="/command-center?tab=motivation" accent="#22c55e" />
-              <LinkCard label="Completed Work" description={`${completedItems.length} items in the archive`} href="/mission-control" accent="#22c55e" />
-            </div>
-          </div>
+          </CollapsibleSection>
         </div>
       )}
     </div>

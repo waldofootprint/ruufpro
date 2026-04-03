@@ -61,8 +61,9 @@ export default function OverviewPanel({ advisorNote, advisorBriefs, outreach, si
     });
 
   // === PRODUCT STATUS ===
-  // Hardcoded from actual codebase inventory (updated Apr 2, 2026)
+  // Hardcoded from actual codebase inventory (updated Apr 3, 2026)
   // Features: 12 complete, 3 planned, 2 in progress
+  // Recent: Onboarding v3 shipped (magic generation + full edit mode + live preview)
   const totalFeatures = projectStatus.length > 0 ? projectStatus.length : 17;
   const completeFeatures = projectStatus.length > 0
     ? projectStatus.filter((p) => p.status === "complete").length

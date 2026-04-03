@@ -44,7 +44,7 @@ export default function MissionControlLayout({ children }: { children: ReactNode
   if (!authorized) return null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e2e8f0" }}>
+    <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e2e8f0", fontFamily: "var(--font-inter), system-ui, sans-serif" }}>
       {children}
     </div>
   );

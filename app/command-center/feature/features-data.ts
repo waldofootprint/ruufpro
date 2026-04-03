@@ -20,6 +20,22 @@ export interface FeatureDefinition {
     keyFiles: string[];
     notes: string;
   };
+  // Visual diagram (ASCII art) showing how the feature works
+  diagram?: string;
+  // Lifecycle: what keeps this feature running day-to-day
+  lifecycle?: {
+    trigger: string;       // What kicks it off
+    flow: string[];        // Step-by-step what happens
+    automation: string;    // What runs without human input
+    humanInput: string;    // What still needs a person
+  };
+  // Safety: how we keep the automation from breaking
+  safety?: {
+    monitoring: string;    // How we know if it's working
+    failureMode: string;   // What happens when it breaks
+    recovery: string;      // How to fix it
+    limits: string;        // Rate limits, quotas, costs
+  };
   // For planned/in-progress features
   requirements?: string;
   vaultReasoning?: string;
@@ -205,10 +221,10 @@ export const FEATURES: FeatureDefinition[] = [
   },
   {
     slug: "website-generator",
-    name: "Website Generator (5 Templates)",
+    name: "Website Generator (5 Templates + Onboarding v3)",
     status: "complete",
-    businessSummary: "Roofers answer 3 questions during onboarding (business type, design style, business info) and get a professional, SEO-optimized website instantly. 5 complete templates: Modern Clean, Chalkboard, Forge, Blueprint, Classic. Each includes nav, hero, trust signals, services, estimate CTA, about, reviews, FAQ, service area, contact form, and footer.",
-    rooferValue: "A professional website in 2 minutes with zero design or technical skills. This is the free lead magnet — the reason roofers sign up. Most roofers either have no website or a terrible one their cousin made.",
+    businessSummary: "Roofers enter 4 fields (name, phone, city, design style) and the system magic-generates a complete site with smart defaults. Then they enter a full edit mode with template picker, hero editor, services chips, trust signal toggles, about textarea, and city tag input — all with a live preview showing the REAL template at 0.32 scale. 5 complete templates: Modern Clean, Chalkboard, Forge, Blueprint, Classic.",
+    rooferValue: "A professional website in 2 minutes with zero design or technical skills. The 3-screen onboarding (simple form → magic generation → full edit mode) means roofers launch with a COMPLETE site, not an empty shell. Live preview builds confidence — they see exactly what they're getting.",
     revenueImpact: "The free website is what gets roofers in the door. It's the top of the funnel for all paid features. Competitors charge $500-3,000+ for this.",
     liveLinks: [
       { label: "Modern Clean Demo", href: "/demo" },
@@ -219,8 +235,8 @@ export const FEATURES: FeatureDefinition[] = [
       stack: "Next.js, Tailwind CSS, Framer Motion, dynamic [slug] routing",
       routes: ["/site/[slug]", "/site/[slug]/services", "/site/[slug]/services/[service]", "/onboarding"],
       database: ["contractors", "sites"],
-      keyFiles: ["components/templates/modern-clean.tsx", "components/templates/chalkboard.tsx", "components/templates/forge.tsx", "components/templates/blueprint.tsx", "components/templates/classic.tsx", "components/contractor-sections/", "lib/themes.ts", "lib/defaults.ts"],
-      notes: "Templates compose reusable sections from components/contractor-sections/. Each template has dark/light variants and theme configs. Data flows through ContractorSiteData interface. JSON-LD structured data for SEO."
+      keyFiles: ["app/onboarding/page.tsx", "components/onboarding/live-preview.tsx", "components/templates/modern-clean.tsx", "components/templates/chalkboard.tsx", "components/templates/forge.tsx", "components/templates/blueprint.tsx", "components/templates/classic.tsx", "components/contractor-sections/", "lib/themes.ts", "lib/defaults.ts"],
+      notes: "Onboarding v3: 3-screen flow with magic generation + full edit mode. Live preview uses IntersectionObserver for scroll sync. handlePublish saves all fields (hero headline, CTA, services, trust signals, about, cities). Service sub-pages auto-create from selected services. Auth bypass active for dev (search 'preview-mode' — REVERT before deploy). Templates compose reusable sections from components/contractor-sections/. JSON-LD structured data for SEO."
     },
   },
   {
@@ -293,8 +309,10 @@ export const FEATURES: FeatureDefinition[] = [
     buildSteps: [
       { text: "Run Supabase migrations (021-024)", done: false },
       { text: "Seed data (plays, positioning, motivation, project status)", done: false },
-      { text: "Set NEXT_PUBLIC_ADMIN_EMAIL in env", done: false },
-      { text: "Re-enable auth guard", done: false },
+      { text: "Set NEXT_PUBLIC_ADMIN_EMAIL in env", done: true },
+      { text: "Re-enable auth guard", done: true },
+      { text: "Build all 11 tabs (Overview, Inbox, To-Do, Plays, Sites, Outreach, Vault, Project Status, Research, Positioning, Motivation)", done: true },
+      { text: "Add feature detail pages with business context, technical docs, and build steps", done: true },
       { text: "Rework remaining sections with collaborative approval pattern", done: false },
       { text: "Deploy to Vercel", done: false },
     ],
