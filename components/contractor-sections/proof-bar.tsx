@@ -8,15 +8,16 @@ import type { ContractorSiteData } from "./types";
 
 type ProofBarProps = Pick<
   ContractorSiteData,
-  "isLicensed" | "isInsured" | "offersFinancing" | "hasEstimateWidget" | "yearsInBusiness" | "reviews"
+  "isLicensed" | "isInsured" | "offersFinancing" | "hasEstimateWidget" | "yearsInBusiness" | "reviews" | "warrantyYears"
 >;
 
-export default function ProofBar({ isLicensed, isInsured, offersFinancing, hasEstimateWidget, yearsInBusiness, reviews = [] }: ProofBarProps) {
+export default function ProofBar({ isLicensed, isInsured, offersFinancing, hasEstimateWidget, yearsInBusiness, reviews = [], warrantyYears }: ProofBarProps) {
   // Build pills dynamically from what the roofer has checked
   const pills: string[] = [];
   if (hasEstimateWidget) pills.push("Free Estimates");
   if (isLicensed || isInsured) pills.push("Licensed & Insured");
   pills.push("Locally Owned"); // always show this — they're all local
+  if (warrantyYears) pills.push(`${warrantyYears}-Year Warranty`);
   if (offersFinancing) pills.push("Financing Available");
   if (pills.length < 4) pills.push("Satisfaction Guaranteed"); // fill to 4
 

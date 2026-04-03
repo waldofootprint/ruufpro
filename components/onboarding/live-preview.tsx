@@ -1,28 +1,46 @@
 "use client";
 
-// Live template preview for onboarding.
-// Renders ACTUAL template sections scaled down inside a browser-chrome frame.
-// Shows only sections relevant to the current step:
-//   step=2: Hero only (they're editing name/phone/city)
-//   step=3: Hero + trust + services (they're toggling these)
+// Live template preview for onboarding edit mode.
+// Renders the FULL website (all sections) at desktop scale, and auto-scrolls
+// to the section matching what the roofer is editing on the left.
+
+import { useEffect, useRef } from "react";
 
 // Modern Clean sections
 import Nav from "../contractor-sections/nav";
 import Hero from "../contractor-sections/hero";
 import ProofBar from "../contractor-sections/proof-bar";
 import Services from "../contractor-sections/services";
+import About from "../contractor-sections/about";
+import Reviews from "../contractor-sections/reviews";
+import CtaBand from "../contractor-sections/cta-band";
+import ContactForm from "../contractor-sections/contact-form";
+import ServiceArea from "../contractor-sections/service-area";
+import Footer from "../contractor-sections/footer";
 
 // Chalkboard sections
 import ChalkNav from "../contractor-sections/chalkboard/nav";
 import ChalkHero from "../contractor-sections/chalkboard/hero";
 import ChalkTrust from "../contractor-sections/chalkboard/trust";
 import ChalkServices from "../contractor-sections/chalkboard/services";
+import ChalkAbout from "../contractor-sections/chalkboard/about";
+import ChalkReviews from "../contractor-sections/chalkboard/reviews";
+import ChalkCta from "../contractor-sections/chalkboard/cta-band";
+import ChalkContact from "../contractor-sections/chalkboard/contact-form";
+import ChalkServiceArea from "../contractor-sections/chalkboard/service-area";
+import ChalkFooter from "../contractor-sections/chalkboard/footer";
 
 // Blueprint sections
 import BlueprintNav from "../contractor-sections/blueprint/nav";
 import BlueprintHero from "../contractor-sections/blueprint/hero";
 import BlueprintFeatures from "../contractor-sections/blueprint/features";
 import BlueprintServices from "../contractor-sections/blueprint/services";
+import BlueprintAbout from "../contractor-sections/blueprint/about";
+import BlueprintReviews from "../contractor-sections/blueprint/reviews";
+import BlueprintCta from "../contractor-sections/blueprint/cta-band";
+import BlueprintContact from "../contractor-sections/blueprint/contact-form";
+import BlueprintServiceArea from "../contractor-sections/blueprint/service-area";
+import BlueprintFooter from "../contractor-sections/blueprint/footer";
 
 type DesignStyle = "modern_clean" | "bold_confident" | "warm_trustworthy";
 
@@ -33,8 +51,7 @@ interface Props {
   state: string;
   phone: string;
   slug: string;
-  /** Which onboarding step — controls what sections are visible */
-  step?: number;
+  activeSection?: string;
   services?: string[];
   isLicensed?: boolean;
   isInsured?: boolean;
@@ -44,6 +61,8 @@ interface Props {
   gafMasterElite?: boolean;
   bbbAccredited?: boolean;
   reviews?: { name: string; text: string; rating: number }[];
+  aboutText?: string;
+  serviceAreaCities?: string[];
 }
 
 const BG_COLORS: Record<DesignStyle, string> = {
@@ -59,9 +78,10 @@ export default function LivePreview({
   designStyle,
   businessName,
   city,
+  state,
   phone,
   slug,
-  step = 2,
+  activeSection = "hero",
   services = ["Roof Replacement", "Roof Repair", "Roof Inspections", "Gutter Installation"],
   isLicensed = true,
   isInsured = true,
@@ -71,13 +91,51 @@ export default function LivePreview({
   gafMasterElite = false,
   bbbAccredited = false,
   reviews = [],
+  aboutText = "",
+  serviceAreaCities = [],
 }: Props) {
   const name = businessName || "Your Roofing Company";
   const loc = city || "Your City";
+  const st = state || "TX";
   const ph = phone || "(555) 123-4567";
 
-  const heroOnly = step <= 2;
-  const sectionsOnly = step >= 3;
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll the preview container to the active section
+  useEffect(() => {
+    const el = sectionRefs.current[activeSection];
+    const container = scrollContainerRef.current;
+    if (el && container) {
+      // el.offsetTop is in unscaled coordinates — multiply by scale to get actual position
+      const scrollTarget = el.offsetTop * SCALE;
+      container.scrollTo({ top: scrollTarget, behavior: "smooth" });
+    }
+  }, [activeSection]);
+
+  const contentRef = useRef<HTMLDivElement | null>(null);
+
+  // Clamp scroll so you can't scroll past the footer
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const content = contentRef.current;
+    if (!container || !content) return;
+
+    function handleScroll() {
+      // Max scroll = scaled content height - container height
+      const maxScroll = (content!.scrollHeight * SCALE) - container!.clientHeight;
+      if (maxScroll > 0 && container!.scrollTop > maxScroll) {
+        container!.scrollTop = maxScroll;
+      }
+    }
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  function setRef(name: string) {
+    return (el: HTMLDivElement | null) => { sectionRefs.current[name] = el; };
+  }
 
   return (
     <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(0,0,0,0.12)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
@@ -94,121 +152,114 @@ export default function LivePreview({
         </div>
       </div>
 
-      {/* Scaled content — renders at 1440px, CSS-scaled to fit.
-           We use a fixed-height clip based on what's visible at scale. */}
-      <div style={{
-        overflow: "hidden",
-        background: BG_COLORS[designStyle],
-        maxHeight: sectionsOnly ? 360 : 220,
-      }}>
-        <div style={{
-          width: DESKTOP_W,
-          transform: `scale(${SCALE})`,
-          transformOrigin: "top left",
-          pointerEvents: "none",
-        }}>
+      {/* Scrollable preview viewport */}
+      <div
+        ref={scrollContainerRef}
+        style={{
+          height: 500,
+          overflowY: "auto",
+          overflowX: "hidden",
+          background: BG_COLORS[designStyle],
+          scrollbarWidth: "none", // Firefox
+          overscrollBehavior: "contain",
+        }}
+        className="[&::-webkit-scrollbar]:hidden"
+      >
+        <div
+          ref={contentRef}
+          style={{
+            width: DESKTOP_W,
+            transform: `scale(${SCALE})`,
+            transformOrigin: "top left",
+            pointerEvents: "none",
+            overflow: "hidden",
+          }}
+        >
+
+          {/* ===== MODERN CLEAN ===== */}
           {designStyle === "modern_clean" && (
             <>
-              {heroOnly && (
-                <>
-                  <Nav businessName={name} phone={ph} hasEstimateWidget={true} services={services} serviceAreaCities={[]} city={loc} />
-                  <Hero
-                    businessName={name}
-                    phone={ph}
-                    city={loc}
-                    heroHeadline={null}
-                    tagline={null}
-                    heroCta={null}
-                    heroImage="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=80"
-                    hasEstimateWidget={true}
-                  />
-                </>
-              )}
-              {sectionsOnly && (
-                <>
-                  <ProofBar
-                    isLicensed={isLicensed}
-                    isInsured={isInsured}
-                    offersFinancing={offersFinancing}
-                    hasEstimateWidget={true}
-                    yearsInBusiness={yearsInBusiness}
-                    reviews={reviews}
-                  />
-                  <Services services={services} />
-                </>
-              )}
+              <div ref={setRef("template")}>
+                <Nav businessName={name} phone={ph} hasEstimateWidget={true} services={services} serviceAreaCities={serviceAreaCities} city={loc} />
+              </div>
+              <div ref={setRef("hero")}>
+                <Hero businessName={name} phone={ph} city={loc} heroHeadline={null} tagline={null} heroCta={null} heroImage="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=80" hasEstimateWidget={true} />
+              </div>
+              <div ref={setRef("trust")}>
+                <ProofBar isLicensed={isLicensed} isInsured={isInsured} offersFinancing={offersFinancing} hasEstimateWidget={true} yearsInBusiness={yearsInBusiness} warrantyYears={warrantyYears} reviews={reviews} />
+              </div>
+              <div ref={setRef("services")}>
+                <Services key={services.join(",")} services={services} />
+              </div>
+              <div ref={setRef("about")}>
+                <About businessName={name} city={loc} aboutText={aboutText || null} yearsInBusiness={yearsInBusiness} />
+              </div>
+              <div ref={setRef("cities")}>
+                <ServiceArea city={loc} state={st} serviceAreaCities={serviceAreaCities.length > 0 ? serviceAreaCities : [loc]} />
+              </div>
+              <Reviews reviews={reviews.length > 0 ? reviews : [{ name: "Maria G.", text: "Best roofing company we've ever worked with. Professional, on time, and great price.", rating: 5 }, { name: "James T.", text: "They handled everything with our insurance. Stress-free experience.", rating: 5 }]} />
+              <CtaBand phone={ph} city={loc} hasEstimateWidget={true} />
+              <ContactForm businessName={name} phone={ph} city={loc} state={st} contractorId="preview" />
+              <Footer businessName={name} phone={ph} city={loc} state={st} services={services} />
             </>
           )}
 
+          {/* ===== CHALKBOARD ===== */}
           {designStyle === "bold_confident" && (
             <>
-              {heroOnly && (
-                <>
-                  <ChalkNav businessName={name} phone={ph} hasEstimateWidget={true} />
-                  <ChalkHero
-                    businessName={name}
-                    city={loc}
-                    phone={ph}
-                    heroHeadline={null}
-                    tagline={null}
-                    heroCta={null}
-                    heroImage={null}
-                    hasEstimateWidget={true}
-                    yearsInBusiness={yearsInBusiness}
-                    reviews={reviews}
-                    urgencyBadge={null}
-                  />
-                </>
-              )}
-              {sectionsOnly && (
-                <>
-                  <ChalkTrust
-                    isLicensed={isLicensed}
-                    isInsured={isInsured}
-                    offersFinancing={offersFinancing}
-                    warrantyYears={warrantyYears}
-                    yearsInBusiness={yearsInBusiness}
-                    gafMasterElite={gafMasterElite}
-                    bbbAccredited={bbbAccredited}
-                  />
-                  <ChalkServices services={services} slug={slug || "preview"} />
-                </>
-              )}
+              <div ref={setRef("template")}>
+                <ChalkNav businessName={name} phone={ph} hasEstimateWidget={true} />
+              </div>
+              <div ref={setRef("hero")}>
+                <ChalkHero businessName={name} city={loc} phone={ph} heroHeadline={null} tagline={null} heroCta={null} heroImage={null} hasEstimateWidget={true} yearsInBusiness={yearsInBusiness} reviews={reviews} urgencyBadge={null} />
+              </div>
+              <div ref={setRef("trust")}>
+                <ChalkTrust isLicensed={isLicensed} isInsured={isInsured} offersFinancing={offersFinancing} warrantyYears={warrantyYears} yearsInBusiness={yearsInBusiness} gafMasterElite={gafMasterElite} bbbAccredited={bbbAccredited} />
+              </div>
+              <div ref={setRef("services")}>
+                <ChalkServices key={services.join(",")} services={services} slug={slug || "preview"} />
+              </div>
+              <div ref={setRef("about")}>
+                <ChalkAbout businessName={name} city={loc} aboutText={aboutText || null} yearsInBusiness={yearsInBusiness} />
+              </div>
+              <div ref={setRef("cities")}>
+                <ChalkServiceArea city={loc} state={st} serviceAreaCities={serviceAreaCities.length > 0 ? serviceAreaCities : [loc]} />
+              </div>
+              <ChalkReviews reviews={reviews.length > 0 ? reviews : [{ name: "Maria G.", text: "Best roofing company we've ever worked with. Professional, on time, and great price.", rating: 5 }, { name: "James T.", text: "They handled everything with our insurance. Stress-free experience.", rating: 5 }]} />
+              <ChalkCta phone={ph} city={loc} hasEstimateWidget={true} />
+              <ChalkContact businessName={name} phone={ph} city={loc} state={st} contractorId="preview" />
+              <ChalkFooter businessName={name} phone={ph} city={loc} state={st} services={services} />
             </>
           )}
 
+          {/* ===== BLUEPRINT ===== */}
           {designStyle === "warm_trustworthy" && (
             <>
-              {heroOnly && (
-                <>
-                  <BlueprintNav businessName={name} phone={ph} hasEstimateWidget={true} />
-                  <BlueprintHero
-                    businessName={name}
-                    city={loc}
-                    phone={ph}
-                    heroHeadline={null}
-                    tagline={null}
-                    heroCta={null}
-                    heroImage={null}
-                    hasEstimateWidget={true}
-                    yearsInBusiness={yearsInBusiness}
-                    reviews={reviews}
-                    urgencyBadge={null}
-                  />
-                </>
-              )}
-              {sectionsOnly && (
-                <>
-                  <BlueprintFeatures
-                    isInsured={isInsured}
-                    offersFinancing={offersFinancing}
-                    warrantyYears={warrantyYears}
-                  />
-                  <BlueprintServices services={services} />
-                </>
-              )}
+              <div ref={setRef("template")}>
+                <BlueprintNav businessName={name} phone={ph} hasEstimateWidget={true} />
+              </div>
+              <div ref={setRef("hero")}>
+                <BlueprintHero businessName={name} city={loc} phone={ph} heroHeadline={null} tagline={null} heroCta={null} heroImage={null} hasEstimateWidget={true} yearsInBusiness={yearsInBusiness} reviews={reviews} urgencyBadge={null} />
+              </div>
+              <div ref={setRef("trust")}>
+                <BlueprintFeatures isInsured={isInsured} offersFinancing={offersFinancing} warrantyYears={warrantyYears} />
+              </div>
+              <div ref={setRef("services")}>
+                <BlueprintServices key={services.join(",")} services={services} />
+              </div>
+              <div ref={setRef("about")}>
+                <BlueprintAbout businessName={name} city={loc} aboutText={aboutText || null} yearsInBusiness={yearsInBusiness} />
+              </div>
+              <div ref={setRef("cities")}>
+                <BlueprintServiceArea city={loc} state={st} serviceAreaCities={serviceAreaCities.length > 0 ? serviceAreaCities : [loc]} />
+              </div>
+              <BlueprintReviews reviews={reviews.length > 0 ? reviews : [{ name: "Maria G.", text: "Best roofing company we've ever worked with. Professional, on time, and great price.", rating: 5 }, { name: "James T.", text: "They handled everything with our insurance. Stress-free experience.", rating: 5 }]} />
+              <BlueprintCta phone={ph} city={loc} hasEstimateWidget={true} />
+              <BlueprintContact businessName={name} phone={ph} city={loc} state={st} contractorId="preview" />
+              <BlueprintFooter businessName={name} phone={ph} city={loc} state={st} services={services} />
             </>
           )}
+
         </div>
       </div>
     </div>

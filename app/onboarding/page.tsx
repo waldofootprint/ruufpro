@@ -124,15 +124,17 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (screen !== "editor") return;
 
+    // Use a narrow strip near the top of the viewport to detect which section
+    // is "active". rootMargin crops the observation zone to just the top ~200px.
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+          if (entry.isIntersecting) {
             setActiveSection(entry.target.getAttribute("data-section") || "template");
           }
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0, rootMargin: "-10% 0px -80% 0px" }
     );
 
     Object.values(sectionRefs.current).forEach((el) => {
@@ -487,7 +489,7 @@ export default function OnboardingPage() {
                 state={state}
                 phone={phone}
                 slug={slug}
-                step={activeSection === "template" || activeSection === "hero" ? 2 : 3}
+                activeSection={activeSection}
                 services={services}
                 isLicensed={showTrust ? isLicensed : false}
                 isInsured={showTrust ? isInsured : false}
@@ -496,6 +498,8 @@ export default function OnboardingPage() {
                 yearsInBusiness={showTrust ? yearsInBusiness : null}
                 gafMasterElite={showTrust ? gafMasterElite : false}
                 bbbAccredited={showTrust ? bbbAccredited : false}
+                aboutText={aboutText}
+                serviceAreaCities={serviceAreaCities}
               />
             </div>
           </div>

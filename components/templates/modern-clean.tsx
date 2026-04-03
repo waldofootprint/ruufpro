@@ -62,6 +62,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         offersFinancing={props.offersFinancing}
         hasEstimateWidget={props.hasEstimateWidget}
         yearsInBusiness={props.yearsInBusiness}
+        warrantyYears={props.warrantyYears}
         reviews={props.reviews}
       />
       <Services services={props.services} />
