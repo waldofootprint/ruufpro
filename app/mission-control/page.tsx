@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { TEMPLATES } from "./template-registry";
 import { WORKFLOWS, PHASE_CONFIG, getPhaseStats, mergeWithDbState, type WorkflowPhase, type DbWorkflowStatus, type DbStepStatus, type MergedWorkflow } from "./workflow-registry";
 import { FEATURES } from "../command-center/feature/features-data";
+import { getFeaturedEntries, getVaultStats } from "./vault-registry";
 import TemplateCard from "./components/TemplateCard";
 import WorkflowCard from "./components/WorkflowCard";
 import MyQueue from "./components/MyQueue";
@@ -334,7 +335,7 @@ export default function MissionControlPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           {/* Knowledge Vault — hero */}
           <div>
-            <SectionHeader title="Knowledge Vault" count={54} accent="#f59e0b" />
+            <SectionHeader title="Knowledge Vault" count={getVaultStats().total} accent="#f59e0b" />
             <a href="/command-center?tab=vault" style={{
               display: "block", background: "#141420", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 12,
               padding: "20px 24px", textDecoration: "none", transition: "all 0.15s",
@@ -344,28 +345,19 @@ export default function MissionControlPage() {
             >
               <div style={{ fontSize: 15, fontWeight: 600, color: "#f59e0b", marginBottom: 6, fontFamily: "var(--font-outfit), var(--font-inter), sans-serif" }}>Open Vault &rarr;</div>
               <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>
-                54 lessons from Skool mentorship — pricing psychology, Hormozi frameworks, lead gen systems, conversion blueprints, cold email, SEO playbooks.
+                {getVaultStats().total} lessons from Skool mentorship — pricing psychology, Hormozi frameworks, lead gen systems, conversion blueprints, cold email, SEO playbooks.
               </div>
             </a>
           </div>
 
-          {/* Key Frameworks */}
+          {/* Key Frameworks — driven by vault-registry.ts */}
           <div>
-            <SectionHeader title="Key Frameworks" accent="#f59e0b" />
+            <SectionHeader title="Key Frameworks" count={getFeaturedEntries().length} accent="#f59e0b" />
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[
-                { entry: "031", title: "$100M Offers — Pricing Psychology", speaker: "Hormozi", hook: "Niching = 100x price. $149 bundle > $99 per feature." },
-                { entry: "025", title: "Grand Slam Offer — Value Equation", speaker: "Hormozi", hook: "Dream outcome × likelihood ÷ (time delay × effort). Position as done-for-you." },
-                { entry: "005", title: "Local Lead Abundance System", speaker: "Jack", hook: "60K pre-scraped leads. Build sites as lead magnet, send via contact forms." },
-                { entry: "023", title: "$40K/mo AI Sales", speaker: "James", hook: "ONE focused offer. Don't feature-sprawl. Sell the outcome." },
-                { entry: "032", title: "ROI Calculator Close", speaker: "Andy Steuer", hook: "$32K/month in missed calls = $999/mo solution is obvious." },
-                { entry: "033", title: "Cold Email at Scale", speaker: "Skool", hook: "1,000/day system. 3x reply rates targeting secondary cities." },
-                { entry: "052", title: "Review Collection + AI Response", speaker: "Skool", hook: "After job → sentiment → SEO review → Google link. Automated." },
-                { entry: "019", title: "Clinic Management Pattern", speaker: "Gal", hook: "Walk in, observe pain, build action dashboard. That's Mission Control." },
-              ].map((fw) => (
+              {getFeaturedEntries().map((fw) => (
                 <a
-                  key={fw.entry}
-                  href={`/command-center/vault/${fw.entry}`}
+                  key={fw.id}
+                  href={`/command-center/vault/${fw.id}`}
                   style={{
                     display: "block", background: "#141420", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10,
                     padding: "14px 18px", textDecoration: "none", transition: "border-color 0.15s",
@@ -375,12 +367,19 @@ export default function MissionControlPage() {
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.12)", padding: "2px 6px", borderRadius: 4 }}>
-                      {fw.entry}
+                      {fw.id}
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{fw.title}</span>
                     <span style={{ fontSize: 10, color: "#555", marginLeft: "auto" }}>{fw.speaker}</span>
                   </div>
                   <div style={{ fontSize: 11, color: "#888", lineHeight: 1.4 }}>{fw.hook}</div>
+                  {fw.summary.length > 0 && (
+                    <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
+                      {fw.summary.map((bullet, i) => (
+                        <div key={i} style={{ fontSize: 10, color: "#666", lineHeight: 1.4 }}>• {bullet}</div>
+                      ))}
+                    </div>
+                  )}
                 </a>
               ))}
             </div>

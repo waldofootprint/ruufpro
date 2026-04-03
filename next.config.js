@@ -11,6 +11,11 @@ const nextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
+
+  // Reduce webpack memory usage for Vercel builds
+  experimental: {
+    webpackMemoryOptimizations: true,
+  },
 };
 
 module.exports = nextConfig;
