@@ -78,6 +78,8 @@ export default function MySitePage() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryUploading, setGalleryUploading] = useState(false);
+  const [reviews, setReviews] = useState<{ name: string; text: string; rating: number }[]>([]);
+  const [newReview, setNewReview] = useState({ name: "", text: "", rating: 5 });
   const [businessHours, setBusinessHours] = useState<Record<string, { open: string; close: string } | null>>({
     mon: { open: "8:00", close: "17:00" },
     tue: { open: "8:00", close: "17:00" },
@@ -120,6 +122,7 @@ export default function MySitePage() {
         setAboutText(siteData.about_text || "");
         setServices(siteData.services || []);
         setGalleryImages(siteData.gallery_images || []);
+        setReviews(siteData.reviews || []);
       }
 
       if (contractorData) {
@@ -157,6 +160,7 @@ export default function MySitePage() {
       hero_cta_text: ctaText || null,
       about_text: aboutText || null,
       services: services.length > 0 ? services : null,
+      reviews: reviews.length > 0 ? reviews : null,
     }).eq("id", site.id);
 
     // Update contractor info + trust signals
@@ -616,26 +620,72 @@ export default function MySitePage() {
     {
       id: "reviews",
       icon: <MessageSquare className="w-4 h-4" />,
-      iconBg: "bg-slate-100 text-slate-500",
+      iconBg: "bg-amber-50 text-amber-500",
       name: "Reviews",
-      desc: `${site.reviews?.length || 0} review${(site.reviews?.length || 0) !== 1 ? "s" : ""} added`,
-      status: site.reviews?.length > 0 ? "live" : "empty",
+      desc: `${reviews.length} review${reviews.length !== 1 ? "s" : ""} added`,
+      status: reviews.length > 0 ? "live" : "empty",
       content: (
         <div>
-          {site.reviews?.length > 0 ? (
-            <div className="space-y-2">
-              {site.reviews.map((r, i) => (
-                <div key={i} className="bg-slate-50 rounded-lg p-3">
-                  <div className="text-[12px] text-amber-500 mb-1">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</div>
-                  <p className="text-[13px] text-slate-600 leading-relaxed">"{r.text}"</p>
-                  <p className="text-[11px] text-slate-400 font-semibold mt-1">— {r.name}</p>
+          <p className="text-[12px] text-slate-400 mb-3">Add customer testimonials to build trust. These appear on your website.</p>
+          {reviews.length > 0 && (
+            <div className="space-y-2 mb-4">
+              {reviews.map((r, i) => (
+                <div key={i} className="bg-slate-50 rounded-lg p-3 flex items-start gap-3">
+                  <div className="flex-1">
+                    <div className="text-[12px] text-amber-500 mb-1">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</div>
+                    <p className="text-[13px] text-slate-600 leading-relaxed">&ldquo;{r.text}&rdquo;</p>
+                    <p className="text-[11px] text-slate-400 font-semibold mt-1">— {r.name}</p>
+                  </div>
+                  <button
+                    onClick={() => setReviews(reviews.filter((_, j) => j !== i))}
+                    className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0 mt-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-[13px] text-slate-500">No reviews yet. Add customer testimonials to build trust with homeowners.</p>
           )}
-          <p className="text-[11px] text-slate-400 mt-3">Review management coming soon. For now, reviews can be added during onboarding.</p>
+          <div className="border border-[#e2e8f0] rounded-lg p-3 space-y-3">
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Add a Review</div>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 px-3 py-2 rounded-lg border border-[#e2e8f0] text-[13px] text-slate-800 focus:border-slate-400 focus:outline-none"
+                value={newReview.name}
+                onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
+                placeholder="Customer name"
+              />
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setNewReview({ ...newReview, rating: star })}
+                    className={`text-lg ${star <= newReview.rating ? "text-amber-400" : "text-slate-200"} hover:text-amber-400 transition-colors`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+            <textarea
+              className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-[13px] text-slate-800 focus:border-slate-400 focus:outline-none resize-vertical min-h-[60px]"
+              value={newReview.text}
+              onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
+              placeholder="What did the customer say?"
+            />
+            <button
+              onClick={() => {
+                if (newReview.name.trim() && newReview.text.trim()) {
+                  setReviews([...reviews, { name: newReview.name.trim(), text: newReview.text.trim(), rating: newReview.rating }]);
+                  setNewReview({ name: "", text: "", rating: 5 });
+                }
+              }}
+              className="px-4 py-2 rounded-lg bg-slate-100 text-[12px] font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
+            >
+              Add Review
+            </button>
+          </div>
         </div>
       ),
     },
