@@ -350,7 +350,7 @@ export default function MySitePage() {
           ) : (
             <div>
               <p className="text-[13px] text-slate-500 mb-2">The estimate widget lets homeowners get instant roof estimates directly on your site.</p>
-              <p className="text-[13px] text-amber-600 font-semibold">Requires the $99/mo widget plan.</p>
+              <p className="text-[13px] text-amber-600 font-semibold">Requires the $149/mo Pro plan.</p>
             </div>
           )}
         </div>

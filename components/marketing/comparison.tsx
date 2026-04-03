@@ -10,7 +10,7 @@ import { FlowButton } from "@/components/ui/flow-button";
 const FEATURES = [
   {
     feature: "Monthly cost",
-    us: "$0 – $99",
+    us: "$0 – $149",
     roofle: "$350",
     roofr: "$249+",
     scorpion: "$3,000+",
@@ -26,7 +26,7 @@ const FEATURES = [
   },
   {
     feature: "First year cost",
-    us: "$0 – $1,188",
+    us: "$0 – $1,788",
     roofle: "$6,200+",
     roofr: "$2,988+",
     scorpion: "$36,000+",
@@ -147,7 +147,7 @@ export default function Comparison() {
           </h2>
           <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
             Same satellite-powered estimates. Free website included.
-            71% cheaper than the leading competitor.
+            57% cheaper than the leading competitor.
           </p>
         </div>
 

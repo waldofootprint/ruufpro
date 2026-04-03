@@ -8,7 +8,7 @@ const COLUMNS = ["RuufPro", "Roofle", "Roofr", "Agency"] as const;
 const ROWS = [
   {
     label: "Monthly cost",
-    values: ["$99/mo (widget)\n$0 (site only)", "$350/mo", "$249–349/mo\n+ $149 widget", "$500–2,500/mo"],
+    values: ["$149/mo (Pro)\n$0 (site only)", "$350/mo", "$249–349/mo\n+ $149 widget", "$500–2,500/mo"],
   },
   {
     label: "Setup fee",
@@ -143,9 +143,9 @@ export default function RidgelineComparison() {
           <p className="text-white text-lg md:text-xl leading-relaxed">
             <span className="font-black">Roofle costs $6,200/year</span>{" "}
             <span className="text-white/50">($350/mo + $2,000 setup).</span>{" "}
-            <span className="font-black text-[#D4863E]">RuufPro costs $1,188/year</span>{" "}
-            <span className="text-white/50">($99/mo, no setup).</span>{" "}
-            Same satellite estimates. <span className="font-black">Save $5,012 in year one.</span>
+            <span className="font-black text-[#D4863E]">RuufPro costs $1,788/year</span>{" "}
+            <span className="text-white/50">($149/mo, no setup).</span>{" "}
+            Same satellite estimates. <span className="font-black">Save $4,412 in year one.</span>
           </p>
         </motion.div>
 
@@ -155,7 +155,7 @@ export default function RidgelineComparison() {
             href="/signup"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold hover:bg-[#c0763a] transition-colors shadow-lg hover:shadow-xl"
           >
-            Start Getting Leads — $99/mo
+            Start Getting Leads — $149/mo
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>

@@ -28,7 +28,7 @@ const FAQS = [
   },
   {
     q: "What's the difference between you and Roofle?",
-    a: "Roofle charges $350/month plus a $2,000 setup fee ($6,200 first year). They don't offer a website — just the estimate widget. We offer a free professional website plus the same satellite-powered estimates at $99/month with no setup fee. That's 71% cheaper.",
+    a: "Roofle charges $350/month plus a $2,000 setup fee ($6,200 first year). They don't offer a website — just the estimate widget. We offer a free professional website plus satellite-powered estimates, missed-call text-back, and review automation at $149/month with no setup fee. That's 57% cheaper.",
   },
   {
     q: "Is there a contract?",

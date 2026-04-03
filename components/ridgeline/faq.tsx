@@ -7,11 +7,11 @@ import { ChevronDown } from "lucide-react";
 const FAQS = [
   {
     q: "What's the catch?",
-    a: "Fair question. Your website is free — no credit card, no trial that expires, no catch. We make money when roofers choose to add our instant estimate widget at $99/mo, which lets homeowners see ballpark pricing on your site using satellite roof data. That's 72% less than Roofle ($350/mo + a $2,000 setup fee). It's optional. Plenty of roofers use just the free site and never pay us a dime. No salesperson will ever call you. No contract. No hidden fees.",
+    a: "Fair question. Your website is free — no credit card, no trial that expires, no catch. We make money when roofers choose our Pro plan at $149/mo, which turns your website visitors into qualified leads with satellite estimates, missed-call text-back, and Google review automation. That's 57% less than Roofle ($350/mo + a $2,000 setup fee). It's optional. Plenty of roofers use just the free site and never pay us a dime. We also offer a Growth plan at $299/mo for roofers who want SEO city pages, competitor monitoring, and a custom domain. No salesperson will ever call you. No contract. No hidden fees.",
   },
   {
     q: "Is the website really free?",
-    a: "Yes, forever. No credit card, no trial that expires, no catch. Your roofing website is fully functional — contact form, SEO, click-to-call, lead capture, everything. We make money when you upgrade to the estimate widget at $99/month. That's our only paid product.",
+    a: "Yes, forever. No credit card, no trial that expires, no catch. Your roofing website is fully functional — contact form, SEO, click-to-call, lead capture, everything. We make money when you upgrade to Pro at $149/month or Growth at $299/month.",
   },
   {
     q: "How accurate are the estimates?",

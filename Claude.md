@@ -1,6 +1,6 @@
 # RuufPro — Agent Instructions
 
-You're building **RuufPro**, a micro-SaaS for small roofing contractors (1-10 person crews). The product bundles a free roofing website, $99/mo estimate widget, review automation, speed-to-lead auto-reply, and SEO city pages. Live on Vercel, backed by Supabase.
+You're building **RuufPro**, a micro-SaaS for small roofing contractors (1-10 person crews). Three tiers: Free (website + SEO), $149/mo Pro (estimate widget + missed-call text-back + review automation + lead dashboard), $299/mo Growth (SEO city pages + competitor monitoring + custom domain). Live on Vercel, backed by Supabase.
 
 ## Architecture (WAT Framework)
 

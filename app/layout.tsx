@@ -38,7 +38,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "RuufPro — Free Roofing Websites + Instant Estimates",
   description:
-    "Get a professional roofing website in minutes. Free. Add an instant estimate widget for $99/mo.",
+    "Get a professional roofing website in minutes. Free. Upgrade to Pro for $149/mo to turn visitors into leads.",
   manifest: "/manifest.json",
 };
 

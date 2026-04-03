@@ -47,7 +47,7 @@ const FEATURE_CONTENT: Record<string, {
     ),
   },
   estimator: {
-    badge: "$99/mo",
+    badge: "$149/mo",
     badgeColor: "bg-brand-50 text-brand-700",
     title: "Satellite Estimate Widget",
     subtitle: "Instant pricing that wins leads.",
@@ -59,7 +59,7 @@ const FEATURE_CONTENT: Record<string, {
       "Contractor-controlled pricing",
       "Embeds on any website",
       "Leads captured with estimate details",
-      "71% cheaper than Roofle",
+      "57% cheaper than Roofle",
     ],
     icon: (
       <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">

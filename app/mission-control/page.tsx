@@ -1,16 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { TEMPLATES } from "./template-registry";
+import { getTodayItems, getCompletedItems } from "./progress-log";
 import TemplateCard from "./components/TemplateCard";
+import ProgressCard from "./components/ProgressCard";
 
 export default function MissionControlPage() {
   const productionCount = TEMPLATES.filter((t) => t.status === "production").length;
-  const totalFeatures = 6; // total competitive features we're tracking
+  const totalFeatures = 6;
   const avgFeatures = Math.round(
     TEMPLATES.filter((t) => t.status === "production").reduce(
       (sum, t) => sum + Object.values(t.features).filter(Boolean).length, 0
     ) / productionCount
   );
+
+  const todayItems = getTodayItems();
+  const completedItems = getCompletedItems();
+  const [progressTab, setProgressTab] = useState<"today" | "completed">("today");
 
   return (
     <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px 80px" }}>
@@ -26,7 +33,7 @@ export default function MissionControlPage() {
           Mission Control
         </h1>
         <p style={{ fontSize: 15, color: "#888" }}>
-          RuufPro ops board — template management, feature tracking, and more coming soon.
+          RuufPro ops board — template management, feature tracking, and progress log.
         </p>
       </div>
 
@@ -44,13 +51,89 @@ export default function MissionControlPage() {
           <div style={{ fontSize: 28, fontWeight: 700, color: "#fff" }}>{avgFeatures}/{totalFeatures}</div>
           <div style={{ fontSize: 12, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>Avg Features</div>
         </div>
+        <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "16px 24px", flex: 1, minWidth: 140 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "#fff" }}>{todayItems.length}</div>
+          <div style={{ fontSize: 12, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>Changes Today</div>
+        </div>
+      </div>
+
+      {/* Progress Log — Tabbed */}
+      <div style={{ marginBottom: 48 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: "#fff", margin: 0 }}>Progress Log</h2>
+          <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: 3 }}>
+            <button
+              onClick={() => setProgressTab("today")}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                padding: "6px 14px",
+                borderRadius: 6,
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.15s",
+                background: progressTab === "today" ? "rgba(34,197,94,0.15)" : "transparent",
+                color: progressTab === "today" ? "#4ade80" : "#666",
+              }}
+            >
+              Today&apos;s Progress{todayItems.length > 0 && ` (${todayItems.length})`}
+            </button>
+            <button
+              onClick={() => setProgressTab("completed")}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                padding: "6px 14px",
+                borderRadius: 6,
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.15s",
+                background: progressTab === "completed" ? "rgba(99,102,241,0.15)" : "transparent",
+                color: progressTab === "completed" ? "#a78bfa" : "#666",
+              }}
+            >
+              Completed{completedItems.length > 0 && ` (${completedItems.length})`}
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {progressTab === "today" && todayItems.length === 0 && (
+            <div style={{
+              background: "#141420",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 12,
+              padding: "32px 24px",
+              textAlign: "center",
+            }}>
+              <p style={{ fontSize: 13, color: "#555", margin: 0 }}>No changes logged today yet. Start building!</p>
+            </div>
+          )}
+          {progressTab === "today" && todayItems.map((item) => (
+            <ProgressCard key={item.id} item={item} />
+          ))}
+          {progressTab === "completed" && completedItems.length === 0 && (
+            <div style={{
+              background: "#141420",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 12,
+              padding: "32px 24px",
+              textAlign: "center",
+            }}>
+              <p style={{ fontSize: 13, color: "#555", margin: 0 }}>No completed items yet. They&apos;ll show up here after each day.</p>
+            </div>
+          )}
+          {progressTab === "completed" && completedItems.map((item) => (
+            <ProgressCard key={item.id} item={item} />
+          ))}
+        </div>
       </div>
 
       {/* Template Control Section */}
       <div style={{ marginBottom: 48 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ fontSize: 18, fontWeight: 600, color: "#fff", margin: 0 }}>Website Templates</h2>
-          <span style={{ fontSize: 12, color: "#555" }}>Click "Preview" to open each template in a new tab</span>
+          <span style={{ fontSize: 12, color: "#555" }}>Click &quot;Preview&quot; to open each template in a new tab</span>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -60,7 +143,67 @@ export default function MissionControlPage() {
         </div>
       </div>
 
-      {/* Future sections stub */}
+      {/* Current Sprint — Updated Apr 3, 2026 */}
+      <div style={{ marginBottom: 48 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600, color: "#fff", marginBottom: 20 }}>Current Sprint</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Pricing Update */}
+          <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "20px 24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Pricing Update — Free / $149 Pro / $299 Growth — Shipped</span>
+            </div>
+            <p style={{ fontSize: 13, color: "#888", lineHeight: 1.6, margin: 0 }}>
+              3-tier pricing across all components. Outcome-focused copy (&quot;Your Website&quot;, &quot;Your Leads&quot;, &quot;Your Growth&quot;).
+              Annual toggle at 20% discount. Competitor math recalculated. Zero $99 references remain in components.
+            </p>
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>3 tiers</span>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Annual toggle</span>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Competitor math</span>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>FAQ + hero + meta</span>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Docs updated</span>
+            </div>
+          </div>
+
+          {/* Onboarding v3 */}
+          <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "20px 24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Onboarding v3 — Shipped</span>
+            </div>
+            <p style={{ fontSize: 13, color: "#888", lineHeight: 1.6, margin: 0 }}>
+              3-screen flow: simple form (4 fields) → magic generation with smart defaults → full edit mode with live preview.
+              Template picker, hero editor, services chips, trust signal toggles, about textarea, city tag input.
+              Live preview renders the real template at 0.32 scale with scroll sync via IntersectionObserver.
+            </p>
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Magic generation</span>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Full edit mode</span>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Live preview</span>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Scroll sync</span>
+              <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Service auto-creation</span>
+              <span style={{ fontSize: 11, background: "rgba(245,158,11,0.12)", color: "#fbbf24", padding: "3px 10px", borderRadius: 6 }}>Auth bypass (dev only)</span>
+            </div>
+          </div>
+
+          {/* Next up */}
+          <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "20px 24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b" }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Up Next</span>
+            </div>
+            <ul style={{ fontSize: 13, color: "#888", lineHeight: 1.8, margin: 0, paddingLeft: 16 }}>
+              <li>Wire up auth flow — remove preview-mode bypass, connect real signup/login</li>
+              <li>Stripe billing integration — subscription gating for Pro/Growth features</li>
+              <li>Smarter template auto-defaults (reviews placeholder, business hours, logo initials, FAQ from services)</li>
+              <li>ScrollAnimation optimization for Modern Clean (151 frames — loads slow)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Command Center link */}
       <div style={{
         background: "rgba(255,255,255,0.02)",
         border: "1px dashed rgba(255,255,255,0.08)",
@@ -68,9 +211,6 @@ export default function MissionControlPage() {
         padding: "32px 24px",
         textAlign: "center",
       }}>
-        <p style={{ fontSize: 14, color: "#555", marginBottom: 12 }}>
-          More sections coming — Outreach, Revenue, Product Roadmap
-        </p>
         <a
           href="/command-center"
           style={{

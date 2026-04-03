@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, Calculator, Check, X } from "lucide-react";
+import { Globe, Calculator, Zap, Check, X } from "lucide-react";
 
 const FREE_FEATURES = [
   "Professional roofing website",
@@ -15,19 +15,34 @@ const FREE_FEATURES = [
 
 const FREE_LOCKED = [
   "Satellite estimate widget",
-  "Embed widget on external sites",
-  "Lead dashboard with insights",
+  "Missed-call text-back",
+  "Google review automation",
+  "Lead dashboard",
 ];
 
 const PRO_FEATURES = [
   "Everything in Free, plus:",
-  "Satellite estimate widget",
-  "Instant ballpark estimates for visitors",
-  "Embed on any website with one line of code",
+  "Satellite estimate widget — visitors see pricing instantly",
+  "Missed-call text-back — never lose a lead on the roof",
+  "Google review automation — more 5-star reviews on autopilot",
   "Lead dashboard — hot, warm, and browsing tags",
-  "Push notifications for new leads",
-  "PDF estimate reports",
+  "Embed widget on any website with one line of code",
   "Contractor-controlled pricing",
+  "PDF estimate reports",
+];
+
+const PRO_LOCKED = [
+  "SEO city pages",
+  "Competitor monitoring",
+  "Custom domain",
+];
+
+const GROWTH_FEATURES = [
+  "Everything in Pro, plus:",
+  "SEO city pages — rank in every city you serve",
+  "Competitor monitoring — know when they change pricing",
+  "Custom domain — yourbusiness.com",
+  "Priority support — real humans, fast responses",
 ];
 
 const staggerContainer = {
@@ -67,7 +82,8 @@ const cardVariantHighlighted = {
 
 export default function RidgelinePricing() {
   const [annual, setAnnual] = useState(false);
-  const price = annual ? "$79" : "$99";
+  const proPrice = annual ? "$119" : "$149";
+  const growthPrice = annual ? "$239" : "$299";
   const period = annual ? "/ month, billed yearly" : "/ month";
 
   return (
@@ -124,7 +140,7 @@ export default function RidgelinePricing() {
             </span>
             {annual && (
               <span className="text-[10px] font-bold text-[#D4863E] uppercase tracking-wider">
-                Save $240/yr
+                Save 20%
               </span>
             )}
           </div>
@@ -132,13 +148,13 @@ export default function RidgelinePricing() {
 
         {/* Cards */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto items-start"
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto items-start"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
         >
-          {/* Free Card */}
+          {/* Free Card — Your Website */}
           <motion.div
             variants={cardVariant}
             className="rounded-[2rem] overflow-hidden flex flex-col h-full transition-all duration-500 hover:-translate-y-1 bg-white/10 backdrop-blur-md border border-white/20"
@@ -149,7 +165,7 @@ export default function RidgelinePricing() {
                   <Globe className="w-4 h-4" />
                 </div>
                 <span className="text-sm font-semibold text-white/60">
-                  Free Website
+                  Your Website
                 </span>
                 <span className="ml-auto text-[10px] font-bold text-white/40 border border-white/20 rounded-full px-2.5 py-0.5 uppercase tracking-wider">
                   Free Forever
@@ -169,7 +185,7 @@ export default function RidgelinePricing() {
               </div>
 
               <p className="text-xs text-white/50 mb-6">
-                A real website that gets you found online — not a teaser.
+                Get found on Google — for free.
               </p>
 
               <a
@@ -220,7 +236,7 @@ export default function RidgelinePricing() {
             </div>
           </motion.div>
 
-          {/* Pro Card */}
+          {/* Pro Card — Your Leads */}
           <motion.div
             variants={cardVariantHighlighted}
             className="rounded-[2rem] overflow-hidden flex flex-col h-full transition-all duration-500 hover:-translate-y-1 bg-white/15 backdrop-blur-md border-2 border-[#D4863E]/60 shadow-2xl shadow-[#D4863E]/10"
@@ -236,7 +252,7 @@ export default function RidgelinePricing() {
                 <div className="text-white/50">
                   <Calculator className="w-4 h-4" />
                 </div>
-                <span className="text-sm font-semibold text-white/60">Pro</span>
+                <span className="text-sm font-semibold text-white/60">Your Leads</span>
               </div>
 
               <div className="flex items-end gap-1.5 mb-2">
@@ -246,20 +262,20 @@ export default function RidgelinePricing() {
                     fontFamily: '"Arial Black", Impact, sans-serif',
                   }}
                 >
-                  {price}
+                  {proPrice}
                 </span>
                 <span className="text-white/40 text-sm pb-1">{period}</span>
               </div>
 
               <p className="text-xs text-white/50 mb-6">
-                Satellite-powered estimates that turn visitors into leads.
+                Your phone rings. Your leads come to you.
               </p>
 
               <a
                 href="/signup"
                 className="block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 bg-[#D4863E] text-white hover:bg-[#c0763a]"
               >
-                Start Getting Leads — {price}/mo
+                Start Getting Leads — {proPrice}/mo
               </a>
             </div>
 
@@ -268,6 +284,89 @@ export default function RidgelinePricing() {
             <div className="p-7 pt-5 flex-1 flex flex-col">
               <ul className="space-y-3 flex-1">
                 {PRO_FEATURES.map((feat) => (
+                  <li
+                    key={feat}
+                    className="flex items-start gap-2.5 text-sm text-white/70"
+                  >
+                    <Check
+                      className="w-4 h-4 text-[#D4863E] shrink-0 mt-0.5"
+                      strokeWidth={3}
+                    />
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="flex items-center gap-3 my-4 text-[10px] text-white/20 uppercase tracking-wider">
+                <span className="h-px flex-1 bg-white/10" />
+                <span>Upgrade to access</span>
+                <span className="h-px flex-1 bg-white/10" />
+              </div>
+              <ul className="space-y-3">
+                {PRO_LOCKED.map((feat) => (
+                  <li
+                    key={feat}
+                    className="flex items-start gap-2.5 text-sm text-white/30"
+                  >
+                    <X
+                      className="w-4 h-4 text-white/20 shrink-0 mt-0.5"
+                      strokeWidth={2.5}
+                    />
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+
+          {/* Growth Card — Your Growth */}
+          <motion.div
+            variants={cardVariant}
+            className="rounded-[2rem] overflow-hidden flex flex-col h-full transition-all duration-500 hover:-translate-y-1 bg-white/10 backdrop-blur-md border border-[#D4863E]/30"
+          >
+            <div className="flex justify-center">
+              <span className="bg-white/10 text-[#D4863E] text-[10px] font-black uppercase tracking-[0.15em] px-5 py-1.5 rounded-b-xl">
+                Full Suite
+              </span>
+            </div>
+
+            <div className="p-7 pb-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="text-white/50">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-semibold text-white/60">Your Growth</span>
+              </div>
+
+              <div className="flex items-end gap-1.5 mb-2">
+                <span
+                  className="text-4xl font-black tracking-tight text-white"
+                  style={{
+                    fontFamily: '"Arial Black", Impact, sans-serif',
+                  }}
+                >
+                  {growthPrice}
+                </span>
+                <span className="text-white/40 text-sm pb-1">{period}</span>
+              </div>
+
+              <p className="text-xs text-white/50 mb-6">
+                Dominate your market. Outrank every competitor.
+              </p>
+
+              <a
+                href="/signup"
+                className="block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 border-2 border-[#D4863E]/50 text-white hover:bg-[#D4863E] hover:border-[#D4863E]"
+              >
+                Scale My Business — {growthPrice}/mo
+              </a>
+            </div>
+
+            <div className="mx-7 h-px bg-white/10" />
+
+            <div className="p-7 pt-5 flex-1 flex flex-col">
+              <ul className="space-y-3 flex-1">
+                {GROWTH_FEATURES.map((feat) => (
                   <li
                     key={feat}
                     className="flex items-start gap-2.5 text-sm text-white/70"
@@ -293,8 +392,8 @@ export default function RidgelinePricing() {
           className="text-center text-sm text-white/30 mt-12 max-w-xl mx-auto"
         >
           The free website is genuinely free — no credit card, no trial, no catch.
-          We make money when you choose to add the estimate widget at {price}/mo.
-          That&apos;s it. No per-lead fees, no setup costs, no contracts.
+          We make money when you choose Pro at {proPrice}/mo or Growth at {growthPrice}/mo.
+          No per-lead fees, no setup costs, no contracts.
           No salesperson will ever call you.
         </motion.p>
       </div>

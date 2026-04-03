@@ -112,7 +112,7 @@ export const Component = () => {
           transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
           className="text-white/55 text-sm md:text-lg max-w-[560px] leading-relaxed mx-auto mb-8"
         >
-          Satellite-powered instant estimates on your website. Homeowners see a price, you see their contact info. $99/mo — or start with a free professional site.
+          Satellite-powered instant estimates on your website. Homeowners see a price, you see their contact info. $149/mo — or start with a free professional site.
         </motion.p>
 
         {/* CTAs */}

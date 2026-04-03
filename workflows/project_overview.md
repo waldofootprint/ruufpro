@@ -1,15 +1,13 @@
 # RuufPro — Project Overview
 
 ## What We're Building
-A micro-SaaS platform for small roofing contractors (1-10 person crews) that bundles:
-- **Free roofing website** (our lead magnet — no competitor offers this)
-- **Instant estimate widget** ($99/mo) — satisfies Google's "Online Estimates" filter
-- **Review automation** ($99/mo) — auto-text Google review requests after job completion
-- **Speed-to-lead auto-reply + follow-up drips** ($149/mo)
-- **City-specific SEO pages** ($149/mo)
+A micro-SaaS platform for small roofing contractors (1-10 person crews) with three tiers:
+- **Free — "Your Website"**: Professional roofing site + SEO + contact form (our lead magnet)
+- **$149/mo Pro — "Your Leads"**: Estimate widget + missed-call text-back + review automation + lead dashboard
+- **$299/mo Growth — "Your Growth"**: SEO city pages + competitor monitoring + custom domain + priority support
 
 ## Why It Exists
-Google launched an "Online Estimates" filter (Dec 2025) that hides roofers without online pricing. 78% of homeowners want pricing. 76% of roofers don't show it. Roofle charges $350/mo + $2K setup. We offer the same core value at $99/mo with no setup fee, plus a free website nobody else provides.
+Google launched an "Online Estimates" filter (Dec 2025) that hides roofers without online pricing. 78% of homeowners want pricing. 76% of roofers don't show it. Roofle charges $350/mo + $2K setup. We offer the same core value at $149/mo with no setup fee, plus a free website nobody else provides.
 
 ## Target Customer
 Solo roofers and small crews (1-10 employees) who either have no website or a bad GoDaddy/Wix site. They can't afford Roofle ($6,200/year) or Scorpion ($3-10K/mo). They need to be found on Google and capture leads.
@@ -30,14 +28,11 @@ Solo roofers and small crews (1-10 employees) who either have no website or a ba
 The free website is our lead magnet and main acquisition tool — always free, fully functional, no gates. Revenue comes from paid services sold independently. Roofers who already have their own website can buy services standalone (widget embeds on any site).
 
 ### Pricing
-| Product | Price | Description |
-|---------|-------|-------------|
-| Roofing Website | Free (always) | Professional single-page site + contact form + lead notifications |
-| Estimate Widget | $99/mo | Instant pricing calculator, embeddable on any site |
-| Review Automation | $99/mo | Auto-text Google review requests after job completion |
-| Auto-Reply + Follow-Up | $149/mo | Speed-to-lead auto-text + drip sequences |
-| SEO City Pages | $149/mo | Auto-generated "[Service] in [City]" pages |
-| Custom Domain | TBD | Use own domain instead of slug.ruufpro.com |
+| Tier | Price | What's Included |
+|------|-------|-----------------|
+| Free — "Your Website" | $0/mo | Professional roofing site, SEO, contact form, lead notifications, trust badges |
+| Pro — "Your Leads" | $149/mo | Everything Free + estimate widget + missed-call text-back + review automation + lead dashboard + PDF reports |
+| Growth — "Your Growth" | $299/mo | Everything Pro + SEO city pages + competitor monitoring + custom domain + priority support |
 
 ## Phased Roadmap
 | Phase | What | Timeline |
