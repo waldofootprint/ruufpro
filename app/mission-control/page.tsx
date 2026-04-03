@@ -4,26 +4,98 @@ import { useState } from "react";
 import { TEMPLATES } from "./template-registry";
 import { getTodayItems, getCompletedItems } from "./progress-log";
 import { WORKFLOWS, PHASE_CONFIG, getPhaseStats, type WorkflowPhase } from "./workflow-registry";
+import { FEATURES } from "../command-center/feature/features-data";
 import TemplateCard from "./components/TemplateCard";
 import ProgressCard from "./components/ProgressCard";
 import WorkflowCard from "./components/WorkflowCard";
 
-type TopTab = "dashboard" | "workflows";
+// ─── Derived data ───────────────────────────────────────────────
+const todayItems = getTodayItems();
+const completedItems = getCompletedItems();
+const productionTemplates = TEMPLATES.filter((t) => t.status === "production");
 
-export default function MissionControlPage() {
-  const [topTab, setTopTab] = useState<TopTab>("dashboard");
-  const productionCount = TEMPLATES.filter((t) => t.status === "production").length;
-  const totalFeatures = 6;
-  const avgFeatures = Math.round(
-    TEMPLATES.filter((t) => t.status === "production").reduce(
-      (sum, t) => sum + Object.values(t.features).filter(Boolean).length, 0
-    ) / productionCount
+const completedFeatures = FEATURES.filter((f) => f.status === "complete");
+const inProgressFeatures = FEATURES.filter((f) => f.status === "in_progress");
+const plannedFeatures = FEATURES.filter((f) => f.status === "planned");
+
+// ─── Types ──────────────────────────────────────────────────────
+type Tab = "today" | "build" | "grow" | "library";
+
+const TABS: { id: Tab; label: string; accent: string }[] = [
+  { id: "today", label: "Today", accent: "#22c55e" },
+  { id: "build", label: "Build", accent: "#D4863E" },
+  { id: "grow", label: "Grow", accent: "#6366f1" },
+  { id: "library", label: "Library", accent: "#f59e0b" },
+];
+
+// ─── Reusable components ────────────────────────────────────────
+function LinkCard({ label, description, href, accent }: { label: string; description: string; href: string; accent: string }) {
+  return (
+    <a href={href} style={{ display: "block", background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 18px", textDecoration: "none", transition: "all 0.15s" }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${accent}40`; e.currentTarget.style.transform = "translateY(-1px)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 600, color: accent, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "#888", lineHeight: 1.4 }}>{description}</div>
+    </a>
   );
+}
 
-  const todayItems = getTodayItems();
-  const completedItems = getCompletedItems();
-  const [progressTab, setProgressTab] = useState<"today" | "completed">("today");
+function SectionHeader({ title, count, accent }: { title: string; count?: number; accent?: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+      {accent && <div style={{ width: 8, height: 8, borderRadius: "50%", background: accent }} />}
+      <h3 style={{ fontSize: 14, fontWeight: 600, color: "#fff", margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>{title}</h3>
+      {count !== undefined && <span style={{ fontSize: 11, color: "#555" }}>({count})</span>}
+    </div>
+  );
+}
 
+function FeatureMini({ name, status, href }: { name: string; status: string; href: string }) {
+  const colors: Record<string, { bg: string; text: string }> = {
+    complete: { bg: "rgba(34,197,94,0.12)", text: "#4ade80" },
+    in_progress: { bg: "rgba(251,191,36,0.12)", text: "#fbbf24" },
+    planned: { bg: "rgba(99,102,241,0.12)", text: "#818cf8" },
+  };
+  const c = colors[status] || colors.planned;
+  return (
+    <a href={href} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#141420", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, textDecoration: "none", transition: "border-color 0.15s" }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)")}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
+    >
+      <span style={{ fontSize: 12, color: "#ccc", fontWeight: 500 }}>{name}</span>
+      <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.03em", padding: "2px 8px", borderRadius: 4, background: c.bg, color: c.text }}>{status.replace("_", " ")}</span>
+    </a>
+  );
+}
+
+function SprintItem({ title, status, tags }: { title: string; status: "shipped" | "next"; tags: string[] }) {
+  const dot = status === "shipped" ? "#22c55e" : "#f59e0b";
+  const tagBg = status === "shipped" ? "rgba(34,197,94,0.12)" : "rgba(245,158,11,0.12)";
+  const tagColor = status === "shipped" ? "#4ade80" : "#fbbf24";
+  return (
+    <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "14px 18px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <div style={{ width: 7, height: 7, borderRadius: "50%", background: dot }} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{title}</span>
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {tags.map((tag) => (
+          <span key={tag} style={{ fontSize: 10, background: tagBg, color: tagColor, padding: "2px 8px", borderRadius: 5 }}>{tag}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAGE
+// ═══════════════════════════════════════════════════════════════
+export default function MissionControlPage() {
+  const [tab, setTab] = useState<Tab>("today");
+  const [progressView, setProgressView] = useState<"today" | "completed">("today");
+
+  // Workflow data
   const phaseStats = getPhaseStats();
   const totalWorkflows = WORKFLOWS.length;
   const completedWorkflows = WORKFLOWS.filter((w) => w.status === "complete").length;
@@ -31,167 +103,140 @@ export default function MissionControlPage() {
 
   return (
     <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px 80px" }}>
-      {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <a href="/hq" style={{ fontSize: 12, color: "#555", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 12 }}>
-          <span style={{ fontSize: 14 }}>&larr;</span> HQ
-        </a>
-        <h1 style={{
-          fontSize: 28,
-          fontWeight: 700,
-          color: "#fff",
-          letterSpacing: "-0.03em",
-          marginBottom: 8,
-        }}>
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", letterSpacing: "-0.03em", marginBottom: 6 }}>
           Mission Control
         </h1>
-        <p style={{ fontSize: 15, color: "#888" }}>
-          RuufPro ops board — template management, feature tracking, and progress log.
+        <p style={{ fontSize: 14, color: "#666", margin: 0 }}>
+          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
         </p>
       </div>
 
-      {/* Top-level tab switcher */}
-      <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 4, marginBottom: 32 }}>
-        <button
-          onClick={() => setTopTab("dashboard")}
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            padding: "10px 24px",
-            borderRadius: 8,
-            border: "none",
-            cursor: "pointer",
-            transition: "all 0.15s",
-            background: topTab === "dashboard" ? "rgba(255,255,255,0.1)" : "transparent",
-            color: topTab === "dashboard" ? "#fff" : "#666",
-            flex: 1,
-          }}
-        >
-          Dashboard
-        </button>
-        <button
-          onClick={() => setTopTab("workflows")}
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            padding: "10px 24px",
-            borderRadius: 8,
-            border: "none",
-            cursor: "pointer",
-            transition: "all 0.15s",
-            background: topTab === "workflows" ? "rgba(129,140,248,0.15)" : "transparent",
-            color: topTab === "workflows" ? "#a78bfa" : "#666",
-            flex: 1,
-          }}
-        >
-          Workflows to Build{completedWorkflows < totalWorkflows && ` (${completedWorkflows}/${totalWorkflows})`}
-        </button>
+      {/* ── Quick stats row ────────────────────────────────────── */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
+        {[
+          { value: todayItems.length, label: "Shipped Today", color: "#22c55e" },
+          { value: completedFeatures.length, label: "Features Live", color: "#D4863E" },
+          { value: inProgressFeatures.length + plannedFeatures.length, label: "In Pipeline", color: "#6366f1" },
+          { value: productionTemplates.length, label: "Templates", color: "#f59e0b" },
+        ].map((stat) => (
+          <div key={stat.label} style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px 20px", flex: 1, minWidth: 120 }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+            <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 2 }}>{stat.label}</div>
+          </div>
+        ))}
       </div>
 
-      {/* ============================================================ */}
-      {/* DASHBOARD TAB */}
-      {/* ============================================================ */}
-      {topTab === "dashboard" && (
-        <>
-          {/* Quick stats */}
-          <div style={{ display: "flex", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
-            <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "16px 24px", flex: 1, minWidth: 140 }}>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#fff" }}>{productionCount}</div>
-              <div style={{ fontSize: 12, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>Production Templates</div>
-            </div>
-            <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "16px 24px", flex: 1, minWidth: 140 }}>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#fff" }}>{TEMPLATES.length}</div>
-              <div style={{ fontSize: 12, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>Total Templates</div>
-            </div>
-            <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "16px 24px", flex: 1, minWidth: 140 }}>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#fff" }}>{avgFeatures}/{totalFeatures}</div>
-              <div style={{ fontSize: 12, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>Avg Features</div>
-            </div>
-            <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "16px 24px", flex: 1, minWidth: 140 }}>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#fff" }}>{todayItems.length}</div>
-              <div style={{ fontSize: 12, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>Changes Today</div>
-            </div>
-          </div>
+      {/* ── Tab bar ────────────────────────────────────────────── */}
+      <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 4, marginBottom: 32 }}>
+        {TABS.map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            flex: 1, fontSize: 13, fontWeight: 600, padding: "10px 0", borderRadius: 8,
+            border: "none", cursor: "pointer", transition: "all 0.15s",
+            background: tab === t.id ? `${t.accent}20` : "transparent",
+            color: tab === t.id ? t.accent : "#555",
+          }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-          {/* Progress Log — Tabbed */}
-          <div style={{ marginBottom: 48 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 600, color: "#fff", margin: 0 }}>Progress Log</h2>
-              <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: 3 }}>
-                <button
-                  onClick={() => setProgressTab("today")}
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    padding: "6px 14px",
-                    borderRadius: 6,
-                    border: "none",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                    background: progressTab === "today" ? "rgba(34,197,94,0.15)" : "transparent",
-                    color: progressTab === "today" ? "#4ade80" : "#666",
-                  }}
-                >
-                  Today&apos;s Progress{todayItems.length > 0 && ` (${todayItems.length})`}
+      {/* ═════════════════════════════════════════════════════════ */}
+      {/* TODAY TAB                                                 */}
+      {/* ═════════════════════════════════════════════════════════ */}
+      {tab === "today" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          {/* Progress log */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <SectionHeader title="Progress Log" accent="#22c55e" />
+              <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: 2 }}>
+                <button onClick={() => setProgressView("today")} style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 5, border: "none", cursor: "pointer", background: progressView === "today" ? "rgba(34,197,94,0.15)" : "transparent", color: progressView === "today" ? "#4ade80" : "#666" }}>
+                  Today{todayItems.length > 0 && ` (${todayItems.length})`}
                 </button>
-                <button
-                  onClick={() => setProgressTab("completed")}
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    padding: "6px 14px",
-                    borderRadius: 6,
-                    border: "none",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                    background: progressTab === "completed" ? "rgba(99,102,241,0.15)" : "transparent",
-                    color: progressTab === "completed" ? "#a78bfa" : "#666",
-                  }}
-                >
+                <button onClick={() => setProgressView("completed")} style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 5, border: "none", cursor: "pointer", background: progressView === "completed" ? "rgba(99,102,241,0.15)" : "transparent", color: progressView === "completed" ? "#a78bfa" : "#666" }}>
                   Completed{completedItems.length > 0 && ` (${completedItems.length})`}
                 </button>
               </div>
             </div>
-
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {progressTab === "today" && todayItems.length === 0 && (
-                <div style={{
-                  background: "#141420",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 12,
-                  padding: "32px 24px",
-                  textAlign: "center",
-                }}>
-                  <p style={{ fontSize: 13, color: "#555", margin: 0 }}>No changes logged today yet. Start building!</p>
+              {progressView === "today" && todayItems.length === 0 && (
+                <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "28px 20px", textAlign: "center" }}>
+                  <p style={{ fontSize: 13, color: "#555", margin: 0 }}>No changes logged today yet.</p>
                 </div>
               )}
-              {progressTab === "today" && todayItems.map((item) => (
-                <ProgressCard key={item.id} item={item} />
-              ))}
-              {progressTab === "completed" && completedItems.length === 0 && (
-                <div style={{
-                  background: "#141420",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 12,
-                  padding: "32px 24px",
-                  textAlign: "center",
-                }}>
-                  <p style={{ fontSize: 13, color: "#555", margin: 0 }}>No completed items yet. They&apos;ll show up here after each day.</p>
+              {progressView === "today" && todayItems.map((item) => <ProgressCard key={item.id} item={item} />)}
+              {progressView === "completed" && completedItems.length === 0 && (
+                <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "28px 20px", textAlign: "center" }}>
+                  <p style={{ fontSize: 13, color: "#555", margin: 0 }}>Items move here automatically after each day.</p>
                 </div>
               )}
-              {progressTab === "completed" && completedItems.map((item) => (
-                <ProgressCard key={item.id} item={item} />
+              {progressView === "completed" && completedItems.map((item) => <ProgressCard key={item.id} item={item} />)}
+            </div>
+          </div>
+
+          {/* Current sprint */}
+          <div>
+            <SectionHeader title="Current Sprint" accent="#D4863E" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <SprintItem title="Pricing — Free / $149 Pro / $299 Growth" status="shipped" tags={["3 tiers", "annual toggle", "competitor math", "all components"]} />
+              <SprintItem title="Onboarding v3 — 3-Screen Flow" status="shipped" tags={["magic generation", "live preview", "scroll sync", "edit mode"]} />
+              <SprintItem title="Auth flow — remove bypass, wire signup" status="next" tags={["auth", "critical path"]} />
+              <SprintItem title="Stripe billing — subscription gating" status="next" tags={["payments", "revenue"]} />
+              <SprintItem title="Template auto-defaults" status="next" tags={["reviews", "hours", "FAQ"]} />
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div>
+            <SectionHeader title="Quick Actions" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+              <LinkCard label="Drop something in Inbox" description="Ideas, links, screenshots" href="/command-center?tab=inbox" accent="#6366f1" />
+              <LinkCard label="To-Do List" description="Priorities + shortlist" href="/command-center?tab=todos" accent="#6366f1" />
+              <LinkCard label="Preview Onboarding" description="Test the live flow" href="/onboarding" accent="#D4863E" />
+              <LinkCard label="View Marketing Site" description="ruufpro.com landing page" href="/" accent="#D4863E" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═════════════════════════════════════════════════════════ */}
+      {/* BUILD TAB                                                 */}
+      {/* ═════════════════════════════════════════════════════════ */}
+      {tab === "build" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          {/* Feature inventory */}
+          <div>
+            <SectionHeader title="Features — Live" count={completedFeatures.length} accent="#22c55e" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {completedFeatures.map((f) => (
+                <FeatureMini key={f.slug} name={f.name} status={f.status} href={`/command-center/feature/${f.slug}`} />
               ))}
             </div>
           </div>
 
-          {/* Template Control Section */}
-          <div style={{ marginBottom: 48 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 600, color: "#fff", margin: 0 }}>Website Templates</h2>
-              <span style={{ fontSize: 12, color: "#555" }}>Click &quot;Preview&quot; to open each template in a new tab</span>
+          <div>
+            <SectionHeader title="Features — In Progress" count={inProgressFeatures.length} accent="#f59e0b" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {inProgressFeatures.map((f) => (
+                <FeatureMini key={f.slug} name={f.name} status={f.status} href={`/command-center/feature/${f.slug}`} />
+              ))}
             </div>
+          </div>
 
+          <div>
+            <SectionHeader title="Features — Planned" count={plannedFeatures.length} accent="#6366f1" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {plannedFeatures.map((f) => (
+                <FeatureMini key={f.slug} name={f.name} status={f.status} href={`/command-center/feature/${f.slug}`} />
+              ))}
+            </div>
+          </div>
+
+          {/* Templates */}
+          <div>
+            <SectionHeader title="Templates" count={TEMPLATES.length} accent="#D4863E" />
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {TEMPLATES.map((t) => (
                 <TemplateCard key={t.id} template={t} />
@@ -199,186 +244,167 @@ export default function MissionControlPage() {
             </div>
           </div>
 
-          {/* Current Sprint — Updated Apr 3, 2026 */}
-          <div style={{ marginBottom: 48 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: "#fff", marginBottom: 20 }}>Current Sprint</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* Pricing Update */}
-              <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "20px 24px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Pricing Update — Free / $149 Pro / $299 Growth — Shipped</span>
-                </div>
-                <p style={{ fontSize: 13, color: "#888", lineHeight: 1.6, margin: 0 }}>
-                  3-tier pricing across all components. Outcome-focused copy (&quot;Your Website&quot;, &quot;Your Leads&quot;, &quot;Your Growth&quot;).
-                  Annual toggle at 20% discount. Competitor math recalculated. Zero $99 references remain in components.
-                </p>
-                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>3 tiers</span>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Annual toggle</span>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Competitor math</span>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>FAQ + hero + meta</span>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Docs updated</span>
-                </div>
-              </div>
-
-              {/* Onboarding v3 */}
-              <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "20px 24px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Onboarding v3 — Shipped</span>
-                </div>
-                <p style={{ fontSize: 13, color: "#888", lineHeight: 1.6, margin: 0 }}>
-                  3-screen flow: simple form (4 fields) → magic generation with smart defaults → full edit mode with live preview.
-                  Template picker, hero editor, services chips, trust signal toggles, about textarea, city tag input.
-                  Live preview renders the real template at 0.32 scale with scroll sync via IntersectionObserver.
-                </p>
-                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Magic generation</span>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Full edit mode</span>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Live preview</span>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Scroll sync</span>
-                  <span style={{ fontSize: 11, background: "rgba(34,197,94,0.12)", color: "#4ade80", padding: "3px 10px", borderRadius: 6 }}>Service auto-creation</span>
-                  <span style={{ fontSize: 11, background: "rgba(245,158,11,0.12)", color: "#fbbf24", padding: "3px 10px", borderRadius: 6 }}>Auth bypass (dev only)</span>
-                </div>
-              </div>
-
-              {/* Next up */}
-              <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "20px 24px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b" }} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Up Next</span>
-                </div>
-                <ul style={{ fontSize: 13, color: "#888", lineHeight: 1.8, margin: 0, paddingLeft: 16 }}>
-                  <li>Wire up auth flow — remove preview-mode bypass, connect real signup/login</li>
-                  <li>Stripe billing integration — subscription gating for Pro/Growth features</li>
-                  <li>Smarter template auto-defaults (reviews placeholder, business hours, logo initials, FAQ from services)</li>
-                  <li>ScrollAnimation optimization for Modern Clean (151 frames — loads slow)</li>
-                </ul>
-              </div>
+          {/* Workflows */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <SectionHeader title="Automation Workflows" accent="#818cf8" />
+              <span style={{ fontSize: 12, color: "#555" }}>{completedWorkflows}/{totalWorkflows} complete</span>
             </div>
-          </div>
 
-          {/* Command Center link */}
-          <div style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px dashed rgba(255,255,255,0.08)",
-            borderRadius: 16,
-            padding: "32px 24px",
-            textAlign: "center",
-          }}>
-            <a
-              href="/command-center"
-              style={{
-                fontSize: 13,
-                color: "#6366f1",
-                textDecoration: "none",
-              }}
-            >
-              Open full Command Center →
-            </a>
-          </div>
-        </>
-      )}
-
-      {/* ============================================================ */}
-      {/* WORKFLOWS TO BUILD TAB */}
-      {/* ============================================================ */}
-      {topTab === "workflows" && (
-        <>
-          {/* Pipeline progress bar */}
-          <div style={{ marginBottom: 32 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Autonomous Pipeline</span>
-              <span style={{ fontSize: 13, color: "#888" }}>{completedWorkflows}/{totalWorkflows} workflows complete</span>
-            </div>
-            <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+            {/* Pipeline bar */}
+            <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden", marginBottom: 20 }}>
               <div style={{
                 height: "100%",
                 width: `${totalWorkflows > 0 ? (completedWorkflows / totalWorkflows) * 100 : 0}%`,
                 background: "linear-gradient(90deg, #818cf8, #34d399)",
-                borderRadius: 3,
-                transition: "width 0.5s",
+                borderRadius: 3, transition: "width 0.5s",
               }} />
             </div>
-          </div>
 
-          {/* Phase summary cards */}
-          <div style={{ display: "flex", gap: 12, marginBottom: 40, flexWrap: "wrap" }}>
-            {phaseStats.map((ps) => {
-              const cfg = PHASE_CONFIG[ps.phase];
+            {/* Phase cards */}
+            <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
+              {phaseStats.map((ps) => {
+                const cfg = PHASE_CONFIG[ps.phase];
+                return (
+                  <div key={ps.phase} style={{ flex: 1, minWidth: 160, background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px 16px", borderTop: `3px solid ${cfg.color}` }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: cfg.color, marginBottom: 4 }}>{cfg.label}</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>{ps.complete}<span style={{ fontSize: 12, color: "#555" }}>/{ps.total}</span></div>
+                    <div style={{ fontSize: 10, color: "#444", marginTop: 4, lineHeight: 1.4 }}>{cfg.description}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Workflow cards by phase */}
+            {phases.map((phase) => {
+              const cfg = PHASE_CONFIG[phase];
+              const items = WORKFLOWS.filter((w) => w.phase === phase);
               return (
-                <div
-                  key={ps.phase}
-                  style={{
-                    flex: 1,
-                    minWidth: 180,
-                    background: "#141420",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 12,
-                    padding: "16px 20px",
-                    borderTop: `3px solid ${cfg.color}`,
-                  }}
-                >
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: cfg.color, marginBottom: 4 }}>
-                    {cfg.label}
+                <div key={phase} style={{ marginBottom: 28 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <div style={{ width: 4, height: 18, borderRadius: 2, background: cfg.color }} />
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: "#fff", margin: 0 }}>{cfg.label}</h3>
+                    <span style={{ fontSize: 11, color: "#555" }}>{items.filter((w) => w.status === "complete").length}/{items.length}</span>
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
-                    {ps.complete}<span style={{ fontSize: 14, color: "#555" }}>/{ps.total}</span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {items.map((w) => <WorkflowCard key={w.id} item={w} />)}
                   </div>
-                  <div style={{ fontSize: 11, color: "#555" }}>
-                    {ps.inProgress > 0 && <span style={{ color: "#fbbf24" }}>{ps.inProgress} in progress</span>}
-                    {ps.inProgress > 0 && ps.notStarted > 0 && " · "}
-                    {ps.notStarted > 0 && `${ps.notStarted} to build`}
-                  </div>
-                  <p style={{ fontSize: 11, color: "#444", marginTop: 6, lineHeight: 1.4, margin: "6px 0 0" }}>{cfg.description}</p>
                 </div>
               );
             })}
           </div>
 
-          {/* Workflow cards grouped by phase */}
-          {phases.map((phase) => {
-            const cfg = PHASE_CONFIG[phase];
-            const items = WORKFLOWS.filter((w) => w.phase === phase);
-            return (
-              <div key={phase} style={{ marginBottom: 40 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                  <div style={{ width: 4, height: 20, borderRadius: 2, background: cfg.color }} />
-                  <h2 style={{ fontSize: 18, fontWeight: 600, color: "#fff", margin: 0 }}>{cfg.label}</h2>
-                  <span style={{ fontSize: 12, color: "#555" }}>
-                    {items.filter((w) => w.status === "complete").length}/{items.length} complete
-                  </span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {items.map((w) => (
-                    <WorkflowCard key={w.id} item={w} />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          {/* Build tools */}
+          <div>
+            <SectionHeader title="Build Tools" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+              <LinkCard label="Onboarding Preview" description="Live iframe of the onboarding flow" href="/command-center?tab=onboarding" accent="#D4863E" />
+              <LinkCard label="Site Kanban" description="Track site edits and builds" href="/command-center?tab=sites" accent="#6366f1" />
+              <LinkCard label="Demo Templates" description="All template demos" href="/demo" accent="#D4863E" />
+              <LinkCard label="Widget Preview" description="Test the estimate widget" href="/widget-preview" accent="#D4863E" />
+            </div>
+          </div>
+        </div>
+      )}
 
-          {/* Command Center link */}
-          <div style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px dashed rgba(255,255,255,0.08)",
-            borderRadius: 16,
-            padding: "32px 24px",
-            textAlign: "center",
-          }}>
-            <a
-              href="/command-center"
-              style={{
-                fontSize: 13,
-                color: "#6366f1",
-                textDecoration: "none",
-              }}
+      {/* ═════════════════════════════════════════════════════════ */}
+      {/* GROW TAB                                                  */}
+      {/* ═════════════════════════════════════════════════════════ */}
+      {tab === "grow" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          {/* Strategy snapshot */}
+          <div style={{ background: "#141420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "20px 24px" }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 8 }}>Revenue Strategy</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Free</div>
+                <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 600 }}>Your Website</div>
+                <div style={{ fontSize: 11, color: "#888" }}>SEO site, the hook</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>$149/mo</div>
+                <div style={{ fontSize: 13, color: "#D4863E", fontWeight: 600 }}>Your Leads</div>
+                <div style={{ fontSize: 11, color: "#888" }}>Widget + SMS + reviews</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>$299/mo</div>
+                <div style={{ fontSize: 13, color: "#a78bfa", fontWeight: 600 }}>Your Growth</div>
+                <div style={{ fontSize: 11, color: "#888" }}>City pages + monitoring</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ fontSize: 11, color: "#555" }}>
+                $50K MRR = ~336 Pro or ~168 Growth or ~250 mixed. Vault 031: $149 bundle &gt; $99 per feature.
+              </div>
+            </div>
+          </div>
+
+          {/* Growth tools */}
+          <div>
+            <SectionHeader title="Growth Tools" accent="#6366f1" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
+              <LinkCard label="Plays" description="Active and queued growth plays with step tracking" href="/command-center?tab=plays" accent="#6366f1" />
+              <LinkCard label="Outreach Pipeline" description="Cold email, DMs, partnerships — track every touch" href="/command-center?tab=outreach" accent="#6366f1" />
+              <LinkCard label="Positioning" description="Market positioning, Hormozi value equation, competitive framing" href="/command-center?tab=positioning" accent="#6366f1" />
+              <LinkCard label="Overview / War Room" description="Advisor notes, approval queue, channel metrics" href="/command-center?tab=overview" accent="#6366f1" />
+            </div>
+          </div>
+
+          {/* Product pages */}
+          <div>
+            <SectionHeader title="Live Product" accent="#D4863E" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
+              <LinkCard label="Marketing Site" description="ruufpro.com — the Ridgeline landing page roofers see" href="/" accent="#D4863E" />
+              <LinkCard label="Roofer Dashboard" description="What paying roofers use — leads, site editor, SMS, settings" href="/dashboard" accent="#D4863E" />
+              <LinkCard label="Onboarding Flow" description="The 3-screen signup experience" href="/onboarding" accent="#D4863E" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═════════════════════════════════════════════════════════ */}
+      {/* LIBRARY TAB                                               */}
+      {/* ═════════════════════════════════════════════════════════ */}
+      {tab === "library" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          {/* Vault */}
+          <div>
+            <SectionHeader title="Knowledge Vault" count={50} accent="#f59e0b" />
+            <p style={{ fontSize: 12, color: "#888", marginBottom: 12, marginTop: -6 }}>
+              50+ lessons from mentorship vault — searchable by topic, speaker, relevance.
+            </p>
+            <a href="/command-center?tab=vault" style={{
+              display: "block", background: "#141420", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 12,
+              padding: "20px 24px", textDecoration: "none", transition: "all 0.15s",
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(245,158,11,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(245,158,11,0.2)"; e.currentTarget.style.transform = "translateY(0)"; }}
             >
-              Open full Command Center →
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#f59e0b", marginBottom: 6 }}>Open Vault &rarr;</div>
+              <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>
+                Pricing psychology, Hormozi frameworks, lead gen systems, conversion blueprints, competitive analysis, SEO playbooks, and more.
+              </div>
             </a>
           </div>
-        </>
+
+          {/* Research */}
+          <div>
+            <SectionHeader title="Research & Strategy" accent="#6366f1" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
+              <LinkCard label="Research Docs" description="GTM plan, competitor analysis, copy research, roofer pain points" href="/command-center?tab=research" accent="#6366f1" />
+              <LinkCard label="Feature Deep-Dives" description="Every feature with business context, tech details, and build steps" href="/command-center?tab=project" accent="#6366f1" />
+            </div>
+          </div>
+
+          {/* Wins */}
+          <div>
+            <SectionHeader title="Wins & Motivation" accent="#22c55e" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
+              <LinkCard label="Wins Board" description="Log milestones, celebrate progress, advisor quotes" href="/command-center?tab=motivation" accent="#22c55e" />
+              <LinkCard label="Completed Work" description={`${completedItems.length} items in the archive`} href="/mission-control" accent="#22c55e" />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

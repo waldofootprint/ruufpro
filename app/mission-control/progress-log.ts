@@ -17,8 +17,22 @@ const TODAY = new Date().toISOString().split("T")[0];
 const ALL_ITEMS: ProgressItem[] = [
   // ── Apr 3, 2026 — HQ Navigation ──────────────────────────
   {
+    id: "merge-hq-into-mission-control",
+    title: "Merged HQ into Mission Control — one page to rule them all",
+    description:
+      "Eliminated the 3-app maze (HQ + Mission Control + Command Center). Mission Control at /mission-control is now the single daily cockpit with 4 tabs: Today (progress log, sprint, quick actions), Build (features inventory, templates, automation workflows, build tools), Grow (revenue strategy, plays, outreach, positioning, live product), Library (vault, research, wins). /hq now redirects to /mission-control. Command Center still works at /command-center for the interactive database-backed panels (todos, plays, outreach, etc.) but the back-link now says 'Mission Control' instead of 'HQ'. Feature detail pages also link back to Mission Control. Workflows (previously a separate Mission Control tab) are now inside the Build tab where they belong.",
+    files: [
+      { label: "mission-control/page.tsx", path: "/app/mission-control/page.tsx" },
+      { label: "hq/page.tsx", path: "/app/hq/page.tsx" },
+      { label: "command-center/page.tsx", path: "/app/command-center/page.tsx" },
+      { label: "feature/[slug]/page.tsx", path: "/app/command-center/feature/[slug]/page.tsx" },
+    ],
+    tags: ["navigation", "reorganization"],
+    date: "2026-04-03",
+  },
+  {
     id: "hq-redesign",
-    title: "HQ redesign — single daily cockpit",
+    title: "HQ redesign — 4-tab daily cockpit (now merged into Mission Control)",
     description:
       "Redesigned /hq from a dumb link directory into a proper 4-tab dashboard organized by solopreneur intent. TODAY tab: progress log (today/completed toggle), current sprint with shipped/next items, and quick action links (inbox, todos, onboarding, marketing site). BUILD tab: full feature inventory grouped by status (12 complete, 2 in progress, 3 planned) with clickable links to feature detail pages at /command-center/feature/[slug], template grid with color swatches and status, plus deep-links to build tools (Mission Control, onboarding preview, site kanban, workflows, demos, widget). GROW tab: revenue strategy snapshot showing all 3 tiers with $50K MRR math (vault 031), links to plays, outreach pipeline, positioning, war room overview, and live product pages. LIBRARY tab: vault (50+ entries) as the hero with prominent 'Open Vault' card, research docs, feature deep-dives, wins board, and completed work archive. Quick stats row at top shows shipped today / features live / pipeline count / templates. Back-links to HQ on both Mission Control and Command Center headers. Imports real data from progress-log.ts, template-registry.ts, and features-data.ts — everything is live, not hardcoded.",
     files: [

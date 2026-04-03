@@ -266,8 +266,8 @@ export default function CommandCenterPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="mb-8">
-        <a href="/hq" className="text-xs text-slate-600 hover:text-slate-400 no-underline flex items-center gap-1 mb-3">
-          <span className="text-sm">&larr;</span> HQ
+        <a href="/mission-control" className="text-xs text-slate-600 hover:text-slate-400 no-underline flex items-center gap-1 mb-3">
+          <span className="text-sm">&larr;</span> Mission Control
         </a>
         <h1 className="text-2xl font-bold text-white tracking-tight">Command Center</h1>
         <p className="text-sm text-slate-500 mt-1">Pre-Launch → $50K MRR</p>

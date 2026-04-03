@@ -20,8 +20,8 @@ export default function FeatureDetailPage() {
   if (!feature) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-        <Link href="/command-center" className="inline-flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-white mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Command Center
+        <Link href="/mission-control" className="inline-flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-white mb-6">
+          <ArrowLeft className="w-4 h-4" /> Back to Mission Control
         </Link>
         <p className="text-slate-400">Feature not found.</p>
       </div>
@@ -36,8 +36,8 @@ export default function FeatureDetailPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
       {/* Back link */}
-      <Link href="/command-center" className="inline-flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-white mb-6 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Back to Command Center
+      <Link href="/mission-control" className="inline-flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-white mb-6 transition-colors">
+        <ArrowLeft className="w-4 h-4" /> Back to Mission Control
       </Link>
 
       {/* Header */}
