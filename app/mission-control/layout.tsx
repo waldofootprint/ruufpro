@@ -11,7 +11,7 @@ export default function MissionControlLayout({ children }: { children: ReactNode
   const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const BYPASS_AUTH = false;
+  const BYPASS_AUTH = true;
 
   useEffect(() => {
     if (BYPASS_AUTH) {
