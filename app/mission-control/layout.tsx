@@ -21,7 +21,7 @@ export default function MissionControlLayout({ children }: { children: ReactNode
     }
     async function checkAdmin() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace("/login"); return; }
+      if (!user) { router.replace("/login?redirect=/mission-control"); return; }
       if (ADMIN_EMAILS.length === 0 || ADMIN_EMAILS.includes(user.email || "")) {
         setAuthorized(true);
       } else {
