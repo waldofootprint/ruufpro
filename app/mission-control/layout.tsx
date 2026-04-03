@@ -11,8 +11,7 @@ export default function MissionControlLayout({ children }: { children: ReactNode
   const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Match command center's current state — flip to false before deploy
-  const BYPASS_AUTH = true;
+  const BYPASS_AUTH = false;
 
   useEffect(() => {
     if (BYPASS_AUTH) {

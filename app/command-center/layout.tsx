@@ -11,8 +11,7 @@ export default function CommandCenterLayout({ children }: { children: ReactNode 
   const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // TEMP: Auth bypassed for local preview. Re-enable before deploy.
-  const BYPASS_AUTH = true;
+  const BYPASS_AUTH = false;
 
   useEffect(() => {
     if (BYPASS_AUTH) {
