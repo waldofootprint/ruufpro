@@ -99,6 +99,7 @@ export default async function ProspectPreview({
     serviceAreaCities: contractor.service_area_cities || [],
     hasEstimateWidget: true, // Show widget — this is what we're selling
     contractorId: contractor.id,
+    urgencyBadge: null,
     slug: params.slug,
 
     // SEO / schema fields
