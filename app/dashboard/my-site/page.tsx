@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { useDashboard } from "../DashboardContext";
 import {
   Home,
+  ImageIcon,
   Star,
   Wrench,
   Calculator,
@@ -45,6 +46,7 @@ interface ContractorData {
   tagline: string | null;
   service_area_cities: string[] | null;
   has_estimate_widget: boolean;
+  logo_url: string | null;
 }
 
 export default function MySitePage() {
@@ -68,6 +70,8 @@ export default function MySitePage() {
   const [phone, setPhone] = useState("");
   const [serviceAreaCities, setServiceAreaCities] = useState<string[]>([]);
   const [newCity, setNewCity] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [trustSignals, setTrustSignals] = useState({
     is_licensed: false,
     is_insured: false,
@@ -90,7 +94,7 @@ export default function MySitePage() {
 
       const { data: contractorData } = await supabase
         .from("contractors")
-        .select("business_name, phone, city, state, tagline, service_area_cities, has_estimate_widget, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, offers_financing")
+        .select("business_name, phone, city, state, tagline, service_area_cities, has_estimate_widget, logo_url, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, offers_financing")
         .eq("id", contractorId)
         .single();
 
@@ -107,6 +111,7 @@ export default function MySitePage() {
         setTagline(contractorData.tagline || "");
         setPhone(contractorData.phone || "");
         setServiceAreaCities(contractorData.service_area_cities || (contractorData.city ? [contractorData.city] : []));
+        setLogoUrl(contractorData.logo_url || null);
         setTrustSignals({
           is_licensed: contractorData.is_licensed || false,
           is_insured: contractorData.is_insured || false,
@@ -155,6 +160,28 @@ export default function MySitePage() {
     }
   }
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !contractorId) return;
+    setLogoUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("contractorId", contractorId);
+      const res = await fetch("/api/dashboard/upload-logo", { method: "POST", body: form });
+      const data = await res.json();
+      if (res.ok && data.logoUrl) {
+        setLogoUrl(data.logoUrl);
+      } else {
+        alert(data.error || "Upload failed");
+      }
+    } catch (err) {
+      alert("Upload failed. Please try again.");
+    }
+    setLogoUploading(false);
+    e.target.value = "";
+  }
+
   function addService() {
     if (newService.trim() && !services.includes(newService.trim())) {
       setServices([...services, newService.trim()]);
@@ -191,6 +218,53 @@ export default function MySitePage() {
 
   // Section definitions
   const sections = [
+    {
+      id: "logo",
+      icon: <ImageIcon className="w-4 h-4" />,
+      iconBg: "bg-violet-50 text-violet-600",
+      name: "Logo",
+      desc: logoUrl ? "Uploaded" : "No logo yet",
+      status: logoUrl ? "live" : "empty",
+      content: (
+        <div>
+          <p className="text-[12px] text-slate-400 mb-3">Your logo appears in the navigation bar and is used for SEO social sharing images.</p>
+          {logoUrl && (
+            <div className="mb-4 p-4 bg-slate-50 rounded-lg flex items-center gap-4">
+              <img src={logoUrl} alt="Current logo" className="h-16 w-auto max-w-[200px] object-contain rounded" />
+              <div>
+                <p className="text-[12px] text-slate-600 font-medium">Current logo</p>
+                <button
+                  onClick={() => document.getElementById("logo-input")?.click()}
+                  className="text-[11px] text-violet-600 hover:text-violet-700 font-semibold mt-1"
+                >
+                  Replace
+                </button>
+              </div>
+            </div>
+          )}
+          <label
+            htmlFor="logo-input"
+            className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+              logoUploading ? "border-slate-200 bg-slate-50" : "border-[#e2e8f0] hover:border-violet-300 hover:bg-violet-50/30"
+            }`}
+          >
+            <ImageIcon className="w-6 h-6 text-slate-300" />
+            <span className="text-[13px] text-slate-500 font-medium">
+              {logoUploading ? "Uploading..." : logoUrl ? "Drop a new logo or click to replace" : "Drop your logo here or click to upload"}
+            </span>
+            <span className="text-[11px] text-slate-400">PNG, JPG, WebP, or SVG — max 5MB</span>
+          </label>
+          <input
+            id="logo-input"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            className="hidden"
+            onChange={handleLogoUpload}
+            disabled={logoUploading}
+          />
+        </div>
+      ),
+    },
     {
       id: "hero",
       icon: <Home className="w-4 h-4" />,
