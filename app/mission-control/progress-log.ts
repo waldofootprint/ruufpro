@@ -15,6 +15,21 @@ const TODAY = new Date().toISOString().split("T")[0];
 
 // All progress items — newest first
 const ALL_ITEMS: ProgressItem[] = [
+  // ── Apr 3, 2026 — HQ Navigation ──────────────────────────
+  {
+    id: "hq-navigation-page",
+    title: "HQ — central navigation hub",
+    description:
+      "Created /hq as a single launchpad page that links to every internal page. Three sections: Mission Control (Dashboard + Workflows tabs), Command Center (all 12 tabs — Overview, Onboarding, Inbox, To-Do, Plays, Sites, Outreach, Vault, Project Status, Research, Positioning, Motivation), and Product (marketing site, onboarding, dashboard, demo templates, widget preview). Each link card shows a description and uses the section's accent color on hover. Command Center links use ?tab= query params to deep-link directly to the right tab. Added '← HQ' back-links to both Mission Control and Command Center headers so you can always navigate back. Auth-gated with same admin email check as other internal pages.",
+    files: [
+      { label: "hq/page.tsx", path: "/app/hq/page.tsx" },
+      { label: "hq/layout.tsx", path: "/app/hq/layout.tsx" },
+      { label: "mission-control/page.tsx", path: "/app/mission-control/page.tsx" },
+      { label: "command-center/page.tsx", path: "/app/command-center/page.tsx" },
+    ],
+    tags: ["navigation", "mission-control", "command-center"],
+    date: "2026-04-03",
+  },
   // ── Apr 3, 2026 — Pricing Update ──────────────────────────
   {
     id: "pricing-live-component",

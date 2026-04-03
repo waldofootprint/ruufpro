@@ -32,12 +32,13 @@ import ResearchLinks from "./components/ResearchLinks";
 import VaultLessons from "./components/VaultLessons";
 import TodoPanel from "./components/TodoPanel";
 import InboxPanel from "./components/InboxPanel";
+import OnboardingPanel from "./components/OnboardingPanel";
 
 export default function CommandCenterPage() {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<TabId>(() => {
     const paramTab = searchParams.get("tab");
-    const validTabs: TabId[] = ["overview", "inbox", "todos", "plays", "sites", "outreach", "vault", "project", "research", "positioning", "motivation"];
+    const validTabs: TabId[] = ["overview", "onboarding", "inbox", "todos", "plays", "sites", "outreach", "vault", "project", "research", "positioning", "motivation"];
     return paramTab && validTabs.includes(paramTab as TabId) ? (paramTab as TabId) : "overview";
   });
   const [plays, setPlays] = useState<CommandPlay[]>([]);
@@ -265,6 +266,9 @@ export default function CommandCenterPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="mb-8">
+        <a href="/hq" className="text-xs text-slate-600 hover:text-slate-400 no-underline flex items-center gap-1 mb-3">
+          <span className="text-sm">&larr;</span> HQ
+        </a>
         <h1 className="text-2xl font-bold text-white tracking-tight">Command Center</h1>
         <p className="text-sm text-slate-500 mt-1">Pre-Launch → $50K MRR</p>
         <div className="mt-4">
@@ -290,7 +294,11 @@ export default function CommandCenterPage() {
           />
         )}
 
-        {/* TO-DO */}
+        {/* ONBOARDING */}
+        {tab === "onboarding" && (
+          <OnboardingPanel />
+        )}
+
         {/* INBOX */}
         {tab === "inbox" && (
           <InboxPanel items={inbox} onSubmit={handleInboxSubmit} />
