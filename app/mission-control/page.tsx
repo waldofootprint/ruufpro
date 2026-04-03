@@ -119,6 +119,26 @@ export default function MissionControlPage() {
   const completedWorkflows = mergedWorkflows.filter((w) => w.dbStatus === "complete").length;
   const phases: WorkflowPhase[] = ["acquire", "convert", "fulfill", "retain"];
 
+  // Claude ping state
+  const [pingMessage, setPingMessage] = useState("");
+  const [pingSending, setPingSending] = useState(false);
+  const [pingSuccess, setPingSuccess] = useState(false);
+
+  async function sendPing() {
+    setPingSending(true);
+    try {
+      await fetch("/api/command-center/claude-ping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "manual", message: pingMessage.trim() || "Review needed" }),
+      });
+      setPingSuccess(true);
+      setPingMessage("");
+      setTimeout(() => setPingSuccess(false), 3000);
+    } catch (e) { console.error(e); }
+    setPingSending(false);
+  }
+
   // Workflow action handlers
   async function handleWorkflowAction(stepId: string, action: string, reviewNotes?: string) {
     await fetch("/api/command-center/workflows", {
@@ -160,6 +180,37 @@ export default function MissionControlPage() {
       {/* ═════════════════════════════════════════════════════════ */}
       {tab === "now" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          {/* Ping Claude */}
+          <div style={{ background: "rgba(129,140,248,0.04)", border: "1px solid rgba(129,140,248,0.15)", borderRadius: 12, padding: "14px 18px" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                value={pingMessage}
+                onChange={(e) => setPingMessage(e.target.value)}
+                placeholder="Message for Claude (optional)..."
+                onKeyDown={(e) => { if (e.key === "Enter") sendPing(); }}
+                style={{
+                  flex: 1, padding: "10px 14px", borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)",
+                  color: "#ddd", fontSize: 13, outline: "none",
+                  fontFamily: "var(--font-inter), system-ui, sans-serif",
+                }}
+              />
+              <button
+                onClick={sendPing}
+                disabled={pingSending}
+                style={{
+                  padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer",
+                  fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
+                  background: pingSuccess ? "rgba(34,197,94,0.15)" : "rgba(129,140,248,0.15)",
+                  color: pingSuccess ? "#4ade80" : "#818cf8",
+                  transition: "all 0.2s",
+                }}
+              >
+                {pingSending ? "Sending..." : pingSuccess ? "Sent!" : "Ping Claude"}
+              </button>
+            </div>
+          </div>
+
           {/* Business Pulse — always visible */}
           <div>
             <SectionHeader title="Business Pulse" accent="#22c55e" />

@@ -141,5 +141,14 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  // Auto-ping Claude when Hannah takes a workflow action
+  await supabase.from("claude_pings").insert({
+    source: "workflow_action",
+    workflow_id: step.workflow_id,
+    step_id: stepId,
+    action,
+    message: reviewNotes || contextNotes || null,
+  });
+
   return NextResponse.json(updatedStep);
 }
