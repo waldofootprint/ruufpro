@@ -9,6 +9,8 @@ import { useDashboard } from "../DashboardContext";
 import {
   Home,
   ImageIcon,
+  Camera,
+  Clock,
   Star,
   Wrench,
   Calculator,
@@ -33,6 +35,7 @@ interface SiteData {
   hero_cta_text: string | null;
   about_text: string | null;
   services: string[] | null;
+  gallery_images: string[] | null;
   reviews: { name: string; text: string; rating: number }[];
   meta_title: string | null;
   meta_description: string | null;
@@ -47,6 +50,7 @@ interface ContractorData {
   service_area_cities: string[] | null;
   has_estimate_widget: boolean;
   logo_url: string | null;
+  business_hours: Record<string, { open: string; close: string } | null> | null;
 }
 
 export default function MySitePage() {
@@ -72,6 +76,17 @@ export default function MySitePage() {
   const [newCity, setNewCity] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [businessHours, setBusinessHours] = useState<Record<string, { open: string; close: string } | null>>({
+    mon: { open: "8:00", close: "17:00" },
+    tue: { open: "8:00", close: "17:00" },
+    wed: { open: "8:00", close: "17:00" },
+    thu: { open: "8:00", close: "17:00" },
+    fri: { open: "8:00", close: "17:00" },
+    sat: null,
+    sun: null,
+  });
   const [trustSignals, setTrustSignals] = useState({
     is_licensed: false,
     is_insured: false,
@@ -94,7 +109,7 @@ export default function MySitePage() {
 
       const { data: contractorData } = await supabase
         .from("contractors")
-        .select("business_name, phone, city, state, tagline, service_area_cities, has_estimate_widget, logo_url, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, offers_financing")
+        .select("business_name, phone, city, state, tagline, service_area_cities, has_estimate_widget, logo_url, business_hours, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, offers_financing")
         .eq("id", contractorId)
         .single();
 
@@ -104,6 +119,7 @@ export default function MySitePage() {
         setCtaText(siteData.hero_cta_text || "Get Your Free Estimate");
         setAboutText(siteData.about_text || "");
         setServices(siteData.services || []);
+        setGalleryImages(siteData.gallery_images || []);
       }
 
       if (contractorData) {
@@ -112,6 +128,7 @@ export default function MySitePage() {
         setPhone(contractorData.phone || "");
         setServiceAreaCities(contractorData.service_area_cities || (contractorData.city ? [contractorData.city] : []));
         setLogoUrl(contractorData.logo_url || null);
+        if (contractorData.business_hours) setBusinessHours(contractorData.business_hours);
         setTrustSignals({
           is_licensed: contractorData.is_licensed || false,
           is_insured: contractorData.is_insured || false,
@@ -147,6 +164,7 @@ export default function MySitePage() {
       tagline: tagline || null,
       phone: phone || null,
       service_area_cities: serviceAreaCities.length > 0 ? serviceAreaCities : null,
+      business_hours: businessHours,
       ...trustSignals,
     }).eq("id", contractorId);
 
@@ -180,6 +198,49 @@ export default function MySitePage() {
     }
     setLogoUploading(false);
     e.target.value = "";
+  }
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length || !site) return;
+    setGalleryUploading(true);
+    for (const file of files) {
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        form.append("siteId", site.id);
+        const res = await fetch("/api/dashboard/upload-photo", { method: "POST", body: form });
+        const data = await res.json();
+        if (res.ok && data.gallery) setGalleryImages(data.gallery);
+      } catch (err) { console.error("Photo upload failed:", err); }
+    }
+    setGalleryUploading(false);
+    e.target.value = "";
+  }
+
+  async function removePhoto(url: string) {
+    if (!site) return;
+    const res = await fetch("/api/dashboard/upload-photo", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ siteId: site.id, photoUrl: url }),
+    });
+    const data = await res.json();
+    if (res.ok && data.gallery) setGalleryImages(data.gallery);
+  }
+
+  function toggleDay(day: string) {
+    setBusinessHours((prev) => ({
+      ...prev,
+      [day]: prev[day] ? null : { open: "8:00", close: "17:00" },
+    }));
+  }
+
+  function updateHours(day: string, field: "open" | "close", value: string) {
+    setBusinessHours((prev) => ({
+      ...prev,
+      [day]: prev[day] ? { ...prev[day]!, [field]: value } : { open: "8:00", close: "17:00", [field]: value },
+    }));
   }
 
   function addService() {
@@ -266,6 +327,55 @@ export default function MySitePage() {
       ),
     },
     {
+      id: "photos",
+      icon: <Camera className="w-4 h-4" />,
+      iconBg: "bg-teal-50 text-teal-600",
+      name: "Project Photos",
+      desc: `${galleryImages.length} photo${galleryImages.length !== 1 ? "s" : ""}`,
+      status: galleryImages.length > 0 ? "live" : "empty",
+      content: (
+        <div>
+          <p className="text-[12px] text-slate-400 mb-3">Show off your completed roofing projects. These appear in the gallery section of your website.</p>
+          {galleryImages.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {galleryImages.map((url, i) => (
+                <div key={i} className="relative group rounded-lg overflow-hidden aspect-[4/3]">
+                  <img src={url} alt={`Project ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => removePhoto(url)}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <label
+            htmlFor="photo-input"
+            className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+              galleryUploading ? "border-slate-200 bg-slate-50" : "border-[#e2e8f0] hover:border-teal-300 hover:bg-teal-50/30"
+            }`}
+          >
+            <Camera className="w-6 h-6 text-slate-300" />
+            <span className="text-[13px] text-slate-500 font-medium">
+              {galleryUploading ? "Uploading..." : "Drop photos here or click to upload"}
+            </span>
+            <span className="text-[11px] text-slate-400">PNG, JPG, or WebP — max 10MB each</span>
+          </label>
+          <input
+            id="photo-input"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            multiple
+            className="hidden"
+            onChange={handlePhotoUpload}
+            disabled={galleryUploading}
+          />
+        </div>
+      ),
+    },
+    {
       id: "hero",
       icon: <Home className="w-4 h-4" />,
       iconBg: "bg-blue-50 text-blue-600",
@@ -300,6 +410,58 @@ export default function MySitePage() {
               onChange={(e) => setCtaText(e.target.value)}
               placeholder="Get Your Free Estimate"
             />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "hours",
+      icon: <Clock className="w-4 h-4" />,
+      iconBg: "bg-orange-50 text-orange-600",
+      name: "Business Hours",
+      desc: Object.values(businessHours).filter(Boolean).length + " days open",
+      status: Object.values(businessHours).some(Boolean) ? "live" : "empty",
+      content: (
+        <div>
+          <p className="text-[12px] text-slate-400 mb-3">Set your weekly hours. These appear on your website and in Google search results.</p>
+          <div className="space-y-1.5">
+            {(["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const).map((day) => {
+              const dayNames: Record<string, string> = { mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday", sun: "Sunday" };
+              const hours = businessHours[day];
+              return (
+                <div key={day} className="flex items-center gap-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center transition-all border ${
+                      hours ? "bg-slate-800 border-slate-800" : "bg-white border-[#e2e8f0]"
+                    }`}
+                  >
+                    {hours && <Check className="w-3 h-3 text-white" />}
+                  </button>
+                  <span className="text-[13px] font-medium text-slate-700 w-24">{dayNames[day]}</span>
+                  {hours ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={hours.open}
+                        onChange={(e) => updateHours(day, "open", e.target.value)}
+                        className="px-2 py-1.5 rounded border border-[#e2e8f0] text-[13px] text-slate-700 focus:border-slate-400 focus:outline-none"
+                      />
+                      <span className="text-slate-400 text-[12px]">to</span>
+                      <input
+                        type="time"
+                        value={hours.close}
+                        onChange={(e) => updateHours(day, "close", e.target.value)}
+                        className="px-2 py-1.5 rounded border border-[#e2e8f0] text-[13px] text-slate-700 focus:border-slate-400 focus:outline-none"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-[12px] text-slate-400">Closed</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       ),
