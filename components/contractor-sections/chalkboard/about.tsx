@@ -26,14 +26,14 @@ export default function ChalkAbout({ businessName, city, aboutText, yearsInBusin
         <div style={{ position: "relative" }}>
           <div
             style={{
-              border: `3px dashed ${CHALK.borderDashed}`,
+              border: `1px solid ${CHALK.border}`,
               borderRadius: 12,
               padding: 8,
             }}
           >
             <div style={{ position: "relative", width: "100%", height: 360, overflow: "hidden", borderRadius: 8 }}>
               <Image
-                src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80&auto=format"
+                src="https://images.unsplash.com/photo-1687119628417-95a9bb01079c?w=800&q=80&auto=format"
                 alt={`${businessName} roofing team serving ${city}`}
                 fill
                 style={{ objectFit: "cover" }}

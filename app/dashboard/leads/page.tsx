@@ -6,8 +6,10 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Phone, Mail, MapPin, Calculator, MessageSquare, MessageCircle, Clock, ChevronDown, ChevronUp, Users, DollarSign, Zap } from "lucide-react";
+import { Phone, Mail, MapPin, MessageCircle, Clock, ChevronDown, ChevronUp, Users, DollarSign, Zap, ExternalLink, FileText, Star, Loader2 } from "lucide-react";
 import type { Lead, LeadStatus } from "@/lib/types";
+import type { PropertyData } from "@/lib/rentcast-api";
+import PropertyIntelCard from "@/components/property-intel-card";
 import { useDashboard } from "../DashboardContext";
 import {
   getLeadTemperature,
@@ -25,6 +27,7 @@ const STATUS_OPTIONS: { value: LeadStatus; label: string; color: string }[] = [
   { value: "contacted", label: "Contacted", color: "bg-blue-50 text-blue-700" },
   { value: "quoted", label: "Quoted", color: "bg-purple-50 text-purple-700" },
   { value: "won", label: "Won", color: "bg-emerald-50 text-emerald-700" },
+  { value: "completed", label: "Completed", color: "bg-amber-50 text-amber-700" },
   { value: "lost", label: "Lost", color: "bg-gray-100 text-gray-500" },
 ];
 
@@ -35,6 +38,10 @@ export default function LeadDashboard() {
   const [filter, setFilter] = useState<LeadStatus | "all">("all");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [expandedIntel, setExpandedIntel] = useState<string | null>(null);
+  const [livingEstimates, setLivingEstimates] = useState<Record<string, { share_token: string; status: string }>>({});
+  const [propertyData, setPropertyData] = useState<Record<string, PropertyData>>({});
+  const [reviewRequests, setReviewRequests] = useState<Record<string, { id: string; status: string }>>({});
+  const [requestingReview, setRequestingReview] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadLeads() {
@@ -45,6 +52,50 @@ export default function LeadDashboard() {
         .eq("contractor_id", contractorId)
         .order("created_at", { ascending: false });
       setLeads((data as Lead[]) || []);
+
+      // Load living estimate statuses
+      const leadIds = (data || []).filter((l: Lead) => l.living_estimate_id).map((l: Lead) => l.living_estimate_id);
+      if (leadIds.length > 0) {
+        const { data: les } = await supabase
+          .from("living_estimates")
+          .select("id, share_token, status")
+          .in("id", leadIds);
+        if (les) {
+          const map: Record<string, { share_token: string; status: string }> = {};
+          les.forEach((le: { id: string; share_token: string; status: string }) => { map[le.id] = le; });
+          setLivingEstimates(map);
+        }
+      }
+
+      // Load cached property data
+      const propIds = (data || []).filter((l: Lead) => l.property_data_id).map((l: Lead) => l.property_data_id);
+      if (propIds.length > 0) {
+        const { data: props } = await supabase
+          .from("property_data_cache")
+          .select("*")
+          .in("id", propIds);
+        if (props) {
+          const pmap: Record<string, PropertyData> = {};
+          props.forEach((p: any) => { pmap[p.id] = p; });
+          setPropertyData(pmap);
+        }
+      }
+
+      // Load review request statuses (fail gracefully)
+      try {
+        if (contractorId) {
+          const { data: reviews } = await supabase
+            .from("review_requests")
+            .select("id, lead_id, status")
+            .eq("contractor_id", contractorId);
+          if (reviews) {
+            const rmap: Record<string, { id: string; status: string }> = {};
+            reviews.forEach((r: { id: string; lead_id: string; status: string }) => { rmap[r.lead_id] = r; });
+            setReviewRequests(rmap);
+          }
+        }
+      } catch { /* table may not have data yet */ }
+
       setLoading(false);
     }
     loadLeads();
@@ -74,6 +125,34 @@ export default function LeadDashboard() {
       });
     }
     refreshLeadCount();
+
+    // Auto-fire review request when lead marked "completed" (if not already requested)
+    if (newStatus === "completed" && !reviewRequests[leadId]) {
+      handleRequestReview(leadId, true);
+    }
+  }
+
+  async function handleRequestReview(leadId: string, silent = false) {
+    setRequestingReview(leadId);
+    try {
+      const res = await fetch("/api/reviews/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setReviewRequests((prev) => ({
+          ...prev,
+          [leadId]: { id: data.reviewRequestId, status: "sms_sent" },
+        }));
+      } else if (!silent) {
+        alert(data.error || "Failed to send review request");
+      }
+    } catch {
+      if (!silent) alert("Failed to send review request");
+    }
+    setRequestingReview(null);
   }
 
   // One-tap call: triggers phone + auto-updates status
@@ -236,6 +315,41 @@ export default function LeadDashboard() {
                             {lead.address.split(",")[0]}
                           </span>
                         )}
+                        {lead.living_estimate_id && livingEstimates[lead.living_estimate_id] && (() => {
+                          const le = livingEstimates[lead.living_estimate_id!];
+                          const isSigned = le.status === "signed";
+                          return (
+                            <a
+                              href={`/estimate/${le.share_token}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${
+                                isSigned
+                                  ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
+                                  : "text-blue-500 bg-blue-50 hover:bg-blue-100"
+                              }`}
+                            >
+                              <FileText className="w-2.5 h-2.5" />
+                              {isSigned ? "Signed" : le.status === "viewed" ? "Viewed" : "Estimate"}
+                            </a>
+                          );
+                        })()}
+                        {reviewRequests[lead.id] && (() => {
+                          const rr = reviewRequests[lead.id];
+                          const isClicked = rr.status === "clicked";
+                          const isReviewed = rr.status === "reviewed";
+                          return (
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                              isReviewed ? "text-amber-600 bg-amber-50" :
+                              isClicked ? "text-emerald-600 bg-emerald-50" :
+                              "text-violet-600 bg-violet-50"
+                            }`}>
+                              <Star className="w-2.5 h-2.5" />
+                              {isReviewed ? "Reviewed" : isClicked ? "Clicked" : "Requested"}
+                            </span>
+                          );
+                        })()}
                         <span className="text-[10px] text-slate-300">
                           {formatTimeAgo(lead.created_at)}
                         </span>
@@ -333,8 +447,8 @@ export default function LeadDashboard() {
                   </div>
                 )}
 
-                {/* Expandable Roof Intel */}
-                {intel && (
+                {/* Expandable Intel (Roof Intel + Property Intel) */}
+                {(intel || lead.address) && (
                   <div className="border-t border-slate-50">
                     <button
                       onClick={(e) => {
@@ -344,44 +458,65 @@ export default function LeadDashboard() {
                       className="flex items-center gap-2 px-4 py-2 text-[11px] font-semibold text-slate-400 hover:text-slate-600 w-full transition-colors"
                     >
                       {isIntelExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                      Roof Intel
+                      {intel ? "Roof Intel" : "Property Intel"}
+                      {lead.property_data_id && propertyData[lead.property_data_id] && (
+                        <span className="text-[8px] text-emerald-500 bg-emerald-50 px-1 py-0.5 rounded ml-1">+Property</span>
+                      )}
                     </button>
 
                     {isIntelExpanded && (
-                      <div className="px-4 pb-4">
-                        <div className="bg-slate-50 rounded-lg p-3">
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <div>
-                              <div className="text-[9px] font-semibold text-slate-400 uppercase">Area</div>
-                              <div className="text-[13px] font-bold text-slate-800">{intel.areaSqft.toLocaleString()} sqft</div>
-                            </div>
-                            <div>
-                              <div className="text-[9px] font-semibold text-slate-400 uppercase">Pitch</div>
-                              <div className="text-[13px] font-bold text-slate-800">{intel.pitchDisplay}</div>
-                            </div>
-                            <div>
-                              <div className="text-[9px] font-semibold text-slate-400 uppercase">Complexity</div>
-                              <div className="text-[13px] font-bold text-slate-800">{intel.complexityRating}</div>
-                            </div>
-                            <div>
-                              <div className="text-[9px] font-semibold text-slate-400 uppercase">Waste</div>
-                              <div className="text-[13px] font-bold text-slate-800">{intel.wastePercent}%</div>
-                            </div>
-                            {intel.estimatedBundles && (
+                      <div className="px-4 pb-4 space-y-3">
+                        {/* Roof Intel */}
+                        {intel && (
+                          <div className="bg-slate-50 rounded-lg p-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                               <div>
-                                <div className="text-[9px] font-semibold text-slate-400 uppercase">~Bundles</div>
-                                <div className="text-[13px] font-bold text-slate-800">~{intel.estimatedBundles}</div>
+                                <div className="text-[9px] font-semibold text-slate-400 uppercase">Area</div>
+                                <div className="text-[13px] font-bold text-slate-800">{intel.areaSqft.toLocaleString()} sqft</div>
                               </div>
-                            )}
-                            <div>
-                              <div className="text-[9px] font-semibold text-slate-400 uppercase">Ridge</div>
-                              <div className="text-[13px] font-bold text-slate-800">~{intel.estimatedRidgeFt} LF</div>
+                              <div>
+                                <div className="text-[9px] font-semibold text-slate-400 uppercase">Pitch</div>
+                                <div className="text-[13px] font-bold text-slate-800">{intel.pitchDisplay}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-semibold text-slate-400 uppercase">Complexity</div>
+                                <div className="text-[13px] font-bold text-slate-800">{intel.complexityRating}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-semibold text-slate-400 uppercase">Waste</div>
+                                <div className="text-[13px] font-bold text-slate-800">{intel.wastePercent}%</div>
+                              </div>
+                              {intel.estimatedBundles && (
+                                <div>
+                                  <div className="text-[9px] font-semibold text-slate-400 uppercase">~Bundles</div>
+                                  <div className="text-[13px] font-bold text-slate-800">~{intel.estimatedBundles}</div>
+                                </div>
+                              )}
+                              <div>
+                                <div className="text-[9px] font-semibold text-slate-400 uppercase">Ridge</div>
+                                <div className="text-[13px] font-bold text-slate-800">~{intel.estimatedRidgeFt} LF</div>
+                              </div>
                             </div>
+                            <p className="text-[9px] text-slate-400 mt-3 italic">
+                              Satellite-estimated. Verify before ordering materials.
+                            </p>
                           </div>
-                          <p className="text-[9px] text-slate-400 mt-3 italic">
-                            Satellite-estimated. Verify before ordering materials.
-                          </p>
-                        </div>
+                        )}
+
+                        {/* Property Intel */}
+                        {lead.address && (
+                          <PropertyIntelCard
+                            leadId={lead.id}
+                            address={lead.address}
+                            initialData={lead.property_data_id ? propertyData[lead.property_data_id] || null : null}
+                            onDataFetched={(data) => {
+                              if (data.id) {
+                                setPropertyData((prev) => ({ ...prev, [data.id]: data }));
+                                setLeads((prev) => prev.map((l) => l.id === lead.id ? { ...l, property_data_id: data.id } : l));
+                              }
+                            }}
+                          />
+                        )}
                       </div>
                     )}
                   </div>
@@ -487,6 +622,33 @@ export default function LeadDashboard() {
                 </div>
               )}
 
+              {/* Living Estimate link */}
+              {selectedLead.living_estimate_id && livingEstimates[selectedLead.living_estimate_id] && (() => {
+                const le = livingEstimates[selectedLead.living_estimate_id!];
+                const isSigned = le.status === "signed";
+                return (
+                  <a
+                    href={`/estimate/${le.share_token}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-2 w-full p-3 rounded-xl font-semibold text-[14px] transition-colors ${
+                      isSigned
+                        ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                    }`}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {isSigned ? "View Signed Estimate" : "View Interactive Estimate"}
+                    {le.status === "viewed" && (
+                      <span className="text-[10px] bg-blue-100 px-1.5 py-0.5 rounded ml-1">Viewed</span>
+                    )}
+                    {isSigned && (
+                      <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded ml-1">Signed</span>
+                    )}
+                  </a>
+                );
+              })()}
+
               {/* Roof Intel in modal */}
               {(() => {
                 const intel = getRoofIntel(selectedLead);
@@ -507,6 +669,21 @@ export default function LeadDashboard() {
                 );
               })()}
 
+              {/* Property Intel in modal */}
+              {selectedLead.address && (
+                <PropertyIntelCard
+                  leadId={selectedLead.id}
+                  address={selectedLead.address}
+                  initialData={selectedLead.property_data_id ? propertyData[selectedLead.property_data_id] || null : null}
+                  onDataFetched={(data) => {
+                    if (data.id) {
+                      setPropertyData((prev) => ({ ...prev, [data.id]: data }));
+                      setLeads((prev) => prev.map((l) => l.id === selectedLead.id ? { ...l, property_data_id: data.id } : l));
+                    }
+                  }}
+                />
+              )}
+
               {/* Status buttons */}
               <div>
                 <p className="text-[10px] text-slate-400 mb-2 uppercase font-semibold">Status</p>
@@ -526,6 +703,35 @@ export default function LeadDashboard() {
                   ))}
                 </div>
               </div>
+
+              {/* Request Review button */}
+              {selectedLead.phone && (selectedLead.status === "completed" || selectedLead.status === "won") && (
+                <div>
+                  {reviewRequests[selectedLead.id] ? (
+                    <div className={`flex items-center justify-center gap-2 w-full p-3 rounded-xl text-[13px] font-semibold ${
+                      reviewRequests[selectedLead.id].status === "reviewed" ? "bg-amber-50 text-amber-700" :
+                      reviewRequests[selectedLead.id].status === "clicked" ? "bg-emerald-50 text-emerald-700" :
+                      "bg-violet-50 text-violet-700"
+                    }`}>
+                      <Star className="w-4 h-4" />
+                      Review {reviewRequests[selectedLead.id].status === "reviewed" ? "Received" :
+                              reviewRequests[selectedLead.id].status === "clicked" ? "Link Clicked" : "Request Sent"}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleRequestReview(selectedLead.id)}
+                      disabled={requestingReview === selectedLead.id}
+                      className="flex items-center justify-center gap-2 w-full p-3 rounded-xl bg-amber-50 text-amber-700 font-semibold text-[14px] hover:bg-amber-100 transition-colors disabled:opacity-50"
+                    >
+                      {requestingReview === selectedLead.id ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+                      ) : (
+                        <><Star className="w-4 h-4" /> Request Google Review</>
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
 
               <p className="text-[10px] text-slate-300 text-center pt-2">
                 Received {new Date(selectedLead.created_at).toLocaleString()}

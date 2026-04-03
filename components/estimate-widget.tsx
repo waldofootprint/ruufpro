@@ -219,6 +219,7 @@ export default function EstimateWidget({
         estimate_high: data.estimate.price_high,
         estimate_material: desiredMaterial,
         estimate_roof_sqft: data.estimate.roof_area_sqft,
+        sms_consent: agreedToSms,
       });
       if (leadErr) console.error("Lead insert failed:", leadErr);
 

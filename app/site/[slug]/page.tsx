@@ -13,6 +13,9 @@ import { buildSchemas } from "@/lib/schema";
 import ModernCleanTemplate from "@/components/templates/modern-clean";
 import ChalkboardTemplate from "@/components/templates/chalkboard";
 import BlueprintTemplate from "@/components/templates/blueprint";
+import ClassicTemplate from "@/components/templates/classic";
+import ForgeTemplate from "@/components/templates/forge";
+import ApexTemplate from "@/components/templates/apex";
 
 export async function generateMetadata({
   params,
@@ -78,21 +81,30 @@ export default async function ContractorSite({
 
   // Choose template based on site.template field
   // Maps both old names and onboarding design style names to templates
-  const template = site.template || "modern_clean";
+  const template = (site.template || "modern_clean") as string;
 
   const templateComponent =
     template === "chalkboard" || template === "bold_confident"
       ? <ChalkboardTemplate {...templateData} />
       : template === "blueprint" || template === "warm_trustworthy"
       ? <BlueprintTemplate {...templateData} />
+      : template === "classic" || template === "clean_professional"
+      ? <ClassicTemplate {...templateData} />
+      : template === "forge" || template === "bold_dark"
+      ? <ForgeTemplate {...templateData} />
+      : template === "apex"
+      ? <ApexTemplate templateData={templateData} />
       : <ModernCleanTemplate {...templateData} />;
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
-      />
+      {schemas.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
       {templateComponent}
     </>
   );

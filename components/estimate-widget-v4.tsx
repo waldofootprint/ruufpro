@@ -3,6 +3,9 @@
 // All colors use rgba white — no brand colors — works on any dark background.
 // Cards lift on hover and press inward when selected.
 // Inputs feel carved into glass. Buttons have physical weight.
+//
+// V4.1 — Good/Better/Best: calculates ALL priced materials and shows
+// comparison cards on the results screen. No more single-material picker.
 
 "use client";
 
@@ -141,12 +144,6 @@ const CURRENT_MATERIALS = [
   { id: "cedar", label: "Cedar", description: "Wood shake or shingle", image: "/images/materials/cedar.jpg" },
 ];
 
-const DESIRED_MATERIALS = [
-  { id: "asphalt", label: "Asphalt Shingles", description: "Most popular choice", badge: "Most Popular", image: "/images/materials/asphalt.jpg" },
-  { id: "metal", label: "Standing Seam Metal", description: "Durable & long-lasting", badge: null, image: "/images/materials/metal.jpg" },
-  { id: "tile", label: "Tile", description: "Premium clay or concrete", badge: null, image: "/images/materials/tile.jpg" },
-];
-
 const TIMELINE_OPTIONS = [
   { id: "no_timeline", label: "No rush", description: "Just exploring" },
   { id: "1_3_months", label: "1–3 months", description: "Planning ahead" },
@@ -159,11 +156,49 @@ const FINANCING_OPTIONS = [
   { id: "maybe", label: "Maybe", description: "Want to learn more" },
 ];
 
+// ----- TYPES -----
+
+interface MaterialEstimate {
+  material: string;
+  tier: string;
+  label: string;
+  description: string;
+  warranty: string;
+  wind_rating: string;
+  lifespan: string;
+  price_low: number;
+  price_high: number;
+  range_display: string;
+  roof_area_sqft: number;
+  pitch_degrees: number;
+  num_segments: number;
+  is_satellite: boolean;
+}
+
+interface EstimateResponse {
+  estimates: MaterialEstimate[];
+  roof_data: {
+    roof_area_sqft: number;
+    pitch_degrees: number;
+    num_segments: number;
+    is_satellite: boolean;
+    detail_display: string;
+  };
+}
+
 // ----- STEP TRANSITION (enhanced with scale for 3D feel) -----
 const stepVariants = {
   enter: { opacity: 0, x: 16, scale: 0.98 },
   center: { opacity: 1, x: 0, scale: 1 },
   exit: { opacity: 0, x: -16, scale: 0.98 },
+};
+
+// ----- TIER BADGE COLORS -----
+const TIER_COLORS: Record<string, { bg: string; text: string }> = {
+  Good: { bg: "rgba(48,209,88,0.2)", text: "#30d158" },
+  Better: { bg: "rgba(100,160,255,0.2)", text: "#64a0ff" },
+  Best: { bg: "rgba(255,214,10,0.2)", text: "#ffd60a" },
+  Premium: { bg: "rgba(191,90,242,0.2)", text: "#bf5af2" },
 };
 
 // ----- MAIN WIDGET -----
@@ -184,7 +219,6 @@ export default function EstimateWidgetV4({
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [pitchCategory, setPitchCategory] = useState("");
   const [currentMaterial, setCurrentMaterial] = useState("");
-  const [desiredMaterial, setDesiredMaterial] = useState("");
   const [timeline, setTimeline] = useState("");
   const [financing, setFinancing] = useState("");
   const [name, setName] = useState("");
@@ -192,10 +226,11 @@ export default function EstimateWidgetV4({
   const [phone, setPhone] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToSms, setAgreedToSms] = useState(false);
-  const [estimate, setEstimate] = useState<{
-    price_low: number; price_high: number; range_display: string;
-    detail_display: string; roof_area_sqft: number; pitch_degrees: number; is_satellite: boolean;
-  } | null>(null);
+
+  // G/B/B estimate results
+  const [estimateData, setEstimateData] = useState<EstimateResponse | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState("");
+  const [livingEstimateUrl, setLivingEstimateUrl] = useState("");
 
   const nextStep = () => { setDirection(1); setStep((s) => s + 1); setError(""); };
   const prevStep = () => { setDirection(-1); setStep((s) => Math.max(1, s - 1)); setError(""); };
@@ -209,43 +244,95 @@ export default function EstimateWidgetV4({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contractor_id: contractorId, address, pitch_category: pitchCategory,
-          current_material: currentMaterial, material: desiredMaterial,
+          current_material: currentMaterial,
           shingle_layers: "not_sure", timeline, financing_interest: financing,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Estimate failed");
-      setEstimate(data);
+      setEstimateData(data);
+
+      // Default selection = first (cheapest) material
+      const primaryMaterial = data.estimates[0]?.material || "asphalt";
+      setSelectedMaterial(primaryMaterial);
+      const primaryEst = data.estimates[0];
+
+      // Notify contractor
       fetch("/api/notify", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contractor_id: contractorId, lead_name: name, lead_email: email,
           lead_phone: phone, lead_address: address,
           source: "estimate_widget",
-          estimate_low: data.price_low, estimate_high: data.price_high,
-          estimate_material: desiredMaterial, estimate_roof_sqft: data.roof_area_sqft,
+          estimate_low: primaryEst?.price_low, estimate_high: primaryEst?.price_high,
+          estimate_material: primaryMaterial, estimate_roof_sqft: data.roof_data?.roof_area_sqft,
           timeline: timeline || null,
         }),
       }).catch(() => {});
+
+      // Insert lead with full G/B/B data
+      const estimateMaterials = data.estimates.map((e: MaterialEstimate) => ({
+        material: e.material, tier: e.tier, label: e.label,
+        price_low: e.price_low, price_high: e.price_high,
+        warranty: e.warranty, lifespan: e.lifespan,
+      }));
+
       const { error: leadErr } = await supabase.from("leads").insert({
         contractor_id: contractorId, name, email, phone, address,
-        source: "estimate_widget", estimate_low: data.price_low,
-        estimate_high: data.price_high, estimate_material: desiredMaterial,
-        estimate_roof_sqft: data.roof_area_sqft,
+        source: "estimate_widget",
+        estimate_low: primaryEst?.price_low,
+        estimate_high: primaryEst?.price_high,
+        estimate_material: primaryMaterial,
+        estimate_roof_sqft: data.roof_data?.roof_area_sqft,
+        estimate_materials: estimateMaterials,
         timeline: timeline || null,
         financing_interest: financing || null,
-        estimate_pitch_degrees: data.pitch_degrees || null,
-        estimate_segments: data.num_segments || null,
+        estimate_pitch_degrees: data.roof_data?.pitch_degrees || null,
+        estimate_segments: data.roof_data?.num_segments || null,
+        sms_consent: agreedToSms,
       });
       if (leadErr) console.error("Lead insert failed:", leadErr);
-      setDirection(1); setStep(8);
+
+      // Create living estimate for interactive proposal page
+      try {
+        const leadData = await supabase
+          .from("leads")
+          .select("id")
+          .eq("contractor_id", contractorId)
+          .eq("email", email)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        const leRes = await fetch("/api/living-estimate", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contractor_id: contractorId,
+            lead_id: leadData.data?.id || null,
+            homeowner_name: name, homeowner_email: email,
+            homeowner_phone: phone, homeowner_address: address,
+            roof_area_sqft: data.roof_data?.roof_area_sqft,
+            pitch_degrees: data.roof_data?.pitch_degrees,
+            num_segments: data.roof_data?.num_segments,
+            is_satellite: data.roof_data?.is_satellite,
+            estimates: data.estimates,
+          }),
+        });
+        if (leRes.ok) {
+          const leData = await leRes.json();
+          setLivingEstimateUrl(leData.url || "");
+        }
+      } catch (e) { console.error("Living estimate creation failed:", e); }
+
+      setDirection(1); setStep(7);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally { setLoading(false); }
   };
 
-  const totalSteps = 7;
-  const progress = step === 1 || step === 8 ? 0 : ((step - 1) / totalSteps) * 100;
+  // Steps: 1=Landing, 2=Address, 3=Pitch, 4=Current Material, 5=Timeline+Financing, 6=Contact, 7=Results
+  const totalSteps = 6;
+  const progress = step === 1 || step === 7 ? 0 : ((step - 1) / totalSteps) * 100;
 
   // Shared input style
   const inputStyle = {
@@ -287,7 +374,7 @@ export default function EstimateWidgetV4({
       <div className="px-7 pt-7 pb-9">
 
         {/* Progress bar — inset track with glowing fill */}
-        {step > 1 && step < 8 && (
+        {step > 1 && step < 7 && (
           <div className="mb-6">
             <div
               className="h-[4px] rounded-full overflow-hidden"
@@ -304,7 +391,7 @@ export default function EstimateWidgetV4({
         )}
 
         {/* Back button — glass secondary style */}
-        {step > 1 && step < 8 && (
+        {step > 1 && step < 7 && (
           <motion.button
             onClick={prevStep}
             whileHover={{ scale: 1.02 }}
@@ -590,75 +677,8 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
-        {/* ===== STEP 5: Desired Material ===== */}
+        {/* ===== STEP 5: Timeline + Financing (was Step 6) ===== */}
         {step === 5 && (
-          <div className="space-y-5">
-            <div>
-              <h2 className="text-[21px] font-semibold mb-1" style={{ color: GLASS.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
-                What type of roof would you like?
-              </h2>
-              <p className="text-[14px]" style={{ color: GLASS.textSecondary, letterSpacing: "-0.016em" }}>
-                Choose your new roofing material.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {DESIRED_MATERIALS.map((mat) => {
-                const isSelected = desiredMaterial === mat.id;
-                return (
-                  <motion.button
-                    key={mat.id}
-                    onClick={() => { setDesiredMaterial(mat.id); nextStep(); }}
-                    whileHover={!isSelected ? { y: -2 } : undefined}
-                    whileTap={{ scale: 0.97 }}
-                    className="text-left rounded-xl overflow-hidden transition-all duration-300"
-                    style={{
-                      background: isSelected ? GLASS.cardSelectedBg : GLASS.cardBg,
-                      border: `1px solid ${isSelected ? GLASS.cardSelectedBorder : GLASS.cardBorder}`,
-                      boxShadow: isSelected ? SHADOW.cardSelected : SHADOW.cardRaised,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.borderColor = GLASS.cardHoverBorder;
-                        e.currentTarget.style.boxShadow = SHADOW.cardHover;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.borderColor = GLASS.cardBorder;
-                        e.currentTarget.style.boxShadow = SHADOW.cardRaised;
-                      }
-                    }}
-                  >
-                    <div className="h-16 overflow-hidden relative" style={{ background: GLASS.cardBg }}>
-                      <img src={mat.image} alt={mat.label} className="w-full h-full object-cover opacity-85" />
-                      {mat.badge && (
-                        <span
-                          className="absolute top-1.5 right-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                          style={{
-                            background: "rgba(255,255,255,0.15)",
-                            color: GLASS.text,
-                            backdropFilter: "blur(8px)",
-                            WebkitBackdropFilter: "blur(8px)",
-                          }}
-                        >
-                          {mat.badge}
-                        </span>
-                      )}
-                    </div>
-                    <div className="px-2.5 py-2">
-                      <p className="text-[12px] font-semibold" style={{ color: GLASS.text }}>{mat.label}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: GLASS.textTertiary }}>{mat.description}</p>
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ===== STEP 6: Timeline + Financing (pill toggles) ===== */}
-        {step === 6 && (
           <div className="space-y-7">
             <div>
               <h2 className="text-[21px] font-semibold mb-1" style={{ color: GLASS.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
@@ -738,8 +758,8 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
-        {/* ===== STEP 7: Contact Info ===== */}
-        {step === 7 && (
+        {/* ===== STEP 6: Contact Info (was Step 7) ===== */}
+        {step === 6 && (
           <div className="space-y-5">
             <div>
               <h2 className="text-[21px] font-semibold mb-1" style={{ color: GLASS.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
@@ -838,43 +858,98 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
-        {/* ===== STEP 8: Results ===== */}
-        {step === 8 && estimate && (
-          <div className="space-y-6 py-2">
+        {/* ===== STEP 7: Good/Better/Best Results ===== */}
+        {step === 7 && estimateData && (
+          <div className="space-y-5 py-2">
             <div className="text-center">
-              <p className="text-[12px] font-semibold uppercase mb-6" style={{ color: GLASS.textTertiary, letterSpacing: "0.06em" }}>
-                {estimate.is_satellite ? "Satellite-Measured" : "Estimated"} Roof Analysis
+              <p className="text-[12px] font-semibold uppercase mb-2" style={{ color: GLASS.textTertiary, letterSpacing: "0.06em" }}>
+                {estimateData.roof_data.is_satellite ? "Satellite-Measured" : "Estimated"} Roof Analysis
               </p>
+              <p className="text-[12px]" style={{ color: GLASS.textTertiary }}>
+                {estimateData.roof_data.detail_display}
+              </p>
+            </div>
 
-              <p className="text-[12px] font-semibold uppercase mb-3" style={{ color: GLASS.textSecondary, letterSpacing: "0.04em" }}>
-                Ballpark Estimate
-              </p>
+            {/* G/B/B Material Cards — stacked for mobile-first */}
+            <div className="space-y-3">
+              {estimateData.estimates.map((est, i) => {
+                const isSelected = selectedMaterial === est.material;
+                const tierColor = TIER_COLORS[est.tier] || TIER_COLORS.Good;
+                return (
+                  <motion.button
+                    key={est.material}
+                    onClick={() => setSelectedMaterial(est.material)}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: i * 0.1 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full text-left rounded-xl p-4 transition-all duration-300"
+                    style={{
+                      background: isSelected ? GLASS.cardSelectedBg : GLASS.cardBg,
+                      border: `1px solid ${isSelected ? GLASS.cardSelectedBorder : GLASS.cardBorder}`,
+                      boxShadow: isSelected ? SHADOW.cardSelected : SHADOW.cardRaised,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = GLASS.cardHoverBg;
+                        e.currentTarget.style.borderColor = GLASS.cardHoverBorder;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = GLASS.cardBg;
+                        e.currentTarget.style.borderColor = GLASS.cardBorder;
+                      }
+                    }}
+                  >
+                    {/* Header row: tier badge + material name */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full"
+                          style={{
+                            background: tierColor.bg,
+                            color: tierColor.text,
+                            letterSpacing: "0.05em",
+                          }}
+                        >
+                          {est.tier}
+                        </span>
+                        <span className="text-[15px] font-semibold" style={{ color: GLASS.text }}>
+                          {est.label}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <Check className="w-4 h-4" style={{ color: GLASS.green }} />
+                      )}
+                    </div>
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1], delay: 0.15 }}
-                className="mb-3"
-              >
-                <span
-                  className="text-[44px] md:text-[52px] font-semibold"
-                  style={{
-                    color: GLASS.text,
-                    letterSpacing: "-0.003em",
-                    lineHeight: 1.08,
-                    textShadow: "0 0 20px rgba(255,255,255,0.15)",
-                  }}
-                >
-                  {estimate.range_display}
-                </span>
-              </motion.div>
+                    {/* Price range */}
+                    <p
+                      className="text-[24px] font-semibold mb-2"
+                      style={{ color: GLASS.text, letterSpacing: "-0.003em" }}
+                    >
+                      {est.range_display}
+                    </p>
 
-              <p className="text-[17px]" style={{ color: GLASS.textSecondary, letterSpacing: "-0.022em" }}>
-                for {DESIRED_MATERIALS.find((m) => m.id === desiredMaterial)?.label || desiredMaterial}
-              </p>
-              <p className="text-[12px] mt-1" style={{ color: GLASS.textTertiary }}>
-                {estimate.detail_display}
-              </p>
+                    {/* Specs row */}
+                    <div className="flex gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase" style={{ color: GLASS.textTertiary, letterSpacing: "0.03em" }}>Warranty</p>
+                        <p className="text-[12px] font-medium" style={{ color: GLASS.textSecondary }}>{est.warranty}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase" style={{ color: GLASS.textTertiary, letterSpacing: "0.03em" }}>Wind</p>
+                        <p className="text-[12px] font-medium" style={{ color: GLASS.textSecondary }}>{est.wind_rating}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase" style={{ color: GLASS.textTertiary, letterSpacing: "0.03em" }}>Lifespan</p>
+                        <p className="text-[12px] font-medium" style={{ color: GLASS.textSecondary }}>{est.lifespan}</p>
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
             </div>
 
             {/* Disclaimer */}
@@ -887,8 +962,8 @@ export default function EstimateWidgetV4({
             >
               <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: GLASS.textTertiary }} />
               <p className="text-[12px] leading-relaxed" style={{ color: GLASS.textSecondary }}>
-                <strong style={{ color: GLASS.text }}>Note:</strong> This is a ballpark estimate,
-                not a final quote. Actual price depends on roof condition, access, and
+                <strong style={{ color: GLASS.text }}>Note:</strong> These are ballpark estimates,
+                not final quotes. Actual price depends on roof condition, access, and
                 other factors assessed during a free inspection.
               </p>
             </div>
@@ -918,13 +993,21 @@ export default function EstimateWidgetV4({
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={async () => {
+                  const primary = estimateData.estimates.find((e) => e.material === selectedMaterial) || estimateData.estimates[0];
                   const res = await fetch("/api/report", {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                       contractor_id: contractorId, homeowner_name: name, homeowner_address: address,
-                      roof_area_sqft: estimate?.roof_area_sqft, pitch_degrees: estimate?.pitch_degrees,
-                      material: desiredMaterial, price_low: estimate?.price_low,
-                      price_high: estimate?.price_high, is_satellite: estimate?.is_satellite,
+                      roof_area_sqft: estimateData.roof_data.roof_area_sqft,
+                      pitch_degrees: estimateData.roof_data.pitch_degrees,
+                      num_segments: estimateData.roof_data.num_segments,
+                      material: primary.material, price_low: primary.price_low,
+                      price_high: primary.price_high, is_satellite: estimateData.roof_data.is_satellite,
+                      all_estimates: estimateData.estimates.map((e) => ({
+                        material: e.material, label: e.label, price_low: e.price_low,
+                        price_high: e.price_high, warranty: e.warranty,
+                        wind_rating: e.wind_rating, lifespan: e.lifespan, description: e.description,
+                      })),
                     }),
                   });
                   const blob = await res.blob();
@@ -945,6 +1028,27 @@ export default function EstimateWidgetV4({
                 <Download className="w-4 h-4" />
                 Download Estimate PDF
               </motion.button>
+
+              {livingEstimateUrl && (
+                <motion.a
+                  href={livingEstimateUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-3 rounded-xl text-[17px] flex items-center justify-center gap-2 transition-all duration-300"
+                  style={{
+                    background: GLASS.secondaryBg,
+                    border: `1px solid ${GLASS.secondaryBorder}`,
+                    color: GLASS.secondaryText,
+                    boxShadow: SHADOW.btnSecondary,
+                    fontWeight: 500, minHeight: 44,
+                  }}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  View Interactive Estimate
+                </motion.a>
+              )}
             </div>
 
             <div className="flex items-center justify-center gap-5 text-[12px]" style={{ color: GLASS.textTertiary }}>

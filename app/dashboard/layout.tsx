@@ -15,6 +15,8 @@ import {
   Bell,
   LogOut,
   Settings,
+  Puzzle,
+  MessageSquare,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -23,7 +25,9 @@ const SIDEBAR_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/leads", label: "Leads", icon: Users, showBadge: true },
   { href: "/dashboard/estimate-settings", label: "Widget Settings", icon: Calculator },
+  { href: "/dashboard/addons", label: "Estimate Add-Ons", icon: Puzzle },
   { href: "/dashboard/my-site", label: "My Website", icon: Globe },
+  { href: "/dashboard/sms", label: "SMS & Reviews", icon: MessageSquare },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -239,6 +243,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                       >
                         <LayoutDashboard className="w-4 h-4 text-slate-400" />
                         Dashboard
+                      </a>
+                      <a
+                        href="/dashboard/sms"
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        <MessageSquare className="w-4 h-4 text-slate-400" />
+                        SMS & Reviews
                       </a>
                       <a
                         href="/dashboard/settings"

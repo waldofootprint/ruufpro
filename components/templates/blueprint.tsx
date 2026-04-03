@@ -2,6 +2,8 @@
 // Clean, trustworthy, professional. Plus Jakarta Sans.
 
 import type { ContractorSiteData } from "../contractor-sections/types";
+import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
+import FloatingTextUs from "../contractor-sections/floating-text-us";
 import BlueprintNav from "../contractor-sections/blueprint/nav";
 import BlueprintHero from "../contractor-sections/blueprint/hero";
 import BlueprintFeatures from "../contractor-sections/blueprint/features";
@@ -19,7 +21,7 @@ export default function BlueprintTemplate(props: ContractorSiteData) {
   return (
     <main style={{ background: "#F5F7FA", minHeight: "100vh" }}>
       <BlueprintNav businessName={props.businessName} phone={props.phone} hasEstimateWidget={props.hasEstimateWidget} />
-      <BlueprintHero businessName={props.businessName} city={props.city} phone={props.phone} heroHeadline={props.heroHeadline} tagline={props.tagline} heroCta={props.heroCta} heroImage={null} hasEstimateWidget={props.hasEstimateWidget} yearsInBusiness={props.yearsInBusiness} />
+      <BlueprintHero businessName={props.businessName} city={props.city} phone={props.phone} heroHeadline={props.heroHeadline} tagline={props.tagline} heroCta={props.heroCta} heroImage={null} hasEstimateWidget={props.hasEstimateWidget} yearsInBusiness={props.yearsInBusiness} reviews={props.reviews} urgencyBadge={props.urgencyBadge} />
       <BlueprintFeatures isInsured={props.isInsured} offersFinancing={props.offersFinancing} warrantyYears={props.warrantyYears} />
       <BlueprintServices services={props.services} />
       <BlueprintEstimate hasEstimateWidget={props.hasEstimateWidget} contractorId={props.contractorId} businessName={props.businessName} phone={props.phone} />
@@ -42,6 +44,8 @@ export default function BlueprintTemplate(props: ContractorSiteData) {
       <BlueprintCta phone={props.phone} city={props.city} hasEstimateWidget={props.hasEstimateWidget} />
       <BlueprintContact businessName={props.businessName} phone={props.phone} city={props.city} state={props.state} contractorId={props.contractorId} />
       <BlueprintFooter businessName={props.businessName} phone={props.phone} city={props.city} state={props.state} services={props.services} />
+      <FloatingEstimateCTA hasEstimateWidget={props.hasEstimateWidget} phone={props.phone} />
+      <FloatingTextUs phone={props.phone} />
     </main>
   );
 }

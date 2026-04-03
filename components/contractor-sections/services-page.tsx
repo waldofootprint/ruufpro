@@ -6,6 +6,8 @@
 import { THEME } from "./theme";
 import { BLUEPRINT } from "./theme-blueprint";
 import { CHALK } from "./theme-chalkboard";
+import { CLASSIC } from "./theme-classic";
+import { FORGE } from "./theme-forge";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -66,6 +68,44 @@ function getTheme(template: string) {
       tagBg: BLUEPRINT.accentLight,
       tagText: BLUEPRINT.accent,
       isDark: false,
+    };
+  }
+  if (template === "classic" || template === "clean_professional") {
+    return {
+      bg: CLASSIC.bgAlt,
+      bgCard: CLASSIC.bg,
+      text: CLASSIC.text,
+      textSecondary: CLASSIC.textSecondary,
+      accent: CLASSIC.accent,
+      accentHover: CLASSIC.accentHover,
+      border: CLASSIC.border,
+      fontDisplay: CLASSIC.fontDisplay,
+      fontBody: CLASSIC.fontBody,
+      maxWidth: CLASSIC.maxWidth,
+      borderRadius: CLASSIC.borderRadiusLg,
+      sectionPadding: CLASSIC.sectionPadding,
+      tagBg: CLASSIC.accentLight,
+      tagText: CLASSIC.text,
+      isDark: false,
+    };
+  }
+  if (template === "forge" || template === "bold_dark") {
+    return {
+      bg: FORGE.bgAlt,
+      bgCard: FORGE.bgCard,
+      text: FORGE.text,
+      textSecondary: FORGE.textMuted,
+      accent: FORGE.accent,
+      accentHover: FORGE.accentHover,
+      border: FORGE.border,
+      fontDisplay: FORGE.fontDisplay,
+      fontBody: FORGE.fontBody,
+      maxWidth: FORGE.maxWidth,
+      borderRadius: FORGE.borderRadiusLg,
+      sectionPadding: FORGE.sectionPadding,
+      tagBg: FORGE.accentLight,
+      tagText: FORGE.accent,
+      isDark: true,
     };
   }
   // Modern Clean default
@@ -160,7 +200,7 @@ export default function ServicesPageContent({
           }}
         >
           <a
-            href="/"
+            href={`/site/${siteSlug}`}
             style={{
               fontFamily: t.fontDisplay,
               fontWeight: 800,
@@ -173,7 +213,7 @@ export default function ServicesPageContent({
           </a>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <a
-              href="/"
+              href={`/site/${siteSlug}`}
               style={{ fontSize: 14, fontWeight: 500, color: t.textSecondary, textDecoration: "none" }}
             >
               Home
@@ -186,7 +226,7 @@ export default function ServicesPageContent({
               {phone}
             </a>
             <a
-              href={hasEstimateWidget ? "/#estimate" : "/#contact"}
+              href={hasEstimateWidget ? `/site/${siteSlug}#estimate` : `/site/${siteSlug}#contact`}
               style={{
                 fontSize: 13,
                 fontWeight: 700,
@@ -223,7 +263,7 @@ export default function ServicesPageContent({
           {/* Breadcrumb */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
             <a
-              href="/"
+              href={`/site/${siteSlug}`}
               style={{ fontSize: 13, color: t.textSecondary, textDecoration: "none" }}
             >
               Home
@@ -432,7 +472,7 @@ export default function ServicesPageContent({
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <a
-              href={hasEstimateWidget ? "/#estimate" : "/#contact"}
+              href={hasEstimateWidget ? `/site/${siteSlug}#estimate` : `/site/${siteSlug}#contact`}
               style={{
                 fontSize: 15,
                 fontWeight: 700,

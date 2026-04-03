@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction A — Warm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #FAF7F2;
+    --bg-card: #FFFFFF;
+    --text-primary: #1A1612;
+    --text-secondary: #6B5E4F;
+    --accent: #C4713B;
+    --accent-hover: #A85D2F;
+    --accent-glow: rgba(196, 113, 59, 0.2);
+    --border: rgba(107, 94, 79, 0.1);
+    --shadow-sm: 0 1px 3px rgba(26, 22, 18, 0.04), 0 1px 2px rgba(26, 22, 18, 0.06);
+    --shadow-md: 0 4px 20px rgba(26, 22, 18, 0.06), 0 2px 8px rgba(26, 22, 18, 0.04);
+    --shadow-lg: 0 12px 40px rgba(26, 22, 18, 0.08), 0 4px 12px rgba(26, 22, 18, 0.04);
+    --shadow-accent: 0 4px 20px rgba(196, 113, 59, 0.15);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(250, 247, 242, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .nav-brand {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem; color: var(--text-primary);
+  }
+  .nav-phone {
+    font-weight: 600; color: var(--accent);
+    text-decoration: none; font-size: 0.95rem;
+    transition: color 0.2s;
+  }
+  .nav-phone:hover { color: var(--accent-hover); }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 120px 40px 80px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -50%; right: -20%; width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(196, 113, 59, 0.06) 0%, transparent 70%);
+    animation: float 20s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-40px, 30px); }
+  }
+
+  .hero-content {
+    max-width: 720px; text-align: center;
+    position: relative; z-index: 1;
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: 6px 16px; border-radius: 100px;
+    background: rgba(196, 113, 59, 0.08);
+    color: var(--accent); font-size: 0.8rem; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.2s;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.8rem, 6vw, 4.2rem);
+    line-height: 1.08; letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+  .hero p {
+    font-size: 1.15rem; line-height: 1.7;
+    color: var(--text-secondary);
+    max-width: 540px; margin: 0 auto 36px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 16px 36px; border-radius: 12px;
+    background: var(--accent); color: #fff;
+    font-weight: 600; font-size: 1rem;
+    text-decoration: none; border: none; cursor: pointer;
+    box-shadow: var(--shadow-accent);
+    transition: all 0.3s ease;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.8s;
+  }
+  .hero-cta:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(196, 113, 59, 0.25);
+  }
+
+  /* Service Cards */
+  .services {
+    padding: 80px 40px;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .services h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem; text-align: center; margin-bottom: 48px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 1s;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    transition: all 0.3s ease;
+    opacity: 0; animation: fadeUp 0.8s ease forwards;
+  }
+  .card:nth-child(1) { animation-delay: 1.1s; }
+  .card:nth-child(2) { animation-delay: 1.2s; }
+  .card:nth-child(3) { animation-delay: 1.3s; }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(196, 113, 59, 0.15);
+  }
+  .card-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: rgba(196, 113, 59, 0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; margin-bottom: 20px;
+  }
+  .card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.25rem; margin-bottom: 10px;
+  }
+  .card p {
+    color: var(--text-secondary);
+    font-size: 0.92rem; line-height: 1.65;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Label */
+  .direction-label {
+    position: fixed; bottom: 20px; left: 20px;
+    background: var(--accent); color: #fff;
+    padding: 8px 16px; border-radius: 8px;
+    font-size: 0.8rem; font-weight: 600; z-index: 200;
+  }
+</style>
+</head>
+<body>
+  <div class="direction-label">Direction A — Warm</div>
+
+  <nav>
+    <div class="nav-brand">Pinnacle Roofing Co.</div>
+    <a href="tel:5551234567" class="nav-phone">(555) 123-4567</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <span class="hero-badge">Trusted in Austin Since 2012</span>
+      <h1>Your roof protects everything that matters</h1>
+      <p>Licensed, insured, and rated 4.9 stars by Austin homeowners. Get an instant estimate in 30 seconds — no phone call needed.</p>
+      <a href="#" class="hero-cta">Get Your Free Estimate →</a>
+    </div>
+  </section>
+
+  <section class="services">
+    <h2>What We Do</h2>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🏠</div>
+        <h3>Roof Replacement</h3>
+        <p>Complete tear-off and installation with premium materials. We handle everything from permits to cleanup, leaving you with a roof built to last.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔧</div>
+        <h3>Roof Repair</h3>
+        <p>Leaks, missing shingles, flashing issues — we diagnose the problem and fix it right the first time. Fast response, lasting results.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <h3>Roof Inspections</h3>
+        <p>Thorough inspections to assess your roof's condition. Ideal before buying or selling a home, or after severe weather.</p>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

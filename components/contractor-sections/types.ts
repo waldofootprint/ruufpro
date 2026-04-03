@@ -37,6 +37,9 @@ export interface ContractorSiteData {
   hasEstimateWidget: boolean;
   contractorId: string;
 
+  // Conversion
+  urgencyBadge: string | null;
+
   // Site meta
   slug: string;
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDashboard } from "./DashboardContext";
-import { Users, Clock, DollarSign, Zap, ChevronRight, Share2 } from "lucide-react";
+import { Users, Clock, DollarSign, Zap, ChevronRight, Share2, Star, MessageSquare } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import {
   getLeadTemperature,
@@ -20,6 +20,8 @@ export default function DashboardHome() {
   const { contractorId, businessName } = useDashboard();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewStats, setReviewStats] = useState({ sent: 0, clicked: 0, reviewed: 0 });
+  const [smsCount, setSmsCount] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -30,6 +32,35 @@ export default function DashboardHome() {
         .eq("contractor_id", contractorId)
         .order("created_at", { ascending: false });
       setLeads((data as Lead[]) || []);
+
+      // Load review request stats (fail gracefully if tables empty or RLS blocks)
+      try {
+        const { data: reviews } = await supabase
+          .from("review_requests")
+          .select("status")
+          .eq("contractor_id", contractorId);
+        if (reviews) {
+          setReviewStats({
+            sent: reviews.length,
+            clicked: reviews.filter((r: { status: string }) => r.status === "clicked" || r.status === "reviewed").length,
+            reviewed: reviews.filter((r: { status: string }) => r.status === "reviewed").length,
+          });
+        }
+      } catch { /* tables may not exist yet */ }
+
+      // Load SMS count this month
+      try {
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        monthStart.setHours(0, 0, 0, 0);
+        const { count } = await supabase
+          .from("sms_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("contractor_id", contractorId)
+          .gte("created_at", monthStart.toISOString());
+        setSmsCount(count || 0);
+      } catch { /* tables may not exist yet */ }
+
       setLoading(false);
     }
     load();
@@ -121,6 +152,42 @@ export default function DashboardHome() {
           )}
         </div>
       </div>
+
+      {/* Review & SMS metrics */}
+      {(reviewStats.sent > 0 || smsCount > 0) && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="rounded-xl bg-white border border-[#e2e8f0] p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Star className="w-3 h-3 text-amber-400" />
+              <span className="text-[10px] font-semibold text-slate-400 uppercase">Reviews Sent</span>
+            </div>
+            <p className="text-xl font-extrabold text-slate-800">{reviewStats.sent}</p>
+          </div>
+          <div className="rounded-xl bg-white border border-[#e2e8f0] p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Zap className="w-3 h-3 text-emerald-400" />
+              <span className="text-[10px] font-semibold text-slate-400 uppercase">Click Rate</span>
+            </div>
+            <p className="text-xl font-extrabold text-slate-800">
+              {reviewStats.sent > 0 ? `${Math.round((reviewStats.clicked / reviewStats.sent) * 100)}%` : "—"}
+            </p>
+          </div>
+          <div className="rounded-xl bg-white border border-[#e2e8f0] p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Star className="w-3 h-3 text-amber-400" />
+              <span className="text-[10px] font-semibold text-slate-400 uppercase">Reviews</span>
+            </div>
+            <p className="text-xl font-extrabold text-amber-600">{reviewStats.reviewed}</p>
+          </div>
+          <div className="rounded-xl bg-white border border-[#e2e8f0] p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <MessageSquare className="w-3 h-3 text-blue-400" />
+              <span className="text-[10px] font-semibold text-slate-400 uppercase">SMS This Month</span>
+            </div>
+            <p className="text-xl font-extrabold text-slate-800">{smsCount}</p>
+          </div>
+        </div>
+      )}
 
       {/* Main grid: leads list + roof intel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">

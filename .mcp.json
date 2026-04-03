@@ -32,6 +32,10 @@
       "env": {
         "FIRECRAWL_API_KEY": "fc-6f7c54f974ac429793060af609372467"
       }
+    },
+    "stitch": {
+      "command": "npx",
+      "args": ["-y", "@_davideast/stitch-mcp", "proxy"]
     }
   }
 }

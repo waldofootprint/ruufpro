@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction B — Cool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --accent: #1E40AF;
+    --accent-hover: #1E3A8A;
+    --accent-light: #DBEAFE;
+    --border: rgba(15, 23, 42, 0.06);
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 4px 20px rgba(15, 23, 42, 0.05), 0 2px 8px rgba(15, 23, 42, 0.03);
+    --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.07), 0 4px 12px rgba(15, 23, 42, 0.03);
+    --shadow-accent: 0 4px 20px rgba(30, 64, 175, 0.15);
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 18px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(248, 250, 252, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-brand {
+    font-weight: 800; font-size: 1.3rem;
+    color: var(--text-primary); letter-spacing: -0.02em;
+  }
+  .nav-phone {
+    font-weight: 600; color: var(--accent);
+    text-decoration: none; font-size: 0.9rem;
+    padding: 8px 18px; border-radius: 8px;
+    background: var(--accent-light);
+    transition: all 0.2s;
+  }
+  .nav-phone:hover { background: var(--accent); color: #fff; }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 120px 40px 80px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(30, 64, 175, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(30, 64, 175, 0.03) 0%, transparent 50%);
+  }
+  /* Subtle grid */
+  .hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(15, 23, 42, 0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 23, 42, 0.015) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+
+  .hero-content {
+    max-width: 680px; text-align: center;
+    position: relative; z-index: 1;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 100px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-secondary); font-size: 0.8rem; font-weight: 600;
+    margin-bottom: 28px;
+    opacity: 0; animation: fadeUp 0.7s ease forwards 0.15s;
+  }
+  .hero-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #22C55E;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .hero h1 {
+    font-size: clamp(2.6rem, 5.5vw, 3.8rem);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    margin-bottom: 18px;
+    opacity: 0; animation: fadeUp 0.7s ease forwards 0.3s;
+  }
+  .hero p {
+    font-size: 1.1rem; line-height: 1.7;
+    color: var(--text-secondary);
+    max-width: 520px; margin: 0 auto 32px;
+    opacity: 0; animation: fadeUp 0.7s ease forwards 0.45s;
+  }
+  .hero-actions {
+    display: flex; gap: 12px; justify-content: center;
+    opacity: 0; animation: fadeUp 0.7s ease forwards 0.6s;
+  }
+  .btn-primary {
+    padding: 14px 32px; border-radius: 10px;
+    background: var(--accent); color: #fff;
+    font-weight: 700; font-size: 0.95rem;
+    text-decoration: none; border: none; cursor: pointer;
+    box-shadow: var(--shadow-accent);
+    transition: all 0.25s ease;
+  }
+  .btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(30, 64, 175, 0.2);
+  }
+  .btn-secondary {
+    padding: 14px 32px; border-radius: 10px;
+    background: transparent; color: var(--text-primary);
+    font-weight: 600; font-size: 0.95rem;
+    text-decoration: none; border: 1px solid var(--border);
+    transition: all 0.25s ease; cursor: pointer;
+  }
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  /* Service Cards */
+  .services {
+    padding: 80px 40px;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .services h2 {
+    font-size: 1.8rem; font-weight: 800;
+    text-align: center; margin-bottom: 12px;
+    letter-spacing: -0.02em;
+    opacity: 0; animation: fadeUp 0.7s ease forwards 0.9s;
+  }
+  .services .subtitle {
+    text-align: center; color: var(--text-secondary);
+    font-size: 1rem; margin-bottom: 48px;
+    opacity: 0; animation: fadeUp 0.7s ease forwards 1s;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    transition: all 0.3s ease;
+    opacity: 0; animation: fadeUp 0.7s ease forwards;
+  }
+  .card:nth-child(1) { animation-delay: 1.05s; }
+  .card:nth-child(2) { animation-delay: 1.15s; }
+  .card:nth-child(3) { animation-delay: 1.25s; }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(30, 64, 175, 0.12);
+  }
+  .card-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: var(--accent-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; margin-bottom: 18px;
+  }
+  .card h3 {
+    font-size: 1.1rem; font-weight: 700;
+    margin-bottom: 8px; letter-spacing: -0.01em;
+  }
+  .card p {
+    color: var(--text-secondary);
+    font-size: 0.88rem; line-height: 1.65;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .direction-label {
+    position: fixed; bottom: 20px; left: 20px;
+    background: var(--accent); color: #fff;
+    padding: 8px 16px; border-radius: 8px;
+    font-size: 0.8rem; font-weight: 600; z-index: 200;
+  }
+</style>
+</head>
+<body>
+  <div class="direction-label">Direction B — Cool</div>
+
+  <nav>
+    <div class="nav-brand">Pinnacle Roofing Co.</div>
+    <a href="tel:5551234567" class="nav-phone">📞 (555) 123-4567</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <span class="hero-badge"><span class="hero-badge-dot"></span> Serving Austin Since 2012</span>
+      <h1>Your roof protects everything that matters</h1>
+      <p>Licensed, insured, and rated 4.9 stars by Austin homeowners. Get an instant estimate in 30 seconds — no phone call needed.</p>
+      <div class="hero-actions">
+        <a href="#" class="btn-primary">Get Your Free Estimate</a>
+        <a href="#" class="btn-secondary">View Our Work</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="services">
+    <h2>What We Do</h2>
+    <p class="subtitle">Residential roofing services for Austin homeowners</p>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🏠</div>
+        <h3>Roof Replacement</h3>
+        <p>Complete tear-off and installation with premium materials. We handle everything from permits to cleanup, leaving you with a roof built to last.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔧</div>
+        <h3>Roof Repair</h3>
+        <p>Leaks, missing shingles, flashing issues — we diagnose the problem and fix it right the first time. Fast response, lasting results.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <h3>Roof Inspections</h3>
+        <p>Thorough inspections to assess your roof's condition. Ideal before buying or selling a home, or after severe weather.</p>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

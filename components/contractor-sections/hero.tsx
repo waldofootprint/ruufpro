@@ -43,7 +43,7 @@ export default function Hero({
   const headline = heroHeadline || `Honest roofing for ${city} homeowners.`;
   const subtitle = tagline || `Roof replacements, repairs, and inspections done right — with upfront pricing, clean job sites, and no pressure. Locally owned and fully insured.`;
   const ctaText = heroCta || "Get Your Free Estimate";
-  const imgSrc = heroImage || "https://images.unsplash.com/photo-1635424709870-cdc6e64f0e20?w=900&h=600&q=85&auto=format&fit=crop";
+  const imgSrc = heroImage || "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=900&h=600&q=85&auto=format&fit=crop";
 
   return (
     <section

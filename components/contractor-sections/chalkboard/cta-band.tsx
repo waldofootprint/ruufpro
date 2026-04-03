@@ -18,9 +18,9 @@ export default function ChalkCta({ phone, city, hasEstimateWidget }: Props) {
         position: "relative",
       }}
     >
-      {/* Dashed border top/bottom */}
-      <div style={{ position: "absolute", top: 0, left: 32, right: 32, borderTop: `2px dashed ${CHALK.borderDashed}` }} />
-      <div style={{ position: "absolute", bottom: 0, left: 32, right: 32, borderBottom: `2px dashed ${CHALK.borderDashed}` }} />
+      {/* Subtle border top/bottom */}
+      <div style={{ position: "absolute", top: 0, left: 32, right: 32, borderTop: `1px solid ${CHALK.border}` }} />
+      <div style={{ position: "absolute", bottom: 0, left: 32, right: 32, borderBottom: `1px solid ${CHALK.border}` }} />
 
       <h2 style={{ fontFamily: CHALK.fontDisplay, fontSize: 36, color: "#fff", marginBottom: 12 }}>
         Ready to get your roof handled?
@@ -47,7 +47,7 @@ export default function ChalkCta({ phone, city, hasEstimateWidget }: Props) {
           href={`tel:${phoneClean}`}
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "14px 28px", border: `2px dashed ${CHALK.borderDashed}`,
+            padding: "14px 28px", border: `1px solid ${CHALK.border}`,
             color: CHALK.textMuted, borderRadius: 9999, fontFamily: CHALK.fontDisplay, fontSize: 18,
             textDecoration: "none", transition: "all 0.2s",
           }}

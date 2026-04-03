@@ -185,6 +185,7 @@ export default function EstimateWidgetV3({
         source: "estimate_widget", estimate_low: data.price_low,
         estimate_high: data.price_high, estimate_material: desiredMaterial,
         estimate_roof_sqft: data.roof_area_sqft,
+        sms_consent: agreedToSms,
       });
       if (leadErr) console.error("Lead insert failed:", leadErr);
       setDirection(1); setStep(8);

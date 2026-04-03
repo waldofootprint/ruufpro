@@ -21,7 +21,7 @@ export default function ChalkNav({ businessName, phone, hasEstimateWidget }: Pro
         background: "rgba(42,45,42,0.92)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
-        borderBottom: `1px dashed ${CHALK.borderDashed}`,
+        borderBottom: `1px solid ${CHALK.border}`,
         fontFamily: CHALK.fontBody,
       }}
     >

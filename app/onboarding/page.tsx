@@ -60,6 +60,7 @@ export default function OnboardingPage() {
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [legalEntityType, setLegalEntityType] = useState("sole_proprietor");
 
   // Check if user is logged in
   useEffect(() => {
@@ -106,6 +107,7 @@ export default function OnboardingPage() {
         city,
         state,
         business_type: "residential",
+        legal_entity_type: legalEntityType,
       })
       .select()
       .single();
@@ -295,6 +297,25 @@ export default function OnboardingPage() {
                   </select>
                 </label>
               </div>
+
+              <label className="block">
+                <span className="text-sm font-medium text-gray-700">
+                  Business Structure
+                </span>
+                <select
+                  value={legalEntityType}
+                  onChange={(e) => setLegalEntityType(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="sole_proprietor">Sole Proprietor</option>
+                  <option value="llc">LLC</option>
+                  <option value="corporation">Corporation</option>
+                  <option value="partnership">Partnership</option>
+                </select>
+                <span className="text-xs text-gray-400 mt-1 block">
+                  Used to set up your business texting number
+                </span>
+              </label>
             </div>
 
             <div className="mt-6 flex gap-3">

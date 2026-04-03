@@ -6,6 +6,8 @@
 import { THEME } from "./theme";
 import { BLUEPRINT } from "./theme-blueprint";
 import { CHALK } from "./theme-chalkboard";
+import { CLASSIC } from "./theme-classic";
+import { FORGE } from "./theme-forge";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -72,6 +74,46 @@ function getTheme(template: string) {
       isDark: false,
     };
   }
+  if (template === "classic" || template === "clean_professional") {
+    return {
+      bg: CLASSIC.bgAlt,
+      bgCard: CLASSIC.bg,
+      bgAlt: CLASSIC.borderLight,
+      text: CLASSIC.text,
+      textSecondary: CLASSIC.textSecondary,
+      accent: CLASSIC.accent,
+      accentHover: CLASSIC.accentHover,
+      border: CLASSIC.border,
+      fontDisplay: CLASSIC.fontDisplay,
+      fontBody: CLASSIC.fontBody,
+      maxWidth: CLASSIC.maxWidth,
+      borderRadius: CLASSIC.borderRadiusLg,
+      sectionPadding: CLASSIC.sectionPadding,
+      tagBg: CLASSIC.accentLight,
+      tagText: CLASSIC.text,
+      isDark: false,
+    };
+  }
+  if (template === "forge" || template === "bold_dark") {
+    return {
+      bg: FORGE.bgAlt,
+      bgCard: FORGE.bgCard,
+      bgAlt: FORGE.bg,
+      text: FORGE.text,
+      textSecondary: FORGE.textMuted,
+      accent: FORGE.accent,
+      accentHover: FORGE.accentHover,
+      border: FORGE.border,
+      fontDisplay: FORGE.fontDisplay,
+      fontBody: FORGE.fontBody,
+      maxWidth: FORGE.maxWidth,
+      borderRadius: FORGE.borderRadiusLg,
+      sectionPadding: FORGE.sectionPadding,
+      tagBg: FORGE.accentLight,
+      tagText: FORGE.accent,
+      isDark: true,
+    };
+  }
   return {
     bg: THEME.bgWarm,
     bgCard: THEME.bgWhite,
@@ -135,7 +177,7 @@ export default function ServiceDetailContent({
           }}
         >
           <a
-            href="/"
+            href={`/site/${siteSlug}`}
             style={{
               fontFamily: t.fontDisplay,
               fontWeight: 800,
@@ -147,7 +189,7 @@ export default function ServiceDetailContent({
             {businessName}
           </a>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <a href="/" style={{ fontSize: 14, fontWeight: 500, color: t.textSecondary, textDecoration: "none" }}>
+            <a href={`/site/${siteSlug}`} style={{ fontSize: 14, fontWeight: 500, color: t.textSecondary, textDecoration: "none" }}>
               Home
             </a>
             <Link href="/services" style={{ fontSize: 14, fontWeight: 500, color: t.textSecondary, textDecoration: "none" }}>
@@ -161,7 +203,7 @@ export default function ServiceDetailContent({
               {phone}
             </a>
             <a
-              href={hasEstimateWidget ? "/#estimate" : "/#contact"}
+              href={hasEstimateWidget ? `/site/${siteSlug}#estimate` : `/site/${siteSlug}#contact`}
               style={{
                 fontSize: 13,
                 fontWeight: 700,
@@ -190,7 +232,7 @@ export default function ServiceDetailContent({
         >
           {/* Breadcrumb */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-            <a href="/" style={{ fontSize: 13, color: t.textSecondary, textDecoration: "none" }}>Home</a>
+            <a href={`/site/${siteSlug}`} style={{ fontSize: 13, color: t.textSecondary, textDecoration: "none" }}>Home</a>
             <span style={{ fontSize: 13, color: t.textSecondary }}>/</span>
             <Link href="/services" style={{ fontSize: 13, color: t.textSecondary, textDecoration: "none" }}>Services</Link>
             <span style={{ fontSize: 13, color: t.textSecondary }}>/</span>
@@ -328,7 +370,7 @@ export default function ServiceDetailContent({
                 Get a free, no-obligation estimate from {businessName}. We serve {city} and the surrounding {state} area.
               </p>
               <a
-                href={hasEstimateWidget ? "/#estimate" : "/#contact"}
+                href={hasEstimateWidget ? `/site/${siteSlug}#estimate` : `/site/${siteSlug}#contact`}
                 style={{
                   display: "block",
                   textAlign: "center",

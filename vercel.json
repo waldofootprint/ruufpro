@@ -4,6 +4,16 @@
   "devCommand": "next dev",
   "installCommand": "npm install",
   "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/cron/check-10dlc-status",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/review-followups",
+      "schedule": "0 14 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

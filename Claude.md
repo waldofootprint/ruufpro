@@ -1,72 +1,82 @@
-# Agent Instructions
+# RuufPro — Agent Instructions
 
-You're working inside the **WAT framework** (Workflows, Agents, Tools). This architecture separates concerns so that probabilistic AI handles reasoning while deterministic code handles execution. That separation is what makes this system reliable.
+You're building **RuufPro**, a micro-SaaS for small roofing contractors (1-10 person crews). The product bundles a free roofing website, $99/mo estimate widget, review automation, speed-to-lead auto-reply, and SEO city pages. Live on Vercel, backed by Supabase.
 
-## The WAT Architecture
+## Architecture (WAT Framework)
 
-**Layer 1: Workflows (The Instructions)**
-- Markdown SOPs stored in `workflows/`
-- Each workflow defines the objective, required inputs, which tools to use, expected outputs, and how to handle edge cases
-- Written in plain language, the same way you'd brief someone on your team
+Workflows define what to do. You orchestrate. Tools execute. This separation keeps accuracy high.
 
-**Layer 2: Agents (The Decision-Maker)**
-- This is your role. You're responsible for intelligent coordination.
-- Read the relevant workflow, run tools in the correct sequence, handle failures gracefully, and ask clarifying questions when needed
-- You connect intent to execution without trying to do everything yourself
-- Example: If you need to pull data from a website, don't attempt it directly. Read `workflows/scrape_website.md`, figure out the required inputs, then execute `tools/scrape_single_site.py`
+```
+workflows/       # Markdown SOPs (read before building)
+tools/           # Scripts for deterministic execution
+.claude/skills/  # Claude Code skills (the ONLY skills directory)
+.tmp/            # Disposable temp files
+research/        # Strategy docs — competitor analysis, GTM plan, copy research
+```
 
-**Layer 3: Tools (The Execution)**
-- Python scripts in `tools/` that do the actual work
-- API calls, data transformations, file operations, database queries
-- Credentials and API keys are stored in `.env`
-- These scripts are consistent, testable, and fast
+## Key Docs — Read Before Acting
 
-**Why this matters:** When AI tries to handle every step directly, accuracy drops fast. If each step is 90% accurate, you're down to 59% success after just five steps. By offloading execution to deterministic scripts, you stay focused on orchestration and decision-making where you excel.
+| Doc | What It Contains |
+|-----|-----------------|
+| `workflows/project_overview.md` | Product spec, pricing, tech stack, roadmap, competitors |
+| `research/go-to-market-plan.md` | Positioning, messaging, competitor gaps, channel strategy |
+| `research/roofer-pain-points.md` | What roofers say online, ranked by frequency |
+| `research/roofing-website-copy-research.md` | What converts for roofing sites |
+| `research/website-copy-v1-test-results.md` | Copy critique with specific rewrites |
+
+## Two Products in One Codebase
+
+1. **RuufPro marketing site** — Sells RuufPro to roofers. `components/ridgeline/`. Route: `app/page.tsx`
+2. **Roofer client websites** — What roofers GET. `components/contractor-sections/` + `components/templates/`. Route: `app/site/[slug]/page.tsx`
+
+Don't confuse them. Ask if unclear.
+
+## Template System
+
+- Templates: `components/templates/` (blueprint, chalkboard, forge, classic, apex)
+- Sections: `components/contractor-sections/{theme}/`
+- Data type: `ContractorSiteData` from `components/contractor-sections/types.ts`
+- Theme configs: `components/contractor-sections/theme-{name}.ts`
+- Registry: `lib/themes.ts`
+
+## Estimate Widget
+
+- **V4 = production** (blueprint, chalkboard, forge, classic)
+- V3 = shared/generic estimate-section
+- V1 = iframe embed (`app/widget/[contractorId]`)
+- V2 = archived
 
 ## How to Operate
 
-**1. Look for existing tools first**
-Before building anything new, check `tools/` based on what your workflow requires. Only create new scripts when nothing exists for that task.
+1. Read the relevant workflow in `workflows/` first
+2. Check `tools/` for existing scripts before writing new ones
+3. Check `.claude/skills/` for relevant skills
+4. If using paid API calls, check with me before running
+5. Don't create/overwrite workflows without asking
 
-**2. Learn and adapt when things fail**
-When you hit an error:
-- Read the full error message and trace
-- Fix the script and retest (if it uses paid API calls or credits, check with me before running again)
-- Document what you learned in the workflow (rate limits, timing quirks, unexpected behavior)
-- Example: You get rate-limited on an API, so you dig into the docs, discover a batch endpoint, refactor the tool to use it, verify it works, then update the workflow so this never happens again
+## Showing Preview Links
 
-**3. Keep workflows current**
-Workflows should evolve as you learn. When you find better methods, discover constraints, or encounter recurring issues, update the workflow. That said, don't create or overwrite workflows without asking unless I explicitly tell you to. These are your instructions and need to be preserved and refined, not tossed after one use.
-
-## The Self-Improvement Loop
-
-Every failure is a chance to make the system stronger:
-1. Identify what broke
-2. Fix the tool
-3. Verify the fix works
-4. Update the workflow with the new approach
-5. Move on with a more robust system
-
-This loop is how the framework improves over time.
-
-
-**Directory layout:**
-```
-.tmp/           # Temporary files (scraped data, intermediate exports). Regenerated as needed.
-tools/          # Python scripts for deterministic execution
-workflows/      # Markdown SOPs defining what to do and how
-.env            # API keys and environment variables (NEVER store secrets anywhere else)
-credentials.json, token.json  # Google OAuth (gitignored)
-```
-
-**Core principle:** Everything in `.tmp/` is disposable.
+Before sharing localhost links, **always**:
+1. `pkill -f "next dev"`
+2. `rm -rf .next`
+3. `npm run dev` (background)
+4. Wait for compilation, then share the link
 
 ## Website Building
 
-When asked to build, design, create, or modify any website, page, section, or component — **read `workflows/build_website.md` first** and follow it step by step. This workflow encodes our established process: research competitors first, check 21st.dev for premium components, build one section at a time, always show the localhost preview link, and revert immediately if asked.
+When building or modifying any website/page/section — **read `workflows/build_website.md` first**. Research competitors, check 21st.dev for components, build one section at a time, show localhost preview, revert immediately if asked.
 
-## Bottom Line
+## Knowledge Vault
 
-You sit between what I want (workflows) and what actually gets done (tools). Your job is to read instructions, make smart decisions, call the right tools, recover from errors, and keep improving the system as you go.
+Marketing frameworks, sales strategies, case studies, and automation workflows at `/Users/hannahwaldo/AI Automations/`. Search via grep/glob when you need:
+- Pricing strategy (entries 025, 031, 032)
+- Conversion frameworks (entry 050)
+- Design systems (entries 038, 051)
+- Lead generation (entries 005, 033, 047, 048)
 
-Stay pragmatic. Stay reliable. Keep learning.
+## Core Principles
+
+- Everything in `.tmp/` is disposable
+- Workflows and research are not — preserve and refine them
+- When things fail: read the error, fix, retest, update the workflow
+- Stay pragmatic. Stay reliable. Keep learning.

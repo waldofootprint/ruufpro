@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cityToSlug } from "@/lib/city-page-content";
 
 interface ServiceAreaMapProps {
   city: string;
@@ -273,8 +274,9 @@ export default function ServiceAreaMap({
               const isPrimary = c === city;
               const isActive = hoveredCity === c;
               return (
-                <span
+                <a
                   key={c}
+                  href={`/${cityToSlug(c)}`}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -286,8 +288,9 @@ export default function ServiceAreaMap({
                     borderRadius: 10,
                     fontSize: 13,
                     fontWeight: 600,
-                    cursor: "default",
+                    cursor: "pointer",
                     transition: "all 0.25s ease",
+                    textDecoration: "none",
                   }}
                   onMouseEnter={() => setHoveredCity(c)}
                   onMouseLeave={() => setHoveredCity(null)}
@@ -303,7 +306,7 @@ export default function ServiceAreaMap({
                     <circle cx="12" cy="10" r="3" fill={isPrimary || isActive ? activeTagBg : bg} />
                   </svg>
                   {c}
-                </span>
+                </a>
               );
             })}
           </div>

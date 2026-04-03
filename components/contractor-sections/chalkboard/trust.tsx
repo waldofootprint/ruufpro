@@ -16,8 +16,6 @@ export default function ChalkTrust(props: Props) {
 
   if (badges.length < 2) return null;
 
-  const rotations = [-2, 1, -1, 2, -1.5, 1.5];
-
   return (
     <section
       style={{
@@ -27,8 +25,8 @@ export default function ChalkTrust(props: Props) {
         fontFamily: CHALK.fontBody,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12 }}>
-        {badges.slice(0, 6).map((badge, i) => (
+      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 10 }}>
+        {badges.slice(0, 6).map((badge) => (
           <span
             key={badge}
             style={{
@@ -36,16 +34,16 @@ export default function ChalkTrust(props: Props) {
               alignItems: "center",
               gap: 8,
               background: CHALK.bgLight,
-              border: `1px dashed ${CHALK.borderDashed}`,
+              border: `1px solid ${CHALK.border}`,
               borderRadius: 8,
               padding: "10px 18px",
-              fontSize: 15,
+              fontSize: 14,
+              fontWeight: 500,
               color: CHALK.text,
-              transform: `rotate(${rotations[i % rotations.length]}deg)`,
-              transition: "transform 0.2s",
+              transition: "border-color 0.2s, background 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.transform = "rotate(0deg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = `rotate(${rotations[i % rotations.length]}deg)`)}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = CHALK.accent; e.currentTarget.style.background = CHALK.accentSubtle; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = CHALK.border; e.currentTarget.style.background = CHALK.bgLight; }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={CHALK.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 6L9 17l-5-5" />

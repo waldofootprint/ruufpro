@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction C — Dark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0A0F1C;
+    --bg-card: rgba(255, 255, 255, 0.03);
+    --bg-card-hover: rgba(255, 255, 255, 0.06);
+    --text-primary: #E2E8F0;
+    --text-secondary: #94A3B8;
+    --accent: #38BDF8;
+    --accent-hover: #7DD3FC;
+    --accent-glow: rgba(56, 189, 248, 0.15);
+    --border: rgba(255, 255, 255, 0.06);
+    --border-hover: rgba(56, 189, 248, 0.2);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Starscape background */
+  .stars {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+  }
+  .stars::before, .stars::after {
+    content: '';
+    position: absolute;
+    width: 2px; height: 2px;
+    border-radius: 50%;
+    background: white;
+    box-shadow:
+      120px 80px 0 0 rgba(255,255,255,0.15),
+      300px 150px 0 0 rgba(255,255,255,0.1),
+      500px 60px 0 0 rgba(255,255,255,0.12),
+      700px 200px 0 0 rgba(255,255,255,0.08),
+      180px 300px 0 0 rgba(255,255,255,0.15),
+      400px 400px 0 0 rgba(255,255,255,0.1),
+      650px 350px 0 0 rgba(255,255,255,0.12),
+      850px 120px 0 0 rgba(255,255,255,0.08),
+      1000px 250px 0 0 rgba(255,255,255,0.1),
+      1100px 400px 0 0 rgba(255,255,255,0.15),
+      250px 500px 0 0 rgba(255,255,255,0.08),
+      550px 550px 0 0 rgba(255,255,255,0.12),
+      900px 480px 0 0 rgba(255,255,255,0.1);
+    animation: twinkle 8s ease-in-out infinite alternate;
+  }
+  .stars::after { animation-delay: -4s; opacity: 0.6; }
+  @keyframes twinkle {
+    0% { opacity: 0.4; }
+    100% { opacity: 1; }
+  }
+
+  /* Gradient orbs */
+  .orb {
+    position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0;
+  }
+  .orb-1 {
+    width: 600px; height: 600px;
+    background: rgba(56, 189, 248, 0.06);
+    top: -200px; right: -100px;
+    animation: orbFloat 25s ease-in-out infinite;
+  }
+  .orb-2 {
+    width: 400px; height: 400px;
+    background: rgba(56, 189, 248, 0.04);
+    bottom: -100px; left: -100px;
+    animation: orbFloat 20s ease-in-out infinite reverse;
+  }
+  @keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(30px, -20px); }
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 18px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(10, 15, 28, 0.7);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 1.3rem;
+    color: var(--text-primary); letter-spacing: -0.02em;
+  }
+  .nav-phone {
+    font-weight: 500; color: var(--accent);
+    text-decoration: none; font-size: 0.9rem;
+    padding: 8px 18px; border-radius: 8px;
+    border: 1px solid var(--border);
+    transition: all 0.25s;
+  }
+  .nav-phone:hover {
+    border-color: var(--border-hover);
+    background: var(--accent-glow);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.1);
+  }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 120px 40px 80px;
+    position: relative; z-index: 1;
+  }
+  .hero-content {
+    max-width: 700px; text-align: center;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 16px; border-radius: 100px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--accent); font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.2s;
+  }
+  .hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.8rem, 6vw, 4rem);
+    font-weight: 700; line-height: 1.08;
+    letter-spacing: -0.03em;
+    color: #fff;
+    margin-bottom: 18px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--accent), #818CF8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    font-size: 1.1rem; line-height: 1.7;
+    color: var(--text-secondary);
+    max-width: 520px; margin: 0 auto 36px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 16px 36px; border-radius: 12px;
+    background: var(--accent); color: #0A0F1C;
+    font-weight: 700; font-size: 0.95rem;
+    text-decoration: none; border: none; cursor: pointer;
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+    transition: all 0.3s ease;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.8s;
+  }
+  .hero-cta:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px rgba(56, 189, 248, 0.35);
+  }
+
+  /* Service Cards */
+  .services {
+    padding: 80px 40px;
+    max-width: 1100px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .services h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.8rem; font-weight: 700;
+    text-align: center; margin-bottom: 12px;
+    letter-spacing: -0.02em; color: #fff;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.9s;
+  }
+  .services .subtitle {
+    text-align: center; color: var(--text-secondary);
+    font-size: 0.95rem; margin-bottom: 48px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 1s;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    opacity: 0; animation: fadeUp 0.8s ease forwards;
+  }
+  .card:nth-child(1) { animation-delay: 1.05s; }
+  .card:nth-child(2) { animation-delay: 1.15s; }
+  .card:nth-child(3) { animation-delay: 1.25s; }
+  .card:hover {
+    transform: translateY(-3px);
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    box-shadow: 0 8px 32px rgba(56, 189, 248, 0.06);
+  }
+  .card-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: var(--accent-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; margin-bottom: 18px;
+  }
+  .card h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem; font-weight: 600;
+    margin-bottom: 8px; color: #fff;
+  }
+  .card p {
+    color: var(--text-secondary);
+    font-size: 0.88rem; line-height: 1.65;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .direction-label {
+    position: fixed; bottom: 20px; left: 20px;
+    background: var(--accent); color: #0A0F1C;
+    padding: 8px 16px; border-radius: 8px;
+    font-size: 0.8rem; font-weight: 700; z-index: 200;
+  }
+</style>
+</head>
+<body>
+  <div class="direction-label">Direction C — Dark</div>
+  <div class="stars"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <nav>
+    <div class="nav-brand">Pinnacle Roofing Co.</div>
+    <a href="tel:5551234567" class="nav-phone">(555) 123-4567</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <span class="hero-badge">⭐ 4.9 Stars · Austin, TX</span>
+      <h1>Your roof protects <em>everything</em> that matters</h1>
+      <p>Licensed, insured, and rated 4.9 stars by Austin homeowners. Get an instant estimate in 30 seconds — no phone call needed.</p>
+      <a href="#" class="hero-cta">Get Your Free Estimate →</a>
+    </div>
+  </section>
+
+  <section class="services">
+    <h2>What We Do</h2>
+    <p class="subtitle">Residential roofing services for Austin homeowners</p>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🏠</div>
+        <h3>Roof Replacement</h3>
+        <p>Complete tear-off and installation with premium materials. We handle everything from permits to cleanup, leaving you with a roof built to last.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔧</div>
+        <h3>Roof Repair</h3>
+        <p>Leaks, missing shingles, flashing issues — we diagnose the problem and fix it right the first time. Fast response, lasting results.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <h3>Roof Inspections</h3>
+        <p>Thorough inspections to assess your roof's condition. Ideal before buying or selling a home, or after severe weather.</p>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

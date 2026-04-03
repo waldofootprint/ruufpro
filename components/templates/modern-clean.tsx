@@ -1,11 +1,13 @@
-// Modern Clean template — assembles all contractor sections in order.
-// This is the complete roofer website, rendered from database data.
-// Each section is independent and conditionally renders based on
-// what data the roofer has filled in.
+// Modern Clean template — Premium edition with two scroll animations.
+// Animation A (hero): Material Transformation — cheap roof → premium
+// Animation B (mid-page): Cutaway X-Ray — reveal roof layers
+// Non-premium templates still use the standard Hero component.
 
 import type { ContractorSiteData } from "../contractor-sections/types";
+import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
+import FloatingTextUs from "../contractor-sections/floating-text-us";
 import Nav from "../contractor-sections/nav";
-import Hero from "../contractor-sections/hero";
+import ScrollAnimation from "../scroll-animation";
 import ProofBar from "../contractor-sections/proof-bar";
 import Services from "../contractor-sections/services";
 import EstimateSection from "../contractor-sections/estimate-section";
@@ -30,30 +32,69 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         serviceAreaCities={props.serviceAreaCities}
         city={props.city}
       />
-      <Hero
-        businessName={props.businessName}
-        phone={props.phone}
-        city={props.city}
-        heroHeadline={props.heroHeadline}
-        tagline={props.tagline}
-        heroCta={props.heroCta}
-        heroImage={props.heroImage}
-        hasEstimateWidget={props.hasEstimateWidget}
+
+      {/* ANIMATION A: Material Transformation — Hero */}
+      <ScrollAnimation
+        framePath="/animations/roof-transform"
+        frameCount={151}
+        scrollHeight="300vh"
+        bgColor="#FFFFFF"
+        accentColor="#1E3A5F"
+        fontDisplay="'Sora', system-ui, sans-serif"
+        fontBody="'DM Sans', system-ui, sans-serif"
+        fullBleed
+        gradientMask
+        glassCardHeadline={props.heroHeadline || "Your Roof. Done Right."}
+        glassCardSubheadline={`Licensed & Insured \u00B7 Serving ${props.city || "Your Area"}`}
+        glassCardCta="Get Your Free Estimate"
+        ctaScrollTarget="estimate-section"
+        milestones={[
+          { text: "See the difference quality makes.", startProgress: 0.18, endProgress: 0.42, style: "headline" },
+          { text: "Quality you can see.", startProgress: 0.72, endProgress: 0.88, style: "headline" },
+        ]}
+        endCtaText="Get Your Free Estimate"
+        mobileStaticImage="/animations/roof-transform/frame-0151.jpg"
       />
+
       <ProofBar
         isLicensed={props.isLicensed}
         isInsured={props.isInsured}
         offersFinancing={props.offersFinancing}
         hasEstimateWidget={props.hasEstimateWidget}
         yearsInBusiness={props.yearsInBusiness}
+        reviews={props.reviews}
       />
       <Services services={props.services} />
-      <EstimateSection
-        hasEstimateWidget={props.hasEstimateWidget}
-        contractorId={props.contractorId}
-        businessName={props.businessName}
-        phone={props.phone}
+
+      {/* ANIMATION B: Cutaway X-Ray — Educational reveal */}
+      <ScrollAnimation
+        framePath="/animations/roof-cutaway"
+        frameCount={151}
+        scrollHeight="250vh"
+        bgColor="#F7F8FA"
+        accentColor="#1E3A5F"
+        fontDisplay="'Sora', system-ui, sans-serif"
+        fontBody="'DM Sans', system-ui, sans-serif"
+        gradientMask
+        milestones={[
+          { text: "What goes into your roof?", startProgress: 0.0, endProgress: 0.18, style: "headline" },
+          { text: "Architectural Shingles", startProgress: 0.22, endProgress: 0.42, style: "label" },
+          { text: "Synthetic Underlayment", startProgress: 0.45, endProgress: 0.65, style: "label" },
+          { text: "5 layers of protection.", startProgress: 0.7, endProgress: 0.88, style: "headline" },
+        ]}
+        endCtaText="See What Your Roof Costs"
+        ctaScrollTarget="estimate-section"
+        mobileStaticImage="/animations/roof-cutaway/frame-0151.jpg"
       />
+
+      <div id="estimate-section">
+        <EstimateSection
+          hasEstimateWidget={props.hasEstimateWidget}
+          contractorId={props.contractorId}
+          businessName={props.businessName}
+          phone={props.phone}
+        />
+      </div>
       <WhyUs
         city={props.city}
         isLicensed={props.isLicensed}
@@ -112,6 +153,8 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         state={props.state}
         services={props.services}
       />
+      <FloatingEstimateCTA hasEstimateWidget={props.hasEstimateWidget} phone={props.phone} />
+      <FloatingTextUs phone={props.phone} />
     </main>
   );
 }

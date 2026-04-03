@@ -51,6 +51,7 @@ export async function getSiteData(slug: string): Promise<SiteDataResult | null> 
     serviceAreaCities: contractor.service_area_cities || [],
     hasEstimateWidget: contractor.has_estimate_widget,
     contractorId: contractor.id,
+    urgencyBadge: null, // defaults handled in hero components
     slug,
 
     // SEO / schema fields

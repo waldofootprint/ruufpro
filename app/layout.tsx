@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { DM_Sans, Sora, Plus_Jakarta_Sans } from "next/font/google";
+import { DM_Sans, Sora, Plus_Jakarta_Sans, Inter, Outfit } from "next/font/google";
 
 // Contractor template fonts — self-hosted by Next.js for performance.
 // Modern Clean: DM Sans (body) + Sora (headings)
@@ -23,6 +23,18 @@ const plusJakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "RuufPro — Free Roofing Websites + Instant Estimates",
   description:
@@ -40,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${sora.variable} ${plusJakarta.variable}`}>
+    <html lang="en" className={`${dmSans.variable} ${sora.variable} ${plusJakarta.variable} ${inter.variable} ${outfit.variable}`}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

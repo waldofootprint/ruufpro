@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const config = {
   matcher: [
     // Match all paths except static files, Next.js internals, and app routes
-    "/((?!api/|_next/|_static/|_vercel|preview/|dashboard/|login/|signup/|onboarding/|widget-preview/|sitemap|robots|[\\w-]+\\.\\w+).*)",
+    "/((?!api/|_next/|_static/|_vercel|preview/|dashboard/|login/|signup/|onboarding/|widget-preview/|mission-control/|sitemap|robots|[\\w-]+\\.\\w+).*)",
   ],
 };
 

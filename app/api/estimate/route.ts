@@ -5,8 +5,8 @@
 // 1. Looks up the roofer's pricing from their estimate_settings
 // 2. Calls the Solar API (or cache) to get roof measurements
 // 3. Runs the geometric inference for ridge/hip/valley lengths
-// 4. Calculates the full estimate with all factors
-// 5. Returns the price range
+// 4. Calculates estimates for ALL priced materials (Good/Better/Best)
+// 5. Returns the full set of price ranges sorted low → high
 //
 // This endpoint is PUBLIC — no auth required. Anyone visiting a roofer's
 // site can get an estimate. The Google API key stays server-side here,
@@ -30,26 +30,58 @@ function getSupabase() {
   );
 }
 
+// Material display metadata
+const MATERIAL_META: Record<string, { label: string; warranty: string; windRating: string; lifespan: string; description: string }> = {
+  asphalt: {
+    label: "Asphalt Shingles",
+    warranty: "25–50 years",
+    windRating: "50–130 mph",
+    lifespan: "20–30 years",
+    description: "The most popular roofing material in North America. Affordable, durable, and available in a wide range of colors and styles.",
+  },
+  metal: {
+    label: "Standing Seam Metal",
+    warranty: "40–50 years",
+    windRating: "140–150+ mph",
+    lifespan: "40–70 years",
+    description: "Premium roofing known for exceptional durability, energy efficiency, and a modern aesthetic. Resists fire, wind, and impact.",
+  },
+  tile: {
+    label: "Tile (Clay/Concrete)",
+    warranty: "50+ years",
+    windRating: "125–150+ mph",
+    lifespan: "50–100 years",
+    description: "A timeless, premium material offering unmatched longevity and classic beauty. Excellent insulation and fire resistance.",
+  },
+  flat: {
+    label: "Flat / TPO / EPDM",
+    warranty: "15–25 years",
+    windRating: "Up to 100 mph",
+    lifespan: "15–30 years",
+    description: "Single-ply membrane systems ideal for flat or low-slope roofs. Energy-efficient and cost-effective for commercial-style applications.",
+  },
+};
+
 export async function POST(request: NextRequest) {
   const supabase = getSupabase();
   try {
     const body = await request.json();
 
-    // Validate required fields
     const {
-      contractor_id, address, material,
+      contractor_id, address,
       pitch_category, current_material, shingle_layers,
       timeline, financing_interest,
+      material, // optional: if provided, also return a single-material response for backward compat
     } = body;
 
-    if (!contractor_id || !material) {
+    if (!contractor_id) {
       return NextResponse.json(
-        { error: "contractor_id and material are required" },
+        { error: "contractor_id is required" },
         { status: 400 }
       );
     }
 
-    // V1 fallback fields (only needed if no address provided or Solar API misses)
+    // V1 fallback fields
     const { bedrooms, roof_type } = body;
 
     // Step 1: Look up the roofer's pricing
@@ -66,7 +98,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build the rates object from the contractor's settings
     const rates: ContractorRates = {
       asphalt_low: settings.asphalt_low || 0,
       asphalt_high: settings.asphalt_high || 0,
@@ -78,29 +109,35 @@ export async function POST(request: NextRequest) {
       flat_high: settings.flat_high || 0,
     };
 
-    // Step 2: Try to get roof data from Solar API (if address provided)
+    // Step 2: Get roof data
     let roofData = null;
     let geometry = null;
-    let needsFallback = false;
 
     if (address) {
       const result = await getRoofData(address);
       roofData = result.data;
-
       if (roofData) {
-        // Step 3: Run geometric inference on the segment data
         geometry = inferRoofGeometry(roofData);
-      } else {
-        // Solar API didn't have data for this address
-        needsFallback = true;
       }
-    } else {
-      // No address provided — go straight to V1 fallback
-      needsFallback = true;
     }
 
-    // Step 4: Calculate the estimate
-    const result = calculateEstimate({
+    // Step 3: Determine which materials the contractor has priced
+    const allMaterials: RoofMaterial[] = ["asphalt", "metal", "tile", "flat"];
+    const pricedMaterials = allMaterials.filter((m) => {
+      const low = rates[`${m}_low` as keyof ContractorRates];
+      const high = rates[`${m}_high` as keyof ContractorRates];
+      return low > 0 && high > 0;
+    });
+
+    if (pricedMaterials.length === 0) {
+      return NextResponse.json(
+        { error: "No materials priced. Please configure pricing first." },
+        { status: 400 }
+      );
+    }
+
+    // Step 4: Calculate estimates for all priced materials
+    const sharedInput = {
       roofData: roofData || undefined,
       geometry: geometry || undefined,
       bedrooms: bedrooms || 3,
@@ -108,29 +145,71 @@ export async function POST(request: NextRequest) {
       pitchCategory: pitch_category,
       currentMaterial: current_material,
       shingleLayers: shingle_layers || "not_sure",
-      material: material as RoofMaterial,
       timeline,
       financingInterest: financing_interest,
       rates,
       bufferPercent: settings.buffer_percent || 0,
-    });
+    };
 
-    // Step 5: Format and return
-    const display = formatEstimate(result);
+    // Assign Good/Better/Best tier labels based on price order
+    const tierLabels = ["Good", "Better", "Best", "Premium"];
 
+    const estimates = pricedMaterials
+      .map((mat) => {
+        const result = calculateEstimate({ ...sharedInput, material: mat });
+        const display = formatEstimate(result);
+        const meta = MATERIAL_META[mat];
+        return {
+          material: mat,
+          label: meta.label,
+          description: meta.description,
+          warranty: meta.warranty,
+          wind_rating: meta.windRating,
+          lifespan: meta.lifespan,
+          price_low: result.priceLow,
+          price_high: result.priceHigh,
+          range_display: display.range,
+          roof_area_sqft: result.roofAreaSqft,
+          pitch_degrees: result.pitchDegrees,
+          num_segments: result.numSegments,
+          is_satellite: result.isFromSatellite,
+          breakdown: result.breakdown,
+          tier: "", // assigned after sort
+        };
+      })
+      .sort((a, b) => a.price_low - b.price_low)
+      .map((est, i) => ({ ...est, tier: tierLabels[i] || "Premium" }));
+
+    // Build detail display from the first estimate (shared roof data)
+    const firstEst = estimates[0];
+    const detailDisplay = `Based on ${firstEst.roof_area_sqft.toLocaleString()} sqft roof · ${firstEst.is_satellite ? "satellite-measured" : "estimated"}`;
+
+    // Step 5: Return full response
     return NextResponse.json({
-      estimate: {
-        price_low: result.priceLow,
-        price_high: result.priceHigh,
-        range_display: display.range,
-        detail_display: display.detail,
-        roof_area_sqft: result.roofAreaSqft,
-        pitch_degrees: result.pitchDegrees,
-        num_segments: result.numSegments,
-        is_satellite: result.isFromSatellite,
-        needs_fallback: needsFallback,
+      estimates,
+      roof_data: {
+        roof_area_sqft: firstEst.roof_area_sqft,
+        pitch_degrees: firstEst.pitch_degrees,
+        num_segments: firstEst.num_segments,
+        is_satellite: firstEst.is_satellite,
+        detail_display: detailDisplay,
       },
-      breakdown: result.breakdown,
+      // Backward compatibility: if a single material was requested, include flat response
+      ...(material && estimates.find((e) => e.material === material)
+        ? {
+            estimate: {
+              price_low: estimates.find((e) => e.material === material)!.price_low,
+              price_high: estimates.find((e) => e.material === material)!.price_high,
+              range_display: estimates.find((e) => e.material === material)!.range_display,
+              detail_display: detailDisplay,
+              roof_area_sqft: firstEst.roof_area_sqft,
+              pitch_degrees: firstEst.pitch_degrees,
+              num_segments: firstEst.num_segments,
+              is_satellite: firstEst.is_satellite,
+            },
+            breakdown: estimates.find((e) => e.material === material)!.breakdown,
+          }
+        : {}),
     });
   } catch (err) {
     console.error("Estimate API error:", err);

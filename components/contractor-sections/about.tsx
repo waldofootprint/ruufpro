@@ -46,7 +46,7 @@ export default function About({ businessName, city, aboutText, yearsInBusiness }
           />
           <div style={{ position: "relative", zIndex: 1, width: "100%", height: 420, overflow: "hidden", borderRadius: "20px 4px 4px 20px" }}>
             <Image
-              src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80&auto=format"
+              src="https://images.unsplash.com/photo-1747188460368-9e61441e97fa?w=800&q=80&auto=format"
               alt={`${businessName} roofing team serving ${city}`}
               fill
               style={{ objectFit: "cover" }}

@@ -8,7 +8,7 @@ export type DesignStyle = "modern_clean" | "bold_confident" | "warm_trustworthy"
 
 export type LeadSource = "contact_form" | "estimate_widget" | "external_widget";
 
-export type LeadStatus = "new" | "contacted" | "quoted" | "won" | "lost";
+export type LeadStatus = "new" | "contacted" | "quoted" | "won" | "completed" | "lost";
 
 export type LeadTimeline = "no_timeline" | "1_3_months" | "now";
 
@@ -61,11 +61,19 @@ export interface Contractor {
   has_roofready_site: boolean;
   external_site_url: string | null;
 
+  // SMS & 10DLC
+  google_review_url: string | null;
+  sms_enabled: boolean;
+  missed_call_textback_enabled: boolean;
+  review_request_enabled: boolean;
+  legal_entity_type: 'sole_proprietor' | 'llc' | 'corporation' | 'partnership';
+  ein: string | null;
+
   created_at: string;
   updated_at: string;
 }
 
-export type TemplateId = "modern_clean" | "bold_confident" | "warm_trustworthy" | "chalkboard" | "blueprint" | "residential";
+export type TemplateId = "modern_clean" | "bold_confident" | "warm_trustworthy" | "chalkboard" | "blueprint" | "residential" | "classic" | "clean_professional" | "forge" | "bold_dark";
 
 export interface Site {
   id: string;
@@ -96,6 +104,16 @@ export interface Review {
   rating: number;
 }
 
+export interface EstimateMaterialEntry {
+  material: string;
+  tier: string;
+  label: string;
+  price_low: number;
+  price_high: number;
+  warranty: string;
+  lifespan: string;
+}
+
 export interface Lead {
   id: string;
   contractor_id: string;
@@ -115,6 +133,9 @@ export interface Lead {
   estimate_high: number | null;
   estimate_material: string | null;
   estimate_roof_sqft: number | null;
+  estimate_materials: EstimateMaterialEntry[] | null;
+  living_estimate_id: string | null;
+  property_data_id: string | null;
 
   // Lead qualification (from widget)
   timeline: LeadTimeline | null;

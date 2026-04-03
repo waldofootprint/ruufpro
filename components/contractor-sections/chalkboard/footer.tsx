@@ -9,7 +9,7 @@ export default function ChalkFooter({ businessName, phone, city, state, services
   const phoneClean = phone.replace(/\D/g, "");
 
   return (
-    <footer style={{ padding: "48px 32px 32px", borderTop: `2px dashed ${CHALK.borderDashed}`, fontFamily: CHALK.fontBody }}>
+    <footer style={{ padding: "48px 32px 32px", borderTop: `1px solid ${CHALK.border}`, fontFamily: CHALK.fontBody }}>
       <div style={{ maxWidth: CHALK.maxWidth, margin: "0 auto" }}>
         {/* Top row */}
         <div style={{ display: "flex", justifyContent: "space-between", gap: 32, flexWrap: "wrap", paddingBottom: 28, borderBottom: `1px solid ${CHALK.border}`, marginBottom: 20 }}>

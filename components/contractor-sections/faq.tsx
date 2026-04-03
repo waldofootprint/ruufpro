@@ -11,6 +11,8 @@ import { ChevronDown } from "lucide-react";
 import { THEME } from "./theme";
 import { BLUEPRINT } from "./theme-blueprint";
 import { CHALK } from "./theme-chalkboard";
+import { CLASSIC } from "./theme-classic";
+import { FORGE } from "./theme-forge";
 import { generateFaqItems, type FaqInput } from "@/lib/faq-data";
 import type { ContractorSiteData } from "./types";
 
@@ -27,7 +29,7 @@ type FaqProps = Pick<
   | "yearsInBusiness"
   | "phone"
 > & {
-  theme: "modern-clean" | "blueprint" | "chalkboard";
+  theme: "modern-clean" | "blueprint" | "chalkboard" | "classic" | "forge";
 };
 
 const THEMES = {
@@ -75,6 +77,36 @@ const THEMES = {
     sectionPadding: CHALK.sectionPadding,
     maxWidth: CHALK.maxWidth,
     radius: CHALK.borderRadius,
+  },
+  classic: {
+    colors: CLASSIC,
+    bg: CLASSIC.bgAlt,
+    cardBg: CLASSIC.bg,
+    text: CLASSIC.text,
+    textSecondary: CLASSIC.textSecondary,
+    accent: CLASSIC.accent,
+    border: CLASSIC.border,
+    kicker: CLASSIC.textMuted,
+    font: CLASSIC.fontBody,
+    fontDisplay: CLASSIC.fontDisplay,
+    sectionPadding: CLASSIC.sectionPadding,
+    maxWidth: CLASSIC.maxWidth,
+    radius: CLASSIC.borderRadiusLg,
+  },
+  forge: {
+    colors: FORGE,
+    bg: FORGE.bgAlt,
+    cardBg: FORGE.bgCard,
+    text: FORGE.text,
+    textSecondary: FORGE.textMuted,
+    accent: FORGE.accent,
+    border: FORGE.border,
+    kicker: FORGE.accent,
+    font: FORGE.fontBody,
+    fontDisplay: FORGE.fontDisplay,
+    sectionPadding: FORGE.sectionPadding,
+    maxWidth: FORGE.maxWidth,
+    radius: FORGE.borderRadiusLg,
   },
 };
 
