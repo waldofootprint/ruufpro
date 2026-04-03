@@ -17,17 +17,17 @@ const TODAY = new Date().toISOString().split("T")[0];
 const ALL_ITEMS: ProgressItem[] = [
   // ── Apr 3, 2026 — HQ Navigation ──────────────────────────
   {
-    id: "hq-navigation-page",
-    title: "HQ — central navigation hub",
+    id: "hq-redesign",
+    title: "HQ redesign — single daily cockpit",
     description:
-      "Created /hq as a single launchpad page that links to every internal page. Three sections: Mission Control (Dashboard + Workflows tabs), Command Center (all 12 tabs — Overview, Onboarding, Inbox, To-Do, Plays, Sites, Outreach, Vault, Project Status, Research, Positioning, Motivation), and Product (marketing site, onboarding, dashboard, demo templates, widget preview). Each link card shows a description and uses the section's accent color on hover. Command Center links use ?tab= query params to deep-link directly to the right tab. Added '← HQ' back-links to both Mission Control and Command Center headers so you can always navigate back. Auth-gated with same admin email check as other internal pages.",
+      "Redesigned /hq from a dumb link directory into a proper 4-tab dashboard organized by solopreneur intent. TODAY tab: progress log (today/completed toggle), current sprint with shipped/next items, and quick action links (inbox, todos, onboarding, marketing site). BUILD tab: full feature inventory grouped by status (12 complete, 2 in progress, 3 planned) with clickable links to feature detail pages at /command-center/feature/[slug], template grid with color swatches and status, plus deep-links to build tools (Mission Control, onboarding preview, site kanban, workflows, demos, widget). GROW tab: revenue strategy snapshot showing all 3 tiers with $50K MRR math (vault 031), links to plays, outreach pipeline, positioning, war room overview, and live product pages. LIBRARY tab: vault (50+ entries) as the hero with prominent 'Open Vault' card, research docs, feature deep-dives, wins board, and completed work archive. Quick stats row at top shows shipped today / features live / pipeline count / templates. Back-links to HQ on both Mission Control and Command Center headers. Imports real data from progress-log.ts, template-registry.ts, and features-data.ts — everything is live, not hardcoded.",
     files: [
       { label: "hq/page.tsx", path: "/app/hq/page.tsx" },
       { label: "hq/layout.tsx", path: "/app/hq/layout.tsx" },
       { label: "mission-control/page.tsx", path: "/app/mission-control/page.tsx" },
       { label: "command-center/page.tsx", path: "/app/command-center/page.tsx" },
     ],
-    tags: ["navigation", "mission-control", "command-center"],
+    tags: ["navigation", "hq", "reorganization"],
     date: "2026-04-03",
   },
   // ── Apr 3, 2026 — Pricing Update ──────────────────────────
