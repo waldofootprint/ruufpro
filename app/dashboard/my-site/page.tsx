@@ -66,7 +66,8 @@ export default function MySitePage() {
   const [services, setServices] = useState<string[]>([]);
   const [newService, setNewService] = useState("");
   const [phone, setPhone] = useState("");
-  const [serviceArea, setServiceArea] = useState("");
+  const [serviceAreaCities, setServiceAreaCities] = useState<string[]>([]);
+  const [newCity, setNewCity] = useState("");
   const [trustSignals, setTrustSignals] = useState({
     is_licensed: false,
     is_insured: false,
@@ -105,7 +106,7 @@ export default function MySitePage() {
         setContractor(contractorData);
         setTagline(contractorData.tagline || "");
         setPhone(contractorData.phone || "");
-        setServiceArea(contractorData.service_area_cities?.join(", ") || contractorData.city || "");
+        setServiceAreaCities(contractorData.service_area_cities || (contractorData.city ? [contractorData.city] : []));
         setTrustSignals({
           is_licensed: contractorData.is_licensed || false,
           is_insured: contractorData.is_insured || false,
@@ -140,7 +141,7 @@ export default function MySitePage() {
     const { error: contractorErr } = await supabase.from("contractors").update({
       tagline: tagline || null,
       phone: phone || null,
-      service_area_cities: serviceArea ? serviceArea.split(",").map((s) => s.trim()).filter(Boolean) : null,
+      service_area_cities: serviceAreaCities.length > 0 ? serviceAreaCities : null,
       ...trustSignals,
     }).eq("id", contractorId);
 
@@ -422,14 +423,55 @@ export default function MySitePage() {
             />
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Service Area</label>
-            <input
-              className="w-full px-3 py-2.5 rounded-lg border border-[#e2e8f0] text-[14px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all"
-              value={serviceArea}
-              onChange={(e) => setServiceArea(e.target.value)}
-              placeholder="Dallas, Plano, Frisco, McKinney"
-            />
-            <p className="text-[11px] text-slate-400 mt-1.5">Comma-separated cities you serve</p>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Service Area Cities</label>
+            <p className="text-[11px] text-slate-400 mb-2">Each city gets its own SEO landing page at <span className="text-slate-600">{site?.slug}.ruufpro.com/city-name</span></p>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {serviceAreaCities.map((city, i) => {
+                const isPrimary = city === contractor?.city;
+                const slug = city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+                return (
+                  <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#e2e8f0] bg-white text-[13px] text-slate-700">
+                    <span>{city}</span>
+                    <span className="text-[10px] text-slate-400">/{slug}</span>
+                    {isPrimary ? (
+                      <span className="text-[9px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded ml-1">Primary</span>
+                    ) : (
+                      <button onClick={() => setServiceAreaCities(serviceAreaCities.filter((_, j) => j !== i))} className="ml-1 text-slate-300 hover:text-red-400 transition-colors">
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 px-3 py-2 rounded-lg border border-[#e2e8f0] text-[13px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all"
+                value={newCity}
+                onChange={(e) => setNewCity(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newCity.trim()) {
+                    e.preventDefault();
+                    if (!serviceAreaCities.includes(newCity.trim())) {
+                      setServiceAreaCities([...serviceAreaCities, newCity.trim()]);
+                    }
+                    setNewCity("");
+                  }
+                }}
+                placeholder="Add a city..."
+              />
+              <button
+                onClick={() => {
+                  if (newCity.trim() && !serviceAreaCities.includes(newCity.trim())) {
+                    setServiceAreaCities([...serviceAreaCities, newCity.trim()]);
+                    setNewCity("");
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-slate-100 text-[12px] font-semibold text-slate-600 hover:bg-slate-200 transition-all"
+              >
+                Add
+              </button>
+            </div>
           </div>
         </div>
       ),
