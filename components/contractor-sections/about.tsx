@@ -96,7 +96,7 @@ export default function About({ businessName, city, aboutText, yearsInBusiness }
               About us
             </span>
           </div>
-          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 16, fontFamily: THEME.fontDisplay }}>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 16, fontFamily: THEME.fontSerif }}>
             Built on trust, one roof at a time
           </h2>
           <p style={{ fontSize: 16, color: THEME.textSecondary, lineHeight: 1.7, marginBottom: 28 }}>

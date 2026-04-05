@@ -117,7 +117,7 @@ export default function Services({ services }: ServicesProps) {
             color: THEME.textPrimary,
             lineHeight: 1.1,
             letterSpacing: "-0.02em",
-            fontFamily: THEME.fontDisplay,
+            fontFamily: THEME.fontSerif,
             marginBottom: 10,
           }}
         >

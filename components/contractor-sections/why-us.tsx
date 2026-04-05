@@ -137,7 +137,7 @@ export default function WhyUs(props: WhyUsProps) {
             Why choose us
           </span>
         </div>
-        <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: THEME.fontDisplay, marginBottom: 10 }}>
+        <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: THEME.fontSerif, marginBottom: 10 }}>
           Why homeowners choose us
         </h2>
         <p style={{ fontSize: 16, color: THEME.textSecondary, maxWidth: 520, lineHeight: 1.65 }}>

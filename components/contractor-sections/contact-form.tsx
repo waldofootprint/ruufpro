@@ -82,7 +82,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
               Get in touch
             </span>
           </div>
-          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 12, fontFamily: THEME.fontDisplay }}>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 12, fontFamily: THEME.fontSerif }}>
             Let's talk about your roof
           </h2>
           <p style={{ fontSize: 16, color: THEME.textSecondary, lineHeight: 1.6, marginBottom: 32 }}>

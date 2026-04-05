@@ -19,6 +19,7 @@ export const THEME = {
 
   // Typography — uses CSS variables from next/font (loaded in app/layout.tsx)
   fontDisplay: "var(--font-sora), 'Sora', sans-serif",
+  fontSerif: "var(--font-lora), 'Lora', Georgia, serif",
   fontBody: "var(--font-dm-sans), 'DM Sans', sans-serif",
 
   // Spacing

@@ -298,9 +298,35 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         warrantyYears={props.warrantyYears}
         reviews={props.reviews}
       />
+
+      {/* Section order: Problem → Promise → Proof → Path (Q3)
+          Process early = "here's how easy it is" before asking for anything
+          Reviews before estimate = social proof reduces friction */}
+
+      <Process />
+
+      {/* Micro-CTA: after process — "now you know how it works, take the next step" */}
+      <div style={{ textAlign: "center", padding: "24px 32px 0" }}>
+        <a
+          href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
+          style={{
+            fontFamily: "'DM Sans', system-ui, sans-serif",
+            fontSize: "14px",
+            fontWeight: 600,
+            color: "#E8722A",
+            textDecoration: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          Start with step one — Get My Free Inspection →
+        </a>
+      </div>
+
       <Services services={props.services} />
 
-      {/* Micro-CTA: after services — research says only 6% scroll to bottom (Q3) */}
+      {/* Micro-CTA: after services */}
       <div style={{ textAlign: "center", padding: "24px 32px 0" }}>
         <a
           href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
@@ -316,6 +342,27 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
           }}
         >
           Get My Free Estimate →
+        </a>
+      </div>
+
+      <Reviews reviews={props.reviews} />
+
+      {/* Micro-CTA: after reviews — social proof → action */}
+      <div style={{ textAlign: "center", padding: "24px 32px 0" }}>
+        <a
+          href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
+          style={{
+            fontFamily: "'DM Sans', system-ui, sans-serif",
+            fontSize: "14px",
+            fontWeight: 600,
+            color: "#E8722A",
+            textDecoration: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          Ready to start? Get My Free Estimate →
         </a>
       </div>
 
@@ -350,6 +397,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
           phone={props.phone}
         />
       </div>
+
       <WhyUs
         city={props.city}
         isLicensed={props.isLicensed}
@@ -379,26 +427,6 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         businessName={props.businessName}
         photos={[]}
       />
-      <Reviews reviews={props.reviews} />
-
-      {/* Micro-CTA: after reviews — social proof → action (Q3) */}
-      <div style={{ textAlign: "center", padding: "24px 32px 0" }}>
-        <a
-          href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
-          style={{
-            fontFamily: "'DM Sans', system-ui, sans-serif",
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "#E8722A",
-            textDecoration: "none",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          Ready to start? Get My Free Estimate →
-        </a>
-      </div>
 
       <FAQ
         businessName={props.businessName}
@@ -413,26 +441,6 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         phone={props.phone}
         theme="modern-clean"
       />
-      <Process />
-
-      {/* Micro-CTA: after process — "now you know how it works, take the next step" */}
-      <div style={{ textAlign: "center", padding: "24px 32px 0" }}>
-        <a
-          href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
-          style={{
-            fontFamily: "'DM Sans', system-ui, sans-serif",
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "#E8722A",
-            textDecoration: "none",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          Start with step one — Get My Free Inspection →
-        </a>
-      </div>
 
       <ServiceArea
         city={props.city}

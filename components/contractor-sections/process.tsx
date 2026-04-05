@@ -46,7 +46,7 @@ export default function Process() {
             Our process
           </span>
         </div>
-        <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: THEME.fontDisplay, marginBottom: 10 }}>
+        <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: THEME.fontSerif, marginBottom: 10 }}>
           How it works
         </h2>
         <p style={{ fontSize: 16, color: THEME.textSecondary, maxWidth: 480, margin: "0 auto", lineHeight: 1.65 }}>

@@ -181,6 +181,93 @@ export async function sendMissedCallTextback(
 }
 
 // ---------------------------------------------------------------------------
+// sendLeadAutoResponse — instant SMS when a homeowner submits a contact form
+// ---------------------------------------------------------------------------
+
+/**
+ * Send an immediate auto-response SMS when a lead comes in via contact form.
+ * Research: 5-min response = 391% higher qualification. First to respond = 238%
+ * more likely to win. This fires in <10 seconds — before any human sees the lead.
+ *
+ * Only sends if:
+ * - Lead provided a phone number
+ * - Contractor has SMS enabled + a provisioned number
+ * - Phone isn't in the opt-out list
+ */
+export async function sendLeadAutoResponse(
+  contractorId: string,
+  leadPhone: string,
+  leadName: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createServerSupabase();
+
+  // Look up the contractor
+  const { data: contractor, error: contractorError } = await supabase
+    .from("contractors")
+    .select("business_name, sms_enabled")
+    .eq("id", contractorId)
+    .single();
+
+  if (contractorError || !contractor) {
+    return { success: false, error: "Contractor not found" };
+  }
+
+  if (!contractor.sms_enabled) {
+    return { success: false, error: "SMS not enabled for this contractor" };
+  }
+
+  // Get the sending number
+  const fromNumber = await getContractorNumber(contractorId);
+  if (!fromNumber) {
+    return { success: false, error: "SMS not provisioned for this contractor" };
+  }
+
+  // Check opt-out list
+  const { data: optOut } = await supabase
+    .from("sms_opt_outs")
+    .select("id")
+    .eq("phone", leadPhone)
+    .eq("contractor_id", contractorId)
+    .limit(1)
+    .single();
+
+  if (optOut) {
+    return { success: false, error: "Phone number has opted out" };
+  }
+
+  // Build the auto-response — friendly, quick, sets expectation
+  const firstName = leadName.split(" ")[0];
+  const smsBody =
+    `Hi ${firstName}! This is ${contractor.business_name} — we just got your request and will call you shortly. ` +
+    `If you need us sooner, reply here or call us back. Talk soon!`;
+
+  // Try to match to an existing lead
+  const { data: matchedLead } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("contractor_id", contractorId)
+    .eq("phone", leadPhone)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  const smsResult = await sendSMS({
+    to: leadPhone,
+    from: fromNumber,
+    body: smsBody,
+    contractorId,
+    leadId: matchedLead?.id || undefined,
+    messageType: "lead_auto_response",
+  });
+
+  if (!smsResult.success) {
+    return { success: false, error: smsResult.error };
+  }
+
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
 // scheduleReviewEmailFollowup — send email if they didn't click the SMS link
 // ---------------------------------------------------------------------------
 

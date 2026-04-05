@@ -27,7 +27,7 @@ export default function Reviews({ reviews }: ReviewsProps) {
         <p style={{ fontSize: 13, fontWeight: 600, color: THEME.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8, fontFamily: THEME.fontDisplay }}>
           Reviews
         </p>
-        <h2 style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 700, color: THEME.textPrimary, lineHeight: 1.15, fontFamily: THEME.fontDisplay }}>
+        <h2 style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 700, color: THEME.textPrimary, lineHeight: 1.15, fontFamily: THEME.fontSerif }}>
           What our customers say
         </h2>
         <p style={{ fontSize: 16, color: THEME.textSecondary, marginTop: 8, maxWidth: 540, lineHeight: 1.6 }}>

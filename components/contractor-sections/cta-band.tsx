@@ -40,7 +40,7 @@ export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps
             color: "#fff",
             lineHeight: 1.15,
             marginBottom: 12,
-            fontFamily: THEME.fontDisplay,
+            fontFamily: THEME.fontSerif,
           }}
         >
           Ready to get your roof handled?

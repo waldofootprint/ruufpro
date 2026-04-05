@@ -12,6 +12,7 @@ type MessageType =
   | "review_request"
   | "missed_call_textback"
   | "lead_notification"
+  | "lead_auto_response"
   | "general";
 
 interface SendSMSParams {
