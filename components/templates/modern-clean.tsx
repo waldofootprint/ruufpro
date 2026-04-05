@@ -33,26 +33,33 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         city={props.city}
       />
 
-      {/* ANIMATION A: Material Transformation — Hero */}
+      {/* HERO: 3D Scroll Animation — Roof Layer Explosion */}
       <ScrollAnimation
         framePath="/animations/roof-transform"
         frameCount={151}
         scrollHeight="300vh"
         bgColor="#FFFFFF"
-        accentColor="#1E3A5F"
+        accentColor="#0F1B2D"
         fontDisplay="'Sora', system-ui, sans-serif"
         fontBody="'DM Sans', system-ui, sans-serif"
         fullBleed
         gradientMask
-        glassCardHeadline={props.heroHeadline || "Your Roof. Done Right."}
-        glassCardSubheadline={`Licensed & Insured \u00B7 Serving ${props.city || "Your Area"}`}
+        glassCardHeadline={props.heroHeadline || `Built to Last. Backed by ${props.warrantyYears || 25} Years.`}
+        glassCardSubheadline={
+          props.yearsInBusiness
+            ? `${props.yearsInBusiness}+ Years Serving ${props.city || "Your Area"} · Licensed & Insured`
+            : `Licensed & Insured · Serving ${props.city || "Your Area"}`
+        }
         glassCardCta="Get Your Free Estimate"
         ctaScrollTarget="estimate-section"
         milestones={[
-          { text: "See the difference quality makes.", startProgress: 0.18, endProgress: 0.42, style: "headline" },
-          { text: "Quality you can see.", startProgress: 0.72, endProgress: 0.88, style: "headline" },
+          { text: "What goes into your roof?", startProgress: 0.08, endProgress: 0.22, style: "headline" },
+          { text: "Architectural Shingles — 30-year warranty", startProgress: 0.24, endProgress: 0.38, style: "label" },
+          { text: "Synthetic Underlayment — Moisture barrier", startProgress: 0.40, endProgress: 0.54, style: "label" },
+          { text: "Plywood Decking — Structural foundation", startProgress: 0.56, endProgress: 0.70, style: "label" },
+          { text: "We know every layer of your roof.", startProgress: 0.74, endProgress: 0.90, style: "headline" },
         ]}
-        endCtaText="Get Your Free Estimate"
+        endCtaText="See What Your Roof Costs"
         mobileStaticImage="/animations/roof-transform/frame-0151.jpg"
       />
 
@@ -67,21 +74,21 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
       />
       <Services services={props.services} />
 
-      {/* ANIMATION B: Cutaway X-Ray — Educational reveal */}
+      {/* ANIMATION B: Cutaway X-Ray — Deep dive reveal */}
       <ScrollAnimation
         framePath="/animations/roof-cutaway"
         frameCount={151}
         scrollHeight="250vh"
-        bgColor="#F7F8FA"
-        accentColor="#1E3A5F"
+        bgColor="#F9FAFB"
+        accentColor="#0F1B2D"
         fontDisplay="'Sora', system-ui, sans-serif"
         fontBody="'DM Sans', system-ui, sans-serif"
         gradientMask
         milestones={[
-          { text: "What goes into your roof?", startProgress: 0.0, endProgress: 0.18, style: "headline" },
-          { text: "Architectural Shingles", startProgress: 0.22, endProgress: 0.42, style: "label" },
-          { text: "Synthetic Underlayment", startProgress: 0.45, endProgress: 0.65, style: "label" },
-          { text: "5 layers of protection.", startProgress: 0.7, endProgress: 0.88, style: "headline" },
+          { text: "Every layer. Every detail.", startProgress: 0.0, endProgress: 0.18, style: "headline" },
+          { text: "Ice & Water Shield — Prevents leaks at vulnerable points", startProgress: 0.22, endProgress: 0.40, style: "label" },
+          { text: "Drip Edge Flashing — Channels water away from fascia", startProgress: 0.44, endProgress: 0.62, style: "label" },
+          { text: "5 layers of protection between you and the elements.", startProgress: 0.68, endProgress: 0.88, style: "headline" },
         ]}
         endCtaText="See What Your Roof Costs"
         ctaScrollTarget="estimate-section"
