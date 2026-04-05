@@ -200,7 +200,7 @@ export default function LivePreview({
               <Reviews reviews={reviews.length > 0 ? reviews : [{ name: "Maria G.", text: "Best roofing company we've ever worked with. Professional, on time, and great price.", rating: 5 }, { name: "James T.", text: "They handled everything with our insurance. Stress-free experience.", rating: 5 }]} />
               <CtaBand phone={ph} city={loc} hasEstimateWidget={true} />
               <ContactForm businessName={name} phone={ph} city={loc} state={st} contractorId="preview" />
-              <Footer businessName={name} phone={ph} city={loc} state={st} services={services} />
+              <Footer businessName={name} phone={ph} city={loc} state={st} services={services} tier="free" />
             </>
           )}
 

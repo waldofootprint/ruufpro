@@ -1,0 +1,46 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How can roofing contractors get a free website?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Roofing contractors can get a free professional website through roofing-specific platforms that include service area pages, click-to-call, and trust signals out of the box. The most effective free options are purpose-built for contractors — not generic builders — because they come pre-optimized for searches like \"roofer near me\" and \"roof repair in [city].\""
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What's the catch with free website builders?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Generic free builders like Wix and GoDaddy have forced ads, limited storage, and no roofing-specific features. Over 3 years, hidden costs for hosting, email, CRM, and maintenance can add up to $2,400–$3,000. Roofing-specific platforms that offer a free tier typically include hosting and templates, with optional paid upgrades for tools like online estimates."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does a roofing website cost?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "DIY builders run $10–$50/month ($240–$600/year plus your time). Freelancers charge $1,500–$4,000 upfront plus $75–$200/month. Roofing marketing agencies cost $3,000–$15,000/month with 12–24 month contracts. A roofing-specific platform with a free tier is the only $0 entry point."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do roofing contractors actually need a website?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. 78% of homeowners say they're more likely to call a roofer who shows pricing on their website (Roofing Contractor magazine, 2025). An audit of 1,409 roofing websites found the average site scores just 37 out of 100 — meaning most competitors have weak sites, which is an opportunity for any roofer who builds a decent one."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What's the best free website builder for roofers?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The best option depends on your budget and how involved you want to be. Generic builders like Wix ($17/month) and GoDaddy ($9.99/month) are cheap but score poorly for roofing — Wix roofing sites average 27/100 and GoDaddy averages 24/100 in performance audits. Roofing-specific platforms with free tiers outperform generic builders because they include industry trust signals, service pages, and local SEO structure from day one."
+      }
+    }
+  ]
+}
