@@ -15,7 +15,7 @@ import SectionToggle from "@/components/onboarding/section-toggle";
 import CityInput from "@/components/onboarding/city-input";
 
 type DesignStyle = "modern_clean" | "bold_confident" | "warm_trustworthy";
-type Screen = "form" | "loading" | "editor";
+type Screen = "form" | "loading" | "editor" | "published";
 
 const DESIGN_OPTIONS = [
   {
@@ -148,7 +148,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) {
-        setUserId("preview-mode"); // TODO: revert to router.push("/signup") before deploy
+        router.push("/signup");
       } else {
         setUserId(data.user.id);
       }
@@ -168,8 +168,8 @@ export default function OnboardingPage() {
   }
 
   async function handlePublish() {
-    if (!userId || userId === "preview-mode") {
-      setError("Please sign up to publish your site.");
+    if (!userId) {
+      router.push("/signup");
       return;
     }
     setError("");
@@ -221,7 +221,8 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.push(`/site/${slug}`);
+    setLoading(false);
+    setScreen("published");
   }
 
   if (!userId) {
@@ -507,6 +508,89 @@ export default function OnboardingPage() {
       </div>
     </main>
   );
+
+  // ============================================================
+  // SCREEN 4: Published — Celebration + Next Steps
+  // ============================================================
+  if (screen === "published") {
+    const siteUrl = `https://${slug}.ruufpro.com`;
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-lg text-center">
+          {/* Celebration */}
+          <div className="mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Your site is live!</h1>
+            <p className="text-gray-600">
+              {businessName} now has a professional roofing website. Homeowners can find you, call you, and request estimates.
+            </p>
+          </div>
+
+          {/* Live URL */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6 shadow-sm">
+            <p className="text-sm font-medium text-gray-500 mb-2">Your website address</p>
+            <a
+              href={siteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg font-bold text-blue-600 hover:text-blue-700 break-all"
+            >
+              {slug}.ruufpro.com
+            </a>
+            <button
+              onClick={() => { navigator.clipboard.writeText(siteUrl); }}
+              className="mt-3 block mx-auto text-sm font-medium text-gray-500 hover:text-gray-700 underline"
+            >
+              Copy link
+            </button>
+          </div>
+
+          {/* Action buttons */}
+          <div className="space-y-3">
+            <a
+              href={siteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 transition-all"
+            >
+              View Your Site →
+            </a>
+            <a
+              href="/dashboard"
+              className="block w-full rounded-xl bg-white border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 transition-all"
+            >
+              Go to Dashboard
+            </a>
+          </div>
+
+          {/* What's next */}
+          <div className="mt-8 text-left bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-gray-900 mb-3">What to do next</h3>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-start gap-2">
+                <span className="text-green-500 mt-0.5">✓</span>
+                <span><strong>Your site is live</strong> — homeowners can find it on Google</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-gray-300 mt-0.5">○</span>
+                <span>Add real project photos from your phone</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-gray-300 mt-0.5">○</span>
+                <span>Upload your logo in Settings</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-gray-300 mt-0.5">○</span>
+                <span>Set up your estimate widget to show pricing</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    );
+  }
 }
 
 const US_STATES = [

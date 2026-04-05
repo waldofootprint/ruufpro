@@ -16,6 +16,7 @@ import BlueprintTemplate from "@/components/templates/blueprint";
 import ClassicTemplate from "@/components/templates/classic";
 import ForgeTemplate from "@/components/templates/forge";
 import ApexTemplate from "@/components/templates/apex";
+import OwnerBar from "@/components/owner-bar";
 
 export async function generateMetadata({
   params,
@@ -74,7 +75,7 @@ export default async function ContractorSite({
     notFound();
   }
 
-  const { site, templateData } = result;
+  const { site, contractor, templateData } = result;
 
   // JSON-LD structured data — RoofingContractor, Service, FAQPage, WebPage
   const schemas = buildSchemas(result);
@@ -105,6 +106,7 @@ export default async function ContractorSite({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
       ))}
+      <OwnerBar contractorUserId={contractor.user_id} />
       {templateComponent}
     </>
   );

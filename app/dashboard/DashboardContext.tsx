@@ -39,45 +39,31 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   };
 
   // Auth check + contractor fetch (runs once)
-  // TEMP: Skip auth, use demo contractor directly so we can preview the dashboard
   useEffect(() => {
     async function init() {
       try {
-        // Try real auth first
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: contractor } = await supabase
-            .from("contractors")
-            .select("id, business_name")
-            .eq("user_id", user.id)
-            .single();
-          if (contractor) {
-            setContractorId(contractor.id);
-            setBusinessName(contractor.business_name);
-            setLoading(false);
-            return;
-          }
+        if (!user) {
+          router.push("/login?redirect=/dashboard");
+          return;
         }
-        // Fallback: use demo contractor for preview
-        const { data: demo } = await supabase
+        const { data: contractor } = await supabase
           .from("contractors")
           .select("id, business_name")
-          .limit(1)
+          .eq("user_id", user.id)
           .single();
-        if (demo) {
-          setContractorId(demo.id);
-          setBusinessName(demo.business_name);
+        if (contractor) {
+          setContractorId(contractor.id);
+          setBusinessName(contractor.business_name);
         } else {
-          setContractorId("demo");
-          setBusinessName("Demo Roofing Co");
+          // User exists but no contractor record — send to onboarding
+          router.push("/onboarding");
+          return;
         }
         setLoading(false);
       } catch (err) {
         console.error("Dashboard init error:", err);
-        // Still show dashboard with fallback data
-        setContractorId("demo");
-        setBusinessName("Demo Roofing Co");
-        setLoading(false);
+        router.push("/login?redirect=/dashboard");
       }
     }
     init();
