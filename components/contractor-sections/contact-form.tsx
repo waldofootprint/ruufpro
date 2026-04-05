@@ -11,7 +11,8 @@ type ContactFormProps = Pick<ContractorSiteData, "businessName" | "phone" | "cit
 
 export default function ContactForm({ businessName, phone, city, state, contractorId }: ContactFormProps) {
   const phoneClean = phone.replace(/\D/g, "");
-  const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
+  const [form, setForm] = useState({ name: "", phone: "", zip: "", email: "", message: "" });
+  const [showDetails, setShowDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -166,6 +167,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
               <div style={{ marginBottom: 16 }}>
                 <label style={{ fontSize: 14, fontWeight: 600, color: THEME.textPrimary, display: "block", marginBottom: 6 }}>Phone</label>
                 <input
+                  type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="(555) 000-0000"
@@ -175,28 +177,80 @@ export default function ContactForm({ businessName, phone, city, state, contract
                 />
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 14, fontWeight: 600, color: THEME.textPrimary, display: "block", marginBottom: 6 }}>Email</label>
+                <label style={{ fontSize: 14, fontWeight: 600, color: THEME.textPrimary, display: "block", marginBottom: 6 }}>Zip Code</label>
                 <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="you@example.com"
+                  value={form.zip}
+                  onChange={(e) => setForm({ ...form, zip: e.target.value })}
+                  placeholder="e.g. 33602"
+                  inputMode="numeric"
                   style={inputStyle}
                   onFocus={(e) => (e.currentTarget.style.borderColor = THEME.primary)}
                   onBlur={(e) => (e.currentTarget.style.borderColor = THEME.border)}
                 />
               </div>
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ fontSize: 14, fontWeight: 600, color: THEME.textPrimary, display: "block", marginBottom: 6 }}>How can we help?</label>
-                <textarea
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  placeholder="E.g. 'I have a leak near my chimney' or 'I need a full replacement quote'..."
-                  style={{ ...inputStyle, minHeight: 100, resize: "vertical" } as React.CSSProperties}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = THEME.primary)}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = THEME.border)}
-                />
+
+              {/* Email + Message: always visible on desktop, collapsed on mobile behind "+ Add details" */}
+              <div className="contact-details-fields" style={{ marginBottom: 16 }}>
+                {/* Mobile toggle */}
+                <button
+                  type="button"
+                  className="details-toggle"
+                  onClick={() => setShowDetails(!showDetails)}
+                  style={{
+                    display: "none", // shown on mobile via CSS
+                    width: "100%",
+                    padding: "10px 0",
+                    background: "none",
+                    border: "none",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: THEME.accent,
+                    cursor: "pointer",
+                    marginBottom: showDetails ? 16 : 0,
+                  }}
+                >
+                  {showDetails ? "− Hide details" : "+ Add details (email, message)"}
+                </button>
+
+                {/* Fields container — desktop: always visible, mobile: toggled */}
+                <div className="details-inner" style={{ display: showDetails ? "block" : undefined }}>
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: 14, fontWeight: 600, color: THEME.textPrimary, display: "block", marginBottom: 6 }}>Email</label>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      placeholder="you@example.com"
+                      style={inputStyle}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = THEME.primary)}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = THEME.border)}
+                    />
+                  </div>
+                  <div style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: 14, fontWeight: 600, color: THEME.textPrimary, display: "block", marginBottom: 6 }}>How can we help?</label>
+                    <textarea
+                      value={form.message}
+                      onChange={(e) => setForm({ ...form, message: e.target.value })}
+                      placeholder="E.g. 'I have a leak near my chimney' or 'I need a full replacement quote'..."
+                      style={{ ...inputStyle, minHeight: 100, resize: "vertical" } as React.CSSProperties}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = THEME.primary)}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = THEME.border)}
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Mobile: show toggle, hide fields by default. Desktop: hide toggle, show fields always. */}
+              <style>{`
+                @media (max-width: 768px) {
+                  .details-toggle { display: block !important; }
+                  .details-inner { display: ${showDetails ? "block" : "none"} !important; }
+                }
+                @media (min-width: 769px) {
+                  .details-toggle { display: none !important; }
+                  .details-inner { display: block !important; }
+                }
+              `}</style>
               <button
                 type="submit"
                 disabled={submitting}
@@ -217,7 +271,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
                 onMouseEnter={(e) => { if (!submitting) e.currentTarget.style.background = THEME.accentHover; }}
                 onMouseLeave={(e) => (e.currentTarget.style.background = THEME.accent)}
               >
-                {submitting ? "Sending..." : "Send Message"}
+                {submitting ? "Sending..." : "Get My Free Estimate"}
               </button>
               <p style={{ fontSize: 12, color: THEME.textMuted, textAlign: "center", marginTop: 12 }}>
                 We respond within 24 hours. No spam, ever.

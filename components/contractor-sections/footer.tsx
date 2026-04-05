@@ -5,9 +5,9 @@
 import { THEME } from "./theme";
 import type { ContractorSiteData } from "./types";
 
-type FooterProps = Pick<ContractorSiteData, "businessName" | "phone" | "city" | "state" | "services">;
+type FooterProps = Pick<ContractorSiteData, "businessName" | "phone" | "city" | "state" | "services" | "tier">;
 
-export default function Footer({ businessName, phone, city, state, services }: FooterProps) {
+export default function Footer({ businessName, phone, city, state, services, tier }: FooterProps) {
   const phoneClean = phone.replace(/\D/g, "");
   const year = new Date().getFullYear();
 
@@ -127,17 +127,19 @@ export default function Footer({ businessName, phone, city, state, services }: F
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
             &copy; {year} {businessName}. All rights reserved.
           </p>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-            Powered by{" "}
-            <a
-              href="https://ruufpro.com"
-              style={{ color: THEME.accent, textDecoration: "none", transition: "opacity 0.2s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-            >
-              RuufPro
-            </a>
-          </p>
+          {tier === "free" && (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+              Powered by{" "}
+              <a
+                href="https://ruufpro.com"
+                style={{ color: THEME.accent, textDecoration: "none", transition: "opacity 0.2s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+              >
+                RuufPro
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </footer>

@@ -3,6 +3,7 @@
 
 import { createServerSupabase } from "@/lib/supabase-server";
 import type { Contractor, Site } from "@/lib/types";
+import { getTierFromContractor } from "@/lib/types";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 export interface SiteDataResult {
@@ -27,12 +28,14 @@ export async function getSiteData(slug: string): Promise<SiteDataResult | null> 
   const siteData = site as unknown as Site;
 
   const templateData: ContractorSiteData = {
+    tier: getTierFromContractor(contractor),
     businessName: contractor.business_name,
     phone: contractor.phone,
     city: contractor.city,
     state: contractor.state,
     tagline: contractor.tagline,
     heroHeadline: siteData.hero_headline,
+    heroSubheadline: siteData.hero_subheadline || null,
     heroCta: siteData.hero_cta_text,
     heroImage: null,
     aboutText: siteData.about_text,

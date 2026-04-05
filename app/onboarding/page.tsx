@@ -212,7 +212,7 @@ export default function OnboardingPage() {
 
     const { error: siteErr } = await supabase.from("sites").insert({
       contractor_id: contractor.id, slug, template: designStyle, published: true,
-      services, about_text: finalAbout, hero_headline: finalHeadline, hero_cta_text: finalCtaText,
+      services, about_text: finalAbout, hero_headline: finalHeadline, hero_subheadline: subtitle || null, hero_cta_text: finalCtaText,
     });
 
     if (siteErr) {

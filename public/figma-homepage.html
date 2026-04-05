@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuufPro Homepage Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --terracotta: #c4622a;
+      --terracotta-light: #d4753d;
+      --charcoal: #1d1d1f;
+      --gray-1: #86868b;
+      --gray-2: #f5f5f7;
+      --gray-3: #e8e8ed;
+      --white: #ffffff;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--charcoal);
+      background: var(--white);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+
+    /* ── Nav ── */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 48px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 6px; }
+    .nav-logo span:first-child { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: -0.02em; }
+    .nav-logo .badge { font-size: 10px; font-weight: 700; color: var(--terracotta); background: rgba(196,98,42,0.08); padding: 3px 10px; border-radius: 99px; }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 13px; font-weight: 500; color: var(--gray-1); text-decoration: none; }
+    .nav-links a:hover { color: var(--charcoal); }
+    .nav-cta { font-size: 13px; font-weight: 600; color: white; background: var(--charcoal); padding: 10px 24px; border-radius: 99px; text-decoration: none; border: none; cursor: pointer; }
+    .nav-cta:hover { background: #333; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 120px 24px 80px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero h1 {
+      font-size: clamp(56px, 8vw, 96px);
+      font-weight: 700; letter-spacing: -0.045em;
+      line-height: 0.95; margin-bottom: 16px;
+      color: var(--charcoal);
+    }
+    .hero .subtitle {
+      font-size: 21px; font-weight: 500; color: var(--gray-1);
+      margin-bottom: 32px; line-height: 1.4;
+    }
+    .hero .cta-row { display: flex; gap: 12px; margin-bottom: 64px; }
+    .btn-primary {
+      font-size: 15px; font-weight: 600; color: white;
+      background: var(--terracotta); padding: 14px 32px;
+      border-radius: 99px; text-decoration: none; border: none; cursor: pointer;
+    }
+    .btn-secondary {
+      font-size: 15px; font-weight: 600; color: var(--charcoal);
+      background: var(--gray-2); padding: 14px 32px;
+      border-radius: 99px; text-decoration: none; border: none; cursor: pointer;
+    }
+    .hero-image {
+      width: 100%; max-width: 960px;
+      position: relative;
+    }
+    .hero-image img {
+      width: 100%; display: block;
+      filter: drop-shadow(0 40px 80px rgba(0,0,0,0.08));
+    }
+
+    /* ── Section shared ── */
+    section { padding: 120px 48px; }
+    .section-label {
+      font-size: 13px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--terracotta); margin-bottom: 12px;
+    }
+    .section-heading {
+      font-size: clamp(36px, 5vw, 56px); font-weight: 700;
+      letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 20px;
+    }
+    .section-sub {
+      font-size: 18px; color: var(--gray-1); line-height: 1.6;
+      max-width: 560px; margin-bottom: 56px;
+    }
+
+    /* ── Features grid ── */
+    .features { background: var(--gray-2); }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px; max-width: 1200px; margin: 0 auto;
+    }
+    .feature-card {
+      background: white; border-radius: 20px; padding: 40px;
+      overflow: hidden; position: relative;
+    }
+    .feature-card.large {
+      grid-column: span 2; display: grid;
+      grid-template-columns: 1fr 1fr; align-items: center; gap: 32px;
+    }
+    .feature-card h3 {
+      font-size: 24px; font-weight: 700; letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .feature-card p { font-size: 15px; color: var(--gray-1); line-height: 1.6; }
+    .feature-card img { width: 100%; border-radius: 12px; display: block; }
+
+    /* ── Social proof ── */
+    .social-proof { text-align: center; }
+    .stats-row {
+      display: flex; justify-content: center; gap: 80px;
+      margin-bottom: 64px;
+    }
+    .stat { text-align: center; }
+    .stat .number {
+      font-family: 'Outfit', sans-serif; font-size: 64px;
+      font-weight: 700; letter-spacing: -0.04em;
+      background: linear-gradient(135deg, var(--terracotta), var(--terracotta-light));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat .label { font-size: 14px; color: var(--gray-1); margin-top: 4px; }
+
+    .testimonial-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px; max-width: 1000px; margin: 0 auto;
+    }
+    .testimonial {
+      background: var(--gray-2); border-radius: 16px; padding: 32px;
+      text-align: left;
+    }
+    .testimonial .stars { color: var(--terracotta); font-size: 16px; margin-bottom: 12px; }
+    .testimonial p { font-size: 15px; line-height: 1.6; margin-bottom: 16px; color: var(--charcoal); }
+    .testimonial .author { font-size: 13px; color: var(--gray-1); }
+
+    /* ── Materials showcase ── */
+    .materials { background: var(--charcoal); color: white; }
+    .materials .section-heading { color: white; }
+    .materials .section-sub { color: rgba(255,255,255,0.5); }
+    .materials-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 20px; max-width: 1200px; margin: 0 auto;
+    }
+    .material-card {
+      border-radius: 20px; overflow: hidden; position: relative;
+      aspect-ratio: 3/4; cursor: pointer;
+    }
+    .material-card img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    .material-card:hover img { transform: scale(1.05); }
+    .material-card .overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 24px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    }
+    .material-card .overlay h3 {
+      font-size: 18px; font-weight: 600; color: white; margin-bottom: 4px;
+    }
+    .material-card .overlay p { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+    /* ── How it works ── */
+    .how-it-works { text-align: center; }
+    .steps {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 48px; max-width: 960px; margin: 0 auto;
+    }
+    .step .step-num {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--terracotta); color: white;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .step h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 15px; color: var(--gray-1); line-height: 1.6; }
+
+    /* ── CTA ── */
+    .final-cta {
+      text-align: center; padding: 160px 48px;
+      background: linear-gradient(180deg, var(--white) 0%, var(--gray-2) 100%);
+    }
+    .final-cta h2 {
+      font-size: clamp(40px, 6vw, 72px); font-weight: 700;
+      letter-spacing: -0.04em; line-height: 1; margin-bottom: 20px;
+    }
+    .final-cta p {
+      font-size: 18px; color: var(--gray-1); margin-bottom: 40px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 48px; border-top: 1px solid var(--gray-3);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer .copyright { font-size: 13px; color: var(--gray-1); }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 13px; color: var(--gray-1); text-decoration: none; }
+  </style>
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <span>RUUF</span>
+      <span class="badge">PRO</span>
+    </div>
+    <div class="nav-links">
+      <a href="#">Features</a>
+      <a href="#">Pricing</a>
+      <a href="#">Templates</a>
+      <a href="#">Resources</a>
+      <a class="nav-cta" href="#">Get Started Free</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Your roof.<br>Their first impression.</h1>
+    <p class="subtitle">Professional roofing websites that make your phone ring.<br>Free to start. Built to convert.</p>
+    <div class="cta-row">
+      <a class="btn-primary" href="#">Build Your Site</a>
+      <a class="btn-secondary" href="#">See Examples</a>
+    </div>
+    <div class="hero-image">
+      <img src="/images/heroes/coastal-home-metal-roof-3d.png" alt="Professional roofing website preview">
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div style="max-width: 1200px; margin: 0 auto;">
+      <p class="section-label">Built for Roofers</p>
+      <h2 class="section-heading">Everything your website<br>should already have.</h2>
+      <p class="section-sub">No agencies. No monthly retainers. No 6-week timelines. Just a site that works as hard as you do.</p>
+
+      <div class="features-grid">
+        <div class="feature-card large">
+          <div>
+            <h3>Instant Estimates</h3>
+            <p>Homeowners get a ballpark price before they ever pick up the phone. You get qualified leads who already know what to expect.</p>
+          </div>
+          <img src="/images/roof-diagrams/asphalt-gable-simple.png" alt="Roof estimate calculator">
+        </div>
+        <div class="feature-card">
+          <h3>City Pages</h3>
+          <p>Auto-generated service area pages that rank for "[city] + roofing contractor" searches.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Click to Call</h3>
+          <p>One tap from mobile. Every page, every section. Never lose a lead to friction.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Google Reviews</h3>
+          <p>Your 5-star reviews pulled in automatically. Social proof that closes jobs while you sleep.</p>
+        </div>
+        <div class="feature-card large">
+          <div>
+            <h3>SEO That Actually Works</h3>
+            <p>Pre-optimized for the searches homeowners make. "Roofer near me," "roof repair in [city]," "how much does a new roof cost" &mdash; you show up.</p>
+          </div>
+          <img src="/images/roof-diagrams/metal-roof-overhead-1.png" alt="SEO performance">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social Proof -->
+  <section class="social-proof">
+    <p class="section-label">Trusted by Roofers</p>
+    <h2 class="section-heading">The numbers speak.</h2>
+    <div class="stats-row">
+      <div class="stat">
+        <div class="number">3s</div>
+        <div class="label">Average page load</div>
+      </div>
+      <div class="stat">
+        <div class="number">47%</div>
+        <div class="label">More leads vs. old sites</div>
+      </div>
+      <div class="stat">
+        <div class="number">$0</div>
+        <div class="label">To get started</div>
+      </div>
+    </div>
+    <div class="testimonial-grid">
+      <div class="testimonial">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"Had my site up in 20 minutes. Got my first call the same week. No joke."</p>
+        <div class="author">Mike R. &mdash; Texas</div>
+      </div>
+      <div class="testimonial">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"I was paying $3K/month to an agency. This does more and costs nothing."</p>
+        <div class="author">Jake T. &mdash; Florida</div>
+      </div>
+      <div class="testimonial">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"The estimate calculator alone is worth it. Homeowners love seeing a number before they call."</p>
+        <div class="author">Sarah M. &mdash; Ohio</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Materials Showcase -->
+  <section class="materials">
+    <div style="max-width: 1200px; margin: 0 auto;">
+      <p class="section-label" style="color: rgba(196,98,42,0.8);">Material Library</p>
+      <h2 class="section-heading">Show homeowners<br>exactly what they're getting.</h2>
+      <p class="section-sub">Professional product imagery built into every template. No stock photo hunting.</p>
+
+      <div class="materials-grid">
+        <div class="material-card">
+          <img src="/images/stock-photos/shingle-ridge-closeup.png" alt="Asphalt Shingles">
+          <div class="overlay">
+            <h3>Asphalt Shingles</h3>
+            <p>Most popular residential</p>
+          </div>
+        </div>
+        <div class="material-card">
+          <img src="/images/materials/metal-standing-seam-panel-bronze.png" alt="Standing Seam Metal">
+          <div class="overlay">
+            <h3>Standing Seam</h3>
+            <p>Premium metal roofing</p>
+          </div>
+        </div>
+        <div class="material-card">
+          <img src="/images/stock-photos/clay-tile-texture-unsplash.jpg" alt="Clay Tile">
+          <div class="overlay">
+            <h3>Clay Tile</h3>
+            <p>Classic Mediterranean</p>
+          </div>
+        </div>
+        <div class="material-card">
+          <img src="/images/stock-photos/soffit-gutter-detail.png" alt="Gutters & Trim">
+          <div class="overlay">
+            <h3>Gutters & Trim</h3>
+            <p>Complete exterior</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-it-works">
+    <p class="section-label">How It Works</p>
+    <h2 class="section-heading">Live in 5 minutes.<br>Not 5 weeks.</h2>
+    <p class="section-sub" style="margin: 0 auto 56px;">Three steps. No code. No designers. No developers.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Enter your info</h3>
+        <p>Company name, service area, phone number. That's it.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Pick your look</h3>
+        <p>Choose a template. See your real content in a live preview instantly.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Go live</h3>
+        <p>One click. Your site is live with SEO, contact forms, and click-to-call.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="final-cta">
+    <h2>Stop losing jobs<br>to bad websites.</h2>
+    <p>Your competitors have one. Your homeowners expect one. Get yours in 5 minutes.</p>
+    <a class="btn-primary" href="#" style="font-size: 17px; padding: 16px 40px;">Build Your Site Free</a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="copyright">&copy; 2026 RuufPro. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Support</a>
+    </div>
+  </footer>
+
+</body>
+</html>

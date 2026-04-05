@@ -2,12 +2,14 @@ import BlueprintTemplate from "@/components/templates/blueprint";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 const mockData: ContractorSiteData = {
+  tier: "pro",
   businessName: "Precision Roofing Solutions",
   phone: "(303) 555-0178",
   city: "Denver",
   state: "CO",
   tagline: "Engineered for Colorado's toughest weather.",
   heroHeadline: "Precision-Built Roofs for Every Season.",
+  heroSubheadline: null,
   heroCta: "Schedule Your Free Estimate",
   heroImage: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
   aboutText:

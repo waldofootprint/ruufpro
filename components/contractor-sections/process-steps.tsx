@@ -44,8 +44,8 @@ const stagger = {
 
 const fade = {
   hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] } },
-};
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] } },
+} satisfies import("framer-motion").Variants;
 
 export default function ProcessSteps({ theme, steps = DEFAULT_STEPS, heading = "How It Works", isDark = false }: ProcessStepsProps) {
   const textColor = isDark ? "#FFFFFF" : (theme.text || "#1A1A2E");

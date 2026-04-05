@@ -2,12 +2,14 @@ import ForgeTemplate from "@/components/templates/forge";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 const mockData: ContractorSiteData = {
+  tier: "pro",
   businessName: "Pinnacle Roofing Co.",
   phone: "(813) 555-0192",
   city: "Tampa",
   state: "FL",
   tagline: "Tampa Bay's trusted roofing experts since 2011.",
   heroHeadline: "Your Roof. Done Right.",
+  heroSubheadline: null,
   heroCta: "Get Your Free Estimate",
   heroImage: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=80",
   aboutText:

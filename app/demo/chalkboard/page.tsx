@@ -2,12 +2,14 @@ import ChalkboardTemplate from "@/components/templates/chalkboard";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 const mockData: ContractorSiteData = {
+  tier: "pro",
   businessName: "Summit Roofing & Restoration",
   phone: "(615) 555-0234",
   city: "Nashville",
   state: "TN",
   tagline: "Nashville's storm damage specialists — trusted since 2008.",
   heroHeadline: "Roofing That Stands the Test of Time.",
+  heroSubheadline: null,
   heroCta: "Get Your Free Inspection",
   heroImage: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
   aboutText:

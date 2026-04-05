@@ -2,7 +2,12 @@
 // Every section receives a slice of this data — pulled from the
 // contractors + sites tables in Supabase.
 
+import type { ContractorTier } from "@/lib/types";
+
 export interface ContractorSiteData {
+  // Plan tier — derived from feature flags, controls what sections render
+  tier: ContractorTier;
+
   // Business basics
   businessName: string;
   phone: string;
@@ -12,6 +17,7 @@ export interface ContractorSiteData {
   // Content
   tagline: string | null;
   heroHeadline: string | null;
+  heroSubheadline: string | null;
   heroCta: string | null;
   heroImage: string | null;
   aboutText: string | null;

@@ -2,12 +2,14 @@ import ClassicTemplate from "@/components/templates/classic";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 const mockData: ContractorSiteData = {
+  tier: "pro",
   businessName: "Heritage Roofing Co.",
   phone: "(214) 555-0312",
   city: "Dallas",
   state: "TX",
   tagline: "Four generations of trusted roofing in North Texas.",
   heroHeadline: "The Roofer Your Neighbors Recommend.",
+  heroSubheadline: null,
   heroCta: "Get a Free Quote Today",
   heroImage: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
   aboutText:

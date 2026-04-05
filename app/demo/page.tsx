@@ -2,13 +2,15 @@ import ModernCleanTemplate from "@/components/templates/modern-clean";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 const mockData: ContractorSiteData = {
+  tier: "pro",
   businessName: "Pinnacle Roofing Co.",
   phone: "(813) 555-0192",
   city: "Tampa",
   state: "FL",
   tagline: "Tampa Bay's trusted roofing experts since 2011.",
-  heroHeadline: "Your Roof. Done Right.",
-  heroCta: "Get Your Free Estimate",
+  heroHeadline: null,
+  heroSubheadline: null,
+  heroCta: null,
   heroImage: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=80",
   aboutText:
     "We're a family-owned roofing company that's been serving Tampa Bay homeowners for over a decade. Every roof we install is backed by our 10-year workmanship warranty and built with premium materials from trusted manufacturers.",

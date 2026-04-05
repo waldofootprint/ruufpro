@@ -1,5 +1,12 @@
 // My Website — Section-based editor (Option C + A-style inline forms).
 // Each section is a row with toggle, status, and expandable edit fields.
+//
+// ── TODO: "Backed by Research" Indicators ──────────────────────────
+// See /components/onboarding/hero-editor.tsx for full design note.
+// Every editable field here should show a small "Optimized by research" badge
+// with hover tooltips citing specific conversion data for each field.
+// Source: Notion → Knowledge Vault → "Website Research — Complete Findings by Topic"
+// ──────────────────────────────────────────────────────────────────────────
 
 "use client";
 
@@ -32,6 +39,7 @@ interface SiteData {
   slug: string;
   published: boolean;
   hero_headline: string | null;
+  hero_subheadline: string | null;
   hero_cta_text: string | null;
   about_text: string | null;
   services: string[] | null;
@@ -66,6 +74,7 @@ export default function MySitePage() {
 
   // Editable fields
   const [headline, setHeadline] = useState("");
+  const [subheadline, setSubheadline] = useState("");
   const [ctaText, setCtaText] = useState("");
   const [tagline, setTagline] = useState("");
   const [aboutText, setAboutText] = useState("");
@@ -118,7 +127,8 @@ export default function MySitePage() {
       if (siteData) {
         setSite(siteData);
         setHeadline(siteData.hero_headline || "");
-        setCtaText(siteData.hero_cta_text || "Get Your Free Estimate");
+        setSubheadline(siteData.hero_subheadline || "");
+        setCtaText(siteData.hero_cta_text || "Get My Free Estimate");
         setAboutText(siteData.about_text || "");
         setServices(siteData.services || []);
         setGalleryImages(siteData.gallery_images || []);
@@ -157,6 +167,7 @@ export default function MySitePage() {
     // Update site content
     const { error: siteErr } = await supabase.from("sites").update({
       hero_headline: headline || null,
+      hero_subheadline: subheadline || null,
       hero_cta_text: ctaText || null,
       about_text: aboutText || null,
       services: services.length > 0 ? services : null,
@@ -394,8 +405,25 @@ export default function MySitePage() {
               className="w-full px-3 py-2.5 rounded-lg border border-[#e2e8f0] text-[14px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all"
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
-              placeholder={`${contractor?.city}'s Most Trusted Roofers`}
+              placeholder="Your Roof. Done Right. Guaranteed."
             />
+            <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
+              <span className="bg-blue-50 text-blue-600 text-[9px] font-semibold px-1.5 py-0.5 rounded">Research-backed</span>
+              Benefit-first headlines convert 35%+ better
+            </span>
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Subtitle</label>
+            <input
+              className="w-full px-3 py-2.5 rounded-lg border border-[#e2e8f0] text-[14px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all"
+              value={subheadline}
+              onChange={(e) => setSubheadline(e.target.value)}
+              placeholder={`${contractor?.city ? `${contractor.city}'s ` : ""}Licensed & Insured Roofer · 25-Year Warranty · Free Estimates`}
+            />
+            <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
+              <span className="bg-blue-50 text-blue-600 text-[9px] font-semibold px-1.5 py-0.5 rounded">Research-backed</span>
+              Including your city name increases local conversions
+            </span>
           </div>
           <div>
             <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Tagline</label>
@@ -403,7 +431,7 @@ export default function MySitePage() {
               className="w-full px-3 py-2.5 rounded-lg border border-[#e2e8f0] text-[14px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all"
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
-              placeholder="Shows below your business name"
+              placeholder="Shows below your business name in nav"
             />
           </div>
           <div>
@@ -412,8 +440,12 @@ export default function MySitePage() {
               className="w-full px-3 py-2.5 rounded-lg border border-[#e2e8f0] text-[14px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all"
               value={ctaText}
               onChange={(e) => setCtaText(e.target.value)}
-              placeholder="Get Your Free Estimate"
+              placeholder="Get My Free Estimate"
             />
+            <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
+              <span className="bg-blue-50 text-blue-600 text-[9px] font-semibold px-1.5 py-0.5 rounded">Research-backed</span>
+              First-person CTAs (&ldquo;Get My...&rdquo;) outperform &ldquo;Get Your...&rdquo;
+            </span>
           </div>
         </div>
       ),

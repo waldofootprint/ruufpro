@@ -75,12 +75,14 @@ export default async function ProspectPreview({
 
   // Map database fields → template props
   const templateData: ContractorSiteData = {
+    tier: "pro", // Preview sites always show Pro tier to showcase the product
     businessName: contractor.business_name,
     phone: contractor.phone,
     city: contractor.city,
     state: contractor.state,
     tagline: contractor.tagline,
     heroHeadline: siteData.hero_headline,
+    heroSubheadline: siteData.hero_subheadline || null,
     heroCta: siteData.hero_cta_text,
     heroImage: null,
     aboutText: siteData.about_text,

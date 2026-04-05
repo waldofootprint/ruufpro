@@ -16,6 +16,18 @@ export type FinancingInterest = "yes" | "no" | "maybe";
 
 export type LeadTemperature = "hot" | "warm" | "browsing";
 
+// Contractor plan tiers — derived from feature flags, not stored in DB.
+// Free: basic website only
+// Pro ($149): estimate widget + review automation + auto-reply
+// Growth ($299): everything Pro + SEO city pages + custom domain
+export type ContractorTier = "free" | "pro" | "growth";
+
+export function getTierFromContractor(contractor: Pick<Contractor, "has_estimate_widget" | "has_seo_pages" | "has_custom_domain">): ContractorTier {
+  if (contractor.has_seo_pages && contractor.has_custom_domain) return "growth";
+  if (contractor.has_estimate_widget) return "pro";
+  return "free";
+}
+
 export interface Contractor {
   id: string;
   user_id: string;
@@ -84,6 +96,7 @@ export interface Site {
 
   // Content (all optional — smart defaults used when empty)
   hero_headline: string | null;
+  hero_subheadline: string | null;
   hero_cta_text: string | null;
   about_text: string | null;
   services: string[] | null;
