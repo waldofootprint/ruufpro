@@ -221,6 +221,13 @@ export default function OnboardingPage() {
       return;
     }
 
+    // Schedule onboarding email sequence (fire-and-forget — don't block the UI)
+    fetch("/api/email/schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contractorId: contractor.id }),
+    }).catch(() => {}); // Silent fail — emails are important but not blocking
+
     setLoading(false);
     setScreen("published");
   }

@@ -35,62 +35,211 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-brand-900">RuufPro</h1>
-          <p className="mt-2 text-gray-600">Sign in to manage your site</p>
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(to bottom, #FFFFFF 0%, #F8FAFC 100%)",
+        padding: "24px",
+        fontFamily: "var(--font-dm-sans), system-ui, sans-serif",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: "420px" }}>
+        {/* Logo + tagline */}
+        <div style={{ textAlign: "center", marginBottom: "32px" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "12px",
+            }}
+          >
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                background: "#0F1B2D",
+                borderRadius: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </div>
+            <span
+              style={{
+                fontFamily: "var(--font-sora), system-ui, sans-serif",
+                fontSize: "22px",
+                fontWeight: 700,
+                color: "#0F1B2D",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              RuufPro
+            </span>
+          </div>
+          <p style={{ fontSize: "15px", color: "#64748B", lineHeight: 1.5 }}>
+            Sign in to manage your site
+          </p>
         </div>
 
+        {/* Form card */}
         <form
           onSubmit={handleLogin}
-          className="rounded-lg bg-white p-8 shadow-sm border border-gray-200"
+          style={{
+            background: "#FFFFFF",
+            borderRadius: "16px",
+            border: "1px solid #E2E8F0",
+            padding: "32px",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
+          }}
         >
-          <h2 className="mb-6 text-xl font-semibold text-gray-900">
+          <h2
+            style={{
+              fontFamily: "var(--font-sora), system-ui, sans-serif",
+              fontSize: "20px",
+              fontWeight: 700,
+              color: "#0F1B2D",
+              marginBottom: "24px",
+            }}
+          >
             Welcome back
           </h2>
 
           {error && (
-            <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+            <div
+              style={{
+                background: "#FEF2F2",
+                border: "1px solid #FECACA",
+                borderRadius: "10px",
+                padding: "12px 16px",
+                fontSize: "14px",
+                color: "#991B1B",
+                marginBottom: "20px",
+              }}
+            >
               {error}
             </div>
           )}
 
-          <label className="block mb-4">
-            <span className="text-sm font-medium text-gray-700">Email</span>
+          <label style={{ display: "block", marginBottom: "16px" }}>
+            <span
+              style={{
+                display: "block",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#374151",
+                marginBottom: "6px",
+              }}
+            >
+              Email
+            </span>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               placeholder="you@example.com"
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                border: "1.5px solid #E2E8F0",
+                borderRadius: "10px",
+                fontSize: "15px",
+                color: "#1A1A2E",
+                outline: "none",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+              }}
             />
           </label>
 
-          <label className="block mb-6">
-            <span className="text-sm font-medium text-gray-700">Password</span>
+          <label style={{ display: "block", marginBottom: "24px" }}>
+            <span
+              style={{
+                display: "block",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#374151",
+                marginBottom: "6px",
+              }}
+            >
+              Password
+            </span>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               placeholder="Your password"
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                border: "1.5px solid #E2E8F0",
+                borderRadius: "10px",
+                fontSize: "15px",
+                color: "#1A1A2E",
+                outline: "none",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+              }}
             />
           </label>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 hover:bg-gray-800 hover:shadow-[0_2px_4px_rgba(0,0,0,0.12),0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            style={{
+              width: "100%",
+              padding: "14px",
+              background: "#0F1B2D",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: "99px",
+              fontSize: "15px",
+              fontWeight: 700,
+              fontFamily: "var(--font-sora), system-ui, sans-serif",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.6 : 1,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+            }}
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
 
-          <p className="mt-4 text-center text-sm text-gray-500">
-            Don't have an account?{" "}
-            <a href="/signup" className="text-brand-600 hover:underline">
+          <p
+            style={{
+              textAlign: "center",
+              fontSize: "14px",
+              color: "#64748B",
+              marginTop: "20px",
+            }}
+          >
+            Don&rsquo;t have an account?{" "}
+            <a
+              href="/signup"
+              style={{
+                color: "#E8722A",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
               Get started free
             </a>
           </p>
@@ -102,7 +251,21 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-gray-400">Loading...</p></div>}>
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#F8FAFC",
+          }}
+        >
+          <p style={{ color: "#94A3B8", fontFamily: "system-ui" }}>Loading...</p>
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
