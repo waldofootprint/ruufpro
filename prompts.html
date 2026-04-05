@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Luxury Florida Beach House — Cutaway X-Ray — Scroll-Stop Prompts</title>
+<title>The Build — Scroll-Stop Prompts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -66,18 +66,20 @@ h1 span{display:block;color:var(--text-faint)}
 <div class="bg-orb bg-orb-1"></div>
 <div class="bg-orb bg-orb-2"></div>
 <canvas id="confetti-canvas"></canvas>
+
 <div class="container">
   <header class="header">
     <div class="badge">Scroll-Stop Prompts</div>
-    <h1>CUTAWAY<span>X-RAY</span></h1>
+    <h1>THE<span>BUILD</span></h1>
   </header>
+
   <div class="tabs" role="tablist">
     <button class="tab active" data-tab="a" role="tab" aria-selected="true">
-      <span class="full">Complete Roof (Start)</span><span class="short">Complete</span>
+      <span class="full">Empty Lot (Start)</span><span class="short">Start</span>
       <span class="tab-hint">1</span>
     </button>
     <button class="tab" data-tab="b" role="tab" aria-selected="false">
-      <span class="full">Cutaway Reveal (End)</span><span class="short">Cutaway</span>
+      <span class="full">Completed Home (End)</span><span class="short">End</span>
       <span class="tab-hint">2</span>
     </button>
     <button class="tab" data-tab="c" role="tab" aria-selected="false">
@@ -87,20 +89,18 @@ h1 span{display:block;color:var(--text-faint)}
   </div>
 
   <div class="prompt-card active" data-panel="a">
-    <div class="prompt-label">Prompt A &mdash; Complete House (Start Frame)</div>
-    <div class="prompt-text" id="prompt-a">Clean 3D architectural render of a luxury modern Florida coastal home. Two-story contemporary beach house design with expansive floor-to-ceiling glass walls across both levels, clean smooth stucco exterior in bright white, and a low-slope hip roof clad in dark charcoal architectural shingles with rich dimensional texture and visible granule surface. The roofline features clean geometric lines with subtle copper flashing accents at the ridges.
+    <div class="prompt-label">Prompt A &mdash; Empty Lot / Foundation (Start Frame)</div>
+    <div class="prompt-text" id="prompt-a">Clean 3D architectural render of a residential home construction site at the very beginning — just a bare concrete foundation slab sitting on a cleared dirt lot. The foundation is a standard rectangular residential footprint (approximately 2,000 sq ft ranch-style home shape).
 
-Ground level has polished natural stone accent walls flanking the entrance, a dramatic double-height entryway with an oversized pivoting front door in warm natural teak wood. The upper floor is cantilevered slightly forward with an open-air balcony featuring slim matte black powder-coated metal railings with horizontal cable detailing. Clean rectilinear massing with intersecting volumes that create depth and shadow.
+The concrete slab is fresh-poured, smooth light gray with visible form board lines along the edges. Rebar stubs protrude at anchor bolt locations around the perimeter. A few PVC plumbing pipes stub up through the slab.
 
-The roof is fully intact, complete, and sealed &mdash; every shingle in place, ridge caps aligned, no gaps or openings. The roof looks pristine and finished.
+The cleared lot has clean compacted earth around the foundation, with a slight berm where grading was done. No grass, no landscaping — just fresh construction dirt. A clear blue sky with a few wispy clouds above.
 
-Soft diffused studio lighting, gentle shadow beneath the home. No landscaping, no driveway, no ground plane, no palm trees, no pool, no environment. The home floats cleanly on a solid flat white (#FFFFFF) background, no gradient, no vignette. The home is centered with generous breathing room on all sides &mdash; nothing touches any edge of the frame.
+The camera angle is a 3/4 elevated front view — as if standing on a small hill across the street, looking slightly down at the foundation. This exact camera angle will remain locked for the entire build sequence.
 
-Slightly elevated 3/4 camera angle so the roofline is prominently visible, showing both the front facade and one full side of the home. The camera is angled high enough that you can clearly see the entire top surface of the roof. Architectural visualization quality, soft materials, clean geometry, premium real estate rendering feel.
+The foundation is centered with generous breathing room on all sides — nothing touches any edge of the frame. Soft diffused natural daylight, gentle shadow beneath the foundation edges. Clean 3D architectural render style — photorealistic materials but clean, intentional composition. 16:9 aspect ratio, 8K quality.
 
-16:9 aspect ratio.
-
-Absolutely no text, no numbers, no letters, no symbols, no watermarks anywhere in the image. No people. No cars. No furniture visible through windows. No sky.</div>
+Absolutely no text, no numbers, no letters, no symbols, no watermarks anywhere in the image. No people. No construction equipment or vehicles.</div>
     <button class="copy-btn" onclick="copyPrompt('prompt-a',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       Copy Prompt A
@@ -108,30 +108,29 @@ Absolutely no text, no numbers, no letters, no symbols, no watermarks anywhere i
   </div>
 
   <div class="prompt-card" data-panel="b">
-    <div class="prompt-label">Prompt B &mdash; Cutaway X-Ray Reveal (End Frame)</div>
-    <div class="prompt-text" id="prompt-b">Clean 3D architectural render of the same luxury modern Florida coastal home. Same exact position, same camera angle, same white (#FFFFFF) background, same soft diffused studio lighting. Same style and camera angle as reference image. Upload Prompt A output as reference.
+    <div class="prompt-label">Prompt B &mdash; Completed Home (End Frame)</div>
+    <div class="prompt-text" id="prompt-b">Clean 3D architectural render of the same residential home now fully completed — a beautiful single-story ranch-style house with the exact same foundation footprint as reference image. Same camera angle, same lighting direction, same lot.
 
-The front-facing section of the roof (approximately the front 40%) has been cleanly cut away in a precise diagonal cross-section, as if sliced with a laser. This exposed cutaway reveals all internal roofing layers in a clean, educational cross-section view:
+The completed home features:
+- Exterior walls clad in warm light gray James Hardie fiber cement lap siding with crisp shadow lines
+- Bright white PVC trim around all windows and fascia boards
+- A bold charcoal-black front door with brushed nickel hardware
+- Double-hung windows with dark charcoal frames and visible mullions
+- Attached two-car garage with a matching charcoal sectional door
 
-TOP VISIBLE LAYER (at the cut edge): Dark charcoal architectural shingles with rich granule texture &mdash; the same shingles that cover the intact rear portion of the roof. The cut edge shows the shingle thickness in profile.
+THE ROOF is the hero element — the most prominent and beautiful part of the image:
+- Dark charcoal architectural shingles with rich dimensional texture and visible granule surface
+- Clean, sharp ridge cap running the full length of the roofline
+- Bright aluminum drip edge visible at the eaves, catching a glint of sunlight
+- Properly installed step flashing where the roof meets any vertical walls
+- Soffit and fascia in bright white, with visible soffit vents
+- Clean copper or dark brown gutters with downspouts at corners
 
-SECOND LAYER: Synthetic roofing underlayment &mdash; a smooth light gray sheet material visible as a thin band beneath the shingles at the cut line. Subtle woven texture.
+The lot now has a fresh concrete driveway, a paved walkway to the front door, and basic landscaping — green grass lawn, a few small shrubs along the foundation, one young tree in the front yard. The same clear blue sky with wispy clouds from the start frame.
 
-THIRD LAYER: OSB roof decking / sheathing &mdash; oriented strand board with its characteristic compressed wood chip pattern in warm tan-brown. The cut edge shows the board thickness clearly. This is the largest visible layer in the cross-section.
+Same 3/4 elevated front camera angle as reference image — locked position, nothing has moved except the house has been built. The home is centered with generous breathing room on all sides — nothing touches any edge of the frame. Soft diffused natural daylight matching the start frame exactly. Clean 3D architectural render, 16:9 aspect ratio, 8K quality.
 
-FOURTH LAYER: Wooden roof rafters &mdash; clean dimensional lumber in light pine color, showing the angled structural members with visible wood grain. The rafters are cut in cross-section, revealing their rectangular profile. Multiple parallel rafters visible with even spacing between them.
-
-FIFTH LAYER (deepest): Rigid foam insulation board in pale pink, nestled between the rafters. Visible as flat panels filling the bays between the structural members.
-
-The rear 60% of the roof remains completely intact with pristine charcoal shingles &mdash; untouched and sealed. The cut line between exposed and intact sections is clean and precise, running diagonally across the roof from one hip line to another.
-
-The cross-section layers are clearly differentiated by color and texture &mdash; each material is immediately recognizable. The exposed layers follow the natural slope of the roof. The walls, windows, teak door, black railings, stone accents, and all non-roof elements remain exactly the same as the reference image.
-
-The home floats cleanly on a solid flat white (#FFFFFF) background, no gradient, no vignette. Centered with generous breathing room on all sides &mdash; nothing touches any edge. Architectural visualization quality with soft, tactile materials.
-
-16:9 aspect ratio.
-
-Absolutely no text, no numbers, no letters, no labels, no arrows, no annotations, no symbols, no watermarks anywhere in the image. No people. No sky.</div>
+Absolutely no text, no numbers, no letters, no symbols, no watermarks anywhere in the image. No people. No construction equipment.</div>
     <button class="copy-btn" onclick="copyPrompt('prompt-b',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       Copy Prompt B
@@ -139,46 +138,40 @@ Absolutely no text, no numbers, no letters, no labels, no arrows, no annotations
   </div>
 
   <div class="prompt-card" data-panel="c">
-    <div class="prompt-label">Prompt C &mdash; Video Transition (Kling)</div>
-    <div class="prompt-text" id="prompt-c">OPTION 1: PEEL-AWAY REVEAL (Complete &rarr; Cutaway) — RECOMMENDED
+    <div class="prompt-label">Prompt C &mdash; Video Transition (The Build)</div>
+    <div class="prompt-text" id="prompt-c">START FRAME: A bare concrete foundation slab on a cleared dirt lot, clean 3D architectural render, 3/4 elevated front view, clear blue sky, soft natural daylight.
 
-Upload: Complete house as START frame, Cutaway house as END frame.
+END FRAME: A fully completed beautiful ranch-style home on the same lot, same camera angle, same sky. Dark charcoal architectural shingle roof as the hero element, light gray siding, white trim, landscaped yard with green grass.
 
-The front section of the roof begins to peel away and dissolve. Starting from the front edge of the roofline, the dark charcoal shingles gradually fade and become transparent, revealing the layers underneath. The reveal progresses smoothly from front to back &mdash; first the shingle surface dissolves exposing the light gray underlayment beneath, then that layer fades revealing the tan OSB decking, then the decking becomes transparent showing the pine-colored wooden rafters underneath, and finally the pink insulation boards become visible between the rafter bays.
+TRANSITION: The house builds itself from the ground up in a smooth, cinematic construction sequence. The camera remains completely locked — no movement, no zoom, no rotation. Only the house changes.
 
-The peel-away moves as a smooth wave from the front of the roof toward the middle, stopping at approximately the halfway point. The rear half of the roof remains completely solid and intact throughout &mdash; pristine charcoal shingles untouched. The transition line between exposed and intact sections is clean and defined.
+Phase 1 (0-1s): The foundation sits still. A brief pause to establish the empty lot.
 
-The house walls, windows, teak door, black railings, stone accents, and all non-roof surfaces remain completely still and unchanged throughout. No camera movement, no rotation. The only motion is the progressive layer-by-layer reveal of the roof cross-section.
+Phase 2 (1-2.5s): Wall framing rises. Wooden 2x4 studs appear and rise upward from the foundation — the skeleton of the house takes shape. The framing is raw dimensional lumber, no sheathing yet. You can see through the walls. The structure grows organically, studs appearing in sequence from one side to the other.
 
-Smooth, steady, educational pace &mdash; like watching a technical illustration come to life. Each layer is visible for a moment before the next one beneath it is revealed. Satisfying and precise. No text, no numbers, no artifacts.
+Phase 3 (2.5-3.5s): Walls fill in. Plywood sheathing covers the framing. Then house wrap (white Tyvek-style material) appears over the sheathing. Then siding materializes — panels of light gray lap siding cascading down from top to bottom. Windows drop into their rough openings with a satisfying click.
 
----
+Phase 4 (3.5-4.5s): THE ROOF — the dramatic hero moment. Roof trusses swing up into position one by one from left to right, like a zipper. Plywood decking lays across the trusses. Then dark charcoal shingles cascade from the ridge down to the eaves in a wave — a satisfying waterfall of shingles covering the entire roof surface. Ridge cap snaps into place last. This is the most visually dramatic and satisfying moment of the entire sequence.
 
-OPTION 2: REVERSE REBUILD (Cutaway &rarr; Complete) — Alternative
+Phase 5 (4.5-5.5s): Finishing touches. Gutters appear along the eaves. The front door materializes. Driveway and walkway pour into place. Green grass spreads across the bare dirt. A few shrubs pop up along the foundation. A young tree appears in the front yard. The home is complete.
 
-Upload: Cutaway house as START frame, Complete house as END frame.
+Phase 6 (5.5-6s): Hold on the completed home for 0.5 seconds. The roof catches a subtle glint of sunlight. Perfect.
 
-The exposed roof cross-section begins to seal itself back up. Starting from the deepest visible layer (the pink insulation between rafters), each layer progressively covers the one below it. The wooden rafters become hidden as tan OSB decking panels spread across them. The gray underlayment smoothly covers the decking. Finally, dark charcoal shingles materialize and seal across the top surface, flowing from the intact rear section forward until the entire roof is complete and pristine.
+CRITICAL RULES:
+- The camera NEVER moves. Locked tripod shot throughout. Only the house changes.
+- The sky, lighting, and lot position remain identical from start to end.
+- The build progresses logically: foundation → framing → walls → ROOF (hero moment) → finishing.
+- The roof phase should take the longest and be the most visually dramatic — this is a roofing company's website.
+- Movement is smooth and eased, not jerky. Each element flows naturally into the next.
+- No construction workers, no equipment, no trucks. The house builds itself like magic.
 
-The rebuild progresses smoothly from back to front, with the intact rear section "growing" forward to cover the exposed area. Each layer appears in proper construction sequence from bottom to top. The house walls and all non-roof elements remain completely still and unchanged. No camera movement, no rotation.
+STYLE: Clean 3D architectural render. Consistent soft natural daylight throughout. Photorealistic materials — real wood grain on framing, real shingle texture, real siding shadow lines.
 
-Smooth, satisfying, purposeful pace. The message: every layer matters, and they all come together into one finished roof. No text, no numbers, no artifacts.
+DURATION: 6 seconds total.
+ASPECT RATIO: 16:9
+QUALITY: High fidelity, smooth 30fps (180 frames total), no artifacts.
 
----
-
-OPTION 3: TWO-PART SEQUENCE (Chain both for maximum scroll length)
-
-Generate Option 1 first (complete &rarr; cutaway), then Option 2 (cutaway &rarr; complete). Chain the extracted frames together for a scroll sequence that reveals the layers, holds, then rebuilds &mdash; total ~10 seconds / ~300 frames.
-
----
-
-SETTINGS FOR ALL KLING GENERATIONS:
-- Duration: 5 seconds per transition
-- Aspect ratio: 16:9
-- Multi-shot: OFF
-- Always provide BOTH start and end frame images
-- No camera movement in any generation
-- Quality: Highest available</div>
+NOTE: The roof moment (Phase 4) is the climax. If any phase needs extra time or detail, it's this one. The shingle cascade should be the most satisfying visual in the entire video.</div>
     <button class="copy-btn" onclick="copyPrompt('prompt-c',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       Copy Prompt C
@@ -188,26 +181,81 @@ SETTINGS FOR ALL KLING GENERATIONS:
   <div class="settings">
     <h3>Recommended Settings</h3>
     <ul>
-      <li>Image generator: 16:9 aspect ratio, highest quality available</li>
-      <li>Generate Prompt A (complete house) first &mdash; use as reference for Prompt B</li>
-      <li>Kling feasibility: 7/10 &mdash; progressive transparency/dissolve is moderate difficulty</li>
-      <li>Key risk: Kling may dissolve too much or blur layers together instead of clean separation</li>
-      <li>Mitigation: describe the reveal as "fading/dissolving" not "peeling" &mdash; Kling handles opacity changes better than physical peeling motion</li>
-      <li>Option 3 (two-part chain) gives the best scroll experience for mid-page placement</li>
+      <li>Image generator: Nano Banana Pro or Midjourney — 16:9 aspect ratio, highest quality</li>
+      <li>Video model: Higgsfield, Runway, or Kling — 16:9, 6 seconds, highest quality</li>
+      <li>Generate Prompt A (empty lot) first, then use as reference for Prompt B (completed home)</li>
+      <li>For video: upload Prompt A as start frame, Prompt B as end frame</li>
+      <li>Extract frames at 30fps → save as frame-0001.jpg through frame-0180.jpg</li>
+      <li>Drop frames into /public/animations/roof-transform/ in RoofReady (replacing old frames)</li>
+      <li>Update ScrollAnimation frameCount to 180 in modern-clean.tsx</li>
     </ul>
   </div>
 </div>
-<div class="kbd-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> switch tabs</div>
+
+<div class="kbd-hint">
+  <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> switch tabs
+</div>
+
 <script>
-const tabs=document.querySelectorAll('.tab');const panels=document.querySelectorAll('.prompt-card');
-function switchTab(id){tabs.forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false')});panels.forEach(p=>p.classList.remove('active'));const tab=document.querySelector(`.tab[data-tab="${id}"]`);const panel=document.querySelector(`.prompt-card[data-panel="${id}"]`);if(tab)tab.classList.add('active'),tab.setAttribute('aria-selected','true');if(panel){panel.classList.remove('active');void panel.offsetWidth;panel.classList.add('active')}}
+const tabs=document.querySelectorAll('.tab');
+const panels=document.querySelectorAll('.prompt-card');
+function switchTab(id){
+  tabs.forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false')});
+  panels.forEach(p=>p.classList.remove('active'));
+  const tab=document.querySelector(`.tab[data-tab="${id}"]`);
+  const panel=document.querySelector(`.prompt-card[data-panel="${id}"]`);
+  if(tab)tab.classList.add('active'),tab.setAttribute('aria-selected','true');
+  if(panel){panel.classList.remove('active');void panel.offsetWidth;panel.classList.add('active')}
+}
 tabs.forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
-document.addEventListener('keydown',e=>{if(e.key==='1')switchTab('a');if(e.key==='2')switchTab('b');if(e.key==='3')switchTab('c')});
-async function copyPrompt(id,btn){const text=document.getElementById(id).textContent;await navigator.clipboard.writeText(text);btn.classList.add('copied');btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied!`;fireConfetti();setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy Prompt ${id.split('-')[1].toUpperCase()}`;},2000)}
-const canvas=document.getElementById('confetti-canvas');const ctx=canvas.getContext('2d');let particles=[];
-function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}resizeCanvas();window.addEventListener('resize',resizeCanvas);
-function fireConfetti(){const colors=['#BFF549','#e8e8e8','#6bff6b','#49f5c9','#f5f549'];for(let i=0;i<60;i++){particles.push({x:canvas.width/2+(Math.random()-0.5)*200,y:canvas.height*0.6,vx:(Math.random()-0.5)*12,vy:-(Math.random()*14+6),w:Math.random()*8+4,h:Math.random()*6+2,color:colors[Math.floor(Math.random()*colors.length)],rotation:Math.random()*360,rotSpeed:(Math.random()-0.5)*12,gravity:0.35,opacity:1,decay:0.008+Math.random()*0.008})}if(particles.length<=60)animateConfetti()}
-function animateConfetti(){ctx.clearRect(0,0,canvas.width,canvas.height);particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=p.gravity;p.rotation+=p.rotSpeed;p.opacity-=p.decay;p.vx*=0.99;if(p.opacity<=0)return false;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rotation*Math.PI/180);ctx.globalAlpha=p.opacity;ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();return true});if(particles.length>0)requestAnimationFrame(animateConfetti)}
+document.addEventListener('keydown',e=>{
+  if(e.key==='1')switchTab('a');
+  if(e.key==='2')switchTab('b');
+  if(e.key==='3')switchTab('c');
+});
+async function copyPrompt(id,btn){
+  const text=document.getElementById(id).textContent;
+  await navigator.clipboard.writeText(text);
+  btn.classList.add('copied');
+  btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied!`;
+  fireConfetti();
+  setTimeout(()=>{
+    btn.classList.remove('copied');
+    btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy Prompt ${id.split('-')[1].toUpperCase()}`;
+  },2000);
+}
+const canvas=document.getElementById('confetti-canvas');
+const ctx=canvas.getContext('2d');
+let particles=[];
+function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
+resizeCanvas();window.addEventListener('resize',resizeCanvas);
+function fireConfetti(){
+  const colors=['#BFF549','#e8e8e8','#6bff6b','#49f5c9','#f5f549'];
+  for(let i=0;i<60;i++){
+    particles.push({
+      x:canvas.width/2+(Math.random()-0.5)*200,y:canvas.height*0.6,
+      vx:(Math.random()-0.5)*12,vy:-(Math.random()*14+6),
+      w:Math.random()*8+4,h:Math.random()*6+2,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      rotation:Math.random()*360,rotSpeed:(Math.random()-0.5)*12,
+      gravity:0.35,opacity:1,decay:0.008+Math.random()*0.008
+    });
+  }
+  if(particles.length<=60)animateConfetti();
+}
+function animateConfetti(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles=particles.filter(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=p.gravity;
+    p.rotation+=p.rotSpeed;p.opacity-=p.decay;p.vx*=0.99;
+    if(p.opacity<=0)return false;
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rotation*Math.PI/180);
+    ctx.globalAlpha=p.opacity;ctx.fillStyle=p.color;
+    ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
+    return true;
+  });
+  if(particles.length>0)requestAnimationFrame(animateConfetti);
+}
 </script>
 </body>
 </html>
