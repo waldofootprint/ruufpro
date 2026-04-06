@@ -38,21 +38,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "No follow-ups needed", count: 0 });
   }
 
-  const { scheduleReviewEmailFollowup } = await import("@/lib/sms-workflows");
+  // Emit one Inngest event per pending follow-up — each gets retry + monitoring
+  const { inngest } = await import("@/lib/inngest/client");
+  const events = pendingFollowups.map((req) => ({
+    name: "sms/review.followup-needed" as const,
+    data: { reviewRequestId: req.id },
+  }));
 
-  let sent = 0;
-  let failed = 0;
+  await inngest.send(events);
 
-  for (const request of pendingFollowups) {
-    const result = await scheduleReviewEmailFollowup(request.id);
-    if (result.success) {
-      sent++;
-    } else {
-      failed++;
-      console.error(`Follow-up failed for ${request.id}:`, result.error);
-    }
-  }
-
-  console.log(`Review follow-ups: ${sent} sent, ${failed} failed out of ${pendingFollowups.length}`);
-  return NextResponse.json({ sent, failed, total: pendingFollowups.length });
+  console.log(`Review follow-ups: ${events.length} events emitted to Inngest`);
+  return NextResponse.json({ queued: events.length });
 }

@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { inngest } from "@/lib/inngest/client";
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,11 +43,15 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (contractor) {
-        // Fire the missed-call textback
-        const { sendMissedCallTextback } = await import(
-          "@/lib/sms-workflows"
-        );
-        await sendMissedCallTextback(contractor.id, from);
+        // Emit event to Inngest — handles textback with dedup + retry
+        await inngest.send({
+          name: "sms/call.missed",
+          data: {
+            contractorId: contractor.id,
+            callerPhone: from,
+            callSid: callSid || "",
+          },
+        });
 
         // Log the missed call
         await supabase.from("sms_messages").insert({

@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendLeadNotificationEmail } from "@/lib/notifications";
-import { sendLeadAutoResponse } from "@/lib/sms-workflows";
+import { inngest } from "@/lib/inngest/client";
 
 export async function POST(request: NextRequest) {
   const supabase = createClient(
@@ -64,26 +64,19 @@ export async function POST(request: NextRequest) {
       ? `New Estimate Lead${timelineLabel}`
       : "New Contact Form Lead";
 
-    fetch(`${request.nextUrl.origin}/api/push/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-internal-secret": process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    // Emit event to Inngest — handles push notification + auto-response SMS
+    // with retry, monitoring, and no silent failures
+    await inngest.send({
+      name: "sms/lead.created",
+      data: {
+        contractorId: contractor_id,
+        leadPhone: lead_phone || null,
+        leadName: lead_name,
+        pushTitle,
+        pushBody,
+        origin: request.nextUrl.origin,
       },
-      body: JSON.stringify({
-        contractor_id,
-        title: pushTitle,
-        body: pushBody,
-      }),
-    }).catch(() => {});
-
-    // Auto-response SMS to the lead — fires in <10 seconds
-    // Research: 5-min response = 391% higher qualification (Q4)
-    if (lead_phone) {
-      sendLeadAutoResponse(contractor_id, lead_phone, lead_name).catch((err) => {
-        console.error("Lead auto-response SMS failed:", err);
-      });
-    }
+    });
 
     return NextResponse.json({ emailSent, to: contractor.email });
   } catch (err) {
