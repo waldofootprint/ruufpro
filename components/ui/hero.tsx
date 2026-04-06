@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Globe, Calculator, UserCheck } from 'lucide-react';
 
 const textShadowStyle = {
   fontFamily: '"Arial Black", Impact, sans-serif',
@@ -34,7 +33,7 @@ const ConnectorArrow = () => (
   </div>
 );
 
-export const Component = () => {
+export default function RidgelineHero() {
   return (
     <div className="bg-[#1B3A4B] flex flex-col font-sans selection:bg-[#D4863E] selection:text-white relative overflow-hidden w-full">
 
@@ -69,8 +68,8 @@ export const Component = () => {
         </div>
 
         {/* CTA Button */}
-        <a href="/signup" className="px-6 py-2 rounded-full border border-white text-white text-xs md:text-sm font-semibold hover:bg-white hover:text-[#1B3A4B] transition-colors">
-          Start Getting Leads
+        <a href="/signup" className="px-6 py-2 rounded-full bg-[#D4863E] text-white text-xs md:text-sm font-bold hover:bg-[#c0763a] transition-colors">
+          Get My Free Site
         </a>
       </nav>
 
@@ -92,6 +91,16 @@ export const Component = () => {
           </span>
         </motion.div>
 
+        {/* Kicker */}
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.08 }}
+          className="text-white/40 text-xs md:text-sm font-semibold uppercase tracking-widest mb-5"
+        >
+          A website that makes your phone ring.
+        </motion.p>
+
         {/* Headline */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -112,7 +121,7 @@ export const Component = () => {
           transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
           className="text-white/55 text-sm md:text-lg max-w-[560px] leading-relaxed mx-auto mb-8"
         >
-          Satellite-powered instant estimates on your website. Homeowners see a price, you see their contact info. $149/mo — or start with a free professional site.
+          Homeowners visit your site, enter their address, and get an instant roof estimate. You get their name, email, and phone number. $149/mo — or start with a free site.
         </motion.p>
 
         {/* CTAs */}
@@ -122,11 +131,11 @@ export const Component = () => {
           transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <a href="#demo" className="px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold hover:bg-[#c0763a] transition-colors shadow-lg hover:shadow-xl">
-            See It In Action
+          <a href="/signup" className="px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold hover:bg-[#c0763a] transition-colors shadow-lg hover:shadow-xl">
+            Get My Free Site
           </a>
-          <a href="/signup" className="px-8 py-3.5 rounded-full border-2 border-white/30 text-white text-sm font-bold hover:bg-white hover:text-[#1B3A4B] transition-colors">
-            Start Free
+          <a href="#demo" className="px-8 py-3.5 rounded-full border-2 border-white/30 text-white text-sm font-bold hover:bg-white hover:text-[#1B3A4B] transition-colors">
+            See It In Action
           </a>
         </motion.div>
       </div>
@@ -229,51 +238,17 @@ export const Component = () => {
         </motion.div>
       </div>
 
-      {/* Bottom Features Section */}
-      <section className="bg-[#FAFAF7] text-[#1B3A4B] rounded-t-[2.5rem] md:rounded-t-[3.5rem] px-6 py-12 md:px-10 md:py-16 relative z-20 shadow-[0_-20px_50px_rgba(0,0,0,0.2)] mt-auto w-full">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-
-          {/* Card 1 — Your Website */}
-          <div className="bg-white rounded-[2rem] p-8 flex flex-col items-center text-center relative h-64 border border-gray-100 shadow-sm">
-            <div className="w-12 h-12 bg-[#1B3A4B] rounded-full flex items-center justify-center mb-4">
-              <Globe className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="text-xl md:text-2xl uppercase leading-tight mb-2 font-black">
-              YOUR<br/>WEBSITE
-            </h3>
-            <p className="text-[10px] md:text-xs text-[#1B3A4B]/60 font-bold">
-              Professional, roofing-specific, live in minutes. Free.
-            </p>
-          </div>
-
-          {/* Card 2 — Their Estimate */}
-          <div className="bg-white rounded-[2rem] p-8 flex flex-col items-center text-center relative h-64 border border-gray-100 shadow-sm">
-            <div className="w-12 h-12 bg-[#D4863E] rounded-full flex items-center justify-center mb-4">
-              <Calculator className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="text-xl md:text-2xl uppercase leading-tight mb-2 font-black">
-              THEIR<br/>ESTIMATE
-            </h3>
-            <p className="text-[10px] md:text-xs text-[#1B3A4B]/60 font-bold">
-              Homeowner enters address. Gets instant pricing from satellite data.
-            </p>
-          </div>
-
-          {/* Card 3 — Your Lead */}
-          <div className="bg-white rounded-[2rem] p-8 flex flex-col items-center text-center relative h-64 border border-gray-100 shadow-sm">
-            <div className="w-12 h-12 bg-[#1B3A4B] rounded-full flex items-center justify-center mb-4">
-              <UserCheck className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="text-xl md:text-2xl uppercase leading-tight mb-2 font-black">
-              YOUR<br/>LEAD
-            </h3>
-            <p className="text-[10px] md:text-xs text-[#1B3A4B]/60 font-bold">
-              Name, email, phone, roof details. Delivered to your dashboard.
-            </p>
-          </div>
-
+      {/* Transition strip — introduces free vs Pro */}
+      <div className="relative z-10 bg-[#0F1B2D] border-t border-white/5 px-6 py-10 md:py-14">
+        <div className="max-w-2xl mx-auto text-center">
+          <p className="text-lg md:text-xl text-white/80 font-bold leading-relaxed mb-2">
+            Your free site makes the phone ring.
+          </p>
+          <p className="text-sm md:text-base text-white/40 leading-relaxed">
+            Upgrade to Pro and it never stops — satellite estimates, missed-call texts, and review automation.
+          </p>
         </div>
-      </section>
+      </div>
 
     </div>
   );

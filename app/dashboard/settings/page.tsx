@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDashboard } from "../DashboardContext";
-import { Check, Eye, EyeOff } from "lucide-react";
+import { Check, Eye, EyeOff, Zap, Send } from "lucide-react";
 
 interface ProfileData {
   business_name: string;
@@ -58,6 +58,11 @@ export default function SettingsPage() {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookEnabled, setWebhookEnabled] = useState(false);
+  const [webhookTesting, setWebhookTesting] = useState(false);
+  const [webhookTestResult, setWebhookTestResult] = useState<"success" | "error" | null>(null);
+
   const [profile, setProfile] = useState<ProfileData>({
     business_name: "", phone: "", email: "", city: "", state: "", zip: "",
     tagline: "", logo_url: "", years_in_business: null, license_number: "",
@@ -72,7 +77,7 @@ export default function SettingsPage() {
       if (!contractorId) return;
       const { data } = await supabase
         .from("contractors")
-        .select("business_name, phone, email, city, state, zip, tagline, logo_url, years_in_business, license_number, warranty_years, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, bbb_rating, offers_financing")
+        .select("business_name, phone, email, city, state, zip, tagline, logo_url, years_in_business, license_number, warranty_years, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, bbb_rating, offers_financing, webhook_url, webhook_enabled")
         .eq("id", contractorId)
         .single();
       if (data) {
@@ -97,6 +102,8 @@ export default function SettingsPage() {
           bbb_rating: data.bbb_rating || "",
           offers_financing: data.offers_financing || false,
         });
+        setWebhookUrl(data.webhook_url || "");
+        setWebhookEnabled(data.webhook_enabled || false);
       }
       setLoading(false);
     }
@@ -132,6 +139,8 @@ export default function SettingsPage() {
       bbb_accredited: profile.bbb_accredited,
       bbb_rating: profile.bbb_rating || null,
       offers_financing: profile.offers_financing,
+      webhook_url: webhookUrl || null,
+      webhook_enabled: webhookEnabled,
     }).eq("id", contractorId);
 
     setSaving(false);
@@ -328,6 +337,98 @@ export default function SettingsPage() {
                 <option value="B">B</option>
               </select>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* CRM Integration */}
+      <div className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-slate-50">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <h2 className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">CRM Integration</h2>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5">Send new leads to your CRM automatically via Zapier webhook.</p>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[13px] font-semibold text-slate-800">Enable webhook</div>
+              <div className="text-[11px] text-slate-400">Send lead data to your Zapier URL when new leads come in</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setWebhookEnabled(!webhookEnabled)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${
+                webhookEnabled ? "bg-green-500" : "bg-slate-200"
+              }`}
+            >
+              <div
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
+                  webhookEnabled ? "left-[calc(100%-1.375rem)]" : "left-0.5"
+                }`}
+              />
+            </button>
+          </div>
+
+          {webhookEnabled && (
+            <>
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Zapier Webhook URL</label>
+                <input
+                  className="w-full px-3 py-2.5 rounded-lg border border-[#e2e8f0] text-[14px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  placeholder="https://hooks.zapier.com/hooks/catch/..."
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Create a Zap in Zapier with a &quot;Webhooks by Zapier&quot; trigger, then paste the URL here.</p>
+              </div>
+
+              <button
+                type="button"
+                disabled={!webhookUrl || webhookTesting}
+                onClick={async () => {
+                  setWebhookTesting(true);
+                  setWebhookTestResult(null);
+                  try {
+                    const res = await fetch(webhookUrl, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        event: "lead.test",
+                        timestamp: new Date().toISOString(),
+                        data: {
+                          name: "Test Lead",
+                          email: "test@example.com",
+                          phone: "(555) 000-0000",
+                          address: "123 Test St",
+                          source: "test",
+                        },
+                      }),
+                    });
+                    setWebhookTestResult(res.ok ? "success" : "error");
+                  } catch {
+                    setWebhookTestResult("error");
+                  }
+                  setWebhookTesting(false);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#e2e8f0] text-[12px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <Send className="w-3.5 h-3.5" />
+                {webhookTesting ? "Sending..." : "Send Test Lead"}
+              </button>
+
+              {webhookTestResult === "success" && (
+                <p className="text-[12px] text-green-600 font-medium flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Test lead sent successfully. Check your Zapier dashboard.
+                </p>
+              )}
+              {webhookTestResult === "error" && (
+                <p className="text-[12px] text-red-500 font-medium">
+                  Failed to reach webhook URL. Double-check the URL and try again.
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>
