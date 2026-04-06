@@ -26,14 +26,14 @@ research/        # Strategy docs — competitor analysis, GTM plan, copy researc
 
 ## Two Products in One Codebase
 
-1. **RuufPro marketing site** — Sells RuufPro to roofers. `components/ridgeline/`. Route: `app/page.tsx`
+1. **RuufPro marketing site** — Sells RuufPro to roofers. `components/ridgeline/`. Route: `app/ridgeline/page.tsx`
 2. **Roofer client websites** — What roofers GET. `components/contractor-sections/` + `components/templates/`. Route: `app/site/[slug]/page.tsx`
 
 Don't confuse them. Ask if unclear.
 
 ## Template System
 
-- Templates: `components/templates/` (blueprint, chalkboard, forge, classic, apex)
+- Templates: `components/templates/` (blueprint, chalkboard, forge, classic, apex, modern-clean)
 - Sections: `components/contractor-sections/{theme}/`
 - Data type: `ContractorSiteData` from `components/contractor-sections/types.ts`
 - Theme configs: `components/contractor-sections/theme-{name}.ts`
@@ -54,25 +54,13 @@ Don't confuse them. Ask if unclear.
 4. If using paid API calls, check with me before running
 5. Don't create/overwrite workflows without asking
 
-## Showing Preview Links
-
-Before sharing localhost links, **always**:
-1. `pkill -f "next dev"`
-2. `rm -rf .next`
-3. `npm run dev` (background)
-4. Wait for compilation, then share the link
-
 ## Website Building
 
 When building or modifying any website/page/section — **read `workflows/build_website.md` first**. Research competitors, check 21st.dev for components, build one section at a time, show localhost preview, revert immediately if asked.
 
 ## Knowledge Vault
 
-Marketing frameworks, sales strategies, case studies, and automation workflows at `/Users/hannahwaldo/AI Automations/`. Search via grep/glob when you need:
-- Pricing strategy (entries 025, 031, 032)
-- Conversion frameworks (entry 050)
-- Design systems (entries 038, 051)
-- Lead generation (entries 005, 033, 047, 048)
+Marketing frameworks, sales strategies, case studies, and automation workflows in the Obsidian vault at `~/RuufPro-Vault/RuufPro-Vault/vault/`. See the global CLAUDE.md for vault structure and session protocol.
 
 ## Core Principles
 
