@@ -221,20 +221,15 @@ export default function Services({ services }: ServicesProps) {
       >
         <a
           href="#contact"
-          className="micro-cta-pill"
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 8,
-            padding: "12px 28px",
-            borderRadius: 999,
-            border: `1.5px solid ${THEME.accent}`,
+            gap: 6,
             color: THEME.accent,
             fontWeight: 600,
             fontSize: 15,
             fontFamily: THEME.fontDisplay,
             textDecoration: "none",
-            transition: "all 0.2s ease",
           }}
         >
           Get my free estimate <span aria-hidden="true">→</span>

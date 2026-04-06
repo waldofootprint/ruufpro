@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { THEME } from "./theme";
 
 type Props = {
   hasEstimateWidget: boolean;
@@ -104,7 +105,7 @@ export default function FloatingEstimateCTA({ hasEstimateWidget, phone }: Props)
             justifyContent: "center",
             gap: "6px",
             minHeight: "48px",
-            background: "#E8722A",
+            background: THEME.ctaBg,
             color: "#FFFFFF",
             border: "none",
             borderRadius: "10px",

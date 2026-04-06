@@ -5,9 +5,11 @@
 import { THEME } from "./theme";
 import type { ContractorSiteData } from "./types";
 
-type FooterProps = Pick<ContractorSiteData, "businessName" | "phone" | "city" | "state" | "services" | "tier">;
+type FooterProps = Pick<ContractorSiteData, "businessName" | "phone" | "city" | "state" | "services" | "tier"> & {
+  licenseNumber?: string;
+};
 
-export default function Footer({ businessName, phone, city, state, services, tier }: FooterProps) {
+export default function Footer({ businessName, phone, city, state, services, tier, licenseNumber }: FooterProps) {
   const phoneClean = phone.replace(/\D/g, "");
   const year = new Date().getFullYear();
 
@@ -109,6 +111,11 @@ export default function Footer({ businessName, phone, city, state, services, tie
               >
                 {phone}
               </a>
+              {licenseNumber && (
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 8 }}>
+                  License #{licenseNumber}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -124,9 +131,19 @@ export default function Footer({ businessName, phone, city, state, services, tie
             gap: 8,
           }}
         >
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-            &copy; {year} {businessName}. All rights reserved.
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+              &copy; {year} {businessName}. All rights reserved.
+            </p>
+            <a
+              href="/privacy"
+              style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", textDecoration: "none", transition: "color 0.2s" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+            >
+              Privacy Policy
+            </a>
+          </div>
           {tier === "free" && (
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
               Powered by{" "}

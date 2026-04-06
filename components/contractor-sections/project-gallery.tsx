@@ -5,6 +5,7 @@
 // Falls back to placeholder grid if no photos uploaded.
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Theme {
@@ -43,6 +44,9 @@ export default function ProjectGallery({
   businessName,
 }: ProjectGalleryProps) {
   const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // Don't render section if no photos — avoids showing placeholder/admin text to visitors
+  if (!photos || photos.length === 0) return null;
 
   const textColor = isDark ? "#FFFFFF" : (theme.text || "#1A1A2E");
   const mutedColor = isDark ? "rgba(255,255,255,0.5)" : (theme.textSecondary || "#666");
@@ -118,14 +122,13 @@ export default function ProjectGallery({
                   }}
                 >
                   {photoUrl ? (
-                    <img
+                    <Image
                       src={photoUrl}
                       alt={label}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                      loading="lazy"
+                      style={{ objectFit: "cover" }}
                     />
                   ) : (
                     <div style={{

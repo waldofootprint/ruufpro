@@ -146,7 +146,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
               </div>
               <h3 style={{ fontSize: 20, fontWeight: 700, color: THEME.textPrimary, marginBottom: 8, fontFamily: THEME.fontDisplay }}>Message sent!</h3>
-              <p style={{ fontSize: 15, color: THEME.textSecondary }}>We'll get back to you within 24 hours.</p>
+              <p style={{ fontSize: 15, color: THEME.textSecondary }}>We'll get back to you shortly — usually within a couple hours.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
@@ -273,7 +273,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
                 {submitting ? "Sending..." : "Get My Free Estimate"}
               </button>
               <p style={{ fontSize: 12, color: THEME.textMuted, textAlign: "center", marginTop: 12 }}>
-                We respond within 24 hours. No spam, ever.
+                Most inquiries answered within a few hours. No spam, ever.
               </p>
             </form>
           )}
