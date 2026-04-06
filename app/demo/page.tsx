@@ -17,10 +17,10 @@ const mockData: ContractorSiteData = {
   services: [
     "Roof Replacement",
     "Roof Repair",
-    "Storm Damage Restoration",
-    "Roof Inspections",
-    "Metal Roofing",
-    "Flat Roofing",
+    "Inspections",
+    "Storm Damage",
+    "Gutters",
+    "Emergency Tarping",
   ],
   reviews: [
     {
