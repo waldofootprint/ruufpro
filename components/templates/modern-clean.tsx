@@ -305,64 +305,33 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
 
       <Process />
 
-      {/* Micro-CTA: after process — "now you know how it works, take the next step" */}
-      <div style={{ textAlign: "center", padding: "24px 32px 0" }}>
-        <a
-          href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
-          style={{
-            fontFamily: "'DM Sans', system-ui, sans-serif",
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "#E8722A",
-            textDecoration: "none",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          Start with step one — Get My Free Inspection →
-        </a>
-      </div>
+      {/* Process component has its own micro-CTA now */}
 
       <Services services={props.services} />
 
-      {/* Micro-CTA: after services */}
-      <div style={{ textAlign: "center", padding: "24px 32px 0" }}>
-        <a
-          href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
-          style={{
-            fontFamily: "'DM Sans', system-ui, sans-serif",
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "#E8722A",
-            textDecoration: "none",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          Get My Free Estimate →
-        </a>
-      </div>
+      {/* Services component has its own micro-CTA now */}
 
       <Reviews reviews={props.reviews} />
 
       {/* Micro-CTA: after reviews — social proof → action */}
-      <div style={{ textAlign: "center", padding: "24px 32px 0" }}>
+      <div style={{ textAlign: "center", padding: "32px 32px 0" }}>
         <a
           href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
           style={{
-            fontFamily: "'DM Sans', system-ui, sans-serif",
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "#E8722A",
-            textDecoration: "none",
             display: "inline-flex",
             alignItems: "center",
-            gap: "6px",
+            gap: 8,
+            padding: "12px 28px",
+            borderRadius: 999,
+            border: "1.5px solid #E8722A",
+            color: "#E8722A",
+            fontWeight: 600,
+            fontSize: 15,
+            fontFamily: "'Sora', system-ui, sans-serif",
+            textDecoration: "none",
           }}
         >
-          Ready to start? Get My Free Estimate →
+          Get my free estimate <span aria-hidden="true">→</span>
         </a>
       </div>
 

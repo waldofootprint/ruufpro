@@ -6,10 +6,9 @@ import { THEME } from "./theme";
 import { motion } from "framer-motion";
 
 const STEPS = [
-  { title: "Free Inspection", desc: "We come out, climb on the roof, and check everything — decking, flashing, vents, shingles. You get an honest assessment with photos, not a sales pitch." },
-  { title: "Written Estimate", desc: "You get a line-by-line breakdown: materials, labor, permits, dumpster, everything. The price we quote is the price you pay." },
-  { title: "Professional Install", desc: "We protect your landscaping, tear off the old roof, inspect the deck, install new underlayment and shingles, and clean up daily. Most jobs done in 1-3 days." },
-  { title: "Final Walkthrough", desc: "We walk the job with you, check every detail, do a magnetic nail sweep of your yard, and hand you your warranty paperwork. You sign off when you're happy." },
+  { title: "Schedule Your Inspection", desc: "We assess your roof and provide a detailed report with photos." },
+  { title: "Review Your Estimate", desc: "Transparent line-by-line pricing. No surprises, no hidden fees." },
+  { title: "We Handle the Rest", desc: "Professional installation, daily cleanup, and a final walkthrough with your warranty." },
 ];
 
 const stagger = {
@@ -50,7 +49,7 @@ export default function Process() {
           How it works
         </h2>
         <p style={{ fontSize: 16, color: THEME.textSecondary, maxWidth: 480, margin: "0 auto", lineHeight: 1.65 }}>
-          From first call to final cleanup, here's what to expect.
+          From first call to final walkthrough.
         </p>
       </motion.div>
 
@@ -62,11 +61,11 @@ export default function Process() {
         viewport={{ once: true, margin: "-40px" }}
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateColumns: "repeat(3, 1fr)",
           gap: 20,
           position: "relative",
         }}
-        className="grid-cols-1! sm:grid-cols-2! md:grid-cols-4!"
+        className="grid-cols-1! sm:grid-cols-3!"
       >
         {STEPS.map((step, i) => (
           <motion.div key={step.title} variants={stepFade} style={{ textAlign: "center" }}>
@@ -91,26 +90,49 @@ export default function Process() {
             <h3 style={{ fontSize: 16, fontWeight: 700, color: THEME.textPrimary, marginBottom: 6, fontFamily: THEME.fontDisplay }}>
               {step.title}
             </h3>
-            <p style={{ fontSize: 13, color: THEME.textMuted, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 14, color: THEME.textMuted, lineHeight: 1.6 }}>
               {step.desc}
             </p>
           </motion.div>
         ))}
       </motion.div>
 
-      {/* Nudge */}
-      <motion.p
+      {/* Micro-CTA */}
+      <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ delay: 0.4 }}
-        style={{ textAlign: "center", fontSize: 15, color: THEME.textMuted, marginTop: 40, lineHeight: 1.6 }}
+        style={{ textAlign: "center", marginTop: 48 }}
       >
-        Ready to start with step one?{" "}
-        <a href="#contact" style={{ color: THEME.accent, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
-          Get your free inspection
+        <a
+          href="#contact"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "12px 28px",
+            borderRadius: 999,
+            border: `1.5px solid ${THEME.accent}`,
+            color: THEME.accent,
+            fontWeight: 600,
+            fontSize: 15,
+            fontFamily: THEME.fontDisplay,
+            textDecoration: "none",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = THEME.accent;
+            e.currentTarget.style.color = "#fff";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = THEME.accent;
+          }}
+        >
+          Schedule my free inspection <span aria-hidden="true">→</span>
         </a>
-      </motion.p>
+      </motion.div>
     </section>
   );
 }

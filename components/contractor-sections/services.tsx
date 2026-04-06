@@ -220,19 +220,42 @@ export default function Services({ services }: ServicesProps) {
         })}
       </motion.div>
 
-      {/* Nudge */}
-      <motion.p
+      {/* Micro-CTA */}
+      <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ delay: 0.4 }}
-        style={{ textAlign: "center", fontSize: 15, color: THEME.textMuted, marginTop: 36, lineHeight: 1.6 }}
+        style={{ textAlign: "center", marginTop: 40 }}
       >
-        Not sure what you need?{" "}
-        <a href="#contact" style={{ color: THEME.accent, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
-          Tell us what's going on and we'll figure it out together
+        <a
+          href="#contact"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "12px 28px",
+            borderRadius: 999,
+            border: `1.5px solid ${THEME.accent}`,
+            color: THEME.accent,
+            fontWeight: 600,
+            fontSize: 15,
+            fontFamily: THEME.fontDisplay,
+            textDecoration: "none",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = THEME.accent;
+            e.currentTarget.style.color = "#fff";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = THEME.accent;
+          }}
+        >
+          Get my free estimate <span aria-hidden="true">→</span>
         </a>
-      </motion.p>
+      </motion.div>
     </section>
   );
 }
