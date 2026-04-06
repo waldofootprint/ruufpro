@@ -66,10 +66,10 @@ export default function EstimateSection({
             fontFamily: THEME.fontSerif,
           }}
         >
-          What will your new roof cost?
+          Get a Ballpark
         </h2>
         <p style={{ fontSize: 16, color: THEME.textSecondary, lineHeight: 1.65, maxWidth: 480, margin: "0 auto" }}>
-          Get a ballpark estimate in 30 seconds. No contact info required.
+          Instant estimate. Zero commitment.
         </p>
       </motion.div>
 
