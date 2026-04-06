@@ -29,17 +29,19 @@ export async function generateMetadata({
     isLicensed: contractor.is_licensed,
     isInsured: contractor.is_insured,
     offersFinancing: contractor.offers_financing,
+    services: templateData.services,
   });
 
   const canonicalUrl = `https://${params.slug}.ruufpro.com/${content.slug}`;
+  const description = `${contractor.business_name} offers professional roofing services in ${cityName}, ${contractor.state}. Licensed, insured, free estimates. Call today.`;
 
   return {
     title: `${content.headline} | ${contractor.business_name}`,
-    description: content.paragraphs[0].slice(0, 160),
+    description,
     alternates: { canonical: canonicalUrl },
     openGraph: {
       title: `${content.headline} | ${contractor.business_name}`,
-      description: content.paragraphs[0].slice(0, 160),
+      description,
       url: canonicalUrl,
       siteName: contractor.business_name,
       locale: "en_US",
@@ -71,15 +73,17 @@ export default async function CityPage({
     isLicensed: contractor.is_licensed,
     isInsured: contractor.is_insured,
     offersFinancing: contractor.offers_financing,
+    services: templateData.services,
   });
 
   const otherCities = templateData.serviceAreaCities.filter(
     (c) => cityToSlug(c) !== params.city
   );
 
-  // JSON-LD
+  // JSON-LD schemas
   const baseUrl = `https://${params.slug}.ruufpro.com`;
   const schemas = [
+    // RoofingContractor with city-specific areaServed
     {
       "@context": "https://schema.org",
       "@type": "RoofingContractor",
@@ -95,8 +99,14 @@ export default async function CityPage({
       areaServed: {
         "@type": "City",
         name: cityName,
+        containedInPlace: {
+          "@type": "State",
+          name: contractor.state,
+        },
       },
+      ...(contractor.is_licensed && { hasCredential: { "@type": "EducationalOccupationalCredential", credentialCategory: "Roofing License" } }),
     },
+    // BreadcrumbList
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
@@ -105,6 +115,34 @@ export default async function CityPage({
         { "@type": "ListItem", position: 2, name: cityName, item: `${baseUrl}/${content.slug}` },
       ],
     },
+    // FAQPage
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: content.faqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: faq.answer,
+        },
+      })),
+    },
+    // Service schema for each service
+    ...templateData.services.map((service) => ({
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: service,
+      provider: {
+        "@type": "RoofingContractor",
+        name: contractor.business_name,
+      },
+      areaServed: {
+        "@type": "City",
+        name: cityName,
+      },
+      description: `Professional ${service.toLowerCase()} services in ${cityName}, ${contractor.state} by ${contractor.business_name}.`,
+    })),
   ];
 
   return (
