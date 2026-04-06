@@ -86,7 +86,7 @@ export async function sendLeadNotificationEmail(data: LeadNotificationData) {
 
   try {
     const { error } = await resend.emails.send({
-      from: "RuufPro <onboarding@resend.dev>",
+      from: "RuufPro <noreply@ruufpro.com>",
       to: contractorEmail,
       subject: `New lead: ${leadName}${hasEstimate ? ` — $${estimateLow!.toLocaleString()}-$${estimateHigh!.toLocaleString()}` : ""}`,
       html,

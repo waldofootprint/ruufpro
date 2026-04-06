@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     `;
 
     const { error } = await resend.emails.send({
-      from: "RuufPro <onboarding@resend.dev>",
+      from: "RuufPro <noreply@ruufpro.com>",
       to: NOTIFY_EMAIL,
       subject: `🎯 ${business_name} claimed their site! — ${name}`,
       html,

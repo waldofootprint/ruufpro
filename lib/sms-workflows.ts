@@ -326,7 +326,7 @@ export async function scheduleReviewEmailFollowup(
 
   try {
     const { error: emailError } = await resend.emails.send({
-      from: "RuufPro <onboarding@resend.dev>",
+      from: "RuufPro <noreply@ruufpro.com>",
       to: lead.email,
       subject: `How was your experience with ${contractor.business_name}?`,
       html: `
