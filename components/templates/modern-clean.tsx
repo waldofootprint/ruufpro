@@ -5,6 +5,7 @@
 
 import Image from "next/image";
 import type { ContractorSiteData } from "../contractor-sections/types";
+import { THEME } from "../contractor-sections/theme";
 import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
 import FloatingTextUs from "../contractor-sections/floating-text-us";
 import Nav from "../contractor-sections/nav";
@@ -12,8 +13,8 @@ import ScrollAnimation from "../scroll-animation";
 import ProofBar from "../contractor-sections/proof-bar";
 import Services from "../contractor-sections/services";
 import EstimateSection from "../contractor-sections/estimate-section";
-import WhyUs from "../contractor-sections/why-us";
-import About from "../contractor-sections/about";
+import EstimateWidgetV3 from "../estimate-widget-v3";
+import AboutTrust from "../contractor-sections/about-trust";
 import Reviews from "../contractor-sections/reviews";
 import FAQ from "../contractor-sections/faq";
 import Process from "../contractor-sections/process";
@@ -21,7 +22,6 @@ import ServiceArea from "../contractor-sections/service-area";
 import CtaBand from "../contractor-sections/cta-band";
 import ContactForm from "../contractor-sections/contact-form";
 import ProjectGallery from "../contractor-sections/project-gallery";
-import FinancingCallout from "../contractor-sections/financing-callout";
 import Footer from "../contractor-sections/footer";
 
 export default function ModernCleanTemplate(props: ContractorSiteData) {
@@ -42,6 +42,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
           trust badges near CTAs (Q3), star rating (Q2), city name (Q1),
           real photo support (Q3), urgency badge (Q4), 48px tap targets (Q2,Q3) */}
       <section
+        className="hero-section"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -85,13 +86,13 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
 
             {/* Kicker — accent bar + location/rating */}
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-              <div style={{ width: "3px", height: "20px", background: "#E8722A", borderRadius: "2px" }} />
+              <div style={{ width: "3px", height: "20px", background: THEME.accent, borderRadius: "2px" }} />
               <span
                 style={{
                   fontFamily: "'Sora', system-ui, sans-serif",
                   fontSize: "13px",
                   fontWeight: 700,
-                  color: "#E8722A",
+                  color: THEME.accent,
                   textTransform: "uppercase",
                   letterSpacing: "0.1em",
                 }}
@@ -140,7 +141,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
                   alignItems: "center",
                   gap: "8px",
                   padding: "15px 32px",
-                  background: "#E8722A",
+                  background: THEME.ctaBg,
                   color: "#fff",
                   borderRadius: "99px",
                   fontWeight: 700,
@@ -180,19 +181,19 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
             {/* Trust badges */}
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
               {(props.isLicensed || props.isInsured) && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(255,255,255,0.8)", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#94A3B8" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(255,255,255,0.8)", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#64748B" }}>
                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#059669" }} />
                   Licensed &amp; insured
                 </div>
               )}
               {props.reviews && props.reviews.length > 0 && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(255,255,255,0.8)", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#94A3B8" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(255,255,255,0.8)", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#64748B" }}>
                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#F59E0B" }} />
                   {props.reviews.length > 5 ? `${(props.reviews.reduce((s, r) => s + r.rating, 0) / props.reviews.length).toFixed(1)}-star rated` : "5-star Google rated"}
                 </div>
               )}
               {props.warrantyYears && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(255,255,255,0.8)", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#94A3B8" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(255,255,255,0.8)", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#64748B" }}>
                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#2563EB" }} />
                   {props.warrantyYears}-year warranty
                 </div>
@@ -200,82 +201,46 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
             </div>
           </div>
 
-          {/* Right column — hero image */}
-          <div style={{ position: "relative" }}>
-            {/* Navy accent strip behind image */}
+          {/* Right column — estimate widget */}
+          {props.hasEstimateWidget ? (
             <div
               style={{
-                position: "absolute",
-                top: "12px",
-                right: "-10px",
-                bottom: "24px",
-                width: "100%",
-                background: "#0F1B2D",
-                borderRadius: "4px 20px 20px 4px",
-                zIndex: 0,
-              }}
-            />
-            {/* Image container */}
-            <div
-              style={{
-                position: "relative",
-                zIndex: 1,
-                width: "100%",
-                height: "460px",
+                background: "#fff",
+                borderRadius: "16px",
+                border: `1px solid ${THEME.border}`,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
                 overflow: "hidden",
-                borderRadius: "4px 20px 20px 4px",
               }}
             >
-              <Image
-                src={props.heroImage || "/images/stock-photos/roofer-nail-gun-action.png"}
-                alt={`${props.businessName} roofing project in ${props.city || "your area"}`}
-                fill
-                sizes="(max-width: 768px) 100vw, 45vw"
-                style={{ objectFit: "cover" }}
-                priority
+              <EstimateWidgetV3
+                contractorId={props.contractorId}
+                contractorName={props.businessName}
+                contractorPhone={props.phone}
+                accentColor={THEME.accent}
               />
             </div>
-            {/* Floating badge */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: "12px",
-                left: "-20px",
-                zIndex: 2,
-                background: "#fff",
-                borderRadius: "12px",
-                padding: "12px 18px",
-                boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontFamily: "'Sora', system-ui, sans-serif",
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#1A1A2E",
-              }}
-            >
+          ) : (
+            <div style={{ position: "relative" }}>
               <div
                 style={{
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "8px",
-                  background: "rgba(232,114,12,0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  position: "relative",
+                  width: "100%",
+                  height: "460px",
+                  overflow: "hidden",
+                  borderRadius: "4px 20px 20px 4px",
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" strokeWidth="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              </div>
-              <div>
-                <div style={{ lineHeight: 1.2 }}>Trusted by homeowners</div>
-                <div style={{ fontSize: "11px", fontWeight: 500, color: "#94A3B8", marginTop: "1px" }}>
-                  {props.hasEstimateWidget ? "Instant estimates, no pressure" : "Free estimates, no pressure"}
-                </div>
+                <Image
+                  src={props.heroImage || "/images/stock-photos/roofer-nail-gun-action.png"}
+                  alt={`${props.businessName} roofing project in ${props.city || "your area"}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 45vw"
+                  style={{ objectFit: "cover" }}
+                  priority
+                />
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Mobile responsive override */}
@@ -284,6 +249,9 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
             .hero-grid {
               grid-template-columns: 1fr !important;
               gap: 32px !important;
+            }
+            .hero-section {
+              padding: 100px 16px 48px !important;
             }
           }
         `}</style>
@@ -320,14 +288,11 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 8,
-            padding: "12px 28px",
-            borderRadius: 999,
-            border: "1.5px solid #E8722A",
-            color: "#E8722A",
+            gap: 6,
+            color: THEME.accent,
             fontWeight: 600,
             fontSize: 15,
-            fontFamily: "'Sora', system-ui, sans-serif",
+            fontFamily: THEME.fontDisplay,
             textDecoration: "none",
           }}
         >
@@ -367,8 +332,11 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         />
       </div>
 
-      <WhyUs
+      <AboutTrust
+        businessName={props.businessName}
         city={props.city}
+        aboutText={props.aboutText}
+        yearsInBusiness={props.yearsInBusiness}
         isLicensed={props.isLicensed}
         isInsured={props.isInsured}
         gafMasterElite={props.gafMasterElite}
@@ -378,21 +346,11 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         bbbRating={props.bbbRating}
         offersFinancing={props.offersFinancing}
         warrantyYears={props.warrantyYears}
-        yearsInBusiness={props.yearsInBusiness}
-      />
-      <FinancingCallout
-        theme={{ accent: "#E8722A", fontDisplay: "'Sora', system-ui, sans-serif", fontBody: "'DM Sans', system-ui, sans-serif", maxWidth: "1100px", borderRadius: "12px" }}
-        offersFinancing={props.offersFinancing}
         phone={props.phone}
-      />
-      <About
-        businessName={props.businessName}
-        city={props.city}
-        aboutText={props.aboutText}
-        yearsInBusiness={props.yearsInBusiness}
+        licenseNumber={props.licenseNumber ?? undefined}
       />
       <ProjectGallery
-        theme={{ accent: "#E8722A", fontDisplay: "'Sora', system-ui, sans-serif", fontBody: "'DM Sans', system-ui, sans-serif", maxWidth: "1100px", borderRadius: "12px" }}
+        theme={{ accent: THEME.accent, fontDisplay: THEME.fontDisplay, fontBody: THEME.fontBody, maxWidth: THEME.maxWidth, borderRadius: THEME.borderRadius }}
         businessName={props.businessName}
         photos={[]}
       />
@@ -435,6 +393,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         state={props.state}
         services={props.services}
         tier={props.tier}
+        licenseNumber={props.licenseNumber ?? undefined}
       />
       <FloatingEstimateCTA hasEstimateWidget={props.hasEstimateWidget} phone={props.phone} />
       <FloatingTextUs phone={props.phone} />

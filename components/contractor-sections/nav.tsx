@@ -134,6 +134,7 @@ function NavDropdown({ label, items, href, itemHrefs, open, onToggle, onClose }:
 export default function Nav({ businessName, phone, hasEstimateWidget, services, serviceAreaCities, city }: NavProps) {
   const phoneClean = phone.replace(/\D/g, "");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const serviceList = services && services.length > 0 ? services : SERVICE_DEFAULTS;
   const areaCities = serviceAreaCities && serviceAreaCities.length > 0 ? serviceAreaCities : [city];
@@ -241,8 +242,30 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
         </a>
       </div>
 
+      {/* Mobile hamburger button */}
+      <button
+        className="md:hidden"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {mobileMenuOpen ? (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={THEME.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={THEME.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        )}
+      </button>
+
       {/* Right: phone + CTA */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="hidden md:flex">
         <a
           href={`tel:${phoneClean}`}
           style={{
@@ -296,6 +319,82 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
           </a>
         )}
       </div>
+
+      {/* Mobile menu panel */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            left: 0,
+            right: 0,
+            background: "rgba(255,255,255,0.97)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: `1px solid ${THEME.border}`,
+            borderRadius: 12,
+            padding: "16px 20px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+          }}
+        >
+          {["Services", "About", "Reviews", "Contact"].map((label) => (
+            <a
+              key={label}
+              href={`#${label.toLowerCase()}`}
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                display: "block",
+                padding: "12px 0",
+                fontSize: 15,
+                fontWeight: 600,
+                color: THEME.textPrimary,
+                textDecoration: "none",
+                borderBottom: `1px solid ${THEME.border}`,
+                fontFamily: THEME.fontBody,
+              }}
+            >
+              {label}
+            </a>
+          ))}
+          <a
+            href={`tel:${phoneClean}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "14px 0 8px",
+              fontSize: 15,
+              fontWeight: 600,
+              color: THEME.primary,
+              textDecoration: "none",
+              fontFamily: THEME.fontBody,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            {phone}
+          </a>
+          <a
+            href={hasEstimateWidget ? "#estimate-section" : "#contact"}
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              display: "block",
+              textAlign: "center",
+              padding: "12px 20px",
+              marginTop: 8,
+              fontSize: 15,
+              fontWeight: 700,
+              color: "#fff",
+              background: THEME.ctaBg,
+              borderRadius: 10,
+              textDecoration: "none",
+              fontFamily: THEME.fontDisplay,
+            }}
+          >
+            Get Free Estimate
+          </a>
+        </div>
+      )}
     </nav>
   );
 }

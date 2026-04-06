@@ -6,9 +6,9 @@ import { THEME } from "./theme";
 import { motion } from "framer-motion";
 
 const STEPS = [
-  { title: "Schedule Your Inspection", desc: "We assess your roof and provide a detailed report with photos." },
-  { title: "Review Your Estimate", desc: "Transparent line-by-line pricing. No surprises, no hidden fees." },
-  { title: "We Handle the Rest", desc: "Professional installation, daily cleanup, and a final walkthrough with your warranty." },
+  { title: "Schedule Your Inspection", desc: "Book your free inspection online or by phone. We work around your schedule." },
+  { title: "Review Your Estimate", desc: "Get a clear, honest assessment with line-by-line pricing. No surprises." },
+  { title: "We Handle the Rest", desc: "We handle permits, materials, installation, and cleanup. You just pick your shingles." },
 ];
 
 const stagger = {
@@ -110,18 +110,13 @@ export default function Process() {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 8,
-            padding: "12px 28px",
-            borderRadius: 999,
-            border: `1.5px solid ${THEME.accent}`,
+            gap: 6,
             color: THEME.accent,
             fontWeight: 600,
             fontSize: 15,
             fontFamily: THEME.fontDisplay,
             textDecoration: "none",
-            transition: "all 0.2s ease",
           }}
-          className="micro-cta-pill"
         >
           Schedule my free inspection <span aria-hidden="true">→</span>
         </a>
