@@ -12,14 +12,14 @@ type ServicesProps = Pick<ContractorSiteData, "services">;
 
 // Default descriptions for common services
 const SERVICE_DESCRIPTIONS: Record<string, string> = {
-  "Roof Replacement": "Full tear-off down to the deck, new underlayment, flashing, drip edge, and shingle installation. We handle the permit, the dumpster, and the cleanup — you just pick your shingle color.",
-  "Roof Repair": "Leaks, missing shingles, cracked flashing, sagging gutterlines, pipe boot failures — we diagnose the actual problem and fix it right the first time. No upselling you a full replacement when a repair will do.",
-  "Inspections": "We check your decking, underlayment, flashing, vents, gutters, and shingle condition. You get a written report with photos and honest recommendations — whether that means repairs, replacement, or doing nothing.",
-  "Gutters": "Seamless aluminum gutter installation, downspout routing, gutter guards, and repairs. Properly sized and pitched to handle your roof's water volume and protect your foundation.",
-  "Emergency Tarping": "Storm hit last night? We respond fast with emergency tarping to stop the damage from getting worse. Available 24/7 — call us and we'll get your roof covered.",
-  "Storm Damage": "Hail, wind, fallen trees — we handle the full restoration and work directly with your insurance adjuster. We document the damage, file the claim paperwork, and get your roof back to pre-storm condition.",
+  "Roof Replacement": "Full roof replacement — professionally installed, fully permitted, and backed by manufacturer warranties.",
+  "Roof Repair": "From storm damage to everyday wear, we identify the problem and fix it right.",
+  "Inspections": "We give you an accurate picture of your roof's condition — no guesswork, no inflated findings.",
+  "Gutters": "Gutter cleaning, repair, and installation done right — because proper drainage is the first line of defense against water damage.",
+  "Emergency Tarping": "Fast-response emergency tarping to protect your home from further damage when every hour counts.",
+  "Storm Damage": "Expert assessment and repair of storm-damaged roofs, from missing shingles to structural issues — documented thoroughly for insurance claims.",
   "Siding": "Vinyl, fiber cement, and wood siding installation and repair. We match existing materials and handle trim, soffit, and fascia so everything looks right together.",
-  "Ventilation": "Ridge vents, soffit vents, powered attic fans, and intake/exhaust balancing. Proper ventilation extends your roof's life and cuts your energy bills — most homes we inspect are under-ventilated.",
+  "Ventilation": "Proper roof ventilation installed and serviced to protect your attic, extend shingle life, and keep energy costs in check.",
 };
 
 // Icons for common services (SVG paths)
@@ -75,7 +75,7 @@ export default function Services({ services }: ServicesProps) {
   // Fall back to standard roofing services if none set
   const serviceList = services.length > 0
     ? services
-    : ["Roof Replacement", "Roof Repair", "Inspections", "Gutters", "Storm Damage", "Ventilation"];
+    : ["Roof Replacement", "Roof Repair", "Inspections", "Storm Damage", "Gutters", "Emergency Tarping"];
 
   return (
     <section
