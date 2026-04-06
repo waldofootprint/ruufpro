@@ -1,5 +1,6 @@
 # Environment & secrets
 .env
+.env.local
 credentials.json
 token.json
 
