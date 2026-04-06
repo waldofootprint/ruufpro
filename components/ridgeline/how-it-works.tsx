@@ -15,10 +15,10 @@ const STEPS = [
   {
     number: "02",
     icon: SlidersHorizontal,
-    title: "Set Your Pricing",
+    title: "Customize Your Site",
     time: "~2 minutes",
     description:
-      "Tell us what you charge per square foot for each material. We suggest rates based on your area. Done.",
+      "Pick your template, add your logo and photos, set your service area. We handle the SEO, hosting, and design.",
   },
   {
     number: "03",
@@ -56,9 +56,9 @@ const fadeUp = {
 
 export default function RidgelineHowItWorks() {
   return (
-    <section className="relative bg-[#1B3A4B] overflow-hidden">
-      {/* Grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none z-0" />
+    <section className="relative bg-white overflow-hidden">
+      {/* Subtle grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1B3A4B06_1px,transparent_1px),linear-gradient(to_bottom,#1B3A4B06_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none z-0" />
 
       <div className="relative z-10 mx-auto max-w-[1440px] px-6 py-20 md:px-10 md:py-28">
         {/* Header */}
@@ -67,11 +67,11 @@ export default function RidgelineHowItWorks() {
             How It Works
           </p>
           <h2
-            className="text-[clamp(2rem,5vw,4rem)] font-black uppercase tracking-tighter text-white leading-[0.95] max-w-3xl mx-auto"
+            className="text-[clamp(2rem,5vw,4rem)] font-black uppercase tracking-tighter text-[#1B3A4B] leading-[0.95] max-w-3xl mx-auto"
             style={{
               fontFamily: '"Arial Black", Impact, sans-serif',
               textShadow:
-                "1px 1px 0 #0D1F2D, 2px 2px 0 #0D1F2D, 3px 3px 0 #0D1F2D, 4px 4px 0 #0D1F2D, 5px 5px 0 #0D1F2D, 6px 6px 0 #0D1F2D",
+                "1px 1px 0 #1B3A4B15, 2px 2px 0 #1B3A4B10, 3px 3px 0 #1B3A4B08",
             }}
           >
             Under 5 Minutes. No Tech Skills. Seriously.
@@ -89,10 +89,10 @@ export default function RidgelineHowItWorks() {
           {STEPS.map((step, i) => (
             <motion.div key={step.number} variants={fadeUp} className="flex items-center md:items-start gap-0">
               {/* Card */}
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-[2rem] p-8 w-full max-w-[300px] text-center hover:bg-white/15 hover:-translate-y-1 transition-all duration-500 group">
+              <div className="bg-[#FAFAF7] border border-gray-100 rounded-[2rem] p-8 w-full max-w-[300px] text-center hover:-translate-y-1 transition-all duration-500 group shadow-sm">
                 {/* Step number */}
                 <span
-                  className="text-[clamp(3rem,5vw,4.5rem)] font-black text-white/10 leading-none block mb-4 group-hover:text-white/20 transition-colors"
+                  className="text-[clamp(3rem,5vw,4.5rem)] font-black text-[#1B3A4B]/8 leading-none block mb-4 group-hover:text-[#1B3A4B]/15 transition-colors"
                   style={{ fontFamily: '"Arial Black", Impact, sans-serif' }}
                 >
                   {step.number}
@@ -104,7 +104,7 @@ export default function RidgelineHowItWorks() {
                 </div>
 
                 {/* Title + time */}
-                <h3 className="text-lg font-black text-white uppercase tracking-wide mb-1">
+                <h3 className="text-lg font-black text-[#1B3A4B] uppercase tracking-wide mb-1">
                   {step.title}
                 </h3>
                 <span className="text-xs font-bold text-[#D4863E] uppercase tracking-widest">
@@ -112,7 +112,7 @@ export default function RidgelineHowItWorks() {
                 </span>
 
                 {/* Description */}
-                <p className="text-sm text-white/55 leading-relaxed mt-4">
+                <p className="text-sm text-[#1B3A4B]/55 leading-relaxed mt-4">
                   {step.description}
                 </p>
               </div>
@@ -131,9 +131,9 @@ export default function RidgelineHowItWorks() {
         <div className="flex justify-center mt-14 md:mt-16">
           <a
             href="/signup"
-            className="inline-flex items-center gap-2 px-8 py-3 rounded-full border-2 border-white text-white text-sm font-bold uppercase tracking-wider hover:bg-white hover:text-[#1B3A4B] transition-colors duration-300"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold uppercase tracking-wider hover:bg-[#c0763a] transition-colors duration-300 shadow-lg hover:shadow-xl"
           >
-            Start Getting Leads
+            Get My Free Site
             <svg
               viewBox="0 0 24 24"
               className="w-4 h-4 stroke-current"

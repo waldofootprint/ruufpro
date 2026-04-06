@@ -6,7 +6,7 @@ import { Globe, Calculator, Zap, Check, X } from "lucide-react";
 
 const FREE_FEATURES = [
   "Professional roofing website",
-  "Mobile-first, SEO optimized",
+  "Looks great on any phone",
   "Contact form + lead capture",
   "Email notifications for new leads",
   "Click-to-call on every page",
@@ -18,17 +18,19 @@ const FREE_LOCKED = [
   "Missed-call text-back",
   "Google review automation",
   "Lead dashboard",
+  "CRM integration",
 ];
 
 const PRO_FEATURES = [
   "Everything in Free, plus:",
-  "Satellite estimate widget — visitors see pricing instantly",
-  "Missed-call text-back — never lose a lead on the roof",
-  "Google review automation — more 5-star reviews on autopilot",
-  "Lead dashboard — hot, warm, and browsing tags",
-  "Embed widget on any website with one line of code",
-  "Contractor-controlled pricing",
-  "PDF estimate reports",
+  "Homeowners see pricing instantly — your phone rings, not your competitor's",
+  "Never lose a lead while you're on the roof — missed calls get auto-texted",
+  "5-star reviews on autopilot — one text, they leave a review",
+  "Know who's ready to buy — leads tagged hot, warm, or browsing",
+  "Works on any website — paste one link on WordPress, Wix, anywhere",
+  "You control the pricing homeowners see",
+  "Send homeowners a branded PDF estimate",
+  "Leads flow straight to your CRM — Zapier, HubSpot, whatever you use",
 ];
 
 const PRO_LOCKED = [
@@ -39,9 +41,9 @@ const PRO_LOCKED = [
 
 const GROWTH_FEATURES = [
   "Everything in Pro, plus:",
-  "SEO city pages — rank in every city you serve",
-  "Competitor monitoring — know when they change pricing",
-  "Custom domain — yourbusiness.com",
+  "Rank on Google in every city you serve — auto-generated city pages",
+  "Know the second a competitor changes pricing — automatic alerts",
+  "Your own domain — yourbusiness.com, not a subdomain",
   "Priority support — real humans, fast responses",
 ];
 
@@ -243,7 +245,7 @@ export default function RidgelinePricing() {
           >
             <div className="flex justify-center">
               <span className="bg-[#D4863E] text-white text-[10px] font-black uppercase tracking-[0.15em] px-5 py-1.5 rounded-b-xl">
-                Most Popular
+                Recommended
               </span>
             </div>
 
@@ -383,13 +385,49 @@ export default function RidgelinePricing() {
           </motion.div>
         </motion.div>
 
+        {/* ROI Math */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.3 }}
+          className="max-w-2xl mx-auto mt-12 bg-white/5 backdrop-blur-sm border border-white/10 rounded-[2rem] p-8 text-center"
+        >
+          <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-3">
+            The Math
+          </p>
+          <p className="text-white text-lg md:text-xl leading-relaxed">
+            The average roof replacement is <span className="font-black text-[#D4863E]">$8,500</span>.
+            {" "}One job from your website pays for{" "}
+            <span className="font-black">over 4 years</span> of Pro.
+          </p>
+        </motion.div>
+
+        {/* Risk Reversal */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.35 }}
+          className="max-w-2xl mx-auto mt-8 bg-[#D4863E]/10 border border-[#D4863E]/25 rounded-[2rem] p-8 text-center"
+        >
+          <p className="text-white text-lg md:text-xl font-black mb-2">
+            No Contract. No Risk. Cancel Anytime.
+          </p>
+          <p className="text-white/50 text-sm leading-relaxed">
+            If Pro doesn&apos;t pay for itself in 30 days, cancel with one click — no
+            fees, no calls, no questions. One roofing job covers over 4 years of Pro.
+            We bet you&apos;ll get one in the first month.
+          </p>
+        </motion.div>
+
         {/* Bottom transparency note */}
         <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
-          className="text-center text-sm text-white/30 mt-12 max-w-xl mx-auto"
+          className="text-center text-sm text-white/30 mt-8 max-w-xl mx-auto"
         >
           The free website is genuinely free — no credit card, no trial, no catch.
           We make money when you choose Pro at {proPrice}/mo or Growth at {growthPrice}/mo.

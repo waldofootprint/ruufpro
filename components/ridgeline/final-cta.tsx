@@ -75,7 +75,7 @@ export default function RidgelineFinalCTA() {
             transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
             className="text-lg md:text-xl text-white/50 max-w-xl leading-relaxed mb-10"
           >
-            A professional website and satellite-powered estimates — set up in
+            A real roofing website that makes your phone ring — set up in
             5 minutes, free to start, no credit card required.
           </motion.p>
 
@@ -91,7 +91,7 @@ export default function RidgelineFinalCTA() {
               href="/signup"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold uppercase tracking-wider hover:bg-[#c0763a] transition-colors duration-300 shadow-lg shadow-[#D4863E]/20"
             >
-              Start Getting Leads
+              Make My Phone Ring
               <svg
                 viewBox="0 0 24 24"
                 className="w-4 h-4 stroke-current"

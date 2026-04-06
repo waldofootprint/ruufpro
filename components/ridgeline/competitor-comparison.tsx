@@ -3,32 +3,32 @@
 import { motion } from "framer-motion";
 import { Check, X, ArrowRight } from "lucide-react";
 
-const COLUMNS = ["RuufPro", "Roofle", "Roofr", "Agency"] as const;
+const COLUMNS = ["RuufPro", "Roofle", "Roofr", "Cannone", "Agency"] as const;
 
 const ROWS = [
   {
     label: "Monthly cost",
-    values: ["$149/mo (Pro)\n$0 (site only)", "$350/mo", "$249–349/mo\n+ $149 widget", "$500–2,500/mo"],
+    values: ["$149/mo (Pro)\n$0 (site only)", "$350/mo", "$249–349/mo\n+ $149 widget", "$199–399/mo", "$500–2,500/mo"],
   },
   {
     label: "Setup fee",
-    values: ["$0", "$2,000", "$0", "$500–5,000"],
+    values: ["$0", "$2,000", "$0", "$0", "$500–5,000"],
   },
   {
     label: "Free website",
-    values: [true, false, false, false],
+    values: [true, false, false, false, false],
   },
   {
     label: "Satellite estimates",
-    values: [true, true, true, false],
+    values: [true, true, true, true, false],
   },
   {
     label: "Contract required",
-    values: [false, "Varies", false, "Usually"],
+    values: [false, "Varies", false, "Monthly", "Usually"],
   },
   {
     label: "Setup time",
-    values: ["5 minutes", "Days", "Hours", "Weeks"],
+    values: ["5 minutes", "Days", "Hours", "Days", "Weeks"],
   },
 ];
 
@@ -49,7 +49,7 @@ function CellValue({ value }: { value: string | boolean }) {
 
 export default function RidgelineComparison() {
   return (
-    <section className="relative bg-[#FAFAF7] overflow-hidden">
+    <section className="relative bg-[#F1F5F9] overflow-hidden">
       {/* Subtle grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1B3A4B08_1px,transparent_1px),linear-gradient(to_bottom,#1B3A4B08_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none z-0" />
 
@@ -77,9 +77,9 @@ export default function RidgelineComparison() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
-          className="max-w-4xl mx-auto overflow-x-auto"
+          className="max-w-5xl mx-auto overflow-x-auto -mx-6 px-6 md:mx-auto md:px-0"
         >
-          <table className="w-full border-collapse text-sm">
+          <table className="w-full border-collapse text-sm min-w-[640px]">
             <thead>
               <tr>
                 <th className="text-left p-4 text-[#1B3A4B]/50 font-semibold text-xs uppercase tracking-wider" />
