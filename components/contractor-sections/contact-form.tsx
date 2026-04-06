@@ -268,8 +268,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
                   opacity: submitting ? 0.6 : 1,
                   transition: "background 0.2s",
                 }}
-                onMouseEnter={(e) => { if (!submitting) e.currentTarget.style.background = THEME.accentHover; }}
-                onMouseLeave={(e) => (e.currentTarget.style.background = THEME.accent)}
+                className="cta-accent-btn"
               >
                 {submitting ? "Sending..." : "Get My Free Estimate"}
               </button>

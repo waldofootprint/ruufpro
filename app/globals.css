@@ -14,3 +14,29 @@
   --font-heading: var(--font-dm-serif);
   --font-body: var(--font-dm-sans);
 }
+
+/* Contractor template hover states — CSS instead of JS to prevent flicker */
+.service-card:hover {
+  border-color: rgba(30, 58, 95, 0.2) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  transform: translateY(-3px);
+}
+
+.review-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.micro-cta-pill:hover {
+  background: #E8722A !important;
+  color: #fff !important;
+}
+
+.cta-accent-btn:hover {
+  background: #d4650f !important;
+}
+
+.cta-outline-btn:hover {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}

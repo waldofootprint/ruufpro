@@ -56,6 +56,7 @@ export default function Reviews({ reviews }: ReviewsProps) {
           return (
             <div
               key={i}
+              className="review-card"
               style={{
                 background: "#fff",
                 border: `1px solid ${THEME.border}`,
@@ -64,14 +65,6 @@ export default function Reviews({ reviews }: ReviewsProps) {
                 display: "flex",
                 flexDirection: "column",
                 transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.06)";
-                e.currentTarget.style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = "none";
-                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               {/* Stars */}

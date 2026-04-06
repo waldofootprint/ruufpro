@@ -121,14 +121,7 @@ export default function Process() {
             textDecoration: "none",
             transition: "all 0.2s ease",
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = THEME.accent;
-            e.currentTarget.style.color = "#fff";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = THEME.accent;
-          }}
+          className="micro-cta-pill"
         >
           Schedule my free inspection <span aria-hidden="true">→</span>
         </a>

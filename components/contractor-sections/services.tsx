@@ -148,6 +148,7 @@ export default function Services({ services }: ServicesProps) {
             <motion.div
               key={service}
               variants={cardFade}
+              className="service-card"
               style={{
                 background: "#fff",
                 border: `1px solid ${THEME.border}`,
@@ -157,16 +158,6 @@ export default function Services({ services }: ServicesProps) {
                 cursor: "default",
                 position: "relative",
                 overflow: "hidden",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "rgba(30,58,95,0.2)";
-                e.currentTarget.style.boxShadow = "0 8px 30px rgba(0,0,0,0.06)";
-                e.currentTarget.style.transform = "translateY(-3px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = THEME.border;
-                e.currentTarget.style.boxShadow = "none";
-                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               {/* Icon box + title row */}
@@ -230,6 +221,7 @@ export default function Services({ services }: ServicesProps) {
       >
         <a
           href="#contact"
+          className="micro-cta-pill"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -243,14 +235,6 @@ export default function Services({ services }: ServicesProps) {
             fontFamily: THEME.fontDisplay,
             textDecoration: "none",
             transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = THEME.accent;
-            e.currentTarget.style.color = "#fff";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = THEME.accent;
           }}
         >
           Get my free estimate <span aria-hidden="true">→</span>

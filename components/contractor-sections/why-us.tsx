@@ -172,16 +172,7 @@ export default function WhyUs(props: WhyUsProps) {
               gap: 14,
               alignItems: "flex-start",
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "rgba(30,58,95,0.2)";
-              e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.05)";
-              e.currentTarget.style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = THEME.border;
-              e.currentTarget.style.boxShadow = "none";
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
+            className="service-card"
           >
             <div
               style={{
