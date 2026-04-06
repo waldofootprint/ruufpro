@@ -99,18 +99,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send the review request
-    const { sendReviewRequest } = await import("@/lib/sms-workflows");
-    const result = await sendReviewRequest(contractor.id, lead.id);
-
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      reviewRequestId: result.reviewRequestId,
+    // Emit event to Inngest — handles review SMS with retry + monitoring
+    const { inngest } = await import("@/lib/inngest/client");
+    await inngest.send({
+      name: "sms/review.requested",
+      data: {
+        contractorId: contractor.id,
+        leadId: lead.id,
+      },
     });
+
+    return NextResponse.json({ success: true, queued: true });
   } catch (err) {
     console.error("Review request endpoint error:", err);
     return NextResponse.json(
