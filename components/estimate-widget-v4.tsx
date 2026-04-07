@@ -569,6 +569,10 @@ export default function EstimateWidgetV4({
                             .then((res) => res.json())
                             .then((data) => {
                               if (data.polygon) setBuildingPolygon(data.polygon);
+                              // Use geocoded coords for map center (aligns with building outline)
+                              if (data.lat && data.lng) {
+                                setPropertyCoords({ lat: data.lat, lng: data.lng });
+                              }
                             })
                             .catch(() => {});
                         }

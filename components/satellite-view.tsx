@@ -91,6 +91,12 @@ export default function SatelliteView({
       map: mapRef.current,
     });
 
+    // Center map on polygon centroid for perfect alignment
+    const bounds = new google.maps.LatLngBounds();
+    buildingPolygon.forEach((p) => bounds.extend(p));
+    const center = bounds.getCenter();
+    mapRef.current.setCenter(center);
+
     polygonRef.current = polygon;
 
     return () => {
