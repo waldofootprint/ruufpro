@@ -105,52 +105,76 @@ export default function DashboardHome() {
         </p>
       </div>
 
-      {/* Stat cards — 3 across */}
+      {/* Action cards — 3 across */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        {/* New Leads */}
-        <div className="rounded-xl bg-white border border-[#e2e8f0] p-5">
+        {/* Waiting Leads — action-first */}
+        <a
+          href="/dashboard/leads"
+          className={`rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+            newCount > 0
+              ? "bg-[#FFF7ED] border-l-4 border-l-[#D4863E] border border-orange-200"
+              : "bg-white border border-[#e2e8f0]"
+          }`}
+        >
           <div className="flex items-center gap-2 mb-2">
-            <Users className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">New Leads</span>
+            <Users className={`w-3.5 h-3.5 ${newCount > 0 ? "text-[#D4863E]" : "text-slate-400"}`} />
+            <span className={`text-[11px] font-semibold uppercase tracking-wide ${newCount > 0 ? "text-[#D4863E]" : "text-slate-400"}`}>
+              {newCount > 0 ? "Waiting for you" : "New Leads"}
+            </span>
           </div>
           <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
             {newCount}
           </div>
-          {newCount > 0 && (
-            <p className="text-[11px] text-green-600 font-semibold mt-1">Action needed</p>
+          {newCount > 0 ? (
+            <p className="text-[12px] text-[#D4863E] font-semibold mt-2 flex items-center gap-1">
+              {newCount} homeowner{newCount > 1 ? "s" : ""} waiting for your call
+              <ChevronRight className="w-3.5 h-3.5" />
+            </p>
+          ) : (
+            <p className="text-[11px] text-slate-400 mt-1">All caught up</p>
           )}
-        </div>
+        </a>
 
-        {/* Avg Response */}
-        <div className="rounded-xl bg-white border border-[#e2e8f0] p-5">
+        {/* Response Speed — gamified */}
+        <div className="rounded-xl bg-white border border-[#e2e8f0] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Avg Response</span>
+            <Zap className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Response Speed</span>
           </div>
           <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
             {avgResponse || "—"}
           </div>
-          {avgResponse && (
-            <div className="inline-flex items-center gap-1 mt-2 text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-md">
+          {avgResponse ? (
+            <p className="text-[12px] text-emerald-600 font-semibold mt-2 flex items-center gap-1">
               <Zap className="w-3 h-3" />
-              Top 10%
-            </div>
+              Faster than 90% of roofers
+            </p>
+          ) : (
+            <p className="text-[11px] text-slate-400 mt-1">Respond to your first lead to start tracking</p>
           )}
         </div>
 
-        {/* Revenue */}
-        <div className="rounded-xl bg-white border border-[#e2e8f0] p-5">
+        {/* Open Estimates — money on the table */}
+        <a
+          href="/dashboard/leads"
+          className="rounded-xl bg-white border border-[#e2e8f0] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        >
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Revenue (Won)</span>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Open Estimates</span>
           </div>
           <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
-            {revenue > 0 ? `$${(revenue / 1000).toFixed(1)}K` : "$0"}
+            {pipelineValue > 0 ? `$${(pipelineValue / 1000).toFixed(1)}K` : "$0"}
           </div>
-          {wonCount > 0 && (
-            <p className="text-[11px] text-slate-400 mt-1">{wonCount} closed job{wonCount > 1 ? "s" : ""}</p>
+          {pipelineValue > 0 ? (
+            <p className="text-[12px] text-slate-500 font-medium mt-2 flex items-center gap-1">
+              {leads.filter((l) => l.status !== "lost" && l.status !== "won" && l.estimate_low).length} estimates waiting for follow-up
+              <ChevronRight className="w-3.5 h-3.5" />
+            </p>
+          ) : (
+            <p className="text-[11px] text-slate-400 mt-1">Estimates will appear as leads come in</p>
           )}
-        </div>
+        </a>
       </div>
 
       {/* Review & SMS metrics */}
