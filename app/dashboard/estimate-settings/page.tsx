@@ -394,7 +394,7 @@ export default function EstimateSettingsPage() {
           </button>
         </div>
         <p className="text-sm text-[#1B3A4B]/50 mb-4">
-          Show monthly payment estimates on your PDF reports and widget. Only enable if you offer financing.
+          Show a &ldquo;Financing Available&rdquo; badge on your PDF reports and widget. Only enable if you offer financing.
         </p>
 
         {financingEnabled && (
@@ -419,29 +419,13 @@ export default function EstimateSettingsPage() {
             </label>
 
             <label className="block">
-              <span className="text-xs text-[#1B3A4B]/50">Longest Term Available (months)</span>
-              <select
-                value={financingTermMonths}
-                onChange={(e) => setFinancingTermMonths(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-gray-200/60 px-3 py-2 text-[#1B3A4B] focus:border-[#D4863E] focus:outline-none focus:ring-1 focus:ring-[#D4863E]"
-              >
-                <option value="">Don&apos;t show term length</option>
-                <option value="60">60 months (5 yr)</option>
-                <option value="84">84 months (7 yr)</option>
-                <option value="120">120 months (10 yr)</option>
-                <option value="144">144 months (12 yr)</option>
-                <option value="180">180 months (15 yr)</option>
-              </select>
-            </label>
-
-            <label className="block">
               <span className="text-xs text-[#1B3A4B]/50">Custom Note (shown on PDF)</span>
               <input
                 type="text"
                 value={financingNote}
                 onChange={(e) => setFinancingNote(e.target.value)}
                 className="mt-1 block w-full rounded-lg border border-gray-200/60 px-3 py-2 text-[#1B3A4B] placeholder-[#1B3A4B]/30 focus:border-[#D4863E] focus:outline-none focus:ring-1 focus:ring-[#D4863E]"
-                placeholder="e.g. Subject to credit approval. Rates may vary."
+                placeholder="e.g. Subject to credit approval. Ask about 0% APR options."
               />
             </label>
           </div>
