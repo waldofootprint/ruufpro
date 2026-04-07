@@ -7,7 +7,7 @@
 import { THEME } from "./theme";
 import { motion } from "framer-motion";
 import type { ContractorSiteData } from "./types";
-import EstimateWidgetV3 from "@/components/estimate-widget-v3";
+import EstimateWidgetV4 from "@/components/estimate-widget-v4";
 
 type EstimateSectionProps = Pick<
   ContractorSiteData,
@@ -91,10 +91,11 @@ export default function EstimateSection({
           overflow: "hidden",
         }}
       >
-        <EstimateWidgetV3
+        <EstimateWidgetV4
           contractorId={contractorId}
           contractorName={businessName}
           contractorPhone={phone}
+          variant="light"
         />
 
         {/* Privacy badge — inside the card */}

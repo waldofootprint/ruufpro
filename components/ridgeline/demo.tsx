@@ -39,12 +39,13 @@ export default function RidgelineDemo() {
           </p>
         </div>
 
-        {/* Widget container — single dark card, no nesting */}
-        <div className="max-w-[540px] mx-auto bg-[#1B3A4B] rounded-[2rem] shadow-[0_25px_60px_rgba(27,58,75,0.35)] px-6 py-8 md:px-8 md:py-10">
+        {/* Widget — light variant, no wrapper card needed */}
+        <div className="max-w-[540px] mx-auto">
           <EstimateWidgetV4
             contractorId="c2a1286d-4faa-444a-b5b7-99f592359f80"
             contractorName="Demo Roofing Co"
             contractorPhone="(555) 123-4567"
+            variant="light"
           />
         </div>
 

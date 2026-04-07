@@ -17,7 +17,67 @@ import { ArrowLeft, ArrowRight, Download, Info, Check, Phone } from "lucide-reac
 import { usePlacesAutocomplete } from "@/lib/use-places-autocomplete";
 import SatelliteView from "@/components/satellite-view";
 
-// ----- GLASS COLOR SYSTEM -----
+// ----- LIGHT COLOR SYSTEM (for light backgrounds) -----
+const LIGHT = {
+  // Text
+  text: "#1A1A2E",
+  textSecondary: "#5A5A6E",
+  textTertiary: "#8A8A9A",
+  // Surfaces
+  container: "rgba(255,255,255,0.92)",
+  containerBorder: "#E2E2EA",
+  inputBg: "#F4F4F8",
+  inputBgFocus: "#EFEFF4",
+  inputBorder: "#D8D8E2",
+  inputBorderFocus: "#1E3A5F",
+  // Cards
+  cardBg: "#F7F7FB",
+  cardBorder: "#E2E2EA",
+  cardHoverBg: "#F0F0F6",
+  cardHoverBorder: "#C8C8D4",
+  cardSelectedBg: "#EEF2F8",
+  cardSelectedBorder: "#1E3A5F",
+  // Buttons
+  primaryBg: "#1E3A5F",
+  primaryText: "#FFFFFF",
+  secondaryBg: "transparent",
+  secondaryBorder: "#D8D8E2",
+  secondaryText: "#5A5A6E",
+  // Progress
+  trackBg: "#E2E2EA",
+  fillBg: "#1E3A5F",
+  fillGlow: "rgba(30,58,95,0.2)",
+  // Pills
+  pillBg: "#F4F4F8",
+  pillBorder: "#E2E2EA",
+  pillText: "#6B6B7B",
+  pillSelectedBg: "#EEF2F8",
+  pillSelectedBorder: "#1E3A5F",
+  pillSelectedText: "#1E3A5F",
+  // Utility
+  separator: "#E8E8EE",
+  red: "#DC2626",
+  green: "#16A34A",
+};
+
+const LIGHT_SHADOW = {
+  container: "0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
+  inputInset: "inset 0 1px 2px rgba(0,0,0,0.04)",
+  inputFocus: "inset 0 1px 2px rgba(0,0,0,0.04), 0 0 0 3px rgba(30,58,95,0.1)",
+  cardRaised: "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)",
+  cardHover: "0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
+  cardSelected: "0 0 0 2px #1E3A5F, 0 2px 8px rgba(30,58,95,0.1)",
+  btnPrimary: "0 4px 14px rgba(30,58,95,0.25), 0 1px 3px rgba(0,0,0,0.08)",
+  btnPrimaryHover: "0 6px 20px rgba(30,58,95,0.3), 0 2px 4px rgba(0,0,0,0.08)",
+  btnPrimaryActive: "0 2px 8px rgba(30,58,95,0.2)",
+  btnSecondary: "0 1px 3px rgba(0,0,0,0.04)",
+  pillRaised: "0 1px 3px rgba(0,0,0,0.04)",
+  pillSelected: "0 0 0 2px #1E3A5F",
+  trackInset: "inset 0 1px 2px rgba(0,0,0,0.06)",
+  fillGlow: "none",
+};
+
+// ----- GLASS COLOR SYSTEM (for dark backgrounds) -----
 const GLASS = {
   // Text
   text: "#f5f5f7",
@@ -83,6 +143,7 @@ interface EstimateWidgetProps {
   contractorName: string;
   contractorPhone: string;
   accentColor?: string;
+  variant?: "dark" | "light";
 }
 
 // ----- STEP DATA -----
@@ -195,11 +256,18 @@ const stepVariants = {
 };
 
 // ----- TIER BADGE COLORS -----
-const TIER_COLORS: Record<string, { bg: string; text: string }> = {
+const TIER_COLORS_DARK: Record<string, { bg: string; text: string }> = {
   Good: { bg: "rgba(48,209,88,0.2)", text: "#30d158" },
   Better: { bg: "rgba(100,160,255,0.2)", text: "#64a0ff" },
   Best: { bg: "rgba(255,214,10,0.2)", text: "#ffd60a" },
   Premium: { bg: "rgba(191,90,242,0.2)", text: "#bf5af2" },
+};
+
+const TIER_COLORS_LIGHT: Record<string, { bg: string; text: string }> = {
+  Good: { bg: "#ECFDF5", text: "#059669" },
+  Better: { bg: "#EFF6FF", text: "#2563EB" },
+  Best: { bg: "#FFF7ED", text: "#D97706" },
+  Premium: { bg: "#FAF5FF", text: "#7C3AED" },
 };
 
 // ----- MAIN WIDGET -----
@@ -208,7 +276,10 @@ export default function EstimateWidgetV4({
   contractorId,
   contractorName,
   contractorPhone,
+  variant = "dark",
 }: EstimateWidgetProps) {
+  const C = variant === "light" ? LIGHT : GLASS;
+  const S = variant === "light" ? LIGHT_SHADOW : SHADOW;
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -218,7 +289,6 @@ export default function EstimateWidgetV4({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [addressSelectedFromDropdown, setAddressSelectedFromDropdown] = useState(false);
   const [propertyCoords, setPropertyCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [buildingPolygon, setBuildingPolygon] = useState<{ lat: number; lng: number }[] | null>(null);
   const { suggestions, search: searchPlaces, clearSuggestions, isLoaded: placesLoaded, getPlaceDetails } = usePlacesAutocomplete();
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [pitchCategory, setPitchCategory] = useState("");
@@ -341,23 +411,23 @@ export default function EstimateWidgetV4({
 
   // Shared input style
   const inputStyle = {
-    color: GLASS.text,
-    background: GLASS.inputBg,
-    border: `1px solid ${GLASS.inputBorder}`,
-    boxShadow: SHADOW.inputInset,
+    color: C.text,
+    background: C.inputBg,
+    border: `1px solid ${C.inputBorder}`,
+    boxShadow: S.inputInset,
     letterSpacing: "-0.022em",
   };
 
   const inputFocusHandlers = {
     onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
-      e.currentTarget.style.background = GLASS.inputBgFocus;
-      e.currentTarget.style.borderColor = GLASS.inputBorderFocus;
-      e.currentTarget.style.boxShadow = SHADOW.inputFocus;
+      e.currentTarget.style.background = C.inputBgFocus;
+      e.currentTarget.style.borderColor = C.inputBorderFocus;
+      e.currentTarget.style.boxShadow = S.inputFocus;
     },
     onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
-      e.currentTarget.style.background = GLASS.inputBg;
-      e.currentTarget.style.borderColor = GLASS.inputBorder;
-      e.currentTarget.style.boxShadow = SHADOW.inputInset;
+      e.currentTarget.style.background = C.inputBg;
+      e.currentTarget.style.borderColor = C.inputBorder;
+      e.currentTarget.style.boxShadow = S.inputInset;
     },
   };
 
@@ -371,11 +441,10 @@ export default function EstimateWidgetV4({
     <div
       className="mx-auto w-full max-w-[480px] overflow-hidden rounded-3xl"
       style={{
-        background: GLASS.container,
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        border: `1px solid ${GLASS.containerBorder}`,
-        boxShadow: SHADOW.container,
+        background: C.container,
+        ...(variant === "dark" ? { backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" } : {}),
+        border: `1px solid ${C.containerBorder}`,
+        boxShadow: S.container,
         fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif',
       }}
     >
@@ -386,11 +455,11 @@ export default function EstimateWidgetV4({
           <div className="mb-6">
             <div
               className="h-[4px] rounded-full overflow-hidden"
-              style={{ background: GLASS.trackBg, boxShadow: SHADOW.trackInset }}
+              style={{ background: C.trackBg, boxShadow: S.trackInset }}
             >
               <motion.div
                 className="h-full rounded-full"
-                style={{ background: GLASS.fillBg, boxShadow: SHADOW.fillGlow }}
+                style={{ background: C.fillBg, boxShadow: S.fillGlow }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
               />
@@ -406,20 +475,20 @@ export default function EstimateWidgetV4({
             whileTap={{ scale: 0.97 }}
             className="flex items-center gap-1.5 text-[14px] mb-5 -ml-0.5 px-3 py-1.5 rounded-lg transition-colors duration-300"
             style={{
-              color: GLASS.secondaryText,
-              background: GLASS.secondaryBg,
-              border: `1px solid ${GLASS.secondaryBorder}`,
+              color: C.secondaryText,
+              background: C.secondaryBg,
+              border: `1px solid ${C.secondaryBorder}`,
               letterSpacing: "-0.016em",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = "rgba(255,255,255,0.85)";
-              e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
-              e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+              e.currentTarget.style.color = variant === "light" ? C.text : "rgba(255,255,255,0.85)";
+              e.currentTarget.style.borderColor = variant === "light" ? "#B8B8C4" : "rgba(255,255,255,0.3)";
+              e.currentTarget.style.background = variant === "light" ? "#F0F0F6" : "rgba(255,255,255,0.1)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = GLASS.secondaryText;
-              e.currentTarget.style.borderColor = GLASS.secondaryBorder;
-              e.currentTarget.style.background = GLASS.secondaryBg;
+              e.currentTarget.style.color = C.secondaryText;
+              e.currentTarget.style.borderColor = C.secondaryBorder;
+              e.currentTarget.style.background = C.secondaryBg;
             }}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -432,9 +501,9 @@ export default function EstimateWidgetV4({
           <div
             className="mb-5 rounded-xl px-4 py-3 text-[14px] flex items-start gap-2.5"
             style={{
-              background: "rgba(255,69,58,0.15)",
-              color: GLASS.red,
-              border: "1px solid rgba(255,69,58,0.25)",
+              background: variant === "light" ? "#FEF2F2" : "rgba(255,69,58,0.15)",
+              color: C.red,
+              border: variant === "light" ? "1px solid #FECACA" : "1px solid rgba(255,69,58,0.25)",
             }}
           >
             <Info className="w-4 h-4 shrink-0 mt-0.5" />
@@ -457,24 +526,24 @@ export default function EstimateWidgetV4({
         {/* ===== STEP 1: Landing ===== */}
         {step === 1 && (
           <div className="text-center py-8">
-            <p className="text-[12px] font-semibold uppercase mb-3" style={{ color: GLASS.textTertiary, letterSpacing: "0.06em" }}>
+            <p className="text-[12px] font-semibold uppercase mb-3" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>
               {contractorName}
             </p>
-            <h1 className="text-[28px] font-semibold mb-3" style={{ color: GLASS.text, letterSpacing: "-0.003em", lineHeight: 1.1 }}>
+            <h1 className="text-[28px] font-semibold mb-3" style={{ color: C.text, letterSpacing: "-0.003em", lineHeight: 1.1 }}>
               Get a free instant estimate
             </h1>
-            <p className="text-[17px] max-w-xs mx-auto mb-10" style={{ color: GLASS.textSecondary, letterSpacing: "-0.022em", lineHeight: 1.47 }}>
+            <p className="text-[17px] max-w-xs mx-auto mb-10" style={{ color: C.textSecondary, letterSpacing: "-0.022em", lineHeight: 1.47 }}>
               Satellite-measured roof data combined with local pricing. Takes about 2 minutes.
             </p>
             <motion.button
               onClick={nextStep}
-              whileHover={{ y: -1, boxShadow: SHADOW.btnPrimaryHover }}
-              whileTap={{ y: 1, boxShadow: SHADOW.btnPrimaryActive }}
+              whileHover={{ y: -1, boxShadow: S.btnPrimaryHover }}
+              whileTap={{ y: 1, boxShadow: S.btnPrimaryActive }}
               className="w-full py-3 rounded-xl text-[17px] transition-colors duration-300"
               style={{
-                background: GLASS.primaryBg,
-                color: GLASS.primaryText,
-                boxShadow: SHADOW.btnPrimary,
+                background: C.primaryBg,
+                color: C.primaryText,
+                boxShadow: S.btnPrimary,
                 letterSpacing: "-0.022em",
                 fontWeight: 600,
                 minHeight: 44,
@@ -489,10 +558,10 @@ export default function EstimateWidgetV4({
         {step === 2 && (
           <div className="space-y-5">
             <div>
-              <h2 className="text-[21px] font-semibold mb-1" style={{ color: GLASS.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
+              <h2 className="text-[21px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
                 What&rsquo;s your address?
               </h2>
-              <p className="text-[14px]" style={{ color: GLASS.textSecondary, letterSpacing: "-0.016em" }}>
+              <p className="text-[14px]" style={{ color: C.textSecondary, letterSpacing: "-0.016em" }}>
                 We&rsquo;ll use satellite data to measure your roof.
               </p>
             </div>
@@ -510,22 +579,21 @@ export default function EstimateWidgetV4({
                   if (addressSelectedFromDropdown) {
                     setAddressSelectedFromDropdown(false);
                     setPropertyCoords(null);
-                    setBuildingPolygon(null);
                   }
                 }}
                 onFocus={(e) => {
                   if (suggestions.length > 0) setShowSuggestions(true);
-                  e.currentTarget.style.background = GLASS.inputBgFocus;
-                  e.currentTarget.style.borderColor = GLASS.inputBorderFocus;
+                  e.currentTarget.style.background = C.inputBgFocus;
+                  e.currentTarget.style.borderColor = C.inputBorderFocus;
                 }}
                 onBlur={(e) => {
                   // Delay hiding so clicks on suggestions register
                   setTimeout(() => setShowSuggestions(false), 200);
-                  e.currentTarget.style.background = GLASS.inputBg;
-                  e.currentTarget.style.borderColor = GLASS.inputBorder;
+                  e.currentTarget.style.background = C.inputBg;
+                  e.currentTarget.style.borderColor = C.inputBorder;
                 }}
                 placeholder={placesLoaded ? "Start typing your address..." : "123 Main St, City, State"}
-                className="w-full px-4 py-3 rounded-xl text-[17px] outline-none transition-all duration-300 placeholder:text-white/30"
+                className="w-full px-4 py-3 rounded-xl text-[17px] outline-none transition-all duration-300 placeholder:opacity-30"
                 style={inputStyle}
                 autoComplete="off"
               />
@@ -536,10 +604,10 @@ export default function EstimateWidgetV4({
                   ref={suggestionsRef}
                   className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden"
                   style={{
-                    background: "rgba(30,30,40,0.95)",
+                    background: variant === "light" ? "rgba(255,255,255,0.98)" : "rgba(30,30,40,0.95)",
                     backdropFilter: "blur(20px)",
-                    border: `1px solid ${GLASS.containerBorder}`,
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+                    border: `1px solid ${C.containerBorder}`,
+                    boxShadow: variant === "light" ? "0 8px 32px rgba(0,0,0,0.12)" : "0 8px 32px rgba(0,0,0,0.4)",
                   }}
                 >
                   {suggestions.map((s) => (
@@ -556,31 +624,12 @@ export default function EstimateWidgetV4({
                         const coords = await getPlaceDetails(s.placeId);
                         if (coords) {
                           setPropertyCoords(coords);
-                          // Fetch building outline in background
-                          fetch("/api/geocode-building", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              address: s.description,
-                              lat: coords.lat,
-                              lng: coords.lng,
-                            }),
-                          })
-                            .then((res) => res.json())
-                            .then((data) => {
-                              if (data.polygon) setBuildingPolygon(data.polygon);
-                              // Use geocoded coords for map center (aligns with building outline)
-                              if (data.lat && data.lng) {
-                                setPropertyCoords({ lat: data.lat, lng: data.lng });
-                              }
-                            })
-                            .catch(() => {});
                         }
                       }}
-                      className="w-full text-left px-4 py-3 text-[15px] transition-colors duration-150 hover:bg-white/10 flex items-start gap-3"
-                      style={{ color: GLASS.text, borderBottom: `1px solid ${GLASS.separator}` }}
+                      className={cn("w-full text-left px-4 py-3 text-[15px] transition-colors duration-150 flex items-start gap-3", variant === "light" ? "hover:bg-black/5" : "hover:bg-white/10")}
+                      style={{ color: C.text, borderBottom: `1px solid ${C.separator}` }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
                       </svg>
                       <span>{s.description}</span>
@@ -596,7 +645,6 @@ export default function EstimateWidgetV4({
                 <SatelliteView
                   lat={propertyCoords.lat}
                   lng={propertyCoords.lng}
-                  buildingPolygon={buildingPolygon}
                 />
               )}
             </AnimatePresence>
@@ -604,16 +652,16 @@ export default function EstimateWidgetV4({
             <motion.button
               onClick={nextStep}
               disabled={!addressValid}
-              whileHover={addressValid ? { y: -1, boxShadow: SHADOW.btnPrimaryHover } : undefined}
-              whileTap={addressValid ? { y: 1, boxShadow: SHADOW.btnPrimaryActive } : undefined}
+              whileHover={addressValid ? { y: -1, boxShadow: S.btnPrimaryHover } : undefined}
+              whileTap={addressValid ? { y: 1, boxShadow: S.btnPrimaryActive } : undefined}
               className={cn(
                 "w-full py-3 rounded-xl text-[17px] transition-all duration-300",
                 !addressValid ? "cursor-not-allowed opacity-40" : ""
               )}
               style={{
-                background: !addressValid ? GLASS.separator : GLASS.primaryBg,
-                color: !addressValid ? GLASS.textTertiary : GLASS.primaryText,
-                boxShadow: !addressValid ? "none" : SHADOW.btnPrimary,
+                background: !addressValid ? C.separator : C.primaryBg,
+                color: !addressValid ? C.textTertiary : C.primaryText,
+                boxShadow: !addressValid ? "none" : S.btnPrimary,
                 letterSpacing: "-0.022em", fontWeight: 600, minHeight: 44,
               }}
             >
@@ -626,10 +674,10 @@ export default function EstimateWidgetV4({
         {step === 3 && (
           <div className="space-y-5">
             <div>
-              <h2 className="text-[21px] font-semibold mb-1" style={{ color: GLASS.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
+              <h2 className="text-[21px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
                 How steep is your roof?
               </h2>
-              <p className="text-[14px]" style={{ color: GLASS.textSecondary, letterSpacing: "-0.016em" }}>
+              <p className="text-[14px]" style={{ color: C.textSecondary, letterSpacing: "-0.016em" }}>
                 Select the closest match.
               </p>
             </div>
@@ -645,28 +693,28 @@ export default function EstimateWidgetV4({
                     whileTap={{ scale: 0.97 }}
                     className="text-left rounded-xl p-4 transition-all duration-300"
                     style={{
-                      background: isSelected ? GLASS.cardSelectedBg : GLASS.cardBg,
-                      border: `1px solid ${isSelected ? GLASS.cardSelectedBorder : GLASS.cardBorder}`,
-                      boxShadow: isSelected ? SHADOW.cardSelected : SHADOW.cardRaised,
+                      background: isSelected ? C.cardSelectedBg : C.cardBg,
+                      border: `1px solid ${isSelected ? C.cardSelectedBorder : C.cardBorder}`,
+                      boxShadow: isSelected ? S.cardSelected : S.cardRaised,
                     }}
                     onMouseEnter={(e) => {
                       if (!isSelected) {
-                        e.currentTarget.style.background = GLASS.cardHoverBg;
-                        e.currentTarget.style.borderColor = GLASS.cardHoverBorder;
-                        e.currentTarget.style.boxShadow = SHADOW.cardHover;
+                        e.currentTarget.style.background = C.cardHoverBg;
+                        e.currentTarget.style.borderColor = C.cardHoverBorder;
+                        e.currentTarget.style.boxShadow = S.cardHover;
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isSelected) {
-                        e.currentTarget.style.background = GLASS.cardBg;
-                        e.currentTarget.style.borderColor = GLASS.cardBorder;
-                        e.currentTarget.style.boxShadow = SHADOW.cardRaised;
+                        e.currentTarget.style.background = C.cardBg;
+                        e.currentTarget.style.borderColor = C.cardBorder;
+                        e.currentTarget.style.boxShadow = S.cardRaised;
                       }
                     }}
                   >
-                    <div style={{ color: GLASS.textTertiary }} className="mb-2">{opt.icon}</div>
-                    <p className="text-[14px] font-semibold" style={{ color: GLASS.text }}>{opt.label}</p>
-                    <p className="text-[12px] mt-0.5" style={{ color: GLASS.textTertiary }}>{opt.description}</p>
+                    <div style={{ color: C.textTertiary }} className="mb-2">{opt.icon}</div>
+                    <p className="text-[14px] font-semibold" style={{ color: C.text }}>{opt.label}</p>
+                    <p className="text-[12px] mt-0.5" style={{ color: C.textTertiary }}>{opt.description}</p>
                   </motion.button>
                 );
               })}
@@ -678,10 +726,10 @@ export default function EstimateWidgetV4({
         {step === 4 && (
           <div className="space-y-5">
             <div>
-              <h2 className="text-[21px] font-semibold mb-1" style={{ color: GLASS.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
+              <h2 className="text-[21px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
                 What&rsquo;s currently on your roof?
               </h2>
-              <p className="text-[14px]" style={{ color: GLASS.textSecondary, letterSpacing: "-0.016em" }}>
+              <p className="text-[14px]" style={{ color: C.textSecondary, letterSpacing: "-0.016em" }}>
                 Select your current roofing material.
               </p>
             </div>
@@ -697,29 +745,29 @@ export default function EstimateWidgetV4({
                     whileTap={{ scale: 0.97 }}
                     className="text-left rounded-xl overflow-hidden transition-all duration-300"
                     style={{
-                      background: isSelected ? GLASS.cardSelectedBg : GLASS.cardBg,
-                      border: `1px solid ${isSelected ? GLASS.cardSelectedBorder : GLASS.cardBorder}`,
-                      boxShadow: isSelected ? SHADOW.cardSelected : SHADOW.cardRaised,
+                      background: isSelected ? C.cardSelectedBg : C.cardBg,
+                      border: `1px solid ${isSelected ? C.cardSelectedBorder : C.cardBorder}`,
+                      boxShadow: isSelected ? S.cardSelected : S.cardRaised,
                     }}
                     onMouseEnter={(e) => {
                       if (!isSelected) {
-                        e.currentTarget.style.borderColor = GLASS.cardHoverBorder;
-                        e.currentTarget.style.boxShadow = SHADOW.cardHover;
+                        e.currentTarget.style.borderColor = C.cardHoverBorder;
+                        e.currentTarget.style.boxShadow = S.cardHover;
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isSelected) {
-                        e.currentTarget.style.borderColor = GLASS.cardBorder;
-                        e.currentTarget.style.boxShadow = SHADOW.cardRaised;
+                        e.currentTarget.style.borderColor = C.cardBorder;
+                        e.currentTarget.style.boxShadow = S.cardRaised;
                       }
                     }}
                   >
-                    <div className="h-20 overflow-hidden" style={{ background: GLASS.cardBg }}>
+                    <div className="h-20 overflow-hidden" style={{ background: C.cardBg }}>
                       <img src={mat.image} alt={mat.label} className="w-full h-full object-cover opacity-85" />
                     </div>
                     <div className="px-3 py-2.5">
-                      <p className="text-[14px] font-semibold" style={{ color: GLASS.text }}>{mat.label}</p>
-                      <p className="text-[12px] mt-0.5" style={{ color: GLASS.textTertiary }}>{mat.description}</p>
+                      <p className="text-[14px] font-semibold" style={{ color: C.text }}>{mat.label}</p>
+                      <p className="text-[12px] mt-0.5" style={{ color: C.textTertiary }}>{mat.description}</p>
                     </div>
                   </motion.button>
                 );
@@ -732,7 +780,7 @@ export default function EstimateWidgetV4({
         {step === 5 && (
           <div className="space-y-7">
             <div>
-              <h2 className="text-[21px] font-semibold mb-1" style={{ color: GLASS.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
+              <h2 className="text-[21px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
                 When would you like to start?
               </h2>
               <div className="flex flex-wrap gap-2.5 mt-4">
@@ -746,10 +794,10 @@ export default function EstimateWidgetV4({
                       whileTap={{ scale: 0.97 }}
                       className="rounded-full px-5 py-2.5 text-[14px] font-medium transition-all duration-300"
                       style={{
-                        background: isSelected ? GLASS.pillSelectedBg : GLASS.pillBg,
-                        border: `1px solid ${isSelected ? GLASS.pillSelectedBorder : GLASS.pillBorder}`,
-                        color: isSelected ? GLASS.pillSelectedText : GLASS.pillText,
-                        boxShadow: isSelected ? SHADOW.pillSelected : SHADOW.pillRaised,
+                        background: isSelected ? C.pillSelectedBg : C.pillBg,
+                        border: `1px solid ${isSelected ? C.pillSelectedBorder : C.pillBorder}`,
+                        color: isSelected ? C.pillSelectedText : C.pillText,
+                        boxShadow: isSelected ? S.pillSelected : S.pillRaised,
                         fontWeight: isSelected ? 600 : 500,
                       }}
                     >
@@ -761,7 +809,7 @@ export default function EstimateWidgetV4({
             </div>
 
             <div>
-              <h3 className="text-[17px] font-semibold mb-1" style={{ color: GLASS.text, letterSpacing: "-0.022em" }}>
+              <h3 className="text-[17px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "-0.022em" }}>
                 Interested in financing?
               </h3>
               <div className="flex flex-wrap gap-2.5 mt-4">
@@ -775,10 +823,10 @@ export default function EstimateWidgetV4({
                       whileTap={{ scale: 0.97 }}
                       className="rounded-full px-5 py-2.5 text-[14px] font-medium transition-all duration-300"
                       style={{
-                        background: isSelected ? GLASS.pillSelectedBg : GLASS.pillBg,
-                        border: `1px solid ${isSelected ? GLASS.pillSelectedBorder : GLASS.pillBorder}`,
-                        color: isSelected ? GLASS.pillSelectedText : GLASS.pillText,
-                        boxShadow: isSelected ? SHADOW.pillSelected : SHADOW.pillRaised,
+                        background: isSelected ? C.pillSelectedBg : C.pillBg,
+                        border: `1px solid ${isSelected ? C.pillSelectedBorder : C.pillBorder}`,
+                        color: isSelected ? C.pillSelectedText : C.pillText,
+                        boxShadow: isSelected ? S.pillSelected : S.pillRaised,
                         fontWeight: isSelected ? 600 : 500,
                       }}
                     >
@@ -792,13 +840,13 @@ export default function EstimateWidgetV4({
             <motion.button
               onClick={nextStep}
               disabled={!timeline || !financing}
-              whileHover={timeline && financing ? { y: -1, boxShadow: SHADOW.btnPrimaryHover } : undefined}
-              whileTap={timeline && financing ? { y: 1, boxShadow: SHADOW.btnPrimaryActive } : undefined}
+              whileHover={timeline && financing ? { y: -1, boxShadow: S.btnPrimaryHover } : undefined}
+              whileTap={timeline && financing ? { y: 1, boxShadow: S.btnPrimaryActive } : undefined}
               className="w-full py-3 rounded-xl text-[17px] transition-all duration-300"
               style={{
-                background: !timeline || !financing ? GLASS.separator : GLASS.primaryBg,
-                color: !timeline || !financing ? GLASS.textTertiary : GLASS.primaryText,
-                boxShadow: !timeline || !financing ? "none" : SHADOW.btnPrimary,
+                background: !timeline || !financing ? C.separator : C.primaryBg,
+                color: !timeline || !financing ? C.textTertiary : C.primaryText,
+                boxShadow: !timeline || !financing ? "none" : S.btnPrimary,
                 letterSpacing: "-0.022em", fontWeight: 600, minHeight: 44,
                 cursor: !timeline || !financing ? "not-allowed" : "pointer",
                 opacity: !timeline || !financing ? 0.4 : 1,
@@ -813,10 +861,10 @@ export default function EstimateWidgetV4({
         {step === 6 && (
           <div className="space-y-5">
             <div>
-              <h2 className="text-[21px] font-semibold mb-1" style={{ color: GLASS.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
+              <h2 className="text-[21px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
                 Where should we send your estimate?
               </h2>
-              <p className="text-[14px]" style={{ color: GLASS.textSecondary, letterSpacing: "-0.016em" }}>
+              <p className="text-[14px]" style={{ color: C.textSecondary, letterSpacing: "-0.016em" }}>
                 We&rsquo;ll never share your information.
               </p>
             </div>
@@ -833,7 +881,7 @@ export default function EstimateWidgetV4({
                   value={field.value}
                   onChange={(e) => field.set(e.target.value)}
                   placeholder={field.placeholder}
-                  className="w-full px-4 py-3 rounded-xl text-[17px] outline-none transition-all duration-300 placeholder:text-white/30"
+                  className="w-full px-4 py-3 rounded-xl text-[17px] outline-none transition-all duration-300 placeholder:opacity-30"
                   style={inputStyle}
                   {...inputFocusHandlers}
                 />
@@ -847,18 +895,18 @@ export default function EstimateWidgetV4({
                   onClick={() => setAgreedToTerms(!agreedToTerms)}
                   className="mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center transition-all duration-200"
                   style={{
-                    background: agreedToTerms ? GLASS.cardSelectedBg : GLASS.inputBg,
-                    border: `1.5px solid ${agreedToTerms ? GLASS.cardSelectedBorder : GLASS.inputBorder}`,
+                    background: agreedToTerms ? C.cardSelectedBg : C.inputBg,
+                    border: `1.5px solid ${agreedToTerms ? C.cardSelectedBorder : C.inputBorder}`,
                     boxShadow: agreedToTerms ? "none" : "inset 1px 1px 2px rgba(0,0,0,0.1)",
                   }}
                 >
-                  {agreedToTerms && <Check className="w-3 h-3" style={{ color: GLASS.text }} />}
+                  {agreedToTerms && <Check className="w-3 h-3" style={{ color: C.text }} />}
                 </button>
-                <span className="text-[12px] leading-relaxed" style={{ color: GLASS.textSecondary }}>
+                <span className="text-[12px] leading-relaxed" style={{ color: C.textSecondary }}>
                   I agree to the{" "}
-                  <a href="/terms" target="_blank" style={{ color: "rgba(255,255,255,0.7)" }} className="hover:underline">Terms of Service</a> and{" "}
-                  <a href="/privacy" target="_blank" style={{ color: "rgba(255,255,255,0.7)" }} className="hover:underline">Privacy Policy</a>
-                  <span style={{ color: GLASS.red }} className="ml-0.5">*</span>
+                  <a href="/terms" target="_blank" style={{ color: variant === "light" ? "#1E3A5F" : "rgba(255,255,255,0.7)" }} className="hover:underline">Terms of Service</a> and{" "}
+                  <a href="/privacy" target="_blank" style={{ color: variant === "light" ? "#1E3A5F" : "rgba(255,255,255,0.7)" }} className="hover:underline">Privacy Policy</a>
+                  <span style={{ color: C.red }} className="ml-0.5">*</span>
                 </span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer group">
@@ -867,14 +915,14 @@ export default function EstimateWidgetV4({
                   onClick={() => setAgreedToSms(!agreedToSms)}
                   className="mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center transition-all duration-200"
                   style={{
-                    background: agreedToSms ? GLASS.cardSelectedBg : GLASS.inputBg,
-                    border: `1.5px solid ${agreedToSms ? GLASS.cardSelectedBorder : GLASS.inputBorder}`,
+                    background: agreedToSms ? C.cardSelectedBg : C.inputBg,
+                    border: `1.5px solid ${agreedToSms ? C.cardSelectedBorder : C.inputBorder}`,
                     boxShadow: agreedToSms ? "none" : "inset 1px 1px 2px rgba(0,0,0,0.1)",
                   }}
                 >
-                  {agreedToSms && <Check className="w-3 h-3" style={{ color: GLASS.text }} />}
+                  {agreedToSms && <Check className="w-3 h-3" style={{ color: C.text }} />}
                 </button>
-                <span className="text-[11px] leading-relaxed" style={{ color: GLASS.textTertiary }}>
+                <span className="text-[11px] leading-relaxed" style={{ color: C.textTertiary }}>
                   I consent to receive SMS messages from {contractorName}. Msg & data rates may apply. Reply STOP to unsubscribe.
                 </span>
               </label>
@@ -883,13 +931,13 @@ export default function EstimateWidgetV4({
             <motion.button
               onClick={handleSubmit}
               disabled={isSubmitDisabled}
-              whileHover={!isSubmitDisabled ? { y: -1, boxShadow: SHADOW.btnPrimaryHover } : undefined}
-              whileTap={!isSubmitDisabled ? { y: 1, boxShadow: SHADOW.btnPrimaryActive } : undefined}
+              whileHover={!isSubmitDisabled ? { y: -1, boxShadow: S.btnPrimaryHover } : undefined}
+              whileTap={!isSubmitDisabled ? { y: 1, boxShadow: S.btnPrimaryActive } : undefined}
               className="w-full py-3 rounded-xl text-[17px] transition-all duration-300 flex items-center justify-center gap-2"
               style={{
-                background: isSubmitDisabled ? GLASS.separator : GLASS.primaryBg,
-                color: isSubmitDisabled ? GLASS.textTertiary : GLASS.primaryText,
-                boxShadow: isSubmitDisabled ? "none" : SHADOW.btnPrimary,
+                background: isSubmitDisabled ? C.separator : C.primaryBg,
+                color: isSubmitDisabled ? C.textTertiary : C.primaryText,
+                boxShadow: isSubmitDisabled ? "none" : S.btnPrimary,
                 letterSpacing: "-0.022em", fontWeight: 600, minHeight: 44,
                 cursor: isSubmitDisabled ? "not-allowed" : "pointer",
                 opacity: isSubmitDisabled ? 0.4 : 1,
@@ -900,7 +948,7 @@ export default function EstimateWidgetV4({
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   className="w-5 h-5 border-2 rounded-full"
-                  style={{ borderColor: "rgba(27,58,75,0.3)", borderTopColor: GLASS.primaryText }}
+                  style={{ borderColor: variant === "light" ? "rgba(255,255,255,0.3)" : "rgba(27,58,75,0.3)", borderTopColor: C.primaryText }}
                 />
               ) : (
                 "Get my estimate"
@@ -913,10 +961,10 @@ export default function EstimateWidgetV4({
         {step === 7 && estimateData && (
           <div className="space-y-5 py-2">
             <div className="text-center">
-              <p className="text-[12px] font-semibold uppercase mb-2" style={{ color: GLASS.textTertiary, letterSpacing: "0.06em" }}>
+              <p className="text-[12px] font-semibold uppercase mb-2" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>
                 {estimateData.roof_data.is_satellite ? "Satellite-Measured" : "Estimated"} Roof Analysis
               </p>
-              <p className="text-[12px]" style={{ color: GLASS.textTertiary }}>
+              <p className="text-[12px]" style={{ color: C.textTertiary }}>
                 {estimateData.roof_data.detail_display}
               </p>
             </div>
@@ -925,27 +973,28 @@ export default function EstimateWidgetV4({
             <div className="space-y-3">
               {estimateData.estimates.map((est, i) => {
                 const isSelected = selectedMaterial === est.material;
-                const tierColor = TIER_COLORS[est.tier] || TIER_COLORS.Good;
+                const TC = variant === "light" ? TIER_COLORS_LIGHT : TIER_COLORS_DARK;
+                const tierColor = TC[est.tier] || TC.Good;
                 return (
                   <button
                     key={est.material}
                     onClick={() => setSelectedMaterial(est.material)}
                     className="w-full text-left rounded-xl p-4 transition-all duration-300"
                     style={{
-                      background: isSelected ? GLASS.cardSelectedBg : GLASS.cardBg,
-                      border: `1px solid ${isSelected ? GLASS.cardSelectedBorder : GLASS.cardBorder}`,
-                      boxShadow: isSelected ? SHADOW.cardSelected : SHADOW.cardRaised,
+                      background: isSelected ? C.cardSelectedBg : C.cardBg,
+                      border: `1px solid ${isSelected ? C.cardSelectedBorder : C.cardBorder}`,
+                      boxShadow: isSelected ? S.cardSelected : S.cardRaised,
                     }}
                     onMouseEnter={(e) => {
                       if (!isSelected) {
-                        e.currentTarget.style.background = GLASS.cardHoverBg;
-                        e.currentTarget.style.borderColor = GLASS.cardHoverBorder;
+                        e.currentTarget.style.background = C.cardHoverBg;
+                        e.currentTarget.style.borderColor = C.cardHoverBorder;
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isSelected) {
-                        e.currentTarget.style.background = GLASS.cardBg;
-                        e.currentTarget.style.borderColor = GLASS.cardBorder;
+                        e.currentTarget.style.background = C.cardBg;
+                        e.currentTarget.style.borderColor = C.cardBorder;
                       }
                     }}
                   >
@@ -962,19 +1011,19 @@ export default function EstimateWidgetV4({
                         >
                           {est.tier}
                         </span>
-                        <span className="text-[15px] font-semibold" style={{ color: GLASS.text }}>
+                        <span className="text-[15px] font-semibold" style={{ color: C.text }}>
                           {est.label}
                         </span>
                       </div>
                       {isSelected && (
-                        <Check className="w-4 h-4" style={{ color: GLASS.green }} />
+                        <Check className="w-4 h-4" style={{ color: C.green }} />
                       )}
                     </div>
 
                     {/* Price range */}
                     <p
                       className="text-[24px] font-semibold mb-2"
-                      style={{ color: GLASS.text, letterSpacing: "-0.003em" }}
+                      style={{ color: C.text, letterSpacing: "-0.003em" }}
                     >
                       {est.range_display}
                     </p>
@@ -982,16 +1031,16 @@ export default function EstimateWidgetV4({
                     {/* Specs row */}
                     <div className="flex gap-4">
                       <div>
-                        <p className="text-[10px] uppercase" style={{ color: GLASS.textTertiary, letterSpacing: "0.03em" }}>Warranty</p>
-                        <p className="text-[12px] font-medium" style={{ color: GLASS.textSecondary }}>{est.warranty}</p>
+                        <p className="text-[10px] uppercase" style={{ color: C.textTertiary, letterSpacing: "0.03em" }}>Warranty</p>
+                        <p className="text-[12px] font-medium" style={{ color: C.textSecondary }}>{est.warranty}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] uppercase" style={{ color: GLASS.textTertiary, letterSpacing: "0.03em" }}>Wind</p>
-                        <p className="text-[12px] font-medium" style={{ color: GLASS.textSecondary }}>{est.wind_rating}</p>
+                        <p className="text-[10px] uppercase" style={{ color: C.textTertiary, letterSpacing: "0.03em" }}>Wind</p>
+                        <p className="text-[12px] font-medium" style={{ color: C.textSecondary }}>{est.wind_rating}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] uppercase" style={{ color: GLASS.textTertiary, letterSpacing: "0.03em" }}>Lifespan</p>
-                        <p className="text-[12px] font-medium" style={{ color: GLASS.textSecondary }}>{est.lifespan}</p>
+                        <p className="text-[10px] uppercase" style={{ color: C.textTertiary, letterSpacing: "0.03em" }}>Lifespan</p>
+                        <p className="text-[12px] font-medium" style={{ color: C.textSecondary }}>{est.lifespan}</p>
                       </div>
                     </div>
                   </button>
@@ -1003,32 +1052,32 @@ export default function EstimateWidgetV4({
             <div
               className="rounded-xl px-4 py-3.5 flex gap-3"
               style={{
-                background: GLASS.cardBg,
-                border: `1px solid ${GLASS.cardBorder}`,
+                background: C.cardBg,
+                border: `1px solid ${C.cardBorder}`,
               }}
             >
-              <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: GLASS.textTertiary }} />
-              <p className="text-[12px] leading-relaxed" style={{ color: GLASS.textSecondary }}>
-                <strong style={{ color: GLASS.text }}>Note:</strong> These are ballpark estimates,
+              <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: C.textTertiary }} />
+              <p className="text-[12px] leading-relaxed" style={{ color: C.textSecondary }}>
+                <strong style={{ color: C.text }}>Note:</strong> These are ballpark estimates,
                 not final quotes. Actual price depends on roof condition, access, and
                 other factors assessed during a free inspection.
               </p>
             </div>
 
-            <div className="pt-2 space-y-3" style={{ borderTop: `1px solid ${GLASS.separator}` }}>
-              <p className="text-center text-[17px] font-semibold pt-3 mb-4" style={{ color: GLASS.text }}>
+            <div className="pt-2 space-y-3" style={{ borderTop: `1px solid ${C.separator}` }}>
+              <p className="text-center text-[17px] font-semibold pt-3 mb-4" style={{ color: C.text }}>
                 Want your exact price?
               </p>
 
               <motion.a
                 href={`tel:${contractorPhone.replace(/\D/g, "")}`}
-                whileHover={{ y: -1, boxShadow: SHADOW.btnPrimaryHover }}
-                whileTap={{ y: 1, boxShadow: SHADOW.btnPrimaryActive }}
+                whileHover={{ y: -1, boxShadow: S.btnPrimaryHover }}
+                whileTap={{ y: 1, boxShadow: S.btnPrimaryActive }}
                 className="w-full py-3 rounded-xl text-[17px] flex items-center justify-center gap-2 transition-all duration-300"
                 style={{
-                  background: GLASS.primaryBg,
-                  color: GLASS.primaryText,
-                  boxShadow: SHADOW.btnPrimary,
+                  background: C.primaryBg,
+                  color: C.primaryText,
+                  boxShadow: S.btnPrimary,
                   fontWeight: 600, minHeight: 44,
                 }}
               >
@@ -1066,10 +1115,10 @@ export default function EstimateWidgetV4({
                 }}
                 className="w-full py-3 rounded-xl text-[17px] flex items-center justify-center gap-2 transition-all duration-300"
                 style={{
-                  background: GLASS.secondaryBg,
-                  border: `1px solid ${GLASS.secondaryBorder}`,
-                  color: GLASS.secondaryText,
-                  boxShadow: SHADOW.btnSecondary,
+                  background: C.secondaryBg,
+                  border: `1px solid ${C.secondaryBorder}`,
+                  color: C.secondaryText,
+                  boxShadow: S.btnSecondary,
                   fontWeight: 500, minHeight: 44,
                 }}
               >
@@ -1079,24 +1128,24 @@ export default function EstimateWidgetV4({
 
             </div>
 
-            <div className="flex items-center justify-center gap-5 text-[12px]" style={{ color: GLASS.textTertiary }}>
+            <div className="flex items-center justify-center gap-5 text-[12px]" style={{ color: C.textTertiary }}>
               <span className="flex items-center gap-1">
-                <Check className="w-3.5 h-3.5" style={{ color: GLASS.green }} />
+                <Check className="w-3.5 h-3.5" style={{ color: C.green }} />
                 Free Inspection
               </span>
               <span className="flex items-center gap-1">
-                <Check className="w-3.5 h-3.5" style={{ color: GLASS.green }} />
+                <Check className="w-3.5 h-3.5" style={{ color: C.green }} />
                 No Obligation
               </span>
               <span className="flex items-center gap-1">
-                <Check className="w-3.5 h-3.5" style={{ color: GLASS.green }} />
+                <Check className="w-3.5 h-3.5" style={{ color: C.green }} />
                 Licensed & Insured
               </span>
             </div>
 
-            <p className="text-center text-[12px]" style={{ color: GLASS.textTertiary }}>
+            <p className="text-center text-[12px]" style={{ color: C.textTertiary }}>
               Powered by{" "}
-              <a href="https://ruufpro.com" style={{ color: "rgba(255,255,255,0.5)" }} className="hover:underline hover:text-white/70 transition-colors">
+              <a href="https://ruufpro.com" style={{ color: variant === "light" ? "#8A8A9A" : "rgba(255,255,255,0.5)" }} className="hover:underline transition-colors">
                 RuufPro
               </a>
             </p>

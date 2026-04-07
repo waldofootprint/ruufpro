@@ -13,7 +13,7 @@ import ScrollAnimation from "../scroll-animation";
 import ProofBar from "../contractor-sections/proof-bar";
 import Services from "../contractor-sections/services";
 import EstimateSection from "../contractor-sections/estimate-section";
-import EstimateWidgetV3 from "../estimate-widget-v3";
+import EstimateWidgetV4 from "../estimate-widget-v4";
 import AboutTrust from "../contractor-sections/about-trust";
 import Reviews from "../contractor-sections/reviews";
 import FAQ from "../contractor-sections/faq";
@@ -212,11 +212,11 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
                 overflow: "hidden",
               }}
             >
-              <EstimateWidgetV3
+              <EstimateWidgetV4
                 contractorId={props.contractorId}
                 contractorName={props.businessName}
                 contractorPhone={props.phone}
-                accentColor={THEME.accent}
+                variant="light"
               />
             </div>
           ) : (
