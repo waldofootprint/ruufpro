@@ -1029,26 +1029,6 @@ export default function EstimateWidgetV4({
                 Download Estimate PDF
               </motion.button>
 
-              {livingEstimateUrl && (
-                <motion.a
-                  href={livingEstimateUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full py-3 rounded-xl text-[17px] flex items-center justify-center gap-2 transition-all duration-300"
-                  style={{
-                    background: GLASS.secondaryBg,
-                    border: `1px solid ${GLASS.secondaryBorder}`,
-                    color: GLASS.secondaryText,
-                    boxShadow: SHADOW.btnSecondary,
-                    fontWeight: 500, minHeight: 44,
-                  }}
-                >
-                  <ArrowRight className="w-4 h-4" />
-                  View Interactive Estimate
-                </motion.a>
-              )}
             </div>
 
             <div className="flex items-center justify-center gap-5 text-[12px]" style={{ color: GLASS.textTertiary }}>
