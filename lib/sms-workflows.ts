@@ -64,9 +64,9 @@ export async function sendReviewRequest(
   const firstName = lead.name.split(" ")[0]; // Use first name only
   const smsBody =
     `Hi ${firstName}, thanks for choosing ${contractor.business_name}! ` +
-    `We'd love a quick review — it really helps us out.\n\n` +
+    `We'd love your feedback on our work. Share your experience here:\n\n` +
     `${reviewUrl}\n\n` +
-    `Reply STOP to opt out`;
+    `Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`;
 
   // Send it
   const smsResult = await sendSMS({
@@ -153,7 +153,8 @@ export async function sendMissedCallTextback(
   const smsBody =
     `Hey, this is ${contractor.business_name} — sorry I missed your call! ` +
     `I'm on a job right now. Can I call you back within the hour? ` +
-    `Or reply here with what you need.`;
+    `Or reply here with what you need.\n\n` +
+    `Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`;
 
   // Try to match the caller to an existing lead (by phone number)
   const { data: matchedLead } = await supabase
@@ -239,17 +240,24 @@ export async function sendLeadAutoResponse(
   const firstName = leadName.split(" ")[0];
   const smsBody =
     `Hi ${firstName}! This is ${contractor.business_name} — we just got your request and will call you shortly. ` +
-    `If you need us sooner, reply here or call us back. Talk soon!`;
+    `If you need us sooner, reply here or call us back. Talk soon!\n\n` +
+    `Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`;
 
-  // Try to match to an existing lead
+  // Try to match to an existing lead and check SMS consent
   const { data: matchedLead } = await supabase
     .from("leads")
-    .select("id")
+    .select("id, sms_consent")
     .eq("contractor_id", contractorId)
     .eq("phone", leadPhone)
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
+
+  // TCPA: only send auto-response if lead explicitly consented to SMS
+  if (!matchedLead?.sms_consent) {
+    console.log(`Lead auto-response skipped — no SMS consent for ${leadPhone}`);
+    return { success: false, error: "No SMS consent" };
+  }
 
   const smsResult = await sendSMS({
     to: leadPhone,

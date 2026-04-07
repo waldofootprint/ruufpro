@@ -9,10 +9,20 @@ export async function POST(request: NextRequest) {
   try {
     // Parse Twilio's URL-encoded webhook body
     const formData = await request.formData();
-    const from = formData.get("From") as string;
-    const to = formData.get("To") as string;
-    const body = formData.get("Body") as string;
-    const messageSid = formData.get("MessageSid") as string;
+
+    // Validate request is actually from Twilio (prevents forged payloads)
+    const { validateTwilioWebhook, formDataToParams } = await import("@/lib/twilio");
+    const params = formDataToParams(formData);
+    const isValid = await validateTwilioWebhook(request, params);
+    if (!isValid) {
+      console.warn("SMS webhook: invalid Twilio signature — rejecting");
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    const from = params.From;
+    const to = params.To;
+    const body = params.Body;
+    const messageSid = params.MessageSid;
 
     if (!from || !to) {
       return new NextResponse("<Response/>", {
@@ -20,11 +30,6 @@ export async function POST(request: NextRequest) {
         headers: { "Content-Type": "text/xml" },
       });
     }
-
-    // Optional: validate Twilio signature in production
-    // In production, use twilio.validateRequest() with the auth token
-    // and the full URL + params to verify requests are from Twilio.
-    // Skipped for now — add when Twilio account is live.
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,13 +47,30 @@ export async function POST(request: NextRequest) {
 
     // Check for opt-out keywords (STOP, UNSUBSCRIBE, etc.)
     const optOutKeywords = ["stop", "unsubscribe", "cancel", "quit", "end"];
-    const isOptOut =
-      body && optOutKeywords.includes(body.trim().toLowerCase());
+    const normalizedBody = body?.trim().toLowerCase() || "";
+    const isOptOut = optOutKeywords.includes(normalizedBody);
+
+    // Check for HELP/INFO keywords — carriers require a response
+    const helpKeywords = ["help", "info"];
+    const isHelp = helpKeywords.includes(normalizedBody);
 
     if (isOptOut && contractorId) {
       // Handle opt-out: mark the phone number as opted out
       const { handleOptOut } = await import("@/lib/twilio");
       await handleOptOut(from, contractorId);
+    }
+
+    // Look up contractor info for HELP response
+    let contractorName = "";
+    let contractorPhone = "";
+    if (isHelp && contractorId) {
+      const { data: contractorInfo } = await supabase
+        .from("contractors")
+        .select("business_name, phone")
+        .eq("id", contractorId)
+        .single();
+      contractorName = contractorInfo?.business_name || "";
+      contractorPhone = contractorInfo?.phone || "";
     }
 
     // Log the inbound message
@@ -58,14 +80,19 @@ export async function POST(request: NextRequest) {
       from_number: from,
       to_number: to,
       body: body || "",
-      message_type: isOptOut ? "opt_out" : "inbound",
+      message_type: isOptOut ? "opt_out" : isHelp ? "help" : "inbound",
       twilio_sid: messageSid || null,
       status: "received",
     });
 
-    // Return empty TwiML response (no auto-reply for now)
-    // To add an auto-reply later, use: <Response><Message>Your reply</Message></Response>
-    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`;
+    // Build TwiML response
+    let twiml: string;
+    if (isHelp && contractorName) {
+      // Carriers require a response to HELP keyword
+      twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${contractorName}: For help, call ${contractorPhone}. Reply STOP to unsubscribe.</Message></Response>`;
+    } else {
+      twiml = `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`;
+    }
 
     return new NextResponse(twiml, {
       status: 200,

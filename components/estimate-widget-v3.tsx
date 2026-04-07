@@ -596,8 +596,8 @@ export default function EstimateWidgetV3({
                 />
                 <span className="text-[12px] leading-relaxed" style={{ color: APPLE.textSecondary }}>
                   I agree to the{" "}
-                  <a href="#" style={{ color: APPLE.blue }} className="hover:underline">Terms of Service</a> and{" "}
-                  <a href="#" style={{ color: APPLE.blue }} className="hover:underline">Privacy Policy</a>
+                  <a href="/terms" target="_blank" style={{ color: APPLE.blue }} className="hover:underline">Terms of Service</a> and{" "}
+                  <a href="/privacy" target="_blank" style={{ color: APPLE.blue }} className="hover:underline">Privacy Policy</a>
                   <span style={{ color: APPLE.red }} className="ml-0.5">*</span>
                 </span>
               </label>
