@@ -16,7 +16,9 @@ export interface ROIOutputs {
 
 export function calculateROI(inputs: ROIInputs): ROIOutputs {
   const { missedCallsPerWeek, avgJobValue, closeRate } = inputs;
-  const monthlyMissedCalls = missedCallsPerWeek * 4.33;
+  // 85% of callers who can't reach you won't call back (industry stat)
+  const lostLeadsPerWeek = missedCallsPerWeek * 0.85;
+  const monthlyMissedCalls = lostLeadsPerWeek * 4.33;
   const convertedCalls = monthlyMissedCalls * (closeRate / 100);
   const monthlyLost = Math.round(convertedCalls * avgJobValue);
   const yearlyLost = monthlyLost * 12;
@@ -27,7 +29,7 @@ export function calculateROI(inputs: ROIInputs): ROIOutputs {
 }
 
 export const SLIDER_CONFIG = {
-  missedCalls: { min: 1, max: 15, step: 1, default: 5 as number, label: "Missed calls per week" },
+  missedCalls: { min: 1, max: 20, step: 1, default: 5 as number, label: "Missed calls per week" },
   jobValue: { min: 2000, max: 25000, step: 500, default: 5000 as number, label: "Average job value" },
-  closeRate: { min: 10, max: 50, step: 5, default: 30 as number, label: "Close rate" },
+  closeRate: { min: 10, max: 60, step: 5, default: 30 as number, label: "Close rate" },
 };

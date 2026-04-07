@@ -1,4 +1,4 @@
-import { Component } from "@/components/ui/hero";
+import Component from "@/components/ui/hero";
 import RidgelineGoogleFilter from "@/components/ridgeline/google-filter";
 import RidgelineSocialProof from "@/components/ridgeline/social-proof";
 import RidgelineWhatsTheCatch from "@/components/ridgeline/whats-the-catch";

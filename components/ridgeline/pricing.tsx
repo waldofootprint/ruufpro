@@ -149,16 +149,11 @@ export default function RidgelinePricing() {
         </div>
 
         {/* Cards */}
-        <motion.div
+        <div
           className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto items-start"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
         >
           {/* Free Card — Your Website */}
-          <motion.div
-            variants={cardVariant}
+          <div
             className="rounded-[2rem] overflow-hidden flex flex-col h-full transition-all duration-500 hover:-translate-y-1 bg-white/10 backdrop-blur-md border border-white/20"
           >
             <div className="p-7 pb-5">
@@ -236,11 +231,10 @@ export default function RidgelinePricing() {
                 ))}
               </ul>
             </div>
-          </motion.div>
+          </div>
 
           {/* Pro Card — Your Leads */}
-          <motion.div
-            variants={cardVariantHighlighted}
+          <div
             className="rounded-[2rem] overflow-hidden flex flex-col h-full transition-all duration-500 hover:-translate-y-1 bg-white/15 backdrop-blur-md border-2 border-[#D4863E]/60 shadow-2xl shadow-[#D4863E]/10"
           >
             <div className="flex justify-center">
@@ -319,11 +313,10 @@ export default function RidgelinePricing() {
                 ))}
               </ul>
             </div>
-          </motion.div>
+          </div>
 
           {/* Growth Card — Your Growth */}
-          <motion.div
-            variants={cardVariant}
+          <div
             className="rounded-[2rem] overflow-hidden flex flex-col h-full transition-all duration-500 hover:-translate-y-1 bg-white/10 backdrop-blur-md border border-[#D4863E]/30"
           >
             <div className="flex justify-center">
@@ -382,15 +375,11 @@ export default function RidgelinePricing() {
                 ))}
               </ul>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
 
         {/* ROI Math */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.3 }}
+        <div
           className="max-w-2xl mx-auto mt-12 bg-white/5 backdrop-blur-sm border border-white/10 rounded-[2rem] p-8 text-center"
         >
           <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-3">
@@ -401,14 +390,10 @@ export default function RidgelinePricing() {
             {" "}One job from your website pays for{" "}
             <span className="font-black">over 4 years</span> of Pro.
           </p>
-        </motion.div>
+        </div>
 
         {/* Risk Reversal */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.35 }}
+        <div
           className="max-w-2xl mx-auto mt-8 bg-[#D4863E]/10 border border-[#D4863E]/25 rounded-[2rem] p-8 text-center"
         >
           <p className="text-white text-lg md:text-xl font-black mb-2">
@@ -419,21 +404,17 @@ export default function RidgelinePricing() {
             fees, no calls, no questions. One roofing job covers over 4 years of Pro.
             We bet you&apos;ll get one in the first month.
           </p>
-        </motion.div>
+        </div>
 
         {/* Bottom transparency note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
+        <p
           className="text-center text-sm text-white/30 mt-8 max-w-xl mx-auto"
         >
           The free website is genuinely free — no credit card, no trial, no catch.
           We make money when you choose Pro at {proPrice}/mo or Growth at {growthPrice}/mo.
           No per-lead fees, no setup costs, no contracts.
           No salesperson will ever call you.
-        </motion.p>
+        </p>
       </div>
     </section>
   );

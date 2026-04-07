@@ -42,7 +42,7 @@ function Navbar() {
             style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }}
           />
         </div>
-        <div className="bg-[#C75B39] text-white font-black text-xs md:text-sm px-3 py-1.5 rounded-full shadow-sm">
+        <div className="bg-[#D4863E] text-white font-black text-xs md:text-sm px-3 py-1.5 rounded-full shadow-sm">
           PRO
         </div>
       </div>
@@ -64,7 +64,7 @@ function Navbar() {
       <div className="flex items-center gap-3">
         <Link
           href="/signup"
-          className="px-6 py-2.5 rounded-full bg-[#C75B39] text-white text-sm font-bold hover:bg-[#A04830] transition-colors shadow-sm"
+          className="px-6 py-2.5 rounded-full bg-[#D4863E] text-white text-sm font-bold hover:bg-[#c0763a] transition-colors shadow-sm"
         >
           Get My Free Site
         </Link>
@@ -98,6 +98,36 @@ function Navbar() {
   );
 }
 
+/* ─── Custom Slider (cross-browser consistent) ─── */
+function HeroSlider({ label, value, displayValue, min, max, step, onChange, last = false }: {
+  label: string; value: number; displayValue: string; min: number; max: number; step: number; onChange: (v: number) => void; last?: boolean;
+}) {
+  const pct = ((value - min) / (max - min)) * 100;
+  return (
+    <div className={last ? "mb-6" : "mb-4"}>
+      <div className="flex justify-between mb-2">
+        <span className="text-xs font-semibold text-[#1A1A1A]/60 uppercase tracking-wide">{label}</span>
+        <span className="text-sm font-bold text-[#1A1A1A] tabular-nums">{displayValue}</span>
+      </div>
+      <div className="relative h-1.5 bg-[#1A1A1A]/10 rounded-full">
+        <div
+          className="absolute left-0 top-0 h-full bg-[#C75B39] rounded-full transition-[width] duration-100"
+          style={{ width: `${pct}%` }}
+        />
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="absolute -top-2 left-0 w-full h-[22px] appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#C75B39] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md"
+        />
+      </div>
+    </div>
+  );
+}
+
 /* ─── Missed Call Calculator ─── */
 function MissedCallCalculator() {
   const [missedPerWeek, setMissedPerWeek] = useState(5);
@@ -114,66 +144,32 @@ function MissedCallCalculator() {
         </p>
 
         {/* Missed calls per week */}
-        <label className="block mb-4">
-          <span className="text-xs font-semibold text-[#1A1A1A]/60 uppercase tracking-wide">
-            Missed calls per week
-          </span>
-          <div className="mt-2 flex items-center gap-3">
-            <input
-              type="range"
-              min={1}
-              max={20}
-              value={missedPerWeek}
-              onChange={(e) => setMissedPerWeek(Number(e.target.value))}
-              className="flex-1 accent-[#C75B39] h-2"
-            />
-            <span className="text-sm font-bold text-[#1A1A1A] w-8 text-right tabular-nums">
-              {missedPerWeek}
-            </span>
-          </div>
-        </label>
+        <HeroSlider
+          label="Missed calls per week"
+          value={missedPerWeek}
+          displayValue={`${missedPerWeek}`}
+          min={1} max={20} step={1}
+          onChange={setMissedPerWeek}
+        />
 
         {/* Avg job value */}
-        <label className="block mb-4">
-          <span className="text-xs font-semibold text-[#1A1A1A]/60 uppercase tracking-wide">
-            Average job value
-          </span>
-          <div className="mt-2 flex items-center gap-3">
-            <input
-              type="range"
-              min={2000}
-              max={25000}
-              step={500}
-              value={avgJobValue}
-              onChange={(e) => setAvgJobValue(Number(e.target.value))}
-              className="flex-1 accent-[#C75B39] h-2"
-            />
-            <span className="text-sm font-bold text-[#1A1A1A] w-20 text-right tabular-nums">
-              ${avgJobValue.toLocaleString()}
-            </span>
-          </div>
-        </label>
+        <HeroSlider
+          label="Average job value"
+          value={avgJobValue}
+          displayValue={`$${avgJobValue.toLocaleString()}`}
+          min={2000} max={25000} step={500}
+          onChange={setAvgJobValue}
+        />
 
         {/* Close rate */}
-        <label className="block mb-6">
-          <span className="text-xs font-semibold text-[#1A1A1A]/60 uppercase tracking-wide">
-            Your close rate
-          </span>
-          <div className="mt-2 flex items-center gap-3">
-            <input
-              type="range"
-              min={10}
-              max={60}
-              step={5}
-              value={closeRate}
-              onChange={(e) => setCloseRate(Number(e.target.value))}
-              className="flex-1 accent-[#C75B39] h-2"
-            />
-            <span className="text-sm font-bold text-[#1A1A1A] w-12 text-right tabular-nums">
-              {closeRate}%
-            </span>
-          </div>
-        </label>
+        <HeroSlider
+          label="Your close rate"
+          value={closeRate}
+          displayValue={`${closeRate}%`}
+          min={10} max={60} step={5}
+          onChange={setCloseRate}
+          last
+        />
 
         {/* Divider */}
         <div className="border-t border-black/8 my-5" />
@@ -202,7 +198,7 @@ function MissedCallCalculator() {
         {/* CTA */}
         <Link
           href="/signup"
-          className="block w-full py-3.5 rounded-xl bg-[#C75B39] text-white text-sm font-bold text-center hover:bg-[#A04830] transition-colors shadow-sm"
+          className="block w-full py-3.5 rounded-xl bg-[#D4863E] text-white text-sm font-bold text-center hover:bg-[#c0763a] transition-colors shadow-sm"
         >
           Never Miss a Lead — It&apos;s Free
         </Link>
@@ -227,9 +223,9 @@ export default function RidgelineHero() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
-              className="text-[#C75B39] text-sm font-bold uppercase tracking-[0.15em] mb-4"
+              className="text-[#D4863E] text-sm font-bold uppercase tracking-[0.15em] mb-4"
             >
-              More Callbacks. More Contracts. More Roofs.
+              More Calls. More Contracts. More Roofs.
             </motion.p>
 
             {/* Headline */}
@@ -281,13 +277,13 @@ export default function RidgelineHero() {
             >
               <Link
                 href="/signup"
-                className="px-8 py-3.5 rounded-full bg-[#C75B39] text-white text-sm font-bold hover:bg-[#A04830] transition-colors shadow-lg hover:shadow-xl"
+                className="px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold hover:bg-[#c0763a] transition-colors shadow-lg hover:shadow-xl"
               >
                 Build My Free Site
               </Link>
               <a
                 href="#demo"
-                className="px-8 py-3.5 rounded-full border-2 border-[#1A1A1A]/15 text-[#1A1A1A] text-sm font-bold hover:bg-[#1A1A1A] hover:text-white transition-colors"
+                className="px-8 py-3.5 rounded-full border-2 border-[#1B3A4B]/20 text-[#1B3A4B] text-sm font-bold hover:bg-[#1B3A4B] hover:text-white transition-colors"
               >
                 See It In Action
               </a>

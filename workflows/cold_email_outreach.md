@@ -47,8 +47,33 @@ Finds roofing contractors in a target metro area and enriches with:
 python tools/find_prospects.py --metro "Dallas-Fort Worth" --limit 100
 ```
 
-### Step 2: Generate Site Preview Mockups
-**Tool:** `tools/generate_site_preview.py`
+### Step 2: Enrich Prospects (Email + Owner Name)
+**Tool:** `tools/enrich_prospects.py`
+
+Takes the CSV from Step 1 and calls Apollo People Enrichment API to fill in owner names and email addresses. Free tier = 50 credits/month (1 credit per lookup).
+
+**Input:** Prospect CSV from Step 1
+**Output:** Enriched CSV in `.tmp/prospects/` with `_enriched_` suffix
+
+**How to run:**
+```bash
+# Always dry-run first to check credit usage
+python tools/enrich_prospects.py --csv .tmp/prospects/dallas_tx_20260407.csv --dry-run
+
+# Enrich all prospects
+python tools/enrich_prospects.py --csv .tmp/prospects/dallas_tx_20260407.csv
+
+# Enrich only first 10 (to test)
+python tools/enrich_prospects.py --csv .tmp/prospects/dallas_tx_20260407.csv --limit 10
+
+# Skip rows that already have an email
+python tools/enrich_prospects.py --csv .tmp/prospects/dallas_tx_20260407.csv --skip-has-email
+```
+
+**Credit management:** Free tier = 50/month. Start with `--limit 10` to test hit rate before burning credits on the full list. If hit rate is low (<30%), consider AnyMailFinder as a supplement.
+
+### Step 3: Generate Site Preview Mockups
+**Tool:** `tools/generate-site-preview.mjs`
 
 Creates a personalized screenshot of what the contractor's RuufPro website would look like using one of our 3 templates (Modern Clean, Chalkboard, or Blueprint).
 
@@ -62,7 +87,7 @@ python tools/generate_site_preview.py --name "Joe's Roofing" --phone "(214) 555-
 
 **When to use:** Generate mockups for your top 50 highest-priority prospects. These go in Email 2 of the sequence. This is the highest-converting email in the sequence — worth the extra effort.
 
-### Step 3: Generate Email Sequences
+### Step 4: Generate Email Sequences
 **Tool:** `tools/generate_email_sequence.py`
 
 Creates a personalized 5-email sequence for each prospect using proven frameworks:
@@ -83,7 +108,7 @@ Creates a personalized 5-email sequence for each prospect using proven framework
 python tools/generate_email_sequence.py --prospects .tmp/prospects/dfw_roofers.csv --output .tmp/sequences/dfw_batch_1.csv
 ```
 
-### Step 4: Track Outreach
+### Step 5: Track Outreach
 **Tool:** `tools/track_outreach.py`
 
 Logs prospect status, tracks which emails have been sent, records replies and outcomes.

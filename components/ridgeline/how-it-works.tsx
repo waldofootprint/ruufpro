@@ -74,7 +74,7 @@ export default function RidgelineHowItWorks() {
                 "1px 1px 0 #1B3A4B15, 2px 2px 0 #1B3A4B10, 3px 3px 0 #1B3A4B08",
             }}
           >
-            Under 5 Minutes. No Tech Skills. Seriously.
+            Under 5 Minutes. Seriously.
           </h2>
         </div>
 

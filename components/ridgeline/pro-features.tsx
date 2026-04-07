@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Download, Smartphone } from "lucide-react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -21,7 +21,7 @@ function PhoneMockup({ children }: { children: React.ReactNode }) {
         style={{ aspectRatio: "380/780" }}
       >
         <div
-          className="absolute overflow-y-auto overflow-x-hidden bg-white z-0"
+          className="absolute overflow-hidden bg-white z-0 flex flex-col"
           style={{
             top: "2.8%",
             left: "5.8%",
@@ -59,7 +59,7 @@ function SmsBubble({
       <div
         className={`max-w-[85%] px-3.5 py-2.5 text-[13px] leading-[1.35] ${
           isOutgoing
-            ? "bg-[#34C759] text-white rounded-[18px] rounded-br-[4px]"
+            ? "bg-[#007AFF] text-white rounded-[18px] rounded-br-[4px]"
             : "bg-[#E9E9EB] text-black rounded-[18px] rounded-bl-[4px]"
         }`}
       >
@@ -70,8 +70,45 @@ function SmsBubble({
   );
 }
 
-/* ─── Email Preview ─── */
-function EmailPreview() {
+/* ─── Homeowner Email Preview (NEW — Step 2 left side) ─── */
+function HomeownerEmailPreview() {
+  return (
+    <div className="w-full max-w-[340px] mx-auto bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+      <div className="bg-gray-50 border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-8 h-8 rounded-full bg-[#1B3A4B] flex items-center justify-center text-white text-xs font-bold">IS</div>
+          <div>
+            <p className="text-xs font-bold text-gray-800">IronShield Roofing</p>
+            <p className="text-[10px] text-gray-400">estimates@ironshieldroofing.com</p>
+          </div>
+        </div>
+        <p className="text-sm font-bold text-gray-900">Your Roof Estimate — 742 Evergreen Terrace</p>
+      </div>
+      <div className="px-5 py-4 space-y-3">
+        <p className="text-xs text-gray-600 leading-relaxed">
+          Hi Robert, thanks for requesting an estimate! Based on satellite measurements of your roof, here&apos;s your ballpark estimate:
+        </p>
+        <div className="bg-[#FAFAF7] border border-gray-100 rounded-xl p-4 text-center">
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Estimated Cost</p>
+          <p className="text-2xl font-black text-[#1B3A4B]" style={{ fontFamily: '"Arial Black", Impact, sans-serif' }}>$14,200</p>
+          <p className="text-[10px] text-gray-400 mt-1">2,450 sq ft · Asphalt · Moderate pitch</p>
+        </div>
+        <div className="flex gap-2">
+          <div className="flex-1 bg-[#1B3A4B] text-white text-center text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5">
+            <Download className="w-3 h-3" />
+            Download PDF
+          </div>
+          <div className="flex-1 bg-[#D4863E] text-white text-center text-xs font-bold py-2.5 rounded-lg">
+            Call Us →
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Roofer Lead Alert Email Preview ─── */
+function RooferEmailPreview() {
   return (
     <div className="w-full max-w-[340px] mx-auto bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
       <div className="bg-gray-50 border-b border-gray-100 px-5 py-4">
@@ -105,18 +142,22 @@ function EmailPreview() {
 
 /* ─── Feature Card ─── */
 function FeatureCard({
+  step,
   reverse = false,
   label,
   title,
   outcome,
   stat,
+  extra,
   children,
 }: {
+  step: number;
   reverse?: boolean;
   label: string;
   title: string;
   outcome: string;
   stat: string;
+  extra?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -126,13 +167,34 @@ function FeatureCard({
       className={`flex flex-col ${reverse ? "md:flex-row-reverse" : "md:flex-row"} items-center gap-8 md:gap-12`}
     >
       <div className="flex-1 text-center md:text-left">
-        <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#D4863E] mb-3 block">{label}</span>
+        <div className="flex items-center gap-3 mb-3 justify-center md:justify-start">
+          <span className="w-8 h-8 rounded-full bg-[#1B3A4B] text-white text-xs font-black flex items-center justify-center">{step}</span>
+          <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#D4863E]">{label}</span>
+        </div>
         <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-[#1B3A4B] leading-[0.95] mb-4" style={{ fontFamily: '"Arial Black", Impact, sans-serif' }}>{title}</h3>
         <p className="text-base text-[#1B3A4B]/60 leading-relaxed mb-4">{outcome}</p>
-        <p className="text-sm font-semibold text-[#D4863E]">{stat}</p>
+        <p className="text-sm font-semibold text-[#D4863E] mb-2">{stat}</p>
+        {extra && (
+          <p className="text-xs text-[#1B3A4B]/40 leading-relaxed flex items-start gap-1.5">
+            <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#1B3A4B]/30" />
+            {extra}
+          </p>
+        )}
       </div>
       <div className="flex-1 flex justify-center">{children}</div>
     </motion.div>
+  );
+}
+
+/* ─── Step Connector Arrow ─── */
+function StepConnector() {
+  return (
+    <div className="flex justify-center py-2">
+      <svg viewBox="0 0 24 40" className="w-6 h-10 text-[#1B3A4B]/15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M12 0 L12 30" />
+        <path d="M6 24 L12 30 L18 24" />
+      </svg>
+    </div>
   );
 }
 
@@ -157,7 +219,7 @@ function WidgetPreview() {
 /* ─── Messages Header ─── */
 function MessagesHeader({ initials, name }: { initials: string; name: string }) {
   return (
-    <div className="bg-[#F6F6F6] border-b border-gray-200 px-4 pt-2 pb-2.5">
+    <div className="bg-[#F6F6F6] border-b border-gray-200 px-4 pt-8 pb-2.5 flex-shrink-0">
       <div className="flex items-center justify-between">
         <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#007AFF]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
         <div className="text-center">
@@ -173,7 +235,7 @@ function MessagesHeader({ initials, name }: { initials: string; name: string }) 
 /* ─── Messages Input Bar ─── */
 function MessagesInputBar() {
   return (
-    <div className="bg-[#F6F6F6] border-t border-gray-200 px-3 py-2 flex items-center gap-2">
+    <div className="bg-[#F6F6F6] border-t border-gray-200 px-3 py-2 flex items-center gap-2 flex-shrink-0">
       <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center">
         <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
       </div>
@@ -190,40 +252,84 @@ export default function RidgelineProFeatures() {
       <div className="relative z-10 mx-auto max-w-[1200px] px-6 py-20 md:px-10 md:py-28">
         {/* Header */}
         <div className="text-center mb-16 md:mb-20">
-          <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#D4863E] mb-4">Pro Features</p>
+          <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#D4863E] mb-4">Tools That Pay Back</p>
           <h2
             className="text-[clamp(2rem,5vw,4rem)] font-black uppercase tracking-tighter text-[#1B3A4B] leading-[0.95] mb-5"
             style={{ fontFamily: '"Arial Black", Impact, sans-serif', textShadow: "1px 1px 0 #1B3A4B15, 2px 2px 0 #1B3A4B10, 3px 3px 0 #1B3A4B08" }}
           >
-            Pro Features That Pay For Themselves
+            More Leads. Less Chasing.
           </h2>
           <p className="text-lg text-[#1B3A4B]/60 max-w-xl mx-auto">
             Everything you need to turn website visitors into booked jobs — without leaving the roof.
           </p>
         </div>
 
-        {/* Feature Cards */}
-        <div className="space-y-20 md:space-y-28">
-          {/* Card 1: Missed-Call Text-Back */}
+        {/* Journey Steps */}
+        <div className="space-y-8 md:space-y-12">
+          {/* Step 1: Satellite Estimates */}
           <FeatureCard
-            label="Missed-Call Text-Back"
-            title="You're On A Roof. Phone Rings. You Can't Answer."
-            outcome="No problem. RuufPro texts them back instantly with a professional message — so the lead stays warm until you're free."
-            stat="85% of leads are lost to voicemail. Not yours."
+            step={1}
+            label="Instant Estimates"
+            title="Homeowner Enters Their Address. Gets A Price. Calls You."
+            outcome="The estimate widget uses Google's satellite data to measure the roof and calculate a ballpark price using your rates. Every visitor becomes a lead — even at 2am."
+            stat="Every estimate captures name, email, phone, and roof details."
           >
-            <PhoneMockup>
-              <MessagesHeader initials="RC" name="Robert Chen" />
-              <div className="px-3 py-4 space-y-2.5 bg-white min-h-[220px]">
-                <p className="text-[10px] text-center text-gray-400 mb-1">Today 2:34 PM</p>
-                <SmsBubble message="Hi Robert, this is Jenna at IronShield Roofing. Sorry I missed you! How can we help with your roof today? Reply with your address for a free inspection." time="2:34 PM" isOutgoing />
-                <SmsBubble message="Hi! Yes I need a roof inspection. I'm at 742 Evergreen Terrace." time="2:41 PM" />
-              </div>
-              <MessagesInputBar />
-            </PhoneMockup>
+            <WidgetPreview />
           </FeatureCard>
 
-          {/* Card 2: Review Automation */}
+          <StepConnector />
+
+          {/* Step 2: Automated Follow-Up (dual mockups) */}
           <FeatureCard
+            step={2}
+            reverse
+            label="Automated Follow-Up"
+            title="They Get A Professional Estimate. You Get A Hot Lead."
+            outcome="The moment a homeowner requests an estimate, RuufPro sends them a branded PDF report with your logo by email and a text with a direct line to you. You get an alert with their name, phone, address, and roof details — automatically synced to your CRM."
+            stat="Roofers who respond in under 5 minutes win 238% more jobs. You respond in under 5 seconds."
+            extra="Download the RuufPro dashboard to your phone — it works like a native app. Get real-time push notifications the instant a lead comes in, even on the job site."
+          >
+            <div className="flex flex-col gap-6">
+              <div>
+                <p className="text-[10px] font-bold text-center text-[#1B3A4B]/30 uppercase tracking-wider mb-2">What the homeowner gets</p>
+                <HomeownerEmailPreview />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-center text-[#1B3A4B]/30 uppercase tracking-wider mb-2">What you get</p>
+                <RooferEmailPreview />
+              </div>
+            </div>
+          </FeatureCard>
+
+          <StepConnector />
+
+          {/* Step 3: Missed-Call Text-Back */}
+          <FeatureCard
+            step={3}
+            label="Missed-Call Text-Back"
+            title="You're On A Roof. Phone Rings. You Can't Answer."
+            outcome="No problem. RuufPro texts them back instantly with a professional message — the lead stays warm until you're free. Every lead syncs to your existing CRM or system automatically, so nothing falls through the cracks."
+            stat="85% of leads are lost to voicemail. Not yours."
+          >
+            <div>
+              <PhoneMockup>
+                <MessagesHeader initials="RC" name="Robert Chen" />
+                <div className="px-3 py-4 space-y-2.5 bg-white flex-1 flex flex-col justify-end">
+                  <p className="text-[10px] text-center text-gray-400 mb-1">Today 2:34 PM</p>
+                  <SmsBubble message="Hi Robert, this is Jenna at IronShield Roofing. Sorry I missed you! How can we help with your roof today? Reply with your address for a free inspection." time="2:34 PM" isOutgoing />
+                  <SmsBubble message="Hi! Yes I need a roof inspection. I'm at 742 Evergreen Terrace." time="2:41 PM" />
+                </div>
+                <MessagesInputBar />
+              </PhoneMockup>
+              <p className="text-[10px] text-[#1B3A4B]/30 text-center mt-4">Connects to HubSpot, Jobber, AccuLynx, Google Sheets, and 5,000+ other tools.</p>
+            </div>
+          </FeatureCard>
+
+          <StepConnector />
+
+          {/* Step 4: Review Automation */}
+          <FeatureCard
+            step={4}
             reverse
             label="Review Automation"
             title="One Text After Every Job. Reviews Stack Up While You Sleep."
@@ -232,7 +338,7 @@ export default function RidgelineProFeatures() {
           >
             <PhoneMockup>
               <MessagesHeader initials="SM" name="Sarah Mitchell" />
-              <div className="px-3 py-4 space-y-2.5 bg-white min-h-[220px]">
+              <div className="px-3 py-4 space-y-2.5 bg-white flex-1 flex flex-col justify-end">
                 <p className="text-[10px] text-center text-gray-400 mb-1">Today 4:15 PM</p>
                 <SmsBubble message="Hi Sarah, we hope you enjoyed your experience with IronShield Roofing! Would you mind taking a moment to leave a review? Here's the link: g.page/ironshield" time="4:15 PM" isOutgoing />
                 <SmsBubble message="Absolutely! You guys did a great job. Just left you 5 stars ⭐" time="4:22 PM" />
@@ -240,35 +346,20 @@ export default function RidgelineProFeatures() {
               <MessagesInputBar />
             </PhoneMockup>
           </FeatureCard>
-
-          {/* Card 3: Satellite Estimates */}
-          <FeatureCard
-            label="Satellite Roof Estimates"
-            title="Homeowner Enters Their Address. Gets A Price. Calls You."
-            outcome="The estimate widget uses Google's satellite data to measure the roof and calculate a ballpark price using your rates. Every visitor becomes a lead — even at 2am."
-            stat="Every estimate captures name, email, phone, and roof details."
-          >
-            <WidgetPreview />
-          </FeatureCard>
-
-          {/* Card 4: Instant Lead Alerts */}
-          <FeatureCard
-            reverse
-            label="Instant Lead Alerts"
-            title="New Lead? You Know In Seconds, Not Hours."
-            outcome="The moment a homeowner requests an estimate or fills out a form, you get an email with everything — name, phone, address, roof specs, and a one-tap call button."
-            stat="First to respond wins 238% more jobs."
-          >
-            <EmailPreview />
-          </FeatureCard>
         </div>
 
-        {/* Supademo placeholder */}
-        <div className="mt-20 md:mt-28 text-center">
-          <div className="max-w-3xl mx-auto bg-[#FAFAF7] border-2 border-dashed border-[#1B3A4B]/15 rounded-[2rem] p-10 md:p-14">
-            <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#D4863E] mb-3">Interactive Demo</p>
-            <p className="text-xl md:text-2xl font-black uppercase tracking-tight text-[#1B3A4B] mb-3" style={{ fontFamily: '"Arial Black", Impact, sans-serif' }}>See The Full Dashboard</p>
-            <p className="text-sm text-[#1B3A4B]/40 mb-0">Interactive walkthrough coming soon — manage leads, send texts, track reviews, all in one place.</p>
+        {/* Supademo Placeholder */}
+        <div className="mt-20 md:mt-28">
+          <div className="max-w-3xl mx-auto bg-[#FAFAF7] border border-[#1B3A4B]/10 rounded-[2rem] p-10 md:p-14 text-center">
+            <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#D4863E] mb-3">Your Lead Dashboard</p>
+            <p className="text-xl md:text-2xl font-black uppercase tracking-tight text-[#1B3A4B] mb-3" style={{ fontFamily: '"Arial Black", Impact, sans-serif' }}>
+              See Every Lead. Track Every Job. Manage Every Review.
+            </p>
+            <p className="text-sm text-[#1B3A4B]/40 mb-6">All in one place — right from your phone or computer.</p>
+            {/* Supademo embed will replace this placeholder */}
+            <div className="aspect-video bg-[#1B3A4B]/5 rounded-2xl flex items-center justify-center">
+              <p className="text-xs text-[#1B3A4B]/25 font-bold uppercase tracking-wider">Interactive walkthrough — click through to explore</p>
+            </div>
           </div>
         </div>
 

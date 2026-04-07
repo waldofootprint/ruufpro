@@ -26,19 +26,6 @@ const PROOF_ITEMS = [
   },
 ];
 
-const EXAMPLE_SITES = [
-  {
-    name: "Pinnacle Roofing Co",
-    location: "Tampa, FL",
-    href: "/demo",
-  },
-  {
-    name: "Summit Roofing",
-    location: "Dallas, TX",
-    href: "/demo/summit",
-  },
-];
-
 const EARLY_ADOPTER_PERKS = [
   {
     stat: "Early",
@@ -52,8 +39,8 @@ const EARLY_ADOPTER_PERKS = [
   },
   {
     stat: "5 min",
-    label: "to a site most roofers don't have",
-    detail: "Most roofing websites are slow, outdated, and missing what homeowners actually want. Yours won't be.",
+    label: "to a site built to rank",
+    detail: "Fast. SEO-optimized. Easy to edit from your dashboard. While your competitors are still on page 3, you'll be getting the call.",
   },
 ];
 
@@ -110,74 +97,11 @@ export default function RidgelineSocialProof() {
         </motion.div>
       </div>
 
-      {/* Part B — Template Gallery + Part C — Testimonials */}
+      {/* Part B — Your Site, Your Brand + Part C — Early Adopter */}
       <div className="relative bg-[#FAFAF7]">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1B3A4B08_1px,transparent_1px),linear-gradient(to_bottom,#1B3A4B08_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none z-0" />
 
         <div className="relative z-10 mx-auto max-w-[1440px] px-6 py-20 md:px-10 md:py-28">
-          {/* Example Sites Header */}
-          <div className="text-center mb-12 md:mb-16">
-            <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#D4863E] mb-4">
-              Built for Roofers
-            </p>
-            <h2
-              className="text-[clamp(2rem,5vw,4rem)] font-black uppercase tracking-tighter text-[#1B3A4B] leading-[0.95] mb-5"
-              style={{
-                fontFamily: '"Arial Black", Impact, sans-serif',
-                textShadow:
-                  "1px 1px 0 #1B3A4B15, 2px 2px 0 #1B3A4B10, 3px 3px 0 #1B3A4B08",
-              }}
-            >
-              Here&apos;s What Your Site Looks Like.
-            </h2>
-            <p className="text-lg text-[#1B3A4B]/60 max-w-2xl mx-auto">
-              Every site is built for roofers, looks great on any phone, and shows up on Google.
-              Yours is generated automatically — just answer 4 questions.
-            </p>
-          </div>
-
-          {/* Example Site Cards */}
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto mb-20 md:mb-24"
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-          >
-            {EXAMPLE_SITES.map((site) => (
-              <motion.a
-                key={site.name}
-                href={site.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                variants={fadeUp}
-                className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm hover:-translate-y-1 transition-transform duration-500 group block"
-              >
-                <div className="aspect-[16/10] bg-gradient-to-br from-[#1B3A4B] via-[#1B3A4B] to-[#2C3E50] relative overflow-hidden flex flex-col items-center justify-center px-8">
-                  {/* Stylized site mockup */}
-                  <div className="w-full max-w-[280px] bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-4 mb-3">
-                    <div className="h-2 w-16 bg-white/20 rounded-full mb-3" />
-                    <div className="h-6 w-3/4 bg-white/15 rounded mb-2" />
-                    <div className="h-3 w-full bg-white/8 rounded mb-1" />
-                    <div className="h-3 w-2/3 bg-white/8 rounded mb-3" />
-                    <div className="h-8 w-32 bg-[#D4863E]/80 rounded-full" />
-                  </div>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold uppercase tracking-wider bg-[#D4863E] px-4 py-2 rounded-full shadow-lg">
-                      See Live Site →
-                    </span>
-                  </div>
-                </div>
-                <div className="p-6 text-center">
-                  <h3 className="font-black text-[#1B3A4B] uppercase tracking-wide mb-1">
-                    {site.name}
-                  </h3>
-                  <p className="text-xs text-[#1B3A4B]/50">{site.location}</p>
-                </div>
-              </motion.a>
-            ))}
-          </motion.div>
-
           {/* Early Adopter */}
           <div className="text-center mb-10">
             <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#D4863E] mb-4">

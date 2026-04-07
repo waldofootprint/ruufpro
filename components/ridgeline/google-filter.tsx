@@ -6,7 +6,7 @@ import { X, Check } from "lucide-react";
 const STATS = [
   { number: "78%", label: "of homeowners want pricing before they call" },
   { number: "~76%", label: "of roofers don't show pricing online (industry estimate)" },
-  { number: "Late 2025", label: "Google began rolling out the Online Estimates filter" },
+  { number: "Dec 2025", label: "Google launched the Online Estimates filter" },
 ];
 
 const WITHOUT_ITEMS = [
@@ -84,7 +84,7 @@ export default function RidgelineGoogleFilter() {
                 "1px 1px 0 #1B3A4B15, 2px 2px 0 #1B3A4B10, 3px 3px 0 #1B3A4B08",
             }}
           >
-            Google Just Changed How Homeowners Find Roofers
+            Google Changed How Homeowners Find Roofers
           </h2>
           <p className="text-lg md:text-xl text-[#1B3A4B]/60 max-w-2xl mx-auto leading-relaxed">
             In December 2025, Google launched an &ldquo;Online Estimates&rdquo;
@@ -95,17 +95,12 @@ export default function RidgelineGoogleFilter() {
         </div>
 
         {/* Stats */}
-        <motion.div
+        <div
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 md:mb-20 relative"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
         >
           {STATS.map((stat, i) => (
-            <motion.div
+            <div
               key={stat.number}
-              variants={fadeUp}
               className="bg-white rounded-[2rem] p-8 text-center border border-gray-100 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
             >
               <div
@@ -115,26 +110,21 @@ export default function RidgelineGoogleFilter() {
                 {stat.number}
               </div>
               <p className="text-sm text-[#1B3A4B]/60">{stat.label}</p>
-            </motion.div>
+            </div>
           ))}
 
           {/* Decorative arrow accent below stats */}
           <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-12 h-16 hidden md:block">
             <ArrowAccentDown />
           </div>
-        </motion.div>
+        </div>
 
         {/* Before / After */}
-        <motion.div
+        <div
           className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-16 relative items-start"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
         >
           {/* Without card */}
-          <motion.div
-            variants={scaleIn}
+          <div
             className="bg-white border border-gray-200 rounded-[2rem] p-8 rotate-[-1.5deg] hover:rotate-0 transition-transform duration-500 shadow-sm"
           >
             <div className="flex items-center gap-2.5 mb-6">
@@ -154,7 +144,7 @@ export default function RidgelineGoogleFilter() {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </div>
 
           {/* Arrow between cards (desktop only) */}
           <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-12 z-20">
@@ -162,8 +152,7 @@ export default function RidgelineGoogleFilter() {
           </div>
 
           {/* With RuufPro card */}
-          <motion.div
-            variants={scaleIn}
+          <div
             className="bg-white border-2 border-[#D4863E]/30 rounded-[2rem] p-8 rotate-[1.5deg] hover:rotate-0 transition-transform duration-500 shadow-md shadow-[#D4863E]/5"
           >
             <div className="flex items-center gap-2.5 mb-6">
@@ -183,8 +172,8 @@ export default function RidgelineGoogleFilter() {
                 </li>
               ))}
             </ul>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
 
         {/* CTA */}
         <div className="flex justify-center">

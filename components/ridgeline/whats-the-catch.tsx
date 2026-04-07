@@ -10,7 +10,7 @@ import { calculateROI, SLIDER_CONFIG } from "@/lib/roi-calculator";
 // Source: Vault 032 (Andy Steuer, WeLevel).
 
 const PROMISES = [
-  { icon: PhoneOff, text: "No salesperson will ever call you." },
+  { icon: PhoneOff, text: "No sales calls." },
   { icon: Handshake, text: "No contract. Cancel anytime. Your site stays live." },
   { icon: Shield, text: "No hidden fees. No upsell tricks. No bait-and-switch." },
 ];
