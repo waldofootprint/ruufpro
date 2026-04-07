@@ -1,3 +1,6 @@
+// Google Places Autocomplete hook — uses the new AutocompleteSuggestion API
+// (AutocompleteService was deprecated for new customers March 2025)
+
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -27,7 +30,6 @@ interface PlaceCoords {
 export function usePlacesAutocomplete() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const serviceRef = useRef<google.maps.places.AutocompleteService | null>(null);
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
 
   useEffect(() => {
@@ -37,7 +39,6 @@ export function usePlacesAutocomplete() {
     ensureConfigured();
     importLibrary("places")
       .then(() => {
-        serviceRef.current = new google.maps.places.AutocompleteService();
         sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
         setIsLoaded(true);
       })
@@ -47,37 +48,37 @@ export function usePlacesAutocomplete() {
   }, []);
 
   const search = useCallback(
-    (input: string) => {
-      if (!serviceRef.current || !input || input.length < 3) {
+    async (input: string) => {
+      if (!isLoaded || !input || input.length < 3) {
         setSuggestions([]);
         return;
       }
 
-      serviceRef.current.getPlacePredictions(
-        {
+      try {
+        const request = {
           input,
-          componentRestrictions: { country: "us" },
-          types: ["address"],
           sessionToken: sessionTokenRef.current!,
-        },
-        (predictions, status) => {
-          if (
-            status === google.maps.places.PlacesServiceStatus.OK &&
-            predictions
-          ) {
-            setSuggestions(
-              predictions.slice(0, 5).map((p) => ({
-                placeId: p.place_id,
-                description: p.description,
-              }))
-            );
-          } else {
-            setSuggestions([]);
-          }
-        }
-      );
+          includedPrimaryTypes: ["street_address", "subpremise", "premise"],
+          includedRegionCodes: ["us"],
+        };
+
+        const { suggestions: results } =
+          await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+        setSuggestions(
+          results
+            .filter((s) => s.placePrediction)
+            .slice(0, 5)
+            .map((s) => ({
+              placeId: s.placePrediction!.placeId,
+              description: s.placePrediction!.text.text,
+            }))
+        );
+      } catch {
+        setSuggestions([]);
+      }
     },
-    []
+    [isLoaded]
   );
 
   const clearSuggestions = useCallback(() => {
@@ -88,39 +89,29 @@ export function usePlacesAutocomplete() {
     }
   }, [isLoaded]);
 
-  // Get lat/lng from a placeId — included in session billing ($0 incremental cost)
+  // Get lat/lng from a placeId via Place.fetchFields (new API)
   const getPlaceDetails = useCallback(
     async (placeId: string): Promise<PlaceCoords | null> => {
       if (!isLoaded) return null;
 
-      return new Promise((resolve) => {
-        const div = document.createElement("div");
-        const service = new google.maps.places.PlacesService(div);
-        service.getDetails(
-          {
-            placeId,
-            fields: ["geometry"],
-            sessionToken: sessionTokenRef.current!,
-          },
-          (result, status) => {
-            // Rotate session token — getDetails completes the session
-            sessionTokenRef.current =
-              new google.maps.places.AutocompleteSessionToken();
+      try {
+        const place = new google.maps.places.Place({ id: placeId });
+        await place.fetchFields({ fields: ["location"] });
 
-            if (
-              status === google.maps.places.PlacesServiceStatus.OK &&
-              result?.geometry?.location
-            ) {
-              resolve({
-                lat: result.geometry.location.lat(),
-                lng: result.geometry.location.lng(),
-              });
-            } else {
-              resolve(null);
-            }
-          }
-        );
-      });
+        // Rotate session token — fetchFields completes the session
+        sessionTokenRef.current =
+          new google.maps.places.AutocompleteSessionToken();
+
+        if (place.location) {
+          return {
+            lat: place.location.lat(),
+            lng: place.location.lng(),
+          };
+        }
+        return null;
+      } catch {
+        return null;
+      }
     },
     [isLoaded]
   );
