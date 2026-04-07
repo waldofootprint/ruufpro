@@ -876,13 +876,9 @@ export default function EstimateWidgetV4({
                 const isSelected = selectedMaterial === est.material;
                 const tierColor = TIER_COLORS[est.tier] || TIER_COLORS.Good;
                 return (
-                  <motion.button
+                  <button
                     key={est.material}
                     onClick={() => setSelectedMaterial(est.material)}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: i * 0.1 }}
-                    whileTap={{ scale: 0.98 }}
                     className="w-full text-left rounded-xl p-4 transition-all duration-300"
                     style={{
                       background: isSelected ? GLASS.cardSelectedBg : GLASS.cardBg,
@@ -947,7 +943,7 @@ export default function EstimateWidgetV4({
                         <p className="text-[12px] font-medium" style={{ color: GLASS.textSecondary }}>{est.lifespan}</p>
                       </div>
                     </div>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
