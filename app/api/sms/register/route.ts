@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
       email: contractor.email,
       phone: contractor.phone?.startsWith("+") ? contractor.phone : `+1${contractor.phone.replace(/\D/g, "")}`,
       mobilePhone: body.mobilePhone || undefined,
+      ssnLast4: body.ssnLast4 || undefined,
       street: contractor.address || "",
       city: contractor.city,
       state: contractor.state,

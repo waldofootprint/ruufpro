@@ -116,6 +116,8 @@ export default function SmsPage() {
   const [saveError, setSaveError] = useState("");
   const [registering, setRegistering] = useState(false);
   const [registerError, setRegisterError] = useState("");
+  const [mobilePhone, setMobilePhone] = useState("");
+  const [ssnLast4, setSsnLast4] = useState("");
   const [resendingOtp, setResendingOtp] = useState(false);
   const [otpResent, setOtpResent] = useState(false);
   const [messages, setMessages] = useState<{ id: string; direction: string; to_number: string; from_number: string; body: string; message_type: string; status: string; created_at: string }[]>([]);
@@ -169,7 +171,14 @@ export default function SmsPage() {
     setRegistering(true);
     setRegisterError("");
     try {
-      const res = await fetch("/api/sms/register", { method: "POST" });
+      const res = await fetch("/api/sms/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mobilePhone: mobilePhone || undefined,
+          ssnLast4: ssnLast4 || undefined,
+        }),
+      });
       const data = await res.json();
       if (!res.ok) {
         setRegisterError(data.error || "Registration failed. Please try again.");
@@ -402,9 +411,41 @@ export default function SmsPage() {
             </div>
           )}
 
-          {/* Start Registration Button */}
+          {/* Start Registration */}
           {regStatus === "not_started" && (
-            <div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[12px] font-medium text-slate-600 mb-1.5">
+                  Mobile Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={mobilePhone}
+                  onChange={(e) => setMobilePhone(e.target.value)}
+                  placeholder="(555) 123-4567"
+                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] focus:outline-none focus:ring-2 focus:ring-slate-300"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Must be a real carrier number (not Google Voice). Used for one-time verification only.
+                </p>
+              </div>
+              <div>
+                <label className="block text-[12px] font-medium text-slate-600 mb-1.5">
+                  Last 4 Digits of SSN
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={ssnLast4}
+                  onChange={(e) => setSsnLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="••••"
+                  className="w-24 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] tracking-widest focus:outline-none focus:ring-2 focus:ring-slate-300"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Required by carriers to verify your identity. Sent securely to the carrier registry — never stored by RuufPro.
+                </p>
+              </div>
               <button
                 onClick={handleStartRegistration}
                 disabled={registering}
@@ -419,7 +460,7 @@ export default function SmsPage() {
               {registerError && (
                 <p className="text-[12px] text-red-500 mt-2 text-center">{registerError}</p>
               )}
-              <p className="text-[11px] text-slate-400 mt-2 text-center">
+              <p className="text-[11px] text-slate-400 text-center">
                 We&apos;ll register a local phone number matching your area code.
                 Carrier review takes 10-15 business days.
               </p>

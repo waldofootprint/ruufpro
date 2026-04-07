@@ -37,6 +37,7 @@ interface ContractorRegistrationData {
   zip: string;
   legalEntityType: "sole_proprietor" | "llc" | "corporation" | "partnership";
   ein?: string;             // required for standard path
+  ssnLast4?: string;        // last 4 of SSN (sole prop only, passed to TCR, NOT stored)
   websiteUrl: string;       // their RuufPro site URL
 }
 
@@ -216,6 +217,7 @@ async function registerSoleProprietor(
       mobile_phone_number: mobilePhone,
       brand_name: data.businessName,
       vertical: "CONSTRUCTION",
+      ...(data.ssnLast4 ? { last_4_digits_ssn: data.ssnLast4 } : {}),
     },
   });
 
