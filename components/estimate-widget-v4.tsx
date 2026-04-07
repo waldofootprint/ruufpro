@@ -805,8 +805,8 @@ export default function EstimateWidgetV4({
                 </button>
                 <span className="text-[12px] leading-relaxed" style={{ color: GLASS.textSecondary }}>
                   I agree to the{" "}
-                  <a href="#" style={{ color: "rgba(255,255,255,0.7)" }} className="hover:underline">Terms of Service</a> and{" "}
-                  <a href="#" style={{ color: "rgba(255,255,255,0.7)" }} className="hover:underline">Privacy Policy</a>
+                  <a href="/terms" target="_blank" style={{ color: "rgba(255,255,255,0.7)" }} className="hover:underline">Terms of Service</a> and{" "}
+                  <a href="/privacy" target="_blank" style={{ color: "rgba(255,255,255,0.7)" }} className="hover:underline">Privacy Policy</a>
                   <span style={{ color: GLASS.red }} className="ml-0.5">*</span>
                 </span>
               </label>

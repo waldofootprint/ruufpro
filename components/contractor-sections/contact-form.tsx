@@ -11,7 +11,7 @@ type ContactFormProps = Pick<ContractorSiteData, "businessName" | "phone" | "cit
 
 export default function ContactForm({ businessName, phone, city, state, contractorId }: ContactFormProps) {
   const phoneClean = phone.replace(/\D/g, "");
-  const [form, setForm] = useState({ name: "", phone: "", zip: "", email: "", message: "" });
+  const [form, setForm] = useState({ name: "", phone: "", zip: "", email: "", message: "", smsConsent: false });
   const [showDetails, setShowDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -29,6 +29,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
       message: form.message || null,
       source: "contact_form",
       status: "new",
+      sms_consent: form.smsConsent,
     });
     if (leadErr) console.error("Lead insert failed:", leadErr);
 
@@ -251,6 +252,25 @@ export default function ContactForm({ businessName, phone, city, state, contract
                   .details-inner { display: block !important; }
                 }
               `}</style>
+              {/* SMS consent — optional, required by FCC one-to-one rule (Jan 2026) */}
+              {form.phone && (
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={form.smsConsent}
+                      onChange={(e) => setForm({ ...form, smsConsent: e.target.checked })}
+                      style={{ marginTop: 3, width: 16, height: 16, accentColor: THEME.accent }}
+                    />
+                    <span style={{ fontSize: 12, color: THEME.textMuted, lineHeight: 1.5 }}>
+                      I consent to receive SMS messages from {businessName}. Msg &amp; data rates may apply. Reply STOP to unsubscribe.{" "}
+                      <a href="/terms" target="_blank" style={{ color: THEME.accent, textDecoration: "underline" }}>Terms</a> &amp;{" "}
+                      <a href="/privacy" target="_blank" style={{ color: THEME.accent, textDecoration: "underline" }}>Privacy</a>.
+                    </span>
+                  </label>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={submitting}

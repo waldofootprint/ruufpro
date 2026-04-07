@@ -37,6 +37,7 @@ interface ContractorRegistrationData {
   zip: string;
   legalEntityType: "sole_proprietor" | "llc" | "corporation" | "partnership";
   ein?: string;             // required for standard path
+  ssnLast4?: string;        // last 4 of SSN (sole prop only, passed to TCR, NOT stored)
   websiteUrl: string;       // their RuufPro site URL
 }
 
@@ -216,6 +217,7 @@ async function registerSoleProprietor(
       mobile_phone_number: mobilePhone,
       brand_name: data.businessName,
       vertical: "CONSTRUCTION",
+      ...(data.ssnLast4 ? { last_4_digits_ssn: data.ssnLast4 } : {}),
     },
   });
 
@@ -551,21 +553,37 @@ export async function completeCampaignRegistration(
     .phoneNumbers.create({ phoneNumberSid: purchased.sid });
 
   // Register campaign
-  const campaignUseCase = isSoleProp ? "SOLE_PROPRIETOR" : "LOW_VOLUME";
+  // LOW_VOLUME_MIXED gives best deliverability for both sole props and LLCs
+  // SOLE_PROPRIETOR is the brand type, not campaign type
+  const campaignUseCase = "LOW_VOLUME_MIXED";
+
+  // A2P Wizard compliance website — must be set before campaign registration
+  const complianceUrl = record.compliance_website_url;
+  if (!complianceUrl) {
+    return {
+      success: false,
+      status: "failed",
+      error: "Missing compliance website URL. Run A2P Wizard for this contractor first, then paste the URL in SMS settings.",
+    };
+  }
+  const privacyUrl = `${complianceUrl}/privacy`;
+  const termsUrl = `${complianceUrl}/terms`;
 
   const campaign = await client.messaging.v1
     .services(messagingService.sid)
     .usAppToPerson.create({
       brandRegistrationSid: record.brand_registration_sid,
-      description: `${contractor.business_name} sends appointment confirmations, estimate follow-ups, review requests, and service updates to homeowners who have requested a roofing estimate or service through the contractor's website.`,
+      description: `${contractor.business_name} sends non-promotional SMS messages to customers regarding inspection results, project milestones, and estimate follow-ups. Customers may also optionally opt in to receive promotional notifications, including roof care tips, upgrade options, and protection plans. Promotional messages are only sent to users who provide separate, explicit consent via an online form. Message frequency varies, up to 4 messages per month. Message & data rates may apply. Recipients can reply STOP to opt out at any time. Users can review our Privacy Policy at ${privacyUrl} and Terms of Service at ${termsUrl} .`,
       messageSamples: [
-        `Hi {FirstName}, this is ${contractor.business_name}. Your roofing estimate is ready! View it here: {link}. Reply STOP to opt out.`,
-        `Hi {FirstName}, thanks for choosing ${contractor.business_name}! We'd love your feedback: {ReviewLink}. Reply STOP to opt out.`,
+        `Hi {FirstName}, this is {RepName} from ${contractor.business_name}. Thank you for reaching out to us! We received your inquiry and a team member will be in touch within the next 24 hours. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
+        `Hi {FirstName}, thanks for choosing ${contractor.business_name}! We'd love your feedback on our work. Share your experience here: {ReviewLink}. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
+        `Hi {FirstName}, sorry we missed your call! This is ${contractor.business_name}. We'll get back to you shortly. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
+        `Hi {FirstName}, this is ${contractor.business_name}. Just following up on your roofing estimate. Have any questions? We're happy to help. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
       ],
       usAppToPersonUsecase: campaignUseCase,
-      messageFlow: `Homeowners opt in by submitting a roofing estimate request form on the contractor's website. The form includes an optional, unchecked-by-default checkbox stating: 'I agree to receive text messages from ${contractor.business_name}. Message and data rates may apply. Reply STOP to opt out.' Consent is recorded with timestamp and IP address.`,
+      messageFlow: `Users opt in by submitting their mobile phone number and actively selecting one or both unchecked consent checkboxes on the contact form at ${complianceUrl}. Each checkbox clearly describes the category of messages the user will receive (non-promotional or promotional). Consent is optional and not required to use the service. After submitting the form and selecting consent, users receive a confirmation SMS message. Please refer to ${complianceUrl} for the most up-to-date version of the business website and opt-in form.`,
       hasEmbeddedLinks: true,
-      hasEmbeddedPhone: true,
+      hasEmbeddedPhone: false,
       subscriberOptIn: true,
       ageGated: false,
       directLending: false,
@@ -644,6 +662,7 @@ export async function checkAllPendingRegistrations(): Promise<void> {
       "profile_pending",
       "brand_pending",
       "brand_otp_required",
+      "brand_approved",
       "campaign_pending",
     ]);
 
@@ -671,8 +690,27 @@ export async function checkAllPendingRegistrations(): Promise<void> {
           .fetch();
 
         if (brand.status === "APPROVED") {
+          // Check if compliance URL is set before attempting campaign registration
+          if (!record.compliance_website_url) {
+            // Notify admin — A2P Wizard submission needed for this contractor
+            await notifyA2PWizardNeeded(record.contractor_id, supabase);
+            // Update status so we know brand is approved but waiting on compliance URL
+            await supabase
+              .from("sms_numbers")
+              .update({ registration_status: "brand_approved" })
+              .eq("contractor_id", record.contractor_id);
+          } else {
+            await completeCampaignRegistration(record.contractor_id);
+          }
+        }
+      }
+
+      // Brand approved but waiting on compliance URL — retry if URL was added
+      if (record.registration_status === "brand_approved") {
+        if (record.compliance_website_url) {
           await completeCampaignRegistration(record.contractor_id);
         }
+        // If still no URL, do nothing — Hannah will get notified again next check
       }
 
       if (record.registration_status === "campaign_pending" && record.campaign_sid && record.messaging_service_sid) {
@@ -733,6 +771,60 @@ export async function resendOTP(contractorId: string): Promise<{ success: boolea
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Notify admin (Hannah) that a contractor's brand was approved and needs
+ * an A2P Wizard compliance website before campaign registration can proceed.
+ */
+async function notifyA2PWizardNeeded(
+  contractorId: string,
+  supabase: ReturnType<typeof createServerSupabase>
+): Promise<void> {
+  const { data: contractor } = await supabase
+    .from("contractors")
+    .select("business_name, email, city, state")
+    .eq("id", contractorId)
+    .single();
+
+  if (!contractor) return;
+
+  try {
+    const { Resend } = await import("resend");
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    await resend.emails.send({
+      from: "RuufPro <noreply@ruufpro.com>",
+      to: "admin@getruufpro.com",
+      subject: `A2P Wizard needed: ${contractor.business_name}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #111827; margin-bottom: 16px;">Brand Approved — A2P Wizard Needed</h2>
+          <p style="font-size: 15px; color: #374151; line-height: 1.6;">
+            <strong>${contractor.business_name}</strong> (${contractor.city}, ${contractor.state}) just got their brand approved by TCR.
+          </p>
+          <p style="font-size: 15px; color: #374151; line-height: 1.6;">
+            Before their campaign can be registered, you need to:
+          </p>
+          <ol style="font-size: 15px; color: #374151; line-height: 1.8;">
+            <li>Go to <a href="https://www.a2pwizard.com" style="color: #2563eb;">A2P Wizard</a></li>
+            <li>Generate a compliance website for <strong>${contractor.business_name}</strong></li>
+            <li>Paste the compliance URL into their SMS settings in the dashboard</li>
+          </ol>
+          <p style="font-size: 15px; color: #374151; line-height: 1.6;">
+            Once the URL is saved, the system will automatically submit their campaign registration on the next daily check.
+          </p>
+          <p style="font-size: 13px; color: #9ca3af; margin-top: 24px;">
+            Contractor ID: ${contractorId}
+          </p>
+        </div>
+      `,
+    });
+
+    console.log(`A2P Wizard notification sent for ${contractor.business_name}`);
+  } catch (err: any) {
+    console.error(`Failed to send A2P Wizard notification for ${contractorId}:`, err.message);
+  }
+}
 
 function extractAreaCode(phone: string): string {
   // Remove +1 prefix and grab first 3 digits
