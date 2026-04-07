@@ -9,10 +9,20 @@ export async function POST(request: NextRequest) {
   try {
     // Parse Twilio's URL-encoded webhook body
     const formData = await request.formData();
-    const from = formData.get("From") as string;
-    const to = formData.get("To") as string;
-    const body = formData.get("Body") as string;
-    const messageSid = formData.get("MessageSid") as string;
+
+    // Validate request is actually from Twilio (prevents forged payloads)
+    const { validateTwilioWebhook, formDataToParams } = await import("@/lib/twilio");
+    const params = formDataToParams(formData);
+    const isValid = await validateTwilioWebhook(request, params);
+    if (!isValid) {
+      console.warn("SMS webhook: invalid Twilio signature — rejecting");
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    const from = params.From;
+    const to = params.To;
+    const body = params.Body;
+    const messageSid = params.MessageSid;
 
     if (!from || !to) {
       return new NextResponse("<Response/>", {
@@ -20,11 +30,6 @@ export async function POST(request: NextRequest) {
         headers: { "Content-Type": "text/xml" },
       });
     }
-
-    // Optional: validate Twilio signature in production
-    // In production, use twilio.validateRequest() with the auth token
-    // and the full URL + params to verify requests are from Twilio.
-    // Skipped for now — add when Twilio account is live.
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

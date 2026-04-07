@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Look up the lead and verify it belongs to this contractor
     const { data: lead } = await supabase
       .from("leads")
-      .select("id, name, phone, contractor_id")
+      .select("id, name, phone, contractor_id, status")
       .eq("id", leadId)
       .single();
 
@@ -83,6 +83,15 @@ export async function POST(request: NextRequest) {
 
     if (lead.contractor_id !== contractor.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Only allow review requests for completed/won jobs (prevents 1-star reviews)
+    const reviewableStatuses = ["completed", "won"];
+    if (!lead.status || !reviewableStatuses.includes(lead.status)) {
+      return NextResponse.json(
+        { error: "Review requests can only be sent for completed jobs" },
+        { status: 400 }
+      );
     }
 
     if (!lead.phone) {

@@ -8,10 +8,20 @@ import { createServerSupabase } from "@/lib/supabase-server";
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const resourceSid = formData.get("ResourceSid") as string;
-    const status = formData.get("Status") as string;
-    const errorCode = formData.get("ErrorCode") as string | null;
-    const errorMessage = formData.get("ErrorMessage") as string | null;
+
+    // Validate request is actually from Twilio (prevents forged payloads)
+    const { validateTwilioWebhook, formDataToParams } = await import("@/lib/twilio");
+    const params = formDataToParams(formData);
+    const isValid = await validateTwilioWebhook(req, params);
+    if (!isValid) {
+      console.warn("Trust Hub webhook: invalid Twilio signature — rejecting");
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const resourceSid = params.ResourceSid;
+    const status = params.Status;
+    const errorCode = params.ErrorCode || null;
+    const errorMessage = params.ErrorMessage || null;
 
     console.log(`Trust Hub webhook: ${resourceSid} → ${status}`);
 

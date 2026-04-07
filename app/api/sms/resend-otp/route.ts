@@ -23,6 +23,26 @@ export async function POST() {
       return NextResponse.json({ error: "Contractor not found" }, { status: 404 });
     }
 
+    // Rate limit: 60-second cooldown between OTP requests
+    const { data: smsRecord } = await supabase
+      .from("sms_numbers")
+      .select("last_otp_sent_at")
+      .eq("contractor_id", contractor.id)
+      .single();
+
+    if (smsRecord?.last_otp_sent_at) {
+      const lastSent = new Date(smsRecord.last_otp_sent_at).getTime();
+      const cooldownMs = 60 * 1000;
+      const elapsed = Date.now() - lastSent;
+      if (elapsed < cooldownMs) {
+        const waitSec = Math.ceil((cooldownMs - elapsed) / 1000);
+        return NextResponse.json(
+          { error: `Please wait ${waitSec} seconds before resending` },
+          { status: 429 }
+        );
+      }
+    }
+
     const { resendOTP } = await import("@/lib/twilio-10dlc");
     const result = await resendOTP(contractor.id);
 

@@ -2,6 +2,7 @@
 // Uses lazy initialization so the Twilio client is only created when needed
 // (importing at the top level crashes Vercel builds).
 
+import { NextRequest } from "next/server";
 import { createServerSupabase } from "./supabase-server";
 
 // ---------------------------------------------------------------------------
@@ -58,6 +59,62 @@ async function getOrCreateTwilioClient() {
 
   twilioClient = twilio(accountSid, authToken);
   return twilioClient;
+}
+
+// ---------------------------------------------------------------------------
+// Webhook signature validation — prevents forged requests to public endpoints
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate that a webhook request actually came from Twilio.
+ * Uses Twilio's request signing — checks the x-twilio-signature header
+ * against a hash of the auth token + URL + params.
+ *
+ * On Vercel, we reconstruct the public URL from x-forwarded-proto/host
+ * since request.url contains the internal hostname.
+ *
+ * Skips validation in development so local testing works without ngrok.
+ */
+export async function validateTwilioWebhook(
+  request: NextRequest,
+  params: Record<string, string>
+): Promise<boolean> {
+  if (process.env.NODE_ENV === "development") {
+    console.warn("Twilio webhook validation skipped in development");
+    return true;
+  }
+
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  if (!authToken) {
+    console.error("TWILIO_AUTH_TOKEN not set — cannot validate webhook");
+    return false;
+  }
+
+  const signature = request.headers.get("x-twilio-signature");
+  if (!signature) {
+    console.warn("Twilio webhook: missing x-twilio-signature header");
+    return false;
+  }
+
+  // Reconstruct the URL Twilio actually called (Vercel proxy rewrites it)
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+  const url = `${proto}://${host}${request.nextUrl.pathname}`;
+
+  const twilio = await import("twilio");
+  return twilio.validateRequest(authToken, signature, url, params);
+}
+
+/**
+ * Parse FormData into a plain Record<string, string> for Twilio validation.
+ * Twilio sends URL-encoded form data — we need a flat object.
+ */
+export function formDataToParams(formData: FormData): Record<string, string> {
+  const params: Record<string, string> = {};
+  formData.forEach((value, key) => {
+    params[key] = value.toString();
+  });
+  return params;
 }
 
 // ---------------------------------------------------------------------------
@@ -256,10 +313,10 @@ export async function isOptedOut(
     .limit(1);
 
   if (error) {
-    console.error("isOptedOut check error:", error);
-    // If we can't check, assume NOT opted out (don't block messages on DB errors)
-    // but log it so we can investigate
-    return false;
+    console.error("isOptedOut check FAILED — blocking SMS to be safe:", error);
+    // Fail closed: if we can't verify opt-out status, do NOT send.
+    // TCPA violation risk is worse than a missed message.
+    return true;
   }
 
   return (data?.length ?? 0) > 0;

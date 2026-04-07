@@ -718,6 +718,12 @@ export async function resendOTP(contractorId: string): Promise<{ success: boolea
       .brandRegistrations(record.brand_registration_sid)
       .brandRegistrationOtps.create();
 
+    // Track when OTP was sent for rate limiting
+    await supabase
+      .from("sms_numbers")
+      .update({ last_otp_sent_at: new Date().toISOString() })
+      .eq("contractor_id", contractorId);
+
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
