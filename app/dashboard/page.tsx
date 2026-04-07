@@ -209,66 +209,85 @@ export default function DashboardHome() {
 
       {/* Main grid: leads list + roof intel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        {/* Recent Leads — spans 2 cols */}
+        {/* Leads by status — spans 2 cols */}
         <div className="lg:col-span-2 rounded-xl bg-white border border-[#e2e8f0] p-5">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">Recent Leads</span>
+            <span className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">Your Leads</span>
             <a href="/dashboard/leads" className="text-[12px] font-semibold text-slate-400 hover:text-slate-600 flex items-center gap-1">
               View all <ChevronRight className="w-3 h-3" />
             </a>
           </div>
 
-          {recentLeads.length === 0 ? (
-            <p className="text-[13px] text-slate-400 py-8 text-center">No leads yet. They'll appear here when homeowners use your estimate widget.</p>
+          {leads.length === 0 ? (
+            <p className="text-[13px] text-slate-400 py-8 text-center">No leads yet. They&apos;ll appear here when homeowners use your estimate widget.</p>
           ) : (
-            <div className="space-y-0">
-              {recentLeads.map((lead) => {
-                const temp = getLeadTemperature(lead);
-                const tempConfig = getTemperatureConfig(temp);
-                const speed = getSpeedToLead(lead);
-                const dotColor = getStatusDotColor(lead);
-
+            <div className="space-y-5">
+              {/* Group leads by status */}
+              {([
+                { key: "new", label: "Needs Response", color: "text-[#D4863E]", bg: "bg-orange-50", border: "border-orange-200", dot: "bg-[#D4863E]" },
+                { key: "contacted", label: "Contacted", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200", dot: "bg-blue-500" },
+                { key: "quoted", label: "Quoted", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-200", dot: "bg-purple-500" },
+                { key: "won", label: "Won", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", dot: "bg-emerald-500" },
+              ] as const).map((group) => {
+                const groupLeads = leads.filter((l) => l.status === group.key).slice(0, 3);
+                if (groupLeads.length === 0) return null;
                 return (
-                  <a
-                    key={lead.id}
-                    href="/dashboard/leads"
-                    className="flex items-center gap-3 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 -mx-2 px-2 rounded-lg transition-colors"
-                  >
-                    {/* Status dot */}
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-bold text-slate-800 truncate">{lead.name}</span>
-                        {tempConfig && (
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${tempConfig.className} uppercase`}>
-                            {tempConfig.label}
-                          </span>
-                        )}
-                        {speed && (
-                          <span className="text-[9px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                            <Zap className="w-2.5 h-2.5" />{speed}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-400 truncate">
-                        {lead.estimate_roof_sqft ? `${lead.estimate_roof_sqft.toLocaleString()} sqft · ` : ""}
-                        {lead.estimate_material || "Contact form"}
-                        {lead.address ? ` · ${lead.address.split(",")[0]}` : ""}
-                      </p>
+                  <div key={group.key}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-2 h-2 rounded-full ${group.dot}`} />
+                      <span className={`text-[11px] font-bold uppercase tracking-wide ${group.color}`}>
+                        {group.label}
+                      </span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${group.bg} ${group.border} border ${group.color}`}>
+                        {leads.filter((l) => l.status === group.key).length}
+                      </span>
                     </div>
-
-                    {/* Estimate + time */}
-                    <div className="text-right flex-shrink-0">
-                      {lead.estimate_low && lead.estimate_high ? (
-                        <p className="text-[12px] font-bold text-slate-800">
-                          ${(lead.estimate_low / 1000).toFixed(1)}K - ${(lead.estimate_high / 1000).toFixed(1)}K
-                        </p>
-                      ) : null}
-                      <p className="text-[10px] text-slate-400">{formatTimeAgo(lead.created_at)}</p>
+                    <div className={`rounded-lg border ${group.border} ${group.bg} overflow-hidden`}>
+                      {groupLeads.map((lead, i) => {
+                        const temp = getLeadTemperature(lead);
+                        const tempConfig = getTemperatureConfig(temp);
+                        const speed = getSpeedToLead(lead);
+                        return (
+                          <a
+                            key={lead.id}
+                            href="/dashboard/leads"
+                            className={`flex items-center gap-3 py-3 px-3 hover:bg-white/60 transition-colors ${
+                              i < groupLeads.length - 1 ? `border-b ${group.border}` : ""
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[13px] font-bold text-slate-800 truncate">{lead.name}</span>
+                                {tempConfig && (
+                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${tempConfig.className} uppercase`}>
+                                    {tempConfig.label}
+                                  </span>
+                                )}
+                                {speed && (
+                                  <span className="text-[9px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                    <Zap className="w-2.5 h-2.5" />{speed}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500 truncate">
+                                {lead.estimate_roof_sqft ? `${lead.estimate_roof_sqft.toLocaleString()} sqft · ` : ""}
+                                {lead.estimate_material || "Contact form"}
+                                {lead.address ? ` · ${lead.address.split(",")[0]}` : ""}
+                              </p>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              {lead.estimate_low && lead.estimate_high ? (
+                                <p className="text-[12px] font-bold text-slate-800">
+                                  ${(lead.estimate_low / 1000).toFixed(1)}K–${(lead.estimate_high / 1000).toFixed(1)}K
+                                </p>
+                              ) : null}
+                              <p className="text-[10px] text-slate-400">{formatTimeAgo(lead.created_at)}</p>
+                            </div>
+                          </a>
+                        );
+                      })}
                     </div>
-                  </a>
+                  </div>
                 );
               })}
             </div>
