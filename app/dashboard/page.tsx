@@ -107,73 +107,67 @@ export default function DashboardHome() {
 
       {/* Action cards — 3 across */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        {/* Waiting Leads — action-first */}
+        {/* Waiting Leads — always orange accent */}
         <a
           href="/dashboard/leads"
-          className={`rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-            newCount > 0
-              ? "bg-[#FFF7ED] border-l-4 border-l-[#D4863E] border border-orange-200"
-              : "bg-white border border-[#e2e8f0]"
-          }`}
+          className="rounded-xl bg-[#FFF7ED] border-l-4 border-l-[#D4863E] border border-orange-200 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
         >
           <div className="flex items-center gap-2 mb-2">
-            <Users className={`w-3.5 h-3.5 ${newCount > 0 ? "text-[#D4863E]" : "text-slate-400"}`} />
-            <span className={`text-[11px] font-semibold uppercase tracking-wide ${newCount > 0 ? "text-[#D4863E]" : "text-slate-400"}`}>
-              {newCount > 0 ? "Waiting for you" : "New Leads"}
+            <Users className="w-3.5 h-3.5 text-[#D4863E]" />
+            <span className="text-[11px] font-semibold text-[#D4863E] uppercase tracking-wide">
+              {newCount > 0 ? "Waiting for you" : "Leads"}
             </span>
           </div>
           <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
             {newCount}
           </div>
-          {newCount > 0 ? (
-            <p className="text-[12px] text-[#D4863E] font-semibold mt-2 flex items-center gap-1">
-              {newCount} homeowner{newCount > 1 ? "s" : ""} waiting for your call
-              <ChevronRight className="w-3.5 h-3.5" />
-            </p>
-          ) : (
-            <p className="text-[11px] text-slate-400 mt-1">All caught up</p>
-          )}
+          <p className="text-[12px] text-[#D4863E] font-semibold mt-2 flex items-center gap-1">
+            {newCount > 0
+              ? `${newCount} homeowner${newCount > 1 ? "s" : ""} waiting for your call`
+              : "All caught up — nice work"}
+            <ChevronRight className="w-3.5 h-3.5" />
+          </p>
         </a>
 
-        {/* Response Speed — gamified */}
-        <div className="rounded-xl bg-white border border-[#e2e8f0] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        {/* Response Speed — always gamified green accent */}
+        <div className="rounded-xl bg-emerald-50 border-l-4 border-l-emerald-500 border border-emerald-200 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Response Speed</span>
+            <Zap className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wide">Response Speed</span>
           </div>
           <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
             {avgResponse || "—"}
           </div>
-          {avgResponse ? (
-            <p className="text-[12px] text-emerald-600 font-semibold mt-2 flex items-center gap-1">
-              <Zap className="w-3 h-3" />
-              Faster than 90% of roofers
-            </p>
-          ) : (
-            <p className="text-[11px] text-slate-400 mt-1">Respond to your first lead to start tracking</p>
-          )}
+          <p className="text-[12px] text-emerald-600 font-semibold mt-2 flex items-center gap-1">
+            {avgResponse ? (
+              <>
+                <Zap className="w-3 h-3" />
+                Faster than 90% of roofers
+              </>
+            ) : (
+              "Respond to your first lead to start tracking"
+            )}
+          </p>
         </div>
 
-        {/* Open Estimates — money on the table */}
+        {/* Open Estimates — always navy accent */}
         <a
           href="/dashboard/leads"
-          className="rounded-xl bg-white border border-[#e2e8f0] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+          className="rounded-xl bg-[#F0F4F8] border-l-4 border-l-[#1B3A4B] border border-[#D1D9E0] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
         >
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Open Estimates</span>
+            <DollarSign className="w-3.5 h-3.5 text-[#1B3A4B]" />
+            <span className="text-[11px] font-semibold text-[#1B3A4B] uppercase tracking-wide">Open Estimates</span>
           </div>
           <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
             {pipelineValue > 0 ? `$${(pipelineValue / 1000).toFixed(1)}K` : "$0"}
           </div>
-          {pipelineValue > 0 ? (
-            <p className="text-[12px] text-slate-500 font-medium mt-2 flex items-center gap-1">
-              {leads.filter((l) => l.status !== "lost" && l.status !== "won" && l.estimate_low).length} estimates waiting for follow-up
-              <ChevronRight className="w-3.5 h-3.5" />
-            </p>
-          ) : (
-            <p className="text-[11px] text-slate-400 mt-1">Estimates will appear as leads come in</p>
-          )}
+          <p className="text-[12px] text-[#1B3A4B]/70 font-semibold mt-2 flex items-center gap-1">
+            {pipelineValue > 0
+              ? `${leads.filter((l) => l.status !== "lost" && l.status !== "won" && l.estimate_low).length} estimates waiting for follow-up`
+              : "Estimates appear as leads come in"}
+            <ChevronRight className="w-3.5 h-3.5" />
+          </p>
         </a>
       </div>
 
