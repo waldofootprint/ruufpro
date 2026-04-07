@@ -1045,6 +1045,7 @@ export default function EstimateWidgetV4({
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                       contractor_id: contractorId, homeowner_name: name, homeowner_address: address,
+                      lat: propertyCoords?.lat, lng: propertyCoords?.lng,
                       roof_area_sqft: estimateData.roof_data.roof_area_sqft,
                       pitch_degrees: estimateData.roof_data.pitch_degrees,
                       num_segments: estimateData.roof_data.num_segments,

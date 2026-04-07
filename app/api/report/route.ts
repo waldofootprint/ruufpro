@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       price_high,
       is_satellite,
       all_estimates, // G/B/B array from the widget (new in V2)
+      lat, lng, // pre-resolved coords from widget
     } = body;
 
     // Look up contractor details
@@ -127,6 +128,23 @@ export async function POST(request: NextRequest) {
     if (contractor.owens_corning_preferred) certs.push("Owens Corning Preferred");
     if (contractor.certainteed_select) certs.push("CertainTeed SELECT");
 
+    // Generate satellite image URL if we have coords
+    const MAPS_KEY = process.env.GOOGLE_API_KEY;
+    let satelliteImageUrl: string | null = null;
+    if (lat && lng && MAPS_KEY) {
+      satelliteImageUrl =
+        `https://maps.googleapis.com/maps/api/staticmap` +
+        `?center=${lat},${lng}` +
+        `&zoom=19&size=600x300&scale=2&maptype=satellite` +
+        `&key=${MAPS_KEY}`;
+    } else if (homeowner_address && MAPS_KEY) {
+      satelliteImageUrl =
+        `https://maps.googleapis.com/maps/api/staticmap` +
+        `?center=${encodeURIComponent(homeowner_address)}` +
+        `&zoom=19&size=600x300&scale=2&maptype=satellite` +
+        `&key=${MAPS_KEY}`;
+    }
+
     const element = React.createElement(EstimateReportPDF, {
       contractorName: contractor.business_name,
       contractorPhone: contractor.phone,
@@ -149,6 +167,7 @@ export async function POST(request: NextRequest) {
       materialOptions,
       repairOption,
       isSatellite: is_satellite ?? true,
+      satelliteImageUrl,
       propertyProtectionEnabled: pdfSettings?.property_protection_enabled ?? false,
       changeOrderEnabled: pdfSettings?.change_order_enabled ?? false,
       financingEnabled: pdfSettings?.financing_enabled ?? false,

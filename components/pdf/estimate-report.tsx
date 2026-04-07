@@ -8,6 +8,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
 } from "@react-pdf/renderer";
 
@@ -56,6 +57,7 @@ interface EstimateReportProps {
   materialOptions: MaterialOption[];
   repairOption: RepairOption | null;
   isSatellite: boolean;
+  satelliteImageUrl?: string | null;
   date: string;
 }
 
@@ -388,7 +390,7 @@ export function EstimateReportPDF(props: EstimateReportProps) {
     contractorLicense, contractorInsured, contractorYears, contractorCertifications,
     homeownerName, homeownerAddress, homeownerPhone, homeownerEmail,
     roofAreaSqft, pitchDegrees, numSegments, selectedMaterial,
-    priceLow, priceHigh, materialOptions, repairOption, isSatellite, date,
+    priceLow, priceHigh, materialOptions, repairOption, isSatellite, satelliteImageUrl, date,
     propertyProtectionEnabled, changeOrderEnabled,
     financingEnabled, financingProvider, financingTermMonths, financingApr, financingNote,
   } = props;
@@ -445,6 +447,17 @@ export function EstimateReportPDF(props: EstimateReportProps) {
               <Text style={s.prepDetail}>{contractorPhone}</Text>
             </View>
           </View>
+
+          {/* SATELLITE IMAGE — property aerial view */}
+          {satelliteImageUrl && (
+            <View style={{ marginBottom: 24 }} wrap={false}>
+              <Text style={s.sectionTitle}>Your Property</Text>
+              <Image
+                src={satelliteImageUrl}
+                style={{ width: "100%", height: 180, objectFit: "cover" }}
+              />
+            </View>
+          )}
 
           {/* ROOF MEASUREMENTS */}
           <Text style={s.sectionTitle}>Roof Measurements</Text>
