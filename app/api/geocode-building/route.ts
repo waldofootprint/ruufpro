@@ -43,18 +43,39 @@ export async function POST(req: Request) {
           finalLng = result.geometry.location.lng;
         }
 
-        // Extract building outline
+        // Extract building outline — pick the LARGEST building (skip sheds/outbuildings)
         const buildings = result.buildings;
         if (buildings?.length) {
-          const outline = buildings[0]?.building_outlines?.[0];
-          if (outline?.display_polygon?.coordinates?.[0]) {
-            // GeoJSON format: [[lng, lat], ...] → Google Maps format: [{lat, lng}, ...]
-            polygon = outline.display_polygon.coordinates[0].map(
-              (coord: number[]) => ({
-                lat: coord[1],
-                lng: coord[0],
-              })
-            );
+          let bestPolygon: number[][] | null = null;
+          let bestArea = 0;
+
+          for (const bldg of buildings) {
+            for (const outline of bldg.building_outlines || []) {
+              const coords = outline?.display_polygon?.coordinates?.[0];
+              if (!coords || coords.length < 4) continue;
+
+              // Calculate approximate area using shoelace formula
+              let area = 0;
+              for (let i = 0; i < coords.length - 1; i++) {
+                area += coords[i][0] * coords[i + 1][1];
+                area -= coords[i + 1][0] * coords[i][1];
+              }
+              area = Math.abs(area) / 2;
+
+              if (area > bestArea) {
+                bestArea = area;
+                bestPolygon = coords;
+              }
+            }
+          }
+
+          // Only use the outline if it's reasonably sized (skip tiny sheds)
+          // ~500 sqft minimum in geo-units ≈ 4e-9 in lng*lat units
+          if (bestPolygon && bestArea > 2e-9) {
+            polygon = bestPolygon.map((coord: number[]) => ({
+              lat: coord[1],
+              lng: coord[0],
+            }));
           }
         }
       }
