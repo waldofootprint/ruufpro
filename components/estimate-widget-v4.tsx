@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Download, Info, Check, Phone } from "lucide-react";
 import { usePlacesAutocomplete } from "@/lib/use-places-autocomplete";
+import SatelliteView from "@/components/satellite-view";
 
 // ----- GLASS COLOR SYSTEM -----
 const GLASS = {
@@ -215,7 +216,10 @@ export default function EstimateWidgetV4({
 
   const [address, setAddress] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const { suggestions, search: searchPlaces, clearSuggestions, isLoaded: placesLoaded } = usePlacesAutocomplete();
+  const [addressSelectedFromDropdown, setAddressSelectedFromDropdown] = useState(false);
+  const [propertyCoords, setPropertyCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [buildingPolygon, setBuildingPolygon] = useState<{ lat: number; lng: number }[] | null>(null);
+  const { suggestions, search: searchPlaces, clearSuggestions, isLoaded: placesLoaded, getPlaceDetails } = usePlacesAutocomplete();
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [pitchCategory, setPitchCategory] = useState("");
   const [currentMaterial, setCurrentMaterial] = useState("");
@@ -246,6 +250,7 @@ export default function EstimateWidgetV4({
           contractor_id: contractorId, address, pitch_category: pitchCategory,
           current_material: currentMaterial,
           shingle_layers: "not_sure", timeline, financing_interest: financing,
+          lat: propertyCoords?.lat, lng: propertyCoords?.lng,
         }),
       });
       const data = await res.json();
@@ -355,6 +360,9 @@ export default function EstimateWidgetV4({
       e.currentTarget.style.boxShadow = SHADOW.inputInset;
     },
   };
+
+  // Address validation — encourage dropdown selection, but allow manual entry for rural
+  const addressValid = addressSelectedFromDropdown || (address.length >= 10 && address.includes(","));
 
   // Disabled button check
   const isSubmitDisabled = loading || !name || !email || !phone || !agreedToTerms;
@@ -498,6 +506,12 @@ export default function EstimateWidgetV4({
                   setAddress(val);
                   searchPlaces(val);
                   setShowSuggestions(true);
+                  // Reset satellite state if user edits after selecting
+                  if (addressSelectedFromDropdown) {
+                    setAddressSelectedFromDropdown(false);
+                    setPropertyCoords(null);
+                    setBuildingPolygon(null);
+                  }
                 }}
                 onFocus={(e) => {
                   if (suggestions.length > 0) setShowSuggestions(true);
@@ -532,10 +546,32 @@ export default function EstimateWidgetV4({
                     <button
                       key={s.placeId}
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         setAddress(s.description);
                         setShowSuggestions(false);
+                        setAddressSelectedFromDropdown(true);
                         clearSuggestions();
+
+                        // Get lat/lng from placeId (included in session billing)
+                        const coords = await getPlaceDetails(s.placeId);
+                        if (coords) {
+                          setPropertyCoords(coords);
+                          // Fetch building outline in background
+                          fetch("/api/geocode-building", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              address: s.description,
+                              lat: coords.lat,
+                              lng: coords.lng,
+                            }),
+                          })
+                            .then((res) => res.json())
+                            .then((data) => {
+                              if (data.polygon) setBuildingPolygon(data.polygon);
+                            })
+                            .catch(() => {});
+                        }
                       }}
                       className="w-full text-left px-4 py-3 text-[15px] transition-colors duration-150 hover:bg-white/10 flex items-start gap-3"
                       style={{ color: GLASS.text, borderBottom: `1px solid ${GLASS.separator}` }}
@@ -550,19 +586,30 @@ export default function EstimateWidgetV4({
               )}
             </div>
 
+            {/* Satellite property view — appears after address selection */}
+            <AnimatePresence>
+              {propertyCoords && (
+                <SatelliteView
+                  lat={propertyCoords.lat}
+                  lng={propertyCoords.lng}
+                  buildingPolygon={buildingPolygon}
+                />
+              )}
+            </AnimatePresence>
+
             <motion.button
               onClick={nextStep}
-              disabled={address.length < 5}
-              whileHover={address.length >= 5 ? { y: -1, boxShadow: SHADOW.btnPrimaryHover } : undefined}
-              whileTap={address.length >= 5 ? { y: 1, boxShadow: SHADOW.btnPrimaryActive } : undefined}
+              disabled={!addressValid}
+              whileHover={addressValid ? { y: -1, boxShadow: SHADOW.btnPrimaryHover } : undefined}
+              whileTap={addressValid ? { y: 1, boxShadow: SHADOW.btnPrimaryActive } : undefined}
               className={cn(
                 "w-full py-3 rounded-xl text-[17px] transition-all duration-300",
-                address.length < 5 ? "cursor-not-allowed opacity-40" : ""
+                !addressValid ? "cursor-not-allowed opacity-40" : ""
               )}
               style={{
-                background: address.length < 5 ? GLASS.separator : GLASS.primaryBg,
-                color: address.length < 5 ? GLASS.textTertiary : GLASS.primaryText,
-                boxShadow: address.length < 5 ? "none" : SHADOW.btnPrimary,
+                background: !addressValid ? GLASS.separator : GLASS.primaryBg,
+                color: !addressValid ? GLASS.textTertiary : GLASS.primaryText,
+                boxShadow: !addressValid ? "none" : SHADOW.btnPrimary,
                 letterSpacing: "-0.022em", fontWeight: 600, minHeight: 44,
               }}
             >

@@ -185,7 +185,8 @@ async function callSolarAPI(
 // Main function: get roof data for an address (checks cache first)
 
 export async function getRoofData(
-  address: string
+  address: string,
+  preCoords?: { lat: number; lng: number }
 ): Promise<{ data: RoofData | null; geocoded: GeoResult | null }> {
   // Step 1: Check cache
   const addressHash = hashAddress(address);
@@ -194,8 +195,10 @@ export async function getRoofData(
     return { data: cached, geocoded: null };
   }
 
-  // Step 2: Geocode the address
-  const geo = await geocodeAddress(address);
+  // Step 2: Use pre-resolved coords or geocode the address
+  const geo = preCoords
+    ? { lat: preCoords.lat, lng: preCoords.lng, formattedAddress: address }
+    : await geocodeAddress(address);
   if (!geo) {
     return { data: null, geocoded: null };
   }

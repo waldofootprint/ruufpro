@@ -19,6 +19,11 @@ interface Suggestion {
   description: string;
 }
 
+interface PlaceCoords {
+  lat: number;
+  lng: number;
+}
+
 export function usePlacesAutocomplete() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -83,5 +88,42 @@ export function usePlacesAutocomplete() {
     }
   }, [isLoaded]);
 
-  return { suggestions, search, clearSuggestions, isLoaded };
+  // Get lat/lng from a placeId — included in session billing ($0 incremental cost)
+  const getPlaceDetails = useCallback(
+    async (placeId: string): Promise<PlaceCoords | null> => {
+      if (!isLoaded) return null;
+
+      return new Promise((resolve) => {
+        const div = document.createElement("div");
+        const service = new google.maps.places.PlacesService(div);
+        service.getDetails(
+          {
+            placeId,
+            fields: ["geometry"],
+            sessionToken: sessionTokenRef.current!,
+          },
+          (result, status) => {
+            // Rotate session token — getDetails completes the session
+            sessionTokenRef.current =
+              new google.maps.places.AutocompleteSessionToken();
+
+            if (
+              status === google.maps.places.PlacesServiceStatus.OK &&
+              result?.geometry?.location
+            ) {
+              resolve({
+                lat: result.geometry.location.lat(),
+                lng: result.geometry.location.lng(),
+              });
+            } else {
+              resolve(null);
+            }
+          }
+        );
+      });
+    },
+    [isLoaded]
+  );
+
+  return { suggestions, search, clearSuggestions, isLoaded, getPlaceDetails };
 }

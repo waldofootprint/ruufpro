@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
       pitch_category, current_material, shingle_layers,
       timeline, financing_interest,
       material, // optional: if provided, also return a single-material response for backward compat
+      lat, lng, // optional: pre-resolved coords from Places API (skips server-side geocoding)
     } = body;
 
     if (!contractor_id) {
@@ -114,7 +115,8 @@ export async function POST(request: NextRequest) {
     let geometry = null;
 
     if (address) {
-      const result = await getRoofData(address);
+      const preCoords = lat && lng ? { lat, lng } : undefined;
+      const result = await getRoofData(address, preCoords);
       roofData = result.data;
       if (roofData) {
         geometry = inferRoofGeometry(roofData);
