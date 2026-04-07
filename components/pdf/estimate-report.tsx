@@ -76,69 +76,72 @@ const s = StyleSheet.create({
     color: "#334155",
   },
 
-  // ---- HEADER ----
+  // ---- HEADER (Clean Minimal — white bg, bottom border) ----
   header: {
-    backgroundColor: DARK,
     paddingHorizontal: 40,
-    paddingTop: 24,
-    paddingBottom: 16,
+    paddingTop: 36,
+    paddingBottom: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
   },
   companyName: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: "Helvetica-Bold",
-    color: "#ffffff",
-    letterSpacing: -0.5,
+    color: DARK,
+    letterSpacing: -0.8,
   },
   companyInfo: {
-    fontSize: 8,
+    fontSize: 8.5,
     color: "#94a3b8",
     marginTop: 4,
-    lineHeight: 1.5,
   },
   reportTitle: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: "#94a3b8",
     textTransform: "uppercase",
-    letterSpacing: 1.5,
+    letterSpacing: 1,
   },
   reportDate: {
     fontSize: 8,
-    color: "#64748b",
-    marginTop: 2,
+    color: "#cbd5e1",
+    marginTop: 3,
   },
   headerBadge: {
-    backgroundColor: BLUE,
+    backgroundColor: "#ecfdf5",
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 3,
+    borderRadius: 20,
     marginTop: 6,
+    borderWidth: 1,
+    borderColor: "#a7f3d0",
   },
   headerBadgeText: {
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
-    color: "#ffffff",
+    color: "#059669",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
 
   // ---- MINI HEADER (page 2+) ----
   miniHeader: {
-    backgroundColor: DARK,
     paddingHorizontal: 40,
     paddingVertical: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
   },
 
   // ---- BODY ----
   body: {
     paddingHorizontal: 40,
-    paddingTop: 24,
+    paddingTop: 28,
     paddingBottom: 20,
   },
 
@@ -146,119 +149,115 @@ const s = StyleSheet.create({
   preparedFor: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
+    marginBottom: 28,
   },
   prepLabel: {
-    fontSize: 7,
-    color: GRAY,
+    fontSize: 6.5,
+    color: "#cbd5e1",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 3,
+    letterSpacing: 1.5,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 6,
   },
   prepValue: {
-    fontSize: 11,
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
-    color: NAVY,
+    color: DARK,
   },
   prepDetail: {
-    fontSize: 8,
-    color: GRAY,
+    fontSize: 8.5,
+    color: "#94a3b8",
     marginTop: 2,
   },
 
   // ---- SECTION TITLE ----
   sectionTitle: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: NAVY,
-    marginBottom: 10,
+    color: "#94a3b8",
+    marginBottom: 12,
     marginTop: 4,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 2,
   },
 
-  // ---- ROOF DETAILS GRID ----
+  // ---- ROOF DETAILS GRID (border-bottom stats, no cards) ----
   detailsGrid: {
     flexDirection: "row",
-    gap: 8,
-    marginBottom: 20,
+    gap: 16,
+    marginBottom: 28,
   },
   detailCard: {
     flex: 1,
-    backgroundColor: LIGHT,
-    borderRadius: 6,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: BORDER,
+    borderBottomWidth: 2,
+    borderBottomColor: DARK,
+    paddingBottom: 12,
   },
   detailLabel: {
     fontSize: 7,
-    color: GRAY,
+    color: "#94a3b8",
     textTransform: "uppercase",
-    letterSpacing: 0.3,
-    marginBottom: 3,
+    letterSpacing: 0.5,
+    marginTop: 4,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 20,
     fontFamily: "Helvetica-Bold",
-    color: NAVY,
+    color: DARK,
+    letterSpacing: -0.5,
   },
   detailSub: {
     fontSize: 7,
-    color: GRAY,
+    color: "#cbd5e1",
     marginTop: 1,
   },
 
-  // ---- ESTIMATE BOX ----
+  // ---- ESTIMATE BOX (square, bordered, no background) ----
   estimateBox: {
-    backgroundColor: "#f0fdf4",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#bbf7d0",
+    borderWidth: 2,
+    borderColor: DARK,
+    padding: 28,
+    marginBottom: 28,
     alignItems: "center",
   },
   estimateLabel: {
-    fontSize: 7,
-    color: GRAY,
+    fontSize: 8,
+    color: "#94a3b8",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 4,
+    letterSpacing: 2,
+    marginBottom: 8,
   },
   estimatePrice: {
-    fontSize: 32,
+    fontSize: 40,
     fontFamily: "Helvetica-Bold",
-    color: NAVY,
-    letterSpacing: -1,
+    color: DARK,
+    letterSpacing: -2,
   },
   estimateMaterial: {
-    fontSize: 10,
-    color: "#4b5563",
-    marginTop: 2,
+    fontSize: 11,
+    color: GRAY,
+    marginTop: 4,
   },
   estimateNote: {
     fontSize: 7,
-    color: GRAY,
+    color: "#94a3b8",
     marginTop: 6,
   },
 
   // ---- MATERIAL CARD ----
   matCard: {
     marginBottom: 8,
-    borderRadius: 6,
-    borderWidth: 1,
-    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+    paddingBottom: 10,
+    paddingTop: 10,
   },
   compBadge: {
-    backgroundColor: GREEN,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    backgroundColor: DARK,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 2,
-    marginLeft: 4,
+    marginLeft: 6,
   },
   compBadgeText: { fontSize: 6, fontFamily: "Helvetica-Bold", color: "#ffffff" },
 
@@ -267,7 +266,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 4,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   includedItem: {
     width: "48%",
@@ -283,7 +282,7 @@ const s = StyleSheet.create({
   },
   includedText: {
     fontSize: 8,
-    color: NAVY,
+    color: DARK,
     flex: 1,
   },
 
@@ -292,7 +291,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   credBadge: {
     backgroundColor: LIGHT,
@@ -302,41 +301,41 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: BORDER,
   },
-  credText: { fontSize: 7, fontFamily: "Helvetica-Bold", color: NAVY },
+  credText: { fontSize: 7, fontFamily: "Helvetica-Bold", color: DARK },
 
   // ---- DISCLAIMER ----
   disclaimer: {
     backgroundColor: LIGHT,
-    borderRadius: 6,
-    padding: 10,
-    marginBottom: 20,
+    borderRadius: 0,
+    padding: 12,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: BORDER,
   },
-  disclaimerTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: GRAY, marginBottom: 3 },
-  disclaimerText: { fontSize: 7, color: GRAY, lineHeight: 1.6 },
+  disclaimerTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#94a3b8", marginBottom: 3 },
+  disclaimerText: { fontSize: 7, color: "#94a3b8", lineHeight: 1.6 },
 
   // ---- NEXT STEPS ----
   stepsBox: {
-    backgroundColor: NAVY,
-    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: DARK,
     padding: 16,
     marginBottom: 16,
   },
-  stepsTitle: { fontSize: 12, fontFamily: "Helvetica-Bold", color: "#ffffff", marginBottom: 10 },
+  stepsTitle: { fontSize: 12, fontFamily: "Helvetica-Bold", color: DARK, marginBottom: 10 },
   step: { flexDirection: "row", marginBottom: 6 },
   stepNum: {
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: BLUE,
+    backgroundColor: DARK,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 8,
   },
   stepNumText: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#ffffff" },
-  stepText: { fontSize: 9, color: "#cbd5e1", flex: 1, paddingTop: 2 },
-  stepsPhone: { fontSize: 16, fontFamily: "Helvetica-Bold", color: "#ffffff", textAlign: "center", marginTop: 8 },
+  stepText: { fontSize: 9, color: GRAY, flex: 1, paddingTop: 2 },
+  stepsPhone: { fontSize: 16, fontFamily: "Helvetica-Bold", color: DARK, textAlign: "center", marginTop: 8 },
   stepsSub: { fontSize: 8, color: "#94a3b8", textAlign: "center", marginTop: 2 },
 
   // ---- FOOTER ----
@@ -397,6 +396,13 @@ export function EstimateReportPDF(props: EstimateReportProps) {
   const pitchDisplay = `${Math.round(Math.tan((pitchDegrees * Math.PI) / 180) * 12)}/12`;
   const complexity = numSegments <= 2 ? "Simple" : numSegments <= 4 ? "Moderate" : numSegments <= 6 ? "Complex" : "Very Complex";
   const totalPages = materialOptions.length > 2 ? 3 : 2;
+
+  // Calculate expiration date (30 days from report date)
+  const expiresDate = new Date();
+  expiresDate.setDate(expiresDate.getDate() + 30);
+  const expiresFormatted = expiresDate.toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  });
 
   return (
     <Document>
@@ -477,6 +483,9 @@ export function EstimateReportPDF(props: EstimateReportProps) {
             <Text style={s.estimateNote}>
               {roofAreaSqft.toLocaleString()} sqft · {pitchDisplay} pitch · {isSatellite ? "satellite-measured" : "estimated"}
             </Text>
+            <Text style={{ fontSize: 7, color: "#b91c1c", fontFamily: "Helvetica-Bold", marginTop: 8 }}>
+              Estimate valid through {expiresFormatted}
+            </Text>
           </View>
 
           {/* REPAIR OPTION */}
@@ -554,7 +563,7 @@ export function EstimateReportPDF(props: EstimateReportProps) {
       {/* ===== PAGE 2: Material Comparison ===== */}
       <Page size="A4" style={s.page}>
         <View style={s.miniHeader}>
-          <Text style={{ fontSize: 12, fontFamily: "Helvetica-Bold", color: "#ffffff" }}>{contractorName}</Text>
+          <Text style={{ fontSize: 12, fontFamily: "Helvetica-Bold", color: DARK }}>{contractorName}</Text>
           <Text style={{ fontSize: 8, color: "#94a3b8" }}>Estimate for {homeownerName} · {date}</Text>
         </View>
 
@@ -569,20 +578,20 @@ export function EstimateReportPDF(props: EstimateReportProps) {
                 wrap={false}
                 style={{
                   ...s.matCard,
-                  borderColor: isSelected ? "#bbf7d0" : BORDER,
-                  backgroundColor: isSelected ? "#f0fdf4" : LIGHT,
+                  borderBottomColor: isSelected ? DARK : BORDER,
+                  borderBottomWidth: isSelected ? 2 : 1,
                 }}
               >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.name}</Text>
+                    <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: DARK }}>{mat.name}</Text>
                     {isSelected && (
                       <View style={s.compBadge}>
                         <Text style={s.compBadgeText}>SELECTED</Text>
                       </View>
                     )}
                   </View>
-                  <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: NAVY }}>
+                  <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: DARK }}>
                     ${mat.priceLow.toLocaleString()} – ${mat.priceHigh.toLocaleString()}
                   </Text>
                 </View>
@@ -591,18 +600,18 @@ export function EstimateReportPDF(props: EstimateReportProps) {
                   {mat.description}
                 </Text>
 
-                <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flexDirection: "row", gap: 16 }}>
                   <View>
-                    <Text style={{ fontSize: 6, color: GRAY, textTransform: "uppercase", letterSpacing: 0.3 }}>Warranty</Text>
-                    <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.warranty}</Text>
+                    <Text style={{ fontSize: 6, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>Warranty</Text>
+                    <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: DARK }}>{mat.warranty}</Text>
                   </View>
                   <View>
-                    <Text style={{ fontSize: 6, color: GRAY, textTransform: "uppercase", letterSpacing: 0.3 }}>Wind Rating</Text>
-                    <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.windRating}</Text>
+                    <Text style={{ fontSize: 6, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>Wind Rating</Text>
+                    <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: DARK }}>{mat.windRating}</Text>
                   </View>
                   <View>
-                    <Text style={{ fontSize: 6, color: GRAY, textTransform: "uppercase", letterSpacing: 0.3 }}>Lifespan</Text>
-                    <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY }}>{mat.lifespan}</Text>
+                    <Text style={{ fontSize: 6, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>Lifespan</Text>
+                    <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: DARK }}>{mat.lifespan}</Text>
                   </View>
                 </View>
               </View>
@@ -654,7 +663,7 @@ export function EstimateReportPDF(props: EstimateReportProps) {
               Your actual price depends on roof condition, number of existing layers, decking integrity, access
               requirements, code compliance, and other factors that can only be assessed during an in-person inspection.
               Final pricing may be higher or lower than this range. Material prices are subject to market fluctuations.
-              This estimate is valid for 30 days from {date}.
+              This estimate is valid through {expiresFormatted}.
             </Text>
           </View>
 
