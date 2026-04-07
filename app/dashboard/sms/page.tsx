@@ -42,6 +42,7 @@ interface SmsNumber {
   registration_path: string | null;
   registration_status: RegistrationStatus;
   registration_error: string | null;
+  compliance_website_url: string | null;
   activated_at: string | null;
   created_at: string;
 }
@@ -92,7 +93,7 @@ function getStatusMessage(status: RegistrationStatus, path: string | null): { ti
     case "brand_otp_required":
       return { title: "Verification Code Sent", desc: "A verification code was sent to your mobile phone. Enter it to continue.", color: "amber" };
     case "brand_approved":
-      return { title: "Brand Approved", desc: "Setting up your messaging campaign...", color: "blue" };
+      return { title: "Brand Approved", desc: "Paste the A2P Wizard compliance URL below to continue registration.", color: "blue" };
     case "campaign_pending":
       return { title: "Campaign Under Review", desc: "Carriers are reviewing your messaging campaign. This typically takes 10-15 business days. We'll activate SMS automatically once approved.", color: "amber" };
     case "campaign_approved":
@@ -122,6 +123,9 @@ export default function SmsPage() {
   const [otpResent, setOtpResent] = useState(false);
   const [messages, setMessages] = useState<{ id: string; direction: string; to_number: string; from_number: string; body: string; message_type: string; status: string; created_at: string }[]>([]);
   const [showAllMessages, setShowAllMessages] = useState(false);
+  const [complianceUrl, setComplianceUrl] = useState("");
+  const [savingCompliance, setSavingCompliance] = useState(false);
+  const [complianceSaved, setComplianceSaved] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -151,6 +155,7 @@ export default function SmsPage() {
 
       if (number) {
         setSmsNumber(number as SmsNumber);
+        setComplianceUrl(number.compliance_website_url || "");
       }
 
       // Load recent SMS messages
@@ -232,6 +237,24 @@ export default function SmsPage() {
     } else {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+    }
+  }
+
+  async function handleSaveComplianceUrl() {
+    if (!contractorId || !smsNumber) return;
+    setSavingCompliance(true);
+    setComplianceSaved(false);
+
+    const { error } = await supabase
+      .from("sms_numbers")
+      .update({ compliance_website_url: complianceUrl || null })
+      .eq("contractor_id", contractorId);
+
+    setSavingCompliance(false);
+    if (!error) {
+      setComplianceSaved(true);
+      setSmsNumber({ ...smsNumber, compliance_website_url: complianceUrl || null });
+      setTimeout(() => setComplianceSaved(false), 3000);
     }
   }
 
@@ -391,6 +414,56 @@ export default function SmsPage() {
                   </div>
                   <p className="text-[10px] text-amber-500 mt-2">
                     Reply to the text message with the code. Then tap &quot;Check Status&quot; above.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* A2P Compliance URL — shows when brand is approved and waiting for URL */}
+          {regStatus === "brand_approved" && !smsNumber?.compliance_website_url && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mt-2">
+              <div className="flex items-start gap-3">
+                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-[13px] font-bold text-blue-800">Compliance Website Needed</p>
+                  <p className="text-[12px] text-blue-600 mt-1">
+                    Your brand is approved! Before we can register your messaging campaign, paste the A2P Wizard compliance URL below.
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    <input
+                      type="url"
+                      value={complianceUrl}
+                      onChange={(e) => setComplianceUrl(e.target.value)}
+                      placeholder="https://yourbusiness.nebulabrandgroup.com"
+                      className="w-full px-3 py-2.5 rounded-lg border border-blue-200 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleSaveComplianceUrl}
+                        disabled={savingCompliance || !complianceUrl}
+                        className="px-4 py-2 rounded-lg bg-blue-600 text-[12px] font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center gap-1.5"
+                      >
+                        {savingCompliance ? (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> Saving...</>
+                        ) : complianceSaved ? (
+                          <><Check className="w-3 h-3" /> Saved</>
+                        ) : (
+                          "Save Compliance URL"
+                        )}
+                      </button>
+                      <a
+                        href="https://www.a2pwizard.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-2 rounded-lg border border-blue-200 text-[12px] font-semibold text-blue-700 hover:bg-blue-100 transition-all flex items-center gap-1.5"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Open A2P Wizard
+                      </a>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-blue-500 mt-2">
+                    Once saved, the system will automatically submit the campaign registration on the next daily check.
                   </p>
                 </div>
               </div>
