@@ -18,64 +18,53 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Address required" }, { status: 400 });
     }
 
-    // If we already have coords (from Places getDetails), try building outline directly
-    // Otherwise geocode first
+    // Forward geocode with building outline — uses the address string
+    // (reverse geocode with latlng picks up wrong nearby structures)
+    let polygon: BuildingOutline["polygon"] | null = null;
     let finalLat = lat;
     let finalLng = lng;
-
-    if (!finalLat || !finalLng) {
-      const geoUrl =
-        `https://maps.googleapis.com/maps/api/geocode/json` +
-        `?address=${encodeURIComponent(address)}` +
-        `&key=${API_KEY}`;
-
-      const geoRes = await fetch(geoUrl);
-      const geoData = await geoRes.json();
-
-      if (geoData.status !== "OK" || !geoData.results?.length) {
-        return NextResponse.json({ lat: null, lng: null, polygon: null });
-      }
-
-      finalLat = geoData.results[0].geometry.location.lat;
-      finalLng = geoData.results[0].geometry.location.lng;
-    }
-
-    // Try to get building outline via Geocoding API with extra_computations
-    let polygon: BuildingOutline["polygon"] | null = null;
 
     try {
       const buildingUrl =
         `https://maps.googleapis.com/maps/api/geocode/json` +
-        `?latlng=${finalLat},${finalLng}` +
+        `?address=${encodeURIComponent(address)}` +
         `&extra_computations=BUILDING_AND_ENTRANCES` +
         `&key=${API_KEY}`;
 
       const buildingRes = await fetch(buildingUrl);
       const buildingData = await buildingRes.json();
 
-      // Extract building outline from response
-      if (buildingData.results?.length) {
-        for (const result of buildingData.results) {
-          const buildings = result.buildings;
-          if (buildings?.length) {
-            const outline = buildings[0]?.building_outlines?.[0];
-            if (outline?.display_polygon?.coordinates?.[0]) {
-              // GeoJSON format: [[lng, lat], [lng, lat], ...]
-              // Convert to Google Maps format: [{lat, lng}, ...]
-              polygon = outline.display_polygon.coordinates[0].map(
-                (coord: number[]) => ({
-                  lat: coord[1],
-                  lng: coord[0],
-                })
-              );
-              break;
-            }
+      if (buildingData.status === "OK" && buildingData.results?.length) {
+        const result = buildingData.results[0];
+
+        // Use the geocoded lat/lng if we don't already have coords
+        if (!finalLat || !finalLng) {
+          finalLat = result.geometry.location.lat;
+          finalLng = result.geometry.location.lng;
+        }
+
+        // Extract building outline
+        const buildings = result.buildings;
+        if (buildings?.length) {
+          const outline = buildings[0]?.building_outlines?.[0];
+          if (outline?.display_polygon?.coordinates?.[0]) {
+            // GeoJSON format: [[lng, lat], ...] → Google Maps format: [{lat, lng}, ...]
+            polygon = outline.display_polygon.coordinates[0].map(
+              (coord: number[]) => ({
+                lat: coord[1],
+                lng: coord[0],
+              })
+            );
           }
         }
       }
     } catch (e) {
-      // Building outline not available — graceful fallback
       console.log("Building outline unavailable:", e);
+    }
+
+    // If geocoding failed and we have no coords at all, return null
+    if (!finalLat || !finalLng) {
+      return NextResponse.json({ lat: null, lng: null, polygon: null });
     }
 
     return NextResponse.json({
