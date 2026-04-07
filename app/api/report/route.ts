@@ -114,14 +114,6 @@ export async function POST(request: NextRequest) {
       .eq("contractor_id", contractor_id)
       .single();
 
-    // Repair option — estimated at roughly 5-8% of replacement cost
-    const roofArea = roof_area_sqft || 2000;
-    const repairOption = {
-      priceLow: Math.round(roofArea * 0.35),
-      priceHigh: Math.round(roofArea * 0.55),
-      description: "Don't replace it when you can repair it! A certified roofing technician will inspect your roof, identify issues, and make targeted repairs to extend its lifetime. Includes leak repair, shingle replacement, flashing repair, and preventive maintenance.",
-    };
-
     // Build certifications list
     const certs: string[] = [];
     if (contractor.gaf_master_elite) certs.push("GAF Master Elite");
@@ -165,7 +157,6 @@ export async function POST(request: NextRequest) {
       priceLow: price_low || 0,
       priceHigh: price_high || 0,
       materialOptions,
-      repairOption,
       isSatellite: is_satellite ?? true,
       satelliteImageUrl,
       propertyProtectionEnabled: pdfSettings?.property_protection_enabled ?? false,
