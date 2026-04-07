@@ -40,6 +40,13 @@ interface EstimateReportProps {
   homeownerAddress: string | null;
   homeownerPhone: string | null;
   homeownerEmail: string | null;
+  propertyProtectionEnabled?: boolean;
+  changeOrderEnabled?: boolean;
+  financingEnabled?: boolean;
+  financingProvider?: string | null;
+  financingTermMonths?: number | null;
+  financingApr?: number | null;
+  financingNote?: string | null;
   roofAreaSqft: number;
   pitchDegrees: number;
   numSegments: number;
@@ -360,6 +367,22 @@ const INCLUDED_ITEMS = [
   "Final walkthrough with homeowner",
 ];
 
+// TODO: Make these editable per contractor via dashboard settings
+const PROPERTY_PROTECTION_ITEMS = [
+  "Tarps over landscaping and flower beds",
+  "Plywood protection for driveways and walkways",
+  "Magnetic nail sweep of entire property",
+  "Same-day debris removal — no overnight dumpsters",
+  "Final walkthrough with you before we leave",
+];
+
+const CHANGE_ORDER_STEPS = [
+  "We stop work and document the issue with photos",
+  "We call you to explain what we found and discuss options",
+  "You approve any changes and costs before we proceed",
+  "No surprise charges — ever",
+];
+
 export function EstimateReportPDF(props: EstimateReportProps) {
   const {
     contractorName, contractorPhone, contractorCity, contractorState,
@@ -367,6 +390,8 @@ export function EstimateReportPDF(props: EstimateReportProps) {
     homeownerName, homeownerAddress, homeownerPhone, homeownerEmail,
     roofAreaSqft, pitchDegrees, numSegments, selectedMaterial,
     priceLow, priceHigh, materialOptions, repairOption, isSatellite, date,
+    propertyProtectionEnabled, changeOrderEnabled,
+    financingEnabled, financingProvider, financingTermMonths, financingApr, financingNote,
   } = props;
 
   const pitchDisplay = `${Math.round(Math.tan((pitchDegrees * Math.PI) / 180) * 12)}/12`;
@@ -486,6 +511,37 @@ export function EstimateReportPDF(props: EstimateReportProps) {
               ))}
             </View>
           </View>
+
+          {/* PROPERTY PROTECTION GUARANTEE — only if roofer enabled */}
+          {propertyProtectionEnabled && <View wrap={false}>
+            <Text style={s.sectionTitle}>Our Property Protection Guarantee</Text>
+            <View style={{ backgroundColor: "#eff6ff", borderRadius: 6, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: "#bfdbfe" }}>
+              {PROPERTY_PROTECTION_ITEMS.map((item) => (
+                <View key={item} style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
+                  <Text style={{ fontSize: 9, color: BLUE, fontFamily: "Helvetica-Bold" }}>●</Text>
+                  <Text style={{ fontSize: 8, color: NAVY, flex: 1, lineHeight: 1.5 }}>{item}</Text>
+                </View>
+              ))}
+            </View>
+          </View>}
+
+          {/* CHANGE ORDER PROTOCOL — only if roofer enabled */}
+          {changeOrderEnabled && <View wrap={false}>
+            <Text style={s.sectionTitle}>What Happens If We Find Surprises</Text>
+            <View style={{ backgroundColor: LIGHT, borderRadius: 6, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: BORDER }}>
+              <Text style={{ fontSize: 8, color: GRAY, lineHeight: 1.5, marginBottom: 8 }}>
+                If we discover rotted decking, extra shingle layers, or hidden damage during tear-off:
+              </Text>
+              {CHANGE_ORDER_STEPS.map((step, i) => (
+                <View key={step} style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
+                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: NAVY, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", color: "#ffffff" }}>{i + 1}</Text>
+                  </View>
+                  <Text style={{ fontSize: 8, color: NAVY, flex: 1, lineHeight: 1.5, paddingTop: 2 }}>{step}</Text>
+                </View>
+              ))}
+            </View>
+          </View>}
         </View>
 
         {/* FOOTER */}
@@ -571,16 +627,24 @@ export function EstimateReportPDF(props: EstimateReportProps) {
             <View style={s.credBadge}><Text style={s.credText}>Workmanship Warranty Included</Text></View>
           </View>
 
-          {/* FINANCING NOTE */}
-          <View style={{ backgroundColor: "#eff6ff", borderRadius: 6, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: "#bfdbfe" }}>
-            <Text style={{ fontSize: 9, fontFamily: "Helvetica-Bold", color: BLUE, marginBottom: 4 }}>
-              Financing Options Available
-            </Text>
-            <Text style={{ fontSize: 8, color: GRAY, lineHeight: 1.5 }}>
-              We offer flexible payment plans so you can get your roof done now without paying everything upfront.
-              Ask about available financing options when you call — rates and terms depend on your situation.
-            </Text>
-          </View>
+          {/* FINANCING — only if roofer enabled */}
+          {financingEnabled && (
+            <View style={{ backgroundColor: "#eff6ff", borderRadius: 6, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: "#bfdbfe" }}>
+              <Text style={{ fontSize: 9, fontFamily: "Helvetica-Bold", color: BLUE, marginBottom: 6 }}>
+                Financing Available{financingProvider ? ` Through ${financingProvider}` : ""}
+              </Text>
+              <Text style={{ fontSize: 8, color: NAVY, lineHeight: 1.6 }}>
+                Most homeowners qualify for affordable monthly payments.
+                {financingTermMonths ? ` Terms from 60 to ${financingTermMonths} months available.` : ""}
+                {" "}Ask about financing when you schedule your free inspection.
+              </Text>
+              {financingNote && (
+                <Text style={{ fontSize: 7, color: GRAY, marginTop: 4, lineHeight: 1.5 }}>
+                  {financingNote}
+                </Text>
+              )}
+            </View>
+          )}
 
           {/* DISCLAIMER */}
           <View style={s.disclaimer} wrap={false}>

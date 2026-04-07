@@ -47,6 +47,17 @@ export default function EstimateSettingsPage() {
   const [serviceZips, setServiceZips] = useState("");
   const [buffer, setBuffer] = useState(10); // default 10% buffer
 
+  // PDF section toggles
+  const [propertyProtection, setPropertyProtection] = useState(false);
+  const [changeOrder, setChangeOrder] = useState(false);
+
+  // Financing settings
+  const [financingEnabled, setFinancingEnabled] = useState(false);
+  const [financingProvider, setFinancingProvider] = useState("");
+  const [financingTermMonths, setFinancingTermMonths] = useState("120");
+  const [financingApr, setFinancingApr] = useState("");
+  const [financingNote, setFinancingNote] = useState("");
+
   const [rates, setRates] = useState<Rates>({
     asphalt_low: "", asphalt_high: "",
     metal_low: "", metal_high: "",
@@ -91,6 +102,14 @@ export default function EstimateSettingsPage() {
           flat_high: settings.flat_high?.toString() || "",
         });
         setServiceZips(settings.service_zips?.join(", ") || "");
+        setBuffer(settings.buffer_percent ?? 10);
+        setPropertyProtection(settings.property_protection_enabled ?? false);
+        setChangeOrder(settings.change_order_enabled ?? false);
+        setFinancingEnabled(settings.financing_enabled ?? false);
+        setFinancingProvider(settings.financing_provider || "");
+        setFinancingTermMonths(settings.financing_term_months?.toString() || "120");
+        setFinancingApr(settings.financing_apr?.toString() || "");
+        setFinancingNote(settings.financing_note || "");
       } else {
         // Pre-fill with regional defaults
         const defaults = getRegionalDefaults(contractor.state || "TX");
@@ -135,6 +154,14 @@ export default function EstimateSettingsPage() {
         flat_low: parseFloat(rates.flat_low) || null,
         flat_high: parseFloat(rates.flat_high) || null,
         service_zips: zipsArray.length > 0 ? zipsArray : null,
+        buffer_percent: buffer,
+        property_protection_enabled: propertyProtection,
+        change_order_enabled: changeOrder,
+        financing_enabled: financingEnabled,
+        financing_provider: financingProvider || null,
+        financing_term_months: financingTermMonths ? parseInt(financingTermMonths) : null,
+        financing_apr: financingApr ? parseFloat(financingApr) : null,
+        financing_note: financingNote || null,
       });
 
     if (saveErr) {
@@ -297,6 +324,128 @@ export default function EstimateSettingsPage() {
           className="block w-full rounded-lg border border-gray-200/60 px-3 py-2 text-[#1B3A4B] placeholder-[#1B3A4B]/30 focus:border-[#D4863E] focus:outline-none focus:ring-1 focus:ring-[#D4863E]"
           placeholder="75201, 75202, 75203, 75204"
         />
+      </div>
+
+      {/* PDF Report Sections */}
+      <div className="rounded-xl bg-white border border-gray-200/60 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-[#1B3A4B] mb-2">
+          PDF Report Sections
+        </h2>
+        <p className="text-sm text-[#1B3A4B]/50 mb-4">
+          Toggle optional sections that appear on your branded estimate PDF.
+          Only enable what your business actually offers.
+        </p>
+
+        <div className="space-y-4">
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <span className="font-medium text-[#1B3A4B]">Property Protection Guarantee</span>
+              <p className="text-xs text-[#1B3A4B]/40 mt-0.5">Tarps, driveway protection, nail sweep, same-day cleanup</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPropertyProtection(!propertyProtection)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                propertyProtection ? "bg-[#D4863E]" : "bg-gray-200"
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                propertyProtection ? "translate-x-6" : "translate-x-1"
+              }`} />
+            </button>
+          </label>
+
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <span className="font-medium text-[#1B3A4B]">Change Order Protocol</span>
+              <p className="text-xs text-[#1B3A4B]/40 mt-0.5">Shows homeowners how you handle unexpected issues — no surprise charges</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setChangeOrder(!changeOrder)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                changeOrder ? "bg-[#D4863E]" : "bg-gray-200"
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                changeOrder ? "translate-x-6" : "translate-x-1"
+              }`} />
+            </button>
+          </label>
+        </div>
+      </div>
+
+      {/* Financing Options */}
+      <div className="rounded-xl bg-white border border-gray-200/60 p-6 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-[#1B3A4B]">
+            Financing Options
+          </h2>
+          <button
+            type="button"
+            onClick={() => setFinancingEnabled(!financingEnabled)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              financingEnabled ? "bg-[#D4863E]" : "bg-gray-200"
+            }`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              financingEnabled ? "translate-x-6" : "translate-x-1"
+            }`} />
+          </button>
+        </div>
+        <p className="text-sm text-[#1B3A4B]/50 mb-4">
+          Show monthly payment estimates on your PDF reports and widget. Only enable if you offer financing.
+        </p>
+
+        {financingEnabled && (
+          <div className="space-y-4 border-t border-gray-100 pt-4">
+            <label className="block">
+              <span className="text-xs text-[#1B3A4B]/50">Financing Provider</span>
+              <select
+                value={financingProvider}
+                onChange={(e) => setFinancingProvider(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-gray-200/60 px-3 py-2 text-[#1B3A4B] focus:border-[#D4863E] focus:outline-none focus:ring-1 focus:ring-[#D4863E]"
+              >
+                <option value="">Select provider...</option>
+                <option value="GreenSky">GreenSky</option>
+                <option value="Hearth">Hearth</option>
+                <option value="Acorn Finance">Acorn Finance</option>
+                <option value="Sunlight Financial">Sunlight Financial</option>
+                <option value="Service Finance">Service Finance</option>
+                <option value="Mosaic">Mosaic</option>
+                <option value="In-house">In-house financing</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-xs text-[#1B3A4B]/50">Longest Term Available (months)</span>
+              <select
+                value={financingTermMonths}
+                onChange={(e) => setFinancingTermMonths(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-gray-200/60 px-3 py-2 text-[#1B3A4B] focus:border-[#D4863E] focus:outline-none focus:ring-1 focus:ring-[#D4863E]"
+              >
+                <option value="">Don&apos;t show term length</option>
+                <option value="60">60 months (5 yr)</option>
+                <option value="84">84 months (7 yr)</option>
+                <option value="120">120 months (10 yr)</option>
+                <option value="144">144 months (12 yr)</option>
+                <option value="180">180 months (15 yr)</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-xs text-[#1B3A4B]/50">Custom Note (shown on PDF)</span>
+              <input
+                type="text"
+                value={financingNote}
+                onChange={(e) => setFinancingNote(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-gray-200/60 px-3 py-2 text-[#1B3A4B] placeholder-[#1B3A4B]/30 focus:border-[#D4863E] focus:outline-none focus:ring-1 focus:ring-[#D4863E]"
+                placeholder="e.g. Subject to credit approval. Rates may vary."
+              />
+            </label>
+          </div>
+        )}
       </div>
 
       {contractorId && (

@@ -106,6 +106,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fetch estimate settings for PDF toggles + financing
+    const { data: pdfSettings } = await supabase
+      .from("estimate_settings")
+      .select("property_protection_enabled, change_order_enabled, financing_enabled, financing_provider, financing_term_months, financing_apr, financing_note")
+      .eq("contractor_id", contractor_id)
+      .single();
+
     // Repair option — estimated at roughly 5-8% of replacement cost
     const roofArea = roof_area_sqft || 2000;
     const repairOption = {
@@ -142,6 +149,13 @@ export async function POST(request: NextRequest) {
       materialOptions,
       repairOption,
       isSatellite: is_satellite ?? true,
+      propertyProtectionEnabled: pdfSettings?.property_protection_enabled ?? false,
+      changeOrderEnabled: pdfSettings?.change_order_enabled ?? false,
+      financingEnabled: pdfSettings?.financing_enabled ?? false,
+      financingProvider: pdfSettings?.financing_provider || null,
+      financingTermMonths: pdfSettings?.financing_term_months || null,
+      financingApr: pdfSettings?.financing_apr || null,
+      financingNote: pdfSettings?.financing_note || null,
       date: new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
