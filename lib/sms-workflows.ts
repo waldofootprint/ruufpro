@@ -241,15 +241,21 @@ export async function sendLeadAutoResponse(
     `Hi ${firstName}! This is ${contractor.business_name} — we just got your request and will call you shortly. ` +
     `If you need us sooner, reply here or call us back. Talk soon!`;
 
-  // Try to match to an existing lead
+  // Try to match to an existing lead and check SMS consent
   const { data: matchedLead } = await supabase
     .from("leads")
-    .select("id")
+    .select("id, sms_consent")
     .eq("contractor_id", contractorId)
     .eq("phone", leadPhone)
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
+
+  // TCPA: only send auto-response if lead explicitly consented to SMS
+  if (!matchedLead?.sms_consent) {
+    console.log(`Lead auto-response skipped — no SMS consent for ${leadPhone}`);
+    return { success: false, error: "No SMS consent" };
+  }
 
   const smsResult = await sendSMS({
     to: leadPhone,

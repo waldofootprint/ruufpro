@@ -15,10 +15,20 @@ export async function POST(request: NextRequest) {
   try {
     // Parse Twilio's URL-encoded voice webhook body
     const formData = await request.formData();
-    const callStatus = formData.get("CallStatus") as string;
-    const from = formData.get("From") as string;
-    const to = formData.get("To") as string;
-    const callSid = formData.get("CallSid") as string;
+
+    // Validate request is actually from Twilio (prevents forged payloads)
+    const { validateTwilioWebhook, formDataToParams } = await import("@/lib/twilio");
+    const params = formDataToParams(formData);
+    const isValid = await validateTwilioWebhook(request, params);
+    if (!isValid) {
+      console.warn("Voice webhook: invalid Twilio signature — rejecting");
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    const callStatus = params.CallStatus;
+    const from = params.From;
+    const to = params.To;
+    const callSid = params.CallSid;
 
     if (!from || !to) {
       return new NextResponse(
