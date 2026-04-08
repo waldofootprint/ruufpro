@@ -487,6 +487,7 @@ export default function LeadDashboard() {
                             <LeadCard
                               key={lead.id}
                               lead={lead}
+                              isPro={isPro}
                               livingEstimates={livingEstimates}
                               reviewRequests={reviewRequests}
                               menuOpenId={menuOpenId}
