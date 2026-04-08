@@ -100,16 +100,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f4f5f7]">
+    <div className="flex min-h-screen bg-white">
 
       {/* ===== DESKTOP SIDEBAR ===== */}
-      <aside className="hidden lg:flex w-[220px] flex-col bg-[#334155] flex-shrink-0">
+      <aside className="hidden lg:flex w-[220px] flex-col bg-white border-r border-slate-200 flex-shrink-0">
         {/* Logo */}
         <div className="px-5 pt-5 pb-6">
-          <a href="/" className="text-[15px] font-extrabold text-white tracking-tight">
+          <a href="/" className="text-[15px] font-extrabold text-slate-900 tracking-tight">
             RuufPro
           </a>
-          <p className="text-[11px] text-white/35 mt-0.5 truncate">{businessName}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5 truncate">{businessName}</p>
         </div>
 
         {/* Nav */}
@@ -120,10 +120,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               <a
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all border-l-2 ${
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                   active
-                    ? "bg-white/10 text-white border-white/60"
-                    : "text-white/45 hover:bg-white/5 hover:text-white/70 border-transparent"
+                    ? "bg-slate-100 text-slate-900"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                 }`}
               >
                 <item.icon className="w-4 h-4" />
@@ -144,24 +144,24 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-white/8 space-y-0.5">
+        <div className="px-3 py-4 border-t border-slate-100 space-y-0.5">
           {!pushEnabled ? (
             <button
               onClick={enablePush}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-amber-300/80 hover:bg-white/5 transition-all w-full"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-amber-600 hover:bg-amber-50 transition-all w-full"
             >
               <Bell className="w-4 h-4" />
               Enable Notifications
             </button>
           ) : (
-            <div className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-emerald-400/80">
+            <div className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-emerald-600">
               <Bell className="w-4 h-4" />
               Notifications On
             </div>
           )}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-white/30 hover:bg-white/5 hover:text-white/50 transition-all w-full"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all w-full"
           >
             <LogOut className="w-4 h-4" />
             Sign out
@@ -171,15 +171,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* ===== MAIN CONTENT ===== */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Desktop top bar */}
-        <header className="hidden lg:flex h-14 bg-white/60 backdrop-blur-sm border-b border-[#e2e8f0] items-center px-7">
-          <h1 className="text-[13px] font-semibold text-slate-700">
-            {SIDEBAR_ITEMS.find((item) => isActive(item.href))?.label || "Dashboard"}
-          </h1>
-        </header>
-
         {/* Mobile top bar */}
-        <header className="lg:hidden bg-white border-b border-[#e2e8f0] px-5 pt-3 pb-3">
+        <header className="lg:hidden bg-white border-b border-slate-200 px-5 pt-3 pb-3">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[20px] font-extrabold text-slate-800 tracking-tight">
@@ -214,13 +207,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Page content */}
-        <main className="flex-1 p-5 lg:p-7 pb-24 lg:pb-7">
+        <main className="flex-1 p-5 lg:px-8 lg:py-7 pb-24 lg:pb-7 bg-white">
           {children}
         </main>
       </div>
 
       {/* ===== MOBILE BOTTOM TAB BAR ===== */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#e2e8f0] flex">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 flex">
         {TAB_ITEMS.map((item) => {
           const active = isActive(item.href);
 

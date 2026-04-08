@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Users, Zap, DollarSign, ChevronRight, Star, Link2, UserPlus,
   MessageCircle, Eye, Bell, CheckCircle, X, Phone, TrendingUp,
-  Target, BarChart3, Trophy, Flame, Share2,
+  Target, BarChart3, Trophy, Flame, Share2, Search, Calendar, Plus,
 } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import {
@@ -27,7 +27,7 @@ interface ActivityEvent {
 type PopupType = "waiting" | "speed" | "pipeline" | "reviews" | null;
 
 export default function DashboardHome() {
-  const { contractorId, businessName, tier } = useDashboard();
+  const { contractorId, businessName, tier, refreshLeadCount } = useDashboard();
   const isPro = tier === "pro" || tier === "growth";
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +45,8 @@ export default function DashboardHome() {
     timeline: "" as string, financing_interest: "" as string, notes: "",
   });
   const [addLeadSaving, setAddLeadSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<"overview" | "leads" | "activity">("overview");
+  const [selectedNewLead, setSelectedNewLead] = useState<Lead | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -167,6 +169,19 @@ export default function DashboardHome() {
   const newCount = newLeads.length;
   const avgResponse = getAvgResponseTime(leads);
 
+  // Industry benchmark: avg roofer responds in ~3 hours (180 min)
+  // Source: roofing industry reports on speed-to-lead
+  const INDUSTRY_AVG_MINS = 180;
+  const contactedLeads = leads.filter((l) => l.contacted_at);
+  const avgResponseMins = contactedLeads.length > 0
+    ? Math.floor(contactedLeads.reduce((sum, l) => {
+        return sum + (new Date(l.contacted_at!).getTime() - new Date(l.created_at).getTime());
+      }, 0) / contactedLeads.length / 60000)
+    : null;
+  const fasterThanPct = avgResponseMins !== null && avgResponseMins < INDUSTRY_AVG_MINS
+    ? Math.min(99, Math.round(((INDUSTRY_AVG_MINS - avgResponseMins) / INDUSTRY_AVG_MINS) * 100))
+    : null;
+
   const pipelineLeads = leads.filter(
     (l) => l.status !== "lost" && l.status !== "won" && l.estimate_low && l.estimate_high
   );
@@ -248,6 +263,32 @@ export default function DashboardHome() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  // Lead heat: Hot (ASAP + new), Warm (1-3mo or contacted), Cool (exploring or stale)
+  function getLeadHeat(lead: Lead): "hot" | "warm" | "cool" {
+    const isNew = lead.status === "new";
+    const isAsap = lead.timeline === "now";
+    const isSoon = lead.timeline === "1_3_months";
+    const isContacted = lead.status === "contacted" || lead.status === "appointment_set";
+
+    if (isNew && isAsap) return "hot";
+    if (isNew && isSoon) return "warm";
+    if (isNew) return "warm"; // new with no timeline = warm by default
+    if (isContacted) return "warm";
+    return "cool";
+  }
+
+  const heatConfig = {
+    hot: { label: "Hot", bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
+    warm: { label: "Warm", bg: "bg-amber-50", text: "text-amber-600", border: "border-amber-200" },
+    cool: { label: "Cool", bg: "bg-slate-100", text: "text-slate-500", border: "border-slate-200" },
+  };
+
+  async function acknowledgeLead(leadId: string) {
+    await supabase.from("leads").update({ status: "contacted" }).eq("id", leadId);
+    setLeads((prev) => prev.map((l) => l.id === leadId ? { ...l, status: "contacted" } : l));
+    refreshLeadCount();
+  }
+
   function getEventIcon(icon: ActivityEvent["icon"]) {
     switch (icon) {
       case "auto_text": return <Zap className="w-3.5 h-3.5 text-emerald-500" />;
@@ -280,240 +321,321 @@ export default function DashboardHome() {
     return `${Math.floor(hours / 24)}d`;
   }
 
-  // ---- Empty state ----
+  // ---- Main render ----
 
-  if (leads.length === 0) {
-    return (
-      <div className="max-w-[960px] mx-auto">
-        <div className="mb-6">
-          <h1 className="text-[20px] font-extrabold text-slate-800 tracking-tight">
-            {greeting}, {firstName}
-          </h1>
-          <p className="text-[13px] text-slate-400 mt-0.5">
-            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-          </p>
-        </div>
-
-        <div className="rounded-xl bg-white border border-[#e2e8f0] p-8 max-w-lg mx-auto">
-          <div className="text-center mb-6">
-            <div className="text-[40px] mb-3">🏠</div>
-            <h2 className="text-[18px] font-bold text-slate-800 mb-1">Get your first lead</h2>
-            <p className="text-[13px] text-slate-400">Complete these steps and leads will start flowing in.</p>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: "Create your account", done: true, href: "#" },
-              { label: "Set your pricing rates", done: false, href: "/dashboard/estimate-settings" },
-              { label: "Customize your website", done: false, href: "/dashboard/my-site" },
-              { label: "Share your widget link", done: false, href: "/dashboard/estimate-settings" },
-            ].map((step, i) => (
-              <a
-                key={i}
-                href={step.href}
-                className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                  step.done ? "bg-emerald-50" : "bg-slate-50 hover:bg-slate-100"
-                }`}
-              >
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold ${
-                  step.done ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"
-                }`}>
-                  {step.done ? <CheckCircle className="w-4 h-4" /> : i + 1}
-                </div>
-                <span className={`text-[13px] font-semibold ${step.done ? "text-emerald-700 line-through" : "text-slate-700"}`}>
-                  {step.label}
-                </span>
-                {!step.done && <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />}
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ---- Main dashboard ----
+  const todayStr = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   return (
-    <div className="max-w-[960px] mx-auto">
-      {/* Greeting */}
-      <div className="mb-5">
-        <h1 className="text-[20px] font-extrabold text-slate-800 tracking-tight">
-          {greeting}, {firstName}
-        </h1>
-        <p className="text-[13px] text-slate-400 mt-0.5">
-          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-          {newCount > 0 && ` · ${newCount} new lead${newCount > 1 ? "s" : ""} waiting`}
-        </p>
-      </div>
-
-      {/* Quick actions */}
-      <div className="flex items-center gap-2 mb-5">
-        <button
-          onClick={copyWidgetLink}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-semibold bg-[#1B3A4B] text-white hover:bg-[#1B3A4B]/90 transition-colors"
-        >
-          <Link2 className="w-3.5 h-3.5" />
-          {copied ? "Copied!" : "Share Widget Link"}
-        </button>
+    <div className="max-w-[1060px] mx-auto">
+      {/* ===== HEADER ===== */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-[26px] font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
+          <p className="text-[13px] text-slate-400 mt-0.5">{todayStr}</p>
+        </div>
         <button
           onClick={() => setShowAddLead(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-bold bg-[#1B3A4B] text-white hover:bg-[#162f3d] transition-colors"
         >
-          <UserPlus className="w-3.5 h-3.5" />
+          <Plus className="w-4 h-4" />
           Add Lead
         </button>
       </div>
 
-      {/* 4 Action cards — clickable with popups */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        {/* Waiting Leads */}
-        <button
-          onClick={() => setActivePopup("waiting")}
-          className="rounded-xl bg-[#FFF7ED] border-l-4 border-l-[#D4863E] border border-orange-200 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left"
-        >
-          <div className="flex items-center gap-1.5 mb-2">
-            <Users className="w-3.5 h-3.5 text-[#D4863E]" />
-            <span className="text-[10px] font-semibold text-[#D4863E] uppercase tracking-wide">
-              {newCount > 0 ? "Waiting" : "Leads"}
-            </span>
-          </div>
-          <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
-            {newCount}
-          </div>
-          <p className="text-[11px] text-[#D4863E] font-semibold mt-2">
-            {newCount > 0 ? `${newCount} homeowner${newCount > 1 ? "s" : ""} waiting` : "All caught up"}
-          </p>
-        </button>
-
-        {/* Response Speed */}
-        <button
-          onClick={() => setActivePopup("speed")}
-          className="rounded-xl bg-emerald-50 border-l-4 border-l-emerald-500 border border-emerald-200 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left"
-        >
-          <div className="flex items-center gap-1.5 mb-2">
-            <Zap className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Speed</span>
-          </div>
-          <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
-            {avgResponse || "—"}
-          </div>
-          <p className="text-[11px] text-emerald-600 font-semibold mt-2">
-            {avgResponse ? "Avg response time" : "Respond to start tracking"}
-          </p>
-        </button>
-
-        {/* Pipeline */}
-        <button
-          onClick={() => setActivePopup("pipeline")}
-          className="rounded-xl bg-[#F0F4F8] border-l-4 border-l-[#1B3A4B] border border-[#D1D9E0] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left"
-        >
-          <div className="flex items-center gap-1.5 mb-2">
-            <DollarSign className="w-3.5 h-3.5 text-[#1B3A4B]" />
-            <span className="text-[10px] font-semibold text-[#1B3A4B] uppercase tracking-wide">Pipeline</span>
-          </div>
-          <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
-            {pipelineValue > 0 ? `$${(pipelineValue / 1000).toFixed(1)}K` : "$0"}
-          </div>
-          <p className="text-[11px] text-[#1B3A4B]/70 font-semibold mt-2">
-            {pipelineCount > 0 ? `${pipelineCount} open estimate${pipelineCount > 1 ? "s" : ""}` : "Estimates appear with leads"}
-          </p>
-        </button>
-
-        {/* Reviews */}
-        <button
-          onClick={() => setActivePopup("reviews")}
-          className="rounded-xl bg-amber-50 border-l-4 border-l-amber-500 border border-amber-200 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left"
-        >
-          <div className="flex items-center gap-1.5 mb-2">
-            <Star className="w-3.5 h-3.5 text-amber-600" />
-            <span className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Reviews</span>
-          </div>
-          <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
-            {reviewCount}
-          </div>
-          <p className="text-[11px] text-amber-600 font-semibold mt-2">
-            {reviewCount > 0 ? "Review requests sent" : "Auto-sent after won jobs"}
-          </p>
-        </button>
+      {/* ===== TABS ===== */}
+      <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg w-fit mb-8">
+        {(["overview", "leads", "activity"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-[13px] font-semibold capitalize rounded-md transition-all ${
+              activeTab === tab
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {/* Main grid: leads preview + activity feed */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Leads preview */}
-        <div className="lg:col-span-2 rounded-xl bg-white border border-[#e2e8f0] p-5">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">Recent Leads</span>
-            <a href="/dashboard/leads" className="text-[12px] font-semibold text-[#1B3A4B] hover:text-[#1B3A4B]/70 flex items-center gap-1">
-              View Pipeline <ChevronRight className="w-3 h-3" />
+      {/* ===== OVERVIEW TAB ===== */}
+      {activeTab === "overview" && (
+        <>
+          {/* Metric cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {/* Waiting Leads */}
+            <button
+              onClick={() => setActivePopup("waiting")}
+              className="rounded-xl bg-white border border-slate-200 p-5 text-left transition-all hover:shadow-sm hover:border-slate-300"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[12px] font-semibold text-slate-400">Waiting Leads</span>
+                <Users className="w-4 h-4 text-slate-300" />
+              </div>
+              <div className="text-[28px] font-extrabold text-slate-900 tracking-tight leading-none">
+                {newCount}
+              </div>
+              <p className="text-[11px] font-medium text-emerald-600 mt-2">
+                {newCount > 0 ? `${newCount} homeowner${newCount > 1 ? "s" : ""} waiting` : "All caught up"}
+              </p>
+            </button>
+
+            {/* Response Speed */}
+            <button
+              onClick={() => setActivePopup("speed")}
+              className="rounded-xl bg-white border border-slate-200 p-5 text-left transition-all hover:shadow-sm hover:border-slate-300"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[12px] font-semibold text-slate-400">Avg Response Time</span>
+                <Zap className="w-4 h-4 text-slate-300" />
+              </div>
+              <div className="text-[28px] font-extrabold text-slate-900 tracking-tight leading-none">
+                {avgResponse || "—"}
+              </div>
+              <p className="text-[11px] font-medium text-emerald-600 mt-2">
+                {fasterThanPct
+                  ? `Faster than ${fasterThanPct}% of roofers`
+                  : avgResponse
+                  ? "Industry avg: 3 hours"
+                  : "Respond to start tracking"}
+              </p>
+            </button>
+
+            {/* Pipeline */}
+            <button
+              onClick={() => setActivePopup("pipeline")}
+              className="rounded-xl bg-white border border-slate-200 p-5 text-left transition-all hover:shadow-sm hover:border-slate-300"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[12px] font-semibold text-slate-400">Pipeline Value</span>
+                <TrendingUp className="w-4 h-4 text-slate-300" />
+              </div>
+              <div className="text-[28px] font-extrabold text-slate-900 tracking-tight leading-none">
+                {pipelineValue > 0 ? `$${(pipelineValue / 1000).toFixed(1)}K` : "$0"}
+              </div>
+              <p className="text-[11px] font-medium text-emerald-600 mt-2">
+                {pipelineCount > 0 ? `${pipelineCount} open estimate${pipelineCount > 1 ? "s" : ""}` : "Estimates appear with leads"}
+              </p>
+            </button>
+
+            {/* Reviews */}
+            <button
+              onClick={() => setActivePopup("reviews")}
+              className="rounded-xl bg-white border border-slate-200 p-5 text-left transition-all hover:shadow-sm hover:border-slate-300"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[12px] font-semibold text-slate-400">Review Requests</span>
+                <Star className="w-4 h-4 text-slate-300" />
+              </div>
+              <div className="text-[28px] font-extrabold text-slate-900 tracking-tight leading-none">
+                {reviewCount}
+              </div>
+              <p className="text-[11px] font-medium text-emerald-600 mt-2">
+                {reviewCount > 0 ? `${reviewClicked} clicked · ${reviewCompleted} reviewed` : "Auto-sent after completed jobs"}
+              </p>
+            </button>
+          </div>
+
+          {/* Two-column: Leads + Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            {/* New Leads — wider column */}
+            <div className="lg:col-span-3 rounded-xl bg-white border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="text-[15px] font-bold text-slate-900">New Leads</h3>
+                  <p className="text-[12px] text-slate-400 mt-0.5">Check off leads as you respond to them</p>
+                </div>
+                <a href="/dashboard/leads" className="text-[12px] font-semibold text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors">
+                  View All <ChevronRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+              {newLeads.length === 0 && leads.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                  <p className="text-[13px] font-semibold text-slate-400">No leads yet</p>
+                  <p className="text-[12px] text-slate-300 mt-1">Share your widget link to start getting estimates</p>
+                </div>
+              ) : newLeads.length === 0 ? (
+                <div className="text-center py-12">
+                  <CheckCircle className="w-10 h-10 text-emerald-200 mx-auto mb-3" />
+                  <p className="text-[13px] font-semibold text-slate-400">All caught up!</p>
+                  <p className="text-[12px] text-slate-300 mt-1">No new leads waiting for a response</p>
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {newLeads.slice(0, 6).map((lead) => {
+                    const heat = getLeadHeat(lead);
+                    const hc = heatConfig[heat];
+                    return (
+                      <div
+                        key={lead.id}
+                        className="flex items-center gap-3 px-3 py-3.5 rounded-lg hover:bg-slate-50 transition-colors -mx-1 group"
+                      >
+                        {/* Checkbox */}
+                        <button
+                          onClick={() => acknowledgeLead(lead.id)}
+                          className="w-4 h-4 rounded border-[1.5px] border-slate-300 flex items-center justify-center flex-shrink-0 hover:border-blue-500 hover:bg-blue-50 transition-colors group-hover:border-slate-400"
+                        >
+                          <CheckCircle className="w-3 h-3 text-transparent group-hover:text-slate-500 transition-colors" />
+                        </button>
+
+                        {/* Lead info — click to open detail */}
+                        <button
+                          onClick={() => setSelectedNewLead(lead)}
+                          className="flex-1 min-w-0 flex items-center gap-3 text-left"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[13px] font-semibold text-slate-800 truncate block">{lead.name}</span>
+                            <p className="text-[11px] text-slate-400 truncate">
+                              {lead.estimate_material || "Contact form"}
+                              {lead.address ? ` · ${lead.address.split(",")[0]}` : ""}
+                            </p>
+                          </div>
+
+                          {/* Heat pill */}
+                          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${hc.bg} ${hc.text} flex-shrink-0`}>
+                            {hc.label}
+                          </span>
+
+                          {/* Estimate value + date */}
+                          <div className="text-right flex-shrink-0">
+                            {lead.estimate_low && lead.estimate_high ? (
+                              <p className="text-[12px] font-bold text-slate-900">
+                                ${((lead.estimate_low + lead.estimate_high) / 2 / 1000).toFixed(1)}K
+                              </p>
+                            ) : null}
+                            <p className="text-[10px] text-slate-400">{formatTimeAgo(lead.created_at)}</p>
+                          </div>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Activity Feed — narrower column */}
+            <div className="lg:col-span-2 rounded-xl bg-white border border-slate-200 p-6">
+              <div className="mb-5">
+                <h3 className="text-[15px] font-bold text-slate-900">Activity</h3>
+                <p className="text-[12px] text-slate-400 mt-0.5">
+                  {automationCount > 0
+                    ? `${automationCount} automation${automationCount > 1 ? "s" : ""} recently`
+                    : "RuufPro works while you work"}
+                </p>
+              </div>
+              {activityEvents.length === 0 ? (
+                <div className="text-center py-12">
+                  <Zap className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                  <p className="text-[13px] font-semibold text-slate-400">No activity yet</p>
+                  <p className="text-[12px] text-slate-300 mt-1">Auto-texts, reviews, estimate views</p>
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {activityEvents.map((event) => (
+                    <div key={event.id} className="flex items-start gap-3 py-2.5">
+                      <div className="mt-0.5 w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0">
+                        {getEventIcon(event.icon)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] text-slate-700 leading-snug">{event.description}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{formatTimeAgo(event.time)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ===== LEADS TAB ===== */}
+      {activeTab === "leads" && (
+        <div className="rounded-xl bg-white border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="text-[15px] font-bold text-slate-900">All Leads</h3>
+              <p className="text-[12px] text-slate-400 mt-0.5">{leads.length} total lead{leads.length !== 1 ? "s" : ""}</p>
+            </div>
+            <a href="/dashboard/leads" className="flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-semibold bg-[#1B3A4B] text-white hover:bg-[#162f3d] transition-colors">
+              Open Pipeline <ChevronRight className="w-3.5 h-3.5" />
             </a>
           </div>
-          <div className="space-y-2">
-            {leads.slice(0, 5).map((lead) => {
+          <div className="space-y-1">
+            {leads.slice(0, 10).map((lead) => {
               const initials = lead.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+              const statusColors: Record<string, string> = {
+                new: "bg-[#D4863E]/10 text-[#D4863E]",
+                contacted: "bg-blue-50 text-blue-600",
+                appointment_set: "bg-teal-50 text-teal-600",
+                quoted: "bg-purple-50 text-purple-600",
+                won: "bg-emerald-50 text-emerald-600",
+                completed: "bg-amber-50 text-amber-600",
+                lost: "bg-slate-100 text-slate-400",
+              };
               return (
-                <a key={lead.id} href="/dashboard/leads" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-[#1B3A4B] flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
+                <a key={lead.id} href="/dashboard/leads" className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-slate-50 transition-colors -mx-1">
+                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-[11px] font-bold text-slate-500 flex-shrink-0">
                     {initials}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-bold text-slate-800 truncate">{lead.name}</span>
-                      {lead.status === "new" && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-50 text-[#D4863E] uppercase">New</span>
-                      )}
-                    </div>
+                    <span className="text-[13px] font-semibold text-slate-800 truncate block">{lead.name}</span>
                     <p className="text-[11px] text-slate-400 truncate">
                       {lead.estimate_material || "Contact form"}
-                      {lead.estimate_roof_sqft ? ` · ${lead.estimate_roof_sqft.toLocaleString()} sqft` : ""}
                       {lead.address ? ` · ${lead.address.split(",")[0]}` : ""}
                     </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <span className={`text-[9px] font-bold px-2 py-1 rounded-full uppercase ${statusColors[lead.status] || "bg-slate-100 text-slate-400"}`}>
+                    {lead.status.replace("_", " ")}
+                  </span>
+                  <div className="text-right flex-shrink-0 w-20">
                     {lead.estimate_low && lead.estimate_high ? (
-                      <p className="text-[12px] font-bold text-slate-800">
+                      <p className="text-[12px] font-bold text-slate-900">
                         ${(lead.estimate_low / 1000).toFixed(1)}K–${(lead.estimate_high / 1000).toFixed(1)}K
                       </p>
-                    ) : null}
-                    <p className="text-[10px] text-slate-400">{formatTimeAgo(lead.created_at)}</p>
+                    ) : (
+                      <p className="text-[11px] text-slate-300">—</p>
+                    )}
                   </div>
                 </a>
               );
             })}
           </div>
         </div>
+      )}
 
-        {/* Activity Feed */}
-        <div className="rounded-xl bg-white border border-[#e2e8f0] p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Zap className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">Activity</span>
+      {/* ===== ACTIVITY TAB ===== */}
+      {activeTab === "activity" && (
+        <div className="rounded-xl bg-white border border-slate-200 p-6 max-w-2xl">
+          <div className="mb-5">
+            <h3 className="text-[15px] font-bold text-slate-900">All Activity</h3>
+            <p className="text-[12px] text-slate-400 mt-0.5">Everything RuufPro has done for you</p>
           </div>
-          {automationCount > 0 && (
-            <p className="text-[11px] text-emerald-600 font-semibold mb-4">
-              RuufPro handled {automationCount} automation{automationCount > 1 ? "s" : ""} recently
-            </p>
-          )}
           {activityEvents.length === 0 ? (
-            <div className="text-center py-8">
-              <Zap className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-              <p className="text-[12px] text-slate-400">Activity will appear here as RuufPro works for you</p>
-              <p className="text-[11px] text-slate-300 mt-1">Auto-texts, review requests, estimate views</p>
+            <div className="text-center py-12">
+              <Zap className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+              <p className="text-[13px] font-semibold text-slate-400">No activity yet</p>
+              <p className="text-[12px] text-slate-300 mt-1">Auto-texts, review requests, and estimate views will appear here</p>
             </div>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {activityEvents.map((event) => (
-                <div key={event.id} className="flex items-start gap-2.5 py-2">
-                  <div className="mt-0.5 flex-shrink-0">{getEventIcon(event.icon)}</div>
+                <div key={event.id} className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+                  <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0">
+                    {getEventIcon(event.icon)}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] text-slate-700 leading-snug">{event.description}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{formatTimeAgo(event.time)}</p>
+                    <p className="text-[13px] text-slate-700 leading-snug">{event.description}</p>
+                    <p className="text-[11px] text-slate-400 mt-1">{formatTimeAgo(event.time)}</p>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* ===== ADD LEAD MODAL ===== */}
       <AnimatePresence>
@@ -697,6 +819,181 @@ export default function DashboardHome() {
         )}
       </AnimatePresence>
 
+      {/* ===== LEAD DETAIL POPUP ===== */}
+      <AnimatePresence>
+        {selectedNewLead && (() => {
+          const lead = selectedNewLead;
+          const heat = getLeadHeat(lead);
+          const hc = heatConfig[heat];
+          const timelineLabels: Record<string, string> = {
+            now: "ASAP",
+            "1_3_months": "1-3 Months",
+            no_timeline: "Just Exploring",
+          };
+          const financingLabels: Record<string, string> = {
+            yes: "Interested",
+            no: "Not interested",
+            maybe: "Maybe",
+          };
+          return (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+                onClick={() => setSelectedNewLead(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none"
+              >
+                <div
+                  className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md sm:mx-4 pointer-events-auto max-h-[85vh] overflow-y-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-[12px] font-bold text-slate-500">
+                        {lead.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="text-[16px] font-bold text-slate-800">{lead.name}</h3>
+                        <p className="text-[11px] text-slate-400">{formatTimeAgo(lead.created_at)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${hc.bg} ${hc.text}`}>
+                        {hc.label}
+                      </span>
+                      <button onClick={() => setSelectedNewLead(null)} className="text-slate-300 hover:text-slate-500">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Contact actions */}
+                  <div className="px-5 py-4 flex gap-2">
+                    {lead.phone && (
+                      <a
+                        href={`tel:${lead.phone}`}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold bg-[#1B3A4B] text-white hover:bg-[#162f3d] transition-colors"
+                      >
+                        <Phone className="w-4 h-4" />
+                        Call {lead.name.split(" ")[0]}
+                      </a>
+                    )}
+                    {lead.email && (
+                      <a
+                        href={`mailto:${lead.email}`}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        Email
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Details */}
+                  <div className="px-5 pb-5 space-y-4">
+                    {/* Estimate */}
+                    {lead.estimate_low && lead.estimate_high && (
+                      <div className="rounded-xl bg-slate-50 p-4">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Estimate</p>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-[22px] font-extrabold text-slate-900">
+                            ${lead.estimate_low.toLocaleString()}
+                          </span>
+                          <span className="text-[14px] text-slate-400">–</span>
+                          <span className="text-[22px] font-extrabold text-slate-900">
+                            ${lead.estimate_high.toLocaleString()}
+                          </span>
+                        </div>
+                        {lead.estimate_material && (
+                          <p className="text-[12px] text-slate-500 mt-1">{lead.estimate_material}</p>
+                        )}
+                        {lead.estimate_roof_sqft && (
+                          <p className="text-[11px] text-slate-400 mt-0.5">{lead.estimate_roof_sqft.toLocaleString()} sq ft</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Contact info */}
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Contact</p>
+                      <div className="space-y-2">
+                        {lead.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-[13px] text-slate-700">{lead.phone}</span>
+                          </div>
+                        )}
+                        {lead.email && (
+                          <div className="flex items-center gap-2">
+                            <MessageCircle className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-[13px] text-slate-700">{lead.email}</span>
+                          </div>
+                        )}
+                        {lead.address && (
+                          <div className="flex items-center gap-2">
+                            <Target className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-[13px] text-slate-700">{lead.address}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Qualification */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {lead.timeline && (
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Timeline</p>
+                          <p className="text-[13px] font-semibold text-slate-800 mt-1">{timelineLabels[lead.timeline] || lead.timeline}</p>
+                        </div>
+                      )}
+                      {lead.financing_interest && (
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Financing</p>
+                          <p className="text-[13px] font-semibold text-slate-800 mt-1">{financingLabels[lead.financing_interest] || lead.financing_interest}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Message */}
+                    {lead.message && (
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Message</p>
+                        <p className="text-[13px] text-slate-700 leading-relaxed">{lead.message}</p>
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {lead.notes && (
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Notes</p>
+                        <p className="text-[13px] text-slate-700 leading-relaxed">{lead.notes}</p>
+                      </div>
+                    )}
+
+                    {/* Mark as contacted */}
+                    <button
+                      onClick={() => { acknowledgeLead(lead.id); setSelectedNewLead(null); }}
+                      className="w-full py-3 rounded-xl text-[13px] font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Mark as Contacted
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          );
+        })()}
+      </AnimatePresence>
+
       {/* ===== POPUP MODALS ===== */}
       <AnimatePresence>
         {activePopup && (
@@ -761,24 +1058,38 @@ export default function DashboardHome() {
                                     <p className="text-[10px] text-slate-400 mt-1">{formatTimeAgo(lead.created_at)}</p>
                                   </div>
                                 </div>
-                                {lead.phone && (
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <a
-                                      href={`tel:${lead.phone}`}
-                                      className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1B3A4B] text-white text-[12px] font-bold hover:bg-[#1B3A4B]/90 transition-colors"
-                                    >
-                                      <Phone className="w-3.5 h-3.5" />
-                                      Call
-                                    </a>
-                                    <a
-                                      href={`sms:${lead.phone}?body=${encodeURIComponent(`Hey ${lead.name.split(" ")[0]}, this is ${businessName}. Thanks for getting an estimate on your roof! What day works best for a free inspection?`)}`}
-                                      className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-100 text-slate-700 text-[12px] font-bold hover:bg-slate-200 transition-colors"
-                                    >
-                                      <MessageCircle className="w-3.5 h-3.5" />
-                                      Text
-                                    </a>
-                                  </div>
-                                )}
+                                {lead.phone && (() => {
+                                  const autoText = smsMessages.find(
+                                    (sms) => sms.lead_id === lead.id && sms.direction === "outbound" && sms.message_type === "lead_auto_response"
+                                  );
+                                  return (
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <a
+                                        href={`tel:${lead.phone}`}
+                                        className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1B3A4B] text-white text-[12px] font-bold hover:bg-[#1B3A4B]/90 transition-colors"
+                                      >
+                                        <Phone className="w-3.5 h-3.5" />
+                                        Call
+                                      </a>
+                                      {isPro && autoText ? (
+                                        <div className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-semibold">
+                                          <CheckCircle className="w-3.5 h-3.5" />
+                                          <span>Estimate texted {formatTimeAgo(autoText.created_at)}</span>
+                                        </div>
+                                      ) : (
+                                        <a
+                                          href={`sms:${lead.phone}?body=${encodeURIComponent(
+                                            `Hey ${lead.name.split(" ")[0]}, this is ${businessName}. Thanks for requesting a roof estimate! When's a good day for a free inspection?`
+                                          )}`}
+                                          className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-100 text-slate-700 text-[12px] font-bold hover:bg-slate-200 transition-colors"
+                                        >
+                                          <MessageCircle className="w-3.5 h-3.5" />
+                                          Text
+                                        </a>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             );
                           })}
@@ -805,9 +1116,11 @@ export default function DashboardHome() {
                       <div className="text-center mb-5 pb-5 border-b border-slate-100">
                         <p className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Avg Response Time</p>
                         <p className="text-[36px] font-extrabold text-emerald-600 leading-none">{avgResponse || "—"}</p>
-                        {avgResponse && (
-                          <p className="text-[11px] text-emerald-600 font-semibold mt-2">⚡ Faster than 90% of roofers</p>
-                        )}
+                        {fasterThanPct ? (
+                          <p className="text-[11px] text-emerald-600 font-semibold mt-2">Faster than {fasterThanPct}% of roofers</p>
+                        ) : avgResponse ? (
+                          <p className="text-[11px] text-slate-400 font-semibold mt-2">Industry avg: 3 hours</p>
+                        ) : null}
                       </div>
 
                       {/* Per-lead timelines */}
