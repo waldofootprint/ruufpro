@@ -198,7 +198,8 @@ export async function sendMissedCallTextback(
 export async function sendLeadAutoResponse(
   contractorId: string,
   leadPhone: string,
-  leadName: string
+  leadName: string,
+  estimate?: { estimateLow: number | null; estimateHigh: number | null }
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createServerSupabase();
 
@@ -236,22 +237,55 @@ export async function sendLeadAutoResponse(
     return { success: false, error: "Phone number has opted out" };
   }
 
-  // Build the auto-response — friendly, quick, sets expectation
-  const firstName = leadName.split(" ")[0];
-  const smsBody =
-    `Hi ${firstName}! This is ${contractor.business_name} — we just got your request and will call you shortly. ` +
-    `If you need us sooner, reply here or call us back. Talk soon!\n\n` +
-    `Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`;
-
   // Try to match to an existing lead and check SMS consent
   const { data: matchedLead } = await supabase
     .from("leads")
-    .select("id, sms_consent")
+    .select("id, sms_consent, living_estimate_id")
     .eq("contractor_id", contractorId)
     .eq("phone", leadPhone)
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
+
+  // Look up living estimate link if available
+  let estimateLink: string | null = null;
+  if (matchedLead?.living_estimate_id) {
+    const { data: le } = await supabase
+      .from("living_estimates")
+      .select("share_token")
+      .eq("id", matchedLead.living_estimate_id)
+      .single();
+    if (le?.share_token) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ruufpro.com";
+      estimateLink = `${siteUrl}/estimate/${le.share_token}`;
+    }
+  }
+
+  // Build the auto-response — includes estimate link + price range when available
+  const firstName = leadName.split(" ")[0];
+  const hasEstimate = estimate?.estimateLow && estimate?.estimateHigh;
+  const priceRange = hasEstimate
+    ? `$${Math.round(estimate.estimateLow!).toLocaleString()}–$${Math.round(estimate.estimateHigh!).toLocaleString()}`
+    : null;
+
+  let smsBody: string;
+  if (estimateLink && priceRange) {
+    smsBody =
+      `Hi ${firstName}! This is ${contractor.business_name}. Your estimate is ready — ` +
+      `${priceRange} for your roof.\n\n` +
+      `View your full estimate here: ${estimateLink}\n\n` +
+      `We'll call you shortly to discuss. Reply here if you need us sooner!`;
+  } else if (estimateLink) {
+    smsBody =
+      `Hi ${firstName}! This is ${contractor.business_name}. Your estimate is ready!\n\n` +
+      `View it here: ${estimateLink}\n\n` +
+      `We'll call you shortly to discuss. Reply here if you need us sooner!`;
+  } else {
+    smsBody =
+      `Hi ${firstName}! This is ${contractor.business_name} — we just got your request and will call you shortly. ` +
+      `If you need us sooner, reply here or call us back. Talk soon!`;
+  }
+  smsBody += `\n\nReply STOP to opt out or HELP for assistance. Msg & data rates may apply.`;
 
   // TCPA: only send auto-response if lead explicitly consented to SMS
   if (!matchedLead?.sms_consent) {

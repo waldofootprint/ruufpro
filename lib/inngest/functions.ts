@@ -51,7 +51,7 @@ export const leadAutoResponse = inngest.createFunction(
     triggers: [{ event: "sms/lead.created" }],
   },
   async ({ event, step }) => {
-    const { contractorId, leadPhone, leadName } = event.data;
+    const { contractorId, leadPhone, leadName, estimateLow, estimateHigh } = event.data;
 
     if (!leadPhone) {
       return { success: true, skipped: true, reason: "no phone number" };
@@ -59,7 +59,10 @@ export const leadAutoResponse = inngest.createFunction(
 
     const result = await step.run("send-auto-response-sms", async () => {
       const { sendLeadAutoResponse } = await import("@/lib/sms-workflows");
-      return sendLeadAutoResponse(contractorId, leadPhone, leadName);
+      return sendLeadAutoResponse(contractorId, leadPhone, leadName, {
+        estimateLow: estimateLow || null,
+        estimateHigh: estimateHigh || null,
+      });
     });
 
     if (!result.success) {
