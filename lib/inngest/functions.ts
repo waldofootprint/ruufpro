@@ -174,9 +174,19 @@ export const crmWebhookExport = inngest.createFunction(
 
     // Step 2: POST lead data to webhook URL
     const result = await step.run("post-to-webhook", async () => {
+      const sourceLabels: Record<string, string> = {
+        estimate_widget: "Estimate Widget",
+        contact_form: "Contact Form",
+        external_widget: "External Widget",
+        address_only: "Address Only",
+        outside_area: "Outside Service Area",
+      };
+      const sourceTag = sourceLabels[event.data.source] || event.data.source;
+
       const payload = {
         event: "lead.created",
         timestamp: new Date().toISOString(),
+        tags: ["RuufPro", sourceTag],
         contractor: {
           id: contractorId,
           business_name: webhookConfig.business_name,

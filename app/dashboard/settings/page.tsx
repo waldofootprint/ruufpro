@@ -347,7 +347,7 @@ export default function SettingsPage() {
             <Zap className="w-3.5 h-3.5" />
             Integrations
           </h2>
-          <p className="text-[11px] text-slate-400 mt-0.5">Push new leads to Zapier, Jobber, or any CRM that accepts webhooks.</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Automatically push new leads to your CRM via Zapier.</p>
         </div>
         <div className="p-5 space-y-4">
           <label className="flex items-center gap-3 cursor-pointer">
@@ -363,8 +363,8 @@ export default function SettingsPage() {
               {profile.webhook_enabled && <Check className="w-3 h-3 text-white" />}
             </button>
             <div>
-              <div className="text-[13px] font-semibold text-slate-800">Send leads to webhook</div>
-              <div className="text-[11px] text-slate-400">Every new lead gets POSTed as JSON to your URL</div>
+              <div className="text-[13px] font-semibold text-slate-800">Send new leads to my CRM</div>
+              <div className="text-[11px] text-slate-400">Every new lead is automatically sent to Zapier, which routes it to Jobber, Housecall Pro, or any CRM you use</div>
             </div>
           </label>
 
@@ -378,7 +378,17 @@ export default function SettingsPage() {
                   onChange={(e) => updateField("webhook_url", e.target.value)}
                   placeholder="https://hooks.zapier.com/hooks/catch/..."
                 />
-                <p className="text-[10px] text-slate-400 mt-1">Paste your Zapier webhook URL, Jobber API endpoint, or any URL that accepts POST requests.</p>
+                <p className="text-[10px] text-slate-400 mt-1">Create a Zap with &quot;Webhooks by Zapier&quot; as the trigger, then paste the URL here.</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 border border-slate-100 px-4 py-3 space-y-1.5">
+                <p className="text-[11px] font-semibold text-slate-600">Quick setup</p>
+                <ol className="text-[11px] text-slate-500 space-y-1 list-decimal list-inside">
+                  <li>In Zapier, create a new Zap → trigger = <span className="font-mono text-[10px]">Webhooks by Zapier</span> → Catch Hook</li>
+                  <li>Copy the webhook URL and paste it above</li>
+                  <li>Click &quot;Send Test&quot; below to send a sample lead</li>
+                  <li>Back in Zapier, add an action to create a contact in Jobber, Housecall Pro, or your CRM</li>
+                  <li>Map the fields: name, phone, email, address, estimate, and <strong>tags</strong> (so leads show up labeled &quot;RuufPro&quot;)</li>
+                </ol>
               </div>
               <WebhookTestButton webhookUrl={profile.webhook_url} contractorId={contractorId || ""} />
             </div>
@@ -464,6 +474,7 @@ function WebhookTestButton({ webhookUrl, contractorId }: { webhookUrl: string; c
           event: "lead.created",
           timestamp: new Date().toISOString(),
           test: true,
+          tags: ["RuufPro", "Estimate Widget"],
           contractor: { id: contractorId, business_name: "Test Business" },
           lead: {
             name: "Test Lead",
