@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDashboard } from "../DashboardContext";
-import { Check, Eye, EyeOff } from "lucide-react";
+import { Check, Eye, EyeOff, Zap, Send } from "lucide-react";
 
 interface ProfileData {
   business_name: string;
@@ -28,6 +28,9 @@ interface ProfileData {
   bbb_accredited: boolean;
   bbb_rating: string;
   offers_financing: boolean;
+  // Integrations
+  webhook_url: string;
+  webhook_enabled: boolean;
 }
 
 const US_STATES = [
@@ -65,6 +68,7 @@ export default function SettingsPage() {
     is_licensed: false, is_insured: false, gaf_master_elite: false,
     owens_corning_preferred: false, certainteed_select: false,
     bbb_accredited: false, bbb_rating: "", offers_financing: false,
+    webhook_url: "", webhook_enabled: false,
   });
 
   useEffect(() => {
@@ -72,7 +76,7 @@ export default function SettingsPage() {
       if (!contractorId) return;
       const { data } = await supabase
         .from("contractors")
-        .select("business_name, phone, email, city, state, zip, tagline, logo_url, years_in_business, license_number, warranty_years, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, bbb_rating, offers_financing")
+        .select("business_name, phone, email, city, state, zip, tagline, logo_url, years_in_business, license_number, warranty_years, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, bbb_rating, offers_financing, webhook_url, webhook_enabled")
         .eq("id", contractorId)
         .single();
       if (data) {
@@ -96,6 +100,8 @@ export default function SettingsPage() {
           bbb_accredited: data.bbb_accredited || false,
           bbb_rating: data.bbb_rating || "",
           offers_financing: data.offers_financing || false,
+          webhook_url: data.webhook_url || "",
+          webhook_enabled: data.webhook_enabled || false,
         });
       }
       setLoading(false);
@@ -132,6 +138,8 @@ export default function SettingsPage() {
       bbb_accredited: profile.bbb_accredited,
       bbb_rating: profile.bbb_rating || null,
       offers_financing: profile.offers_financing,
+      webhook_url: profile.webhook_url || null,
+      webhook_enabled: profile.webhook_enabled,
     }).eq("id", contractorId);
 
     setSaving(false);
@@ -332,6 +340,52 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Integrations — CRM Webhook */}
+      <div className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-slate-50">
+          <h2 className="text-[13px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5" />
+            Integrations
+          </h2>
+          <p className="text-[11px] text-slate-400 mt-0.5">Push new leads to Zapier, Jobber, or any CRM that accepts webhooks.</p>
+        </div>
+        <div className="p-5 space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <button
+              type="button"
+              onClick={() => updateField("webhook_enabled", !profile.webhook_enabled)}
+              className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center transition-all border ${
+                profile.webhook_enabled
+                  ? "bg-slate-800 border-slate-800"
+                  : "bg-white border-[#e2e8f0]"
+              }`}
+            >
+              {profile.webhook_enabled && <Check className="w-3 h-3 text-white" />}
+            </button>
+            <div>
+              <div className="text-[13px] font-semibold text-slate-800">Send leads to webhook</div>
+              <div className="text-[11px] text-slate-400">Every new lead gets POSTed as JSON to your URL</div>
+            </div>
+          </label>
+
+          {profile.webhook_enabled && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Webhook URL</label>
+                <input
+                  className="w-full px-3 py-2.5 rounded-lg border border-[#e2e8f0] text-[14px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 font-mono text-[13px]"
+                  value={profile.webhook_url}
+                  onChange={(e) => updateField("webhook_url", e.target.value)}
+                  placeholder="https://hooks.zapier.com/hooks/catch/..."
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Paste your Zapier webhook URL, Jobber API endpoint, or any URL that accepts POST requests.</p>
+              </div>
+              <WebhookTestButton webhookUrl={profile.webhook_url} contractorId={contractorId || ""} />
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Change Password */}
       <div className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden">
         <div className="px-5 py-3.5 border-b border-slate-50">
@@ -388,6 +442,61 @@ export default function SettingsPage() {
           {saving ? "Saving..." : saved ? <><Check className="w-4 h-4" /> Saved</> : "Save Changes"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ---- Webhook Test Button ----
+
+function WebhookTestButton({ webhookUrl, contractorId }: { webhookUrl: string; contractorId: string }) {
+  const [testing, setTesting] = useState(false);
+  const [result, setResult] = useState<"success" | "error" | null>(null);
+
+  async function handleTest() {
+    if (!webhookUrl) return;
+    setTesting(true);
+    setResult(null);
+    try {
+      const resp = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "lead.created",
+          timestamp: new Date().toISOString(),
+          test: true,
+          contractor: { id: contractorId, business_name: "Test Business" },
+          lead: {
+            name: "Test Lead",
+            phone: "(555) 123-4567",
+            email: "test@example.com",
+            address: "123 Main St, Tampa, FL 33601",
+            source: "estimate_widget",
+            timeline: "1_3_months",
+            financing_interest: "maybe",
+            estimate: { low: 8500, high: 12000, material: "asphalt", roof_sqft: 2100 },
+          },
+        }),
+      });
+      setResult(resp.ok ? "success" : "error");
+    } catch {
+      setResult("error");
+    }
+    setTesting(false);
+    setTimeout(() => setResult(null), 4000);
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        onClick={handleTest}
+        disabled={testing || !webhookUrl}
+        className="px-4 py-2 rounded-lg border border-[#e2e8f0] text-[12px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
+      >
+        <Send className="w-3 h-3" />
+        {testing ? "Sending..." : "Send Test"}
+      </button>
+      {result === "success" && <span className="text-[12px] font-medium text-green-600 flex items-center gap-1"><Check className="w-3 h-3" /> Delivered</span>}
+      {result === "error" && <span className="text-[12px] font-medium text-red-500">Failed — check your URL</span>}
     </div>
   );
 }

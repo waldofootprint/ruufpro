@@ -265,6 +265,26 @@ export default function LeadDashboard() {
       .single();
     if (data) {
       setLeads((prev) => [data as Lead, ...prev]);
+      // Trigger CRM webhook for manually-added leads (fire-and-forget)
+      fetch("/api/leads/webhook-trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contractor_id: contractorId,
+          lead_name: addLeadForm.name.trim(),
+          lead_phone: addLeadForm.phone.trim() || null,
+          lead_email: addLeadForm.email.trim() || null,
+          lead_address: addLeadForm.address.trim() || null,
+          lead_message: addLeadForm.message.trim() || null,
+          source: "contact_form",
+          estimate_low: lowNum,
+          estimate_high: highNum,
+          estimate_material: addLeadForm.estimate_material || null,
+          estimate_roof_sqft: sqftNum,
+          timeline: addLeadForm.timeline || null,
+          financing_interest: addLeadForm.financing_interest || null,
+        }),
+      }).catch(() => {});
     }
     setAddLeadForm({
       name: "", phone: "", email: "", address: "", message: "",

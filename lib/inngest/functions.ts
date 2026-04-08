@@ -141,6 +141,84 @@ export const reviewEmailFollowup = inngest.createFunction(
 );
 
 // ---------------------------------------------------------------------------
+// Chain 5: CRM Webhook Export
+// Trigger: "sms/lead.created" — same event as auto-response
+// Steps: look up contractor webhook config → POST lead data to webhook URL
+// ---------------------------------------------------------------------------
+export const crmWebhookExport = inngest.createFunction(
+  {
+    id: "crm-webhook-export",
+    retries: 3,
+    triggers: [{ event: "sms/lead.created" }],
+  },
+  async ({ event, step }) => {
+    const { contractorId } = event.data;
+
+    // Step 1: Check if contractor has webhook enabled
+    const webhookConfig = await step.run("check-webhook-config", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+
+      const { data } = await supabase
+        .from("contractors")
+        .select("webhook_url, webhook_enabled, business_name")
+        .eq("id", contractorId)
+        .single();
+
+      return data;
+    });
+
+    if (!webhookConfig?.webhook_enabled || !webhookConfig?.webhook_url) {
+      return { success: true, skipped: true, reason: "webhook not enabled" };
+    }
+
+    // Step 2: POST lead data to webhook URL
+    const result = await step.run("post-to-webhook", async () => {
+      const payload = {
+        event: "lead.created",
+        timestamp: new Date().toISOString(),
+        contractor: {
+          id: contractorId,
+          business_name: webhookConfig.business_name,
+        },
+        lead: {
+          name: event.data.leadName,
+          phone: event.data.leadPhone,
+          email: event.data.leadEmail,
+          address: event.data.leadAddress,
+          message: event.data.leadMessage,
+          source: event.data.source,
+          timeline: event.data.timeline,
+          financing_interest: event.data.financingInterest,
+          estimate: event.data.estimateLow
+            ? {
+                low: event.data.estimateLow,
+                high: event.data.estimateHigh,
+                material: event.data.estimateMaterial,
+                roof_sqft: event.data.estimateRoofSqft,
+              }
+            : null,
+        },
+      };
+
+      const resp = await fetch(webhookConfig.webhook_url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Webhook POST failed: ${resp.status} ${resp.statusText}`);
+      }
+
+      return { status: resp.status, delivered: true };
+    });
+
+    return { success: true, ...result };
+  }
+);
+
+// ---------------------------------------------------------------------------
 // Chain 1 bonus: Push Notification (was also fire-and-forget)
 // ---------------------------------------------------------------------------
 export const leadPushNotification = inngest.createFunction(

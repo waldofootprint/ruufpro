@@ -6,6 +6,7 @@ import {
   reviewRequest,
   reviewEmailFollowup,
   leadPushNotification,
+  crmWebhookExport,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -16,5 +17,6 @@ export const { GET, POST, PUT } = serve({
     reviewRequest,
     reviewEmailFollowup,
     leadPushNotification,
+    crmWebhookExport,
   ],
 });
