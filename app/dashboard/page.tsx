@@ -285,7 +285,7 @@ export default function DashboardHome() {
               <div className="flex items-center gap-2.5">
                 <DollarSign className={`w-3.5 h-3.5 ${quotedNotSigned.length > 0 ? "text-purple-500" : "text-slate-300"}`} />
                 <span className={`text-[12px] font-semibold ${quotedNotSigned.length > 0 ? "text-slate-800" : "text-slate-400"}`}>
-                  Quoted — waiting on signature
+                  Quoted — follow up
                 </span>
               </div>
               <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
