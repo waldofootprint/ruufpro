@@ -3,10 +3,13 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import type { ContractorTier } from "@/lib/types";
+import { getTierFromContractor } from "@/lib/types";
 
 interface DashboardState {
   contractorId: string;
   businessName: string;
+  tier: ContractorTier;
   newLeadCount: number;
   refreshLeadCount: () => Promise<void>;
   loading: boolean;
@@ -25,6 +28,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [contractorId, setContractorId] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [tier, setTier] = useState<ContractorTier>("free");
   const [newLeadCount, setNewLeadCount] = useState(0);
 
   // Fetch new lead count
@@ -49,12 +53,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         }
         const { data: contractor } = await supabase
           .from("contractors")
-          .select("id, business_name")
+          .select("id, business_name, has_estimate_widget, has_seo_pages, has_custom_domain")
           .eq("user_id", user.id)
           .single();
         if (contractor) {
           setContractorId(contractor.id);
           setBusinessName(contractor.business_name);
+          setTier(getTierFromContractor(contractor));
         } else {
           // User exists but no contractor record — send to onboarding
           router.push("/onboarding");
@@ -76,7 +81,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   return (
     <DashboardContext.Provider
-      value={{ contractorId, businessName, newLeadCount, refreshLeadCount, loading }}
+      value={{ contractorId, businessName, tier, newLeadCount, refreshLeadCount, loading }}
     >
       {children}
     </DashboardContext.Provider>

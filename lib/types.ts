@@ -8,7 +8,7 @@ export type DesignStyle = "modern_clean" | "bold_confident" | "warm_trustworthy"
 
 export type LeadSource = "contact_form" | "estimate_widget" | "external_widget";
 
-export type LeadStatus = "new" | "contacted" | "quoted" | "won" | "completed" | "lost";
+export type LeadStatus = "new" | "contacted" | "appointment_set" | "quoted" | "won" | "completed" | "lost";
 
 export type LeadTimeline = "no_timeline" | "1_3_months" | "now";
 
@@ -156,6 +156,9 @@ export interface Lead {
 
   // Speed-to-lead tracking
   contacted_at: string | null;
+
+  // Notes (roofer's free-text notes on this lead)
+  notes: string | null;
 
   // Roof intel (from estimate engine)
   estimate_pitch_degrees: number | null;

@@ -32,10 +32,11 @@ const SIDEBAR_ITEMS = [
 ];
 
 const TAB_ITEMS = [
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/dashboard/leads", label: "Leads", icon: Users, showBadge: true },
   { href: "/dashboard/estimate-settings", label: "Widget", icon: Calculator },
   { href: "/dashboard/my-site", label: "My Site", icon: Globe },
-  { href: "/dashboard", label: "More", icon: MoreHorizontal, isMore: true },
+  { href: "more", label: "More", icon: MoreHorizontal, isMore: true },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -3,62 +3,340 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDashboard } from "./DashboardContext";
-import { Users, Zap, DollarSign, ChevronRight, Phone, MessageSquare, Star, AlertCircle } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Users, Zap, DollarSign, ChevronRight, Star, Link2, UserPlus,
+  MessageCircle, Eye, Bell, CheckCircle, X, Phone, TrendingUp,
+  Target, BarChart3, Trophy, Flame, Share2,
+} from "lucide-react";
 import type { Lead } from "@/lib/types";
 import {
-  getLeadTemperature,
-  getTemperatureConfig,
+  getAvgResponseTime,
   getSpeedToLead,
   formatTimeAgo,
-  getAvgResponseTime,
+  calculateRevenue,
 } from "@/lib/dashboard-utils";
 
+interface ActivityEvent {
+  id: string;
+  icon: "auto_text" | "review_request" | "estimate_view" | "new_lead";
+  description: string;
+  time: string;
+}
+
+type PopupType = "waiting" | "speed" | "pipeline" | "reviews" | null;
+
 export default function DashboardHome() {
-  const { contractorId, businessName } = useDashboard();
+  const { contractorId, businessName, tier } = useDashboard();
+  const isPro = tier === "pro" || tier === "growth";
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [reviewClicked, setReviewClicked] = useState(0);
+  const [reviewCompleted, setReviewCompleted] = useState(0);
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [copied, setCopied] = useState(false);
+  const [activePopup, setActivePopup] = useState<PopupType>(null);
+  const [smsMessages, setSmsMessages] = useState<any[]>([]);
+  const [showAddLead, setShowAddLead] = useState(false);
+  const [addLeadForm, setAddLeadForm] = useState({
+    name: "", phone: "", email: "", address: "", message: "",
+    estimate_material: "", estimate_roof_sqft: "", estimate_low: "", estimate_high: "",
+    timeline: "" as string, financing_interest: "" as string, notes: "",
+  });
+  const [addLeadSaving, setAddLeadSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
       if (!contractorId) return;
-      const { data } = await supabase
+
+      // Fetch leads
+      const { data: leadsData } = await supabase
         .from("leads")
         .select("*")
         .eq("contractor_id", contractorId)
         .order("created_at", { ascending: false });
-      setLeads((data as Lead[]) || []);
+      setLeads((leadsData as Lead[]) || []);
+
+      // Fetch review request stats
+      try {
+        const { data: reviews } = await supabase
+          .from("review_requests")
+          .select("id, status")
+          .eq("contractor_id", contractorId);
+        if (reviews) {
+          setReviewCount(reviews.length);
+          setReviewClicked(reviews.filter((r: any) => r.status === "clicked" || r.status === "reviewed").length);
+          setReviewCompleted(reviews.filter((r: any) => r.status === "reviewed").length);
+        }
+      } catch { /* table may not exist yet */ }
+
+      // Fetch SMS messages for speed timeline
+      try {
+        const { data: sms } = await supabase
+          .from("sms_messages")
+          .select("id, created_at, lead_id, direction, message_type")
+          .eq("contractor_id", contractorId)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        setSmsMessages(sms || []);
+      } catch { /* table may not exist */ }
+
+      // Build activity feed
+      const events: ActivityEvent[] = [];
+
+      (leadsData || []).slice(0, 5).forEach((l: Lead) => {
+        events.push({
+          id: `lead-${l.id}`,
+          icon: "new_lead",
+          description: `New estimate request from ${l.name}`,
+          time: l.created_at,
+        });
+      });
+
+      try {
+        const { data: smsData } = await supabase
+          .from("sms_messages")
+          .select("id, created_at, lead_id, message_type")
+          .eq("contractor_id", contractorId)
+          .eq("direction", "outbound")
+          .order("created_at", { ascending: false })
+          .limit(10);
+        if (smsData) {
+          smsData.forEach((sms: any) => {
+            events.push({
+              id: `sms-${sms.id}`,
+              icon: "auto_text",
+              description: sms.message_type === "review_request"
+                ? "Review request sent via SMS"
+                : "Auto-texted estimate link to lead",
+              time: sms.created_at,
+            });
+          });
+        }
+      } catch { /* table may not exist yet */ }
+
+      try {
+        const { data: reviewData } = await supabase
+          .from("review_requests")
+          .select("id, created_at, status")
+          .eq("contractor_id", contractorId)
+          .order("created_at", { ascending: false })
+          .limit(5);
+        if (reviewData) {
+          reviewData.forEach((rr: any) => {
+            events.push({
+              id: `review-${rr.id}`,
+              icon: "review_request",
+              description: rr.status === "reviewed"
+                ? "Google review received!"
+                : rr.status === "clicked"
+                ? "Review link clicked by homeowner"
+                : "Review request sent",
+              time: rr.created_at,
+            });
+          });
+        }
+      } catch { /* table may not exist yet */ }
+
+      events.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      setActivityEvents(events.slice(0, 10));
+
       setLoading(false);
     }
     load();
   }, [contractorId]);
 
   if (loading) {
-    return <div className="text-slate-400 text-sm py-12 text-center">Loading dashboard...</div>;
+    return (
+      <div className="max-w-[960px] mx-auto">
+        <div className="h-8 w-48 bg-slate-100 rounded-lg animate-pulse mb-6" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 bg-slate-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+        <div className="h-64 bg-slate-100 rounded-xl animate-pulse" />
+      </div>
+    );
   }
 
-  const newCount = leads.filter((l) => l.status === "new").length;
+  // ---- Derived data ----
+
+  const newLeads = leads.filter((l) => l.status === "new");
+  const newCount = newLeads.length;
   const avgResponse = getAvgResponseTime(leads);
 
-  // Pipeline value: sum of estimate midpoints for non-lost leads
-  const pipelineValue = leads
-    .filter((l) => l.status !== "lost" && l.status !== "won" && l.estimate_low && l.estimate_high)
-    .reduce((sum, l) => sum + ((l.estimate_low! + l.estimate_high!) / 2), 0);
+  const pipelineLeads = leads.filter(
+    (l) => l.status !== "lost" && l.status !== "won" && l.estimate_low && l.estimate_high
+  );
+  const pipelineValue = pipelineLeads.reduce(
+    (sum, l) => sum + ((l.estimate_low! + l.estimate_high!) / 2), 0
+  );
+  const pipelineCount = pipelineLeads.length;
 
-  // Open items — actionable things that need attention
-  const unrepliedLeads = leads.filter((l) => l.status === "new");
-  const quotedNotSigned = leads.filter((l) => l.status === "quoted");
-  const contactedNoFollowup = leads.filter((l) => l.status === "contacted");
-  const completedNoReview = leads.filter((l) => l.status === "completed" || l.status === "won");
+  const wonLeads = leads.filter((l) => l.status === "won");
+  const revenue = calculateRevenue(leads);
+  const conversionRate = leads.length > 0
+    ? Math.round((wonLeads.length / leads.length) * 100)
+    : 0;
 
-  // Greeting based on time of day
+  const avgEstimate = pipelineLeads.length > 0
+    ? pipelineLeads.reduce((sum, l) => sum + ((l.estimate_low! + l.estimate_high!) / 2), 0) / pipelineLeads.length
+    : 0;
+
+  const highestEstimate = leads.reduce((max, l) => {
+    if (l.estimate_high && l.estimate_high > max) return l.estimate_high;
+    return max;
+  }, 0);
+
+  // Leads with living estimates
+  const leadsWithEstimates = leads.filter((l) => l.living_estimate_id);
+
+  const automationCount = activityEvents.filter(
+    (e) => e.icon === "auto_text" || e.icon === "review_request"
+  ).length;
+
+  // Greeting
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const firstName = businessName.split(" ")[0];
 
+  async function saveNewLead() {
+    if (!addLeadForm.name.trim()) return;
+    setAddLeadSaving(true);
+    const lowNum = addLeadForm.estimate_low ? parseFloat(addLeadForm.estimate_low) : null;
+    const highNum = addLeadForm.estimate_high ? parseFloat(addLeadForm.estimate_high) : null;
+    const sqftNum = addLeadForm.estimate_roof_sqft ? parseFloat(addLeadForm.estimate_roof_sqft) : null;
+    const { data } = await supabase
+      .from("leads")
+      .insert({
+        contractor_id: contractorId,
+        name: addLeadForm.name.trim(),
+        phone: addLeadForm.phone.trim() || null,
+        email: addLeadForm.email.trim() || null,
+        address: addLeadForm.address.trim() || null,
+        message: addLeadForm.message.trim() || null,
+        estimate_material: addLeadForm.estimate_material || null,
+        estimate_roof_sqft: sqftNum,
+        estimate_low: lowNum,
+        estimate_high: highNum,
+        timeline: addLeadForm.timeline || null,
+        financing_interest: addLeadForm.financing_interest || null,
+        notes: addLeadForm.notes.trim() || null,
+        source: "contact_form",
+        status: "new",
+      })
+      .select()
+      .single();
+    if (data) {
+      setLeads((prev) => [data as Lead, ...prev]);
+    }
+    setAddLeadForm({
+      name: "", phone: "", email: "", address: "", message: "",
+      estimate_material: "", estimate_roof_sqft: "", estimate_low: "", estimate_high: "",
+      timeline: "", financing_interest: "", notes: "",
+    });
+    setAddLeadSaving(false);
+    setShowAddLead(false);
+  }
+
+  function copyWidgetLink() {
+    const link = `${window.location.origin}/widget/${contractorId}`;
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function getEventIcon(icon: ActivityEvent["icon"]) {
+    switch (icon) {
+      case "auto_text": return <Zap className="w-3.5 h-3.5 text-emerald-500" />;
+      case "review_request": return <Star className="w-3.5 h-3.5 text-amber-500" />;
+      case "estimate_view": return <Eye className="w-3.5 h-3.5 text-blue-500" />;
+      case "new_lead": return <Bell className="w-3.5 h-3.5 text-[#D4863E]" />;
+    }
+  }
+
+  // Speed timeline for a lead
+  function getLeadTimeline(lead: Lead) {
+    const leadArrived = new Date(lead.created_at);
+    const autoText = smsMessages.find(
+      (sms) => sms.lead_id === lead.id && sms.direction === "outbound"
+    );
+    const autoTextTime = autoText ? new Date(autoText.created_at) : null;
+    const calledTime = lead.contacted_at ? new Date(lead.contacted_at) : null;
+
+    return { leadArrived, autoTextTime, calledTime };
+  }
+
+  function formatTimeDiff(start: Date, end: Date): string {
+    const diffMs = end.getTime() - start.getTime();
+    if (diffMs < 0) return "—";
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "<1m";
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ${mins % 60}m`;
+    return `${Math.floor(hours / 24)}d`;
+  }
+
+  // ---- Empty state ----
+
+  if (leads.length === 0) {
+    return (
+      <div className="max-w-[960px] mx-auto">
+        <div className="mb-6">
+          <h1 className="text-[20px] font-extrabold text-slate-800 tracking-tight">
+            {greeting}, {firstName}
+          </h1>
+          <p className="text-[13px] text-slate-400 mt-0.5">
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-white border border-[#e2e8f0] p-8 max-w-lg mx-auto">
+          <div className="text-center mb-6">
+            <div className="text-[40px] mb-3">🏠</div>
+            <h2 className="text-[18px] font-bold text-slate-800 mb-1">Get your first lead</h2>
+            <p className="text-[13px] text-slate-400">Complete these steps and leads will start flowing in.</p>
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: "Create your account", done: true, href: "#" },
+              { label: "Set your pricing rates", done: false, href: "/dashboard/estimate-settings" },
+              { label: "Customize your website", done: false, href: "/dashboard/my-site" },
+              { label: "Share your widget link", done: false, href: "/dashboard/estimate-settings" },
+            ].map((step, i) => (
+              <a
+                key={i}
+                href={step.href}
+                className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                  step.done ? "bg-emerald-50" : "bg-slate-50 hover:bg-slate-100"
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold ${
+                  step.done ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"
+                }`}>
+                  {step.done ? <CheckCircle className="w-4 h-4" /> : i + 1}
+                </div>
+                <span className={`text-[13px] font-semibold ${step.done ? "text-emerald-700 line-through" : "text-slate-700"}`}>
+                  {step.label}
+                </span>
+                {!step.done && <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Main dashboard ----
+
   return (
     <div className="max-w-[960px] mx-auto">
       {/* Greeting */}
-      <div className="mb-6">
+      <div className="mb-5">
         <h1 className="text-[20px] font-extrabold text-slate-800 tracking-tight">
           {greeting}, {firstName}
         </h1>
@@ -68,257 +346,726 @@ export default function DashboardHome() {
         </p>
       </div>
 
-      {/* Action cards — 3 across */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        {/* Waiting Leads — always orange accent */}
-        <a
-          href="/dashboard/leads"
-          className="rounded-xl bg-[#FFF7ED] border-l-4 border-l-[#D4863E] border border-orange-200 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      {/* Quick actions */}
+      <div className="flex items-center gap-2 mb-5">
+        <button
+          onClick={copyWidgetLink}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-semibold bg-[#1B3A4B] text-white hover:bg-[#1B3A4B]/90 transition-colors"
         >
-          <div className="flex items-center gap-2 mb-2">
+          <Link2 className="w-3.5 h-3.5" />
+          {copied ? "Copied!" : "Share Widget Link"}
+        </button>
+        <button
+          onClick={() => setShowAddLead(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+        >
+          <UserPlus className="w-3.5 h-3.5" />
+          Add Lead
+        </button>
+      </div>
+
+      {/* 4 Action cards — clickable with popups */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        {/* Waiting Leads */}
+        <button
+          onClick={() => setActivePopup("waiting")}
+          className="rounded-xl bg-[#FFF7ED] border-l-4 border-l-[#D4863E] border border-orange-200 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left"
+        >
+          <div className="flex items-center gap-1.5 mb-2">
             <Users className="w-3.5 h-3.5 text-[#D4863E]" />
-            <span className="text-[11px] font-semibold text-[#D4863E] uppercase tracking-wide">
-              {newCount > 0 ? "Waiting for you" : "Leads"}
+            <span className="text-[10px] font-semibold text-[#D4863E] uppercase tracking-wide">
+              {newCount > 0 ? "Waiting" : "Leads"}
             </span>
           </div>
           <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
             {newCount}
           </div>
-          <p className="text-[12px] text-[#D4863E] font-semibold mt-2 flex items-center gap-1">
-            {newCount > 0
-              ? `${newCount} homeowner${newCount > 1 ? "s" : ""} waiting for your call`
-              : "All caught up — nice work"}
-            <ChevronRight className="w-3.5 h-3.5" />
+          <p className="text-[11px] text-[#D4863E] font-semibold mt-2">
+            {newCount > 0 ? `${newCount} homeowner${newCount > 1 ? "s" : ""} waiting` : "All caught up"}
           </p>
-        </a>
+        </button>
 
-        {/* Response Speed — always gamified green accent */}
-        <div className="rounded-xl bg-emerald-50 border-l-4 border-l-emerald-500 border border-emerald-200 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex items-center gap-2 mb-2">
+        {/* Response Speed */}
+        <button
+          onClick={() => setActivePopup("speed")}
+          className="rounded-xl bg-emerald-50 border-l-4 border-l-emerald-500 border border-emerald-200 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left"
+        >
+          <div className="flex items-center gap-1.5 mb-2">
             <Zap className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wide">Response Speed</span>
+            <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Speed</span>
           </div>
           <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
             {avgResponse || "—"}
           </div>
-          <p className="text-[12px] text-emerald-600 font-semibold mt-2 flex items-center gap-1">
-            {avgResponse ? (
-              <>
-                <Zap className="w-3 h-3" />
-                Faster than 90% of roofers
-              </>
-            ) : (
-              "Respond to your first lead to start tracking"
-            )}
+          <p className="text-[11px] text-emerald-600 font-semibold mt-2">
+            {avgResponse ? "Avg response time" : "Respond to start tracking"}
           </p>
-        </div>
+        </button>
 
-        {/* Open Estimates — always navy accent */}
-        <a
-          href="/dashboard/leads"
-          className="rounded-xl bg-[#F0F4F8] border-l-4 border-l-[#1B3A4B] border border-[#D1D9E0] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        {/* Pipeline */}
+        <button
+          onClick={() => setActivePopup("pipeline")}
+          className="rounded-xl bg-[#F0F4F8] border-l-4 border-l-[#1B3A4B] border border-[#D1D9E0] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left"
         >
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-1.5 mb-2">
             <DollarSign className="w-3.5 h-3.5 text-[#1B3A4B]" />
-            <span className="text-[11px] font-semibold text-[#1B3A4B] uppercase tracking-wide">Open Estimates</span>
+            <span className="text-[10px] font-semibold text-[#1B3A4B] uppercase tracking-wide">Pipeline</span>
           </div>
           <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
             {pipelineValue > 0 ? `$${(pipelineValue / 1000).toFixed(1)}K` : "$0"}
           </div>
-          <p className="text-[12px] text-[#1B3A4B]/70 font-semibold mt-2 flex items-center gap-1">
-            {pipelineValue > 0
-              ? `${leads.filter((l) => l.status !== "lost" && l.status !== "won" && l.estimate_low).length} estimates waiting for follow-up`
-              : "Estimates appear as leads come in"}
-            <ChevronRight className="w-3.5 h-3.5" />
+          <p className="text-[11px] text-[#1B3A4B]/70 font-semibold mt-2">
+            {pipelineCount > 0 ? `${pipelineCount} open estimate${pipelineCount > 1 ? "s" : ""}` : "Estimates appear with leads"}
           </p>
-        </a>
+        </button>
+
+        {/* Reviews */}
+        <button
+          onClick={() => setActivePopup("reviews")}
+          className="rounded-xl bg-amber-50 border-l-4 border-l-amber-500 border border-amber-200 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left"
+        >
+          <div className="flex items-center gap-1.5 mb-2">
+            <Star className="w-3.5 h-3.5 text-amber-600" />
+            <span className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Reviews</span>
+          </div>
+          <div className="text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
+            {reviewCount}
+          </div>
+          <p className="text-[11px] text-amber-600 font-semibold mt-2">
+            {reviewCount > 0 ? "Review requests sent" : "Auto-sent after won jobs"}
+          </p>
+        </button>
       </div>
 
-      {/* Main grid: leads list + open items */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        {/* Leads by status — spans 2 cols */}
+      {/* Main grid: leads preview + activity feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Leads preview */}
         <div className="lg:col-span-2 rounded-xl bg-white border border-[#e2e8f0] p-5">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">Your Leads</span>
-            <a href="/dashboard/leads" className="text-[12px] font-semibold text-slate-400 hover:text-slate-600 flex items-center gap-1">
-              View all <ChevronRight className="w-3 h-3" />
+            <span className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">Recent Leads</span>
+            <a href="/dashboard/leads" className="text-[12px] font-semibold text-[#1B3A4B] hover:text-[#1B3A4B]/70 flex items-center gap-1">
+              View Pipeline <ChevronRight className="w-3 h-3" />
             </a>
           </div>
-
-          {leads.length === 0 ? (
-            <p className="text-[13px] text-slate-400 py-8 text-center">No leads yet. They&apos;ll appear here when homeowners use your estimate widget.</p>
-          ) : (
-            <div className="space-y-5">
-              {/* Group leads by status */}
-              {([
-                { key: "new", label: "Needs Response", color: "text-[#D4863E]", bg: "bg-orange-50", border: "border-orange-200", dot: "bg-[#D4863E]" },
-                { key: "contacted", label: "Contacted", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200", dot: "bg-blue-500" },
-                { key: "quoted", label: "Quoted", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-200", dot: "bg-purple-500" },
-                { key: "won", label: "Won", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", dot: "bg-emerald-500" },
-              ] as const).map((group) => {
-                const groupLeads = leads.filter((l) => l.status === group.key).slice(0, 3);
-                if (groupLeads.length === 0) return null;
-                return (
-                  <div key={group.key}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-2 h-2 rounded-full ${group.dot}`} />
-                      <span className={`text-[11px] font-bold uppercase tracking-wide ${group.color}`}>
-                        {group.label}
-                      </span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${group.bg} ${group.border} border ${group.color}`}>
-                        {leads.filter((l) => l.status === group.key).length}
-                      </span>
-                    </div>
-                    <div className={`rounded-lg border ${group.border} ${group.bg} overflow-hidden`}>
-                      {groupLeads.map((lead, i) => {
-                        const temp = getLeadTemperature(lead);
-                        const tempConfig = getTemperatureConfig(temp);
-                        const speed = getSpeedToLead(lead);
-                        return (
-                          <a
-                            key={lead.id}
-                            href="/dashboard/leads"
-                            className={`flex items-center gap-3 py-3 px-3 hover:bg-white/60 transition-colors ${
-                              i < groupLeads.length - 1 ? `border-b ${group.border}` : ""
-                            }`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[13px] font-bold text-slate-800 truncate">{lead.name}</span>
-                                {tempConfig && (
-                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${tempConfig.className} uppercase`}>
-                                    {tempConfig.label}
-                                  </span>
-                                )}
-                                {speed && (
-                                  <span className="text-[9px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                    <Zap className="w-2.5 h-2.5" />{speed}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-slate-500 truncate">
-                                {lead.estimate_roof_sqft ? `${lead.estimate_roof_sqft.toLocaleString()} sqft · ` : ""}
-                                {lead.estimate_material || "Contact form"}
-                                {lead.address ? ` · ${lead.address.split(",")[0]}` : ""}
-                              </p>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              {lead.estimate_low && lead.estimate_high ? (
-                                <p className="text-[12px] font-bold text-slate-800">
-                                  ${(lead.estimate_low / 1000).toFixed(1)}K–${(lead.estimate_high / 1000).toFixed(1)}K
-                                </p>
-                              ) : null}
-                              <p className="text-[10px] text-slate-400">{formatTimeAgo(lead.created_at)}</p>
-                            </div>
-                          </a>
-                        );
-                      })}
-                    </div>
+          <div className="space-y-2">
+            {leads.slice(0, 5).map((lead) => {
+              const initials = lead.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+              return (
+                <a key={lead.id} href="/dashboard/leads" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-[#1B3A4B] flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
+                    {initials}
                   </div>
-                );
-              })}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-bold text-slate-800 truncate">{lead.name}</span>
+                      {lead.status === "new" && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-50 text-[#D4863E] uppercase">New</span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {lead.estimate_material || "Contact form"}
+                      {lead.estimate_roof_sqft ? ` · ${lead.estimate_roof_sqft.toLocaleString()} sqft` : ""}
+                      {lead.address ? ` · ${lead.address.split(",")[0]}` : ""}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    {lead.estimate_low && lead.estimate_high ? (
+                      <p className="text-[12px] font-bold text-slate-800">
+                        ${(lead.estimate_low / 1000).toFixed(1)}K–${(lead.estimate_high / 1000).toFixed(1)}K
+                      </p>
+                    ) : null}
+                    <p className="text-[10px] text-slate-400">{formatTimeAgo(lead.created_at)}</p>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Activity Feed */}
+        <div className="rounded-xl bg-white border border-[#e2e8f0] p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Zap className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">Activity</span>
+          </div>
+          {automationCount > 0 && (
+            <p className="text-[11px] text-emerald-600 font-semibold mb-4">
+              RuufPro handled {automationCount} automation{automationCount > 1 ? "s" : ""} recently
+            </p>
+          )}
+          {activityEvents.length === 0 ? (
+            <div className="text-center py-8">
+              <Zap className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+              <p className="text-[12px] text-slate-400">Activity will appear here as RuufPro works for you</p>
+              <p className="text-[11px] text-slate-300 mt-1">Auto-texts, review requests, estimate views</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {activityEvents.map((event) => (
+                <div key={event.id} className="flex items-start gap-2.5 py-2">
+                  <div className="mt-0.5 flex-shrink-0">{getEventIcon(event.icon)}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] text-slate-700 leading-snug">{event.description}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{formatTimeAgo(event.time)}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
-
-        {/* Open Items — what needs your attention */}
-        <div className="rounded-xl bg-white border border-[#e2e8f0] p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertCircle className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">To-Do</span>
-          </div>
-
-          <div className="space-y-2">
-            {/* Unreplied leads */}
-            <a
-              href="/dashboard/leads"
-              className={`flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:-translate-y-0.5 ${
-                unrepliedLeads.length > 0
-                  ? "bg-orange-50 border border-orange-200 hover:shadow-md"
-                  : "bg-slate-50 border border-slate-100"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Phone className={`w-3.5 h-3.5 ${unrepliedLeads.length > 0 ? "text-[#D4863E]" : "text-slate-300"}`} />
-                <span className={`text-[12px] font-semibold ${unrepliedLeads.length > 0 ? "text-slate-800" : "text-slate-400"}`}>
-                  Leads with no response
-                </span>
-              </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                unrepliedLeads.length > 0 ? "bg-[#D4863E] text-white" : "bg-slate-200 text-slate-400"
-              }`}>
-                {unrepliedLeads.length}
-              </span>
-            </a>
-
-            {/* Contacted but no quote yet */}
-            <a
-              href="/dashboard/leads"
-              className={`flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:-translate-y-0.5 ${
-                contactedNoFollowup.length > 0
-                  ? "bg-blue-50 border border-blue-200 hover:shadow-md"
-                  : "bg-slate-50 border border-slate-100"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <MessageSquare className={`w-3.5 h-3.5 ${contactedNoFollowup.length > 0 ? "text-blue-500" : "text-slate-300"}`} />
-                <span className={`text-[12px] font-semibold ${contactedNoFollowup.length > 0 ? "text-slate-800" : "text-slate-400"}`}>
-                  Contacted — send a quote
-                </span>
-              </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                contactedNoFollowup.length > 0 ? "bg-blue-500 text-white" : "bg-slate-200 text-slate-400"
-              }`}>
-                {contactedNoFollowup.length}
-              </span>
-            </a>
-
-            {/* Quoted but not signed */}
-            <a
-              href="/dashboard/leads"
-              className={`flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:-translate-y-0.5 ${
-                quotedNotSigned.length > 0
-                  ? "bg-purple-50 border border-purple-200 hover:shadow-md"
-                  : "bg-slate-50 border border-slate-100"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <DollarSign className={`w-3.5 h-3.5 ${quotedNotSigned.length > 0 ? "text-purple-500" : "text-slate-300"}`} />
-                <span className={`text-[12px] font-semibold ${quotedNotSigned.length > 0 ? "text-slate-800" : "text-slate-400"}`}>
-                  Quoted — follow up
-                </span>
-              </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                quotedNotSigned.length > 0 ? "bg-purple-500 text-white" : "bg-slate-200 text-slate-400"
-              }`}>
-                {quotedNotSigned.length}
-              </span>
-            </a>
-
-            {/* Won jobs — ask for review */}
-            <a
-              href="/dashboard/leads"
-              className={`flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:-translate-y-0.5 ${
-                completedNoReview.length > 0
-                  ? "bg-amber-50 border border-amber-200 hover:shadow-md"
-                  : "bg-slate-50 border border-slate-100"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Star className={`w-3.5 h-3.5 ${completedNoReview.length > 0 ? "text-amber-500" : "text-slate-300"}`} />
-                <span className={`text-[12px] font-semibold ${completedNoReview.length > 0 ? "text-slate-800" : "text-slate-400"}`}>
-                  Won jobs — ask for a review
-                </span>
-              </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                completedNoReview.length > 0 ? "bg-amber-500 text-white" : "bg-slate-200 text-slate-400"
-              }`}>
-                {completedNoReview.length}
-              </span>
-            </a>
-          </div>
-        </div>
       </div>
+
+      {/* ===== ADD LEAD MODAL ===== */}
+      <AnimatePresence>
+        {showAddLead && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+              onClick={() => setShowAddLead(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none"
+            >
+              <div
+                className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md sm:mx-4 pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="w-4 h-4 text-[#1B3A4B]" />
+                    <h3 className="text-[16px] font-bold text-slate-800">Add Lead</h3>
+                  </div>
+                  <button onClick={() => setShowAddLead(false)} className="text-slate-300 hover:text-slate-500">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                  {/* Contact info */}
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Contact Info</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Name *</label>
+                      <input
+                        type="text"
+                        value={addLeadForm.name}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, name: e.target.value }))}
+                        placeholder="Mike Rodriguez"
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Phone</label>
+                      <input
+                        type="tel"
+                        value={addLeadForm.phone}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, phone: e.target.value }))}
+                        placeholder="(813) 555-1234"
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Email</label>
+                      <input
+                        type="email"
+                        value={addLeadForm.email}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, email: e.target.value }))}
+                        placeholder="mike@email.com"
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E]"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Address</label>
+                      <input
+                        type="text"
+                        value={addLeadForm.address}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, address: e.target.value }))}
+                        placeholder="1234 Oak St, Tampa, FL"
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Estimate info */}
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide pt-2">Estimate Info</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Material</label>
+                      <select
+                        value={addLeadForm.estimate_material}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, estimate_material: e.target.value }))}
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E] bg-white"
+                      >
+                        <option value="">Select...</option>
+                        <option value="asphalt">Asphalt Shingle</option>
+                        <option value="metal">Metal</option>
+                        <option value="tile">Tile</option>
+                        <option value="flat">Flat</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Roof Sqft</label>
+                      <input
+                        type="number"
+                        value={addLeadForm.estimate_roof_sqft}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, estimate_roof_sqft: e.target.value }))}
+                        placeholder="2,400"
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Estimate Low ($)</label>
+                      <input
+                        type="number"
+                        value={addLeadForm.estimate_low}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, estimate_low: e.target.value }))}
+                        placeholder="12500"
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Estimate High ($)</label>
+                      <input
+                        type="number"
+                        value={addLeadForm.estimate_high}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, estimate_high: e.target.value }))}
+                        placeholder="18200"
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Qualification */}
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide pt-2">Qualification</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Timeline</label>
+                      <select
+                        value={addLeadForm.timeline}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, timeline: e.target.value }))}
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E] bg-white"
+                      >
+                        <option value="">Select...</option>
+                        <option value="now">ASAP</option>
+                        <option value="1_3_months">1-3 Months</option>
+                        <option value="no_timeline">Just Exploring</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Financing</label>
+                      <select
+                        value={addLeadForm.financing_interest}
+                        onChange={(e) => setAddLeadForm((f) => ({ ...f, financing_interest: e.target.value }))}
+                        className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E] bg-white"
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                        <option value="maybe">Maybe</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Message / Notes</label>
+                    <textarea
+                      value={addLeadForm.message}
+                      onChange={(e) => setAddLeadForm((f) => ({ ...f, message: e.target.value }))}
+                      placeholder="Called about storm damage on the back slope..."
+                      rows={2}
+                      className="w-full mt-1 px-3 py-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4863E]/30 focus:border-[#D4863E] resize-none"
+                    />
+                  </div>
+
+                  <button
+                    onClick={saveNewLead}
+                    disabled={!addLeadForm.name.trim() || addLeadSaving}
+                    className="w-full py-3 rounded-xl text-[14px] font-bold text-white bg-[#1B3A4B] hover:bg-[#1B3A4B]/90 transition-colors disabled:opacity-50"
+                  >
+                    {addLeadSaving ? "Saving..." : "Add Lead"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ===== POPUP MODALS ===== */}
+      <AnimatePresence>
+        {activePopup && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+              onClick={() => setActivePopup(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none"
+            >
+              <div
+                className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md sm:mx-4 max-h-[85vh] overflow-y-auto pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* ---- WAITING POPUP ---- */}
+                {activePopup === "waiting" && (
+                  <div>
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-[#D4863E]" />
+                        <h3 className="text-[16px] font-bold text-slate-800">Waiting Leads</h3>
+                      </div>
+                      <button onClick={() => setActivePopup(null)} className="text-slate-300 hover:text-slate-500">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="p-5">
+                      {newLeads.length === 0 ? (
+                        <div className="text-center py-6">
+                          <div className="text-[32px] mb-2">🎉</div>
+                          <p className="text-[14px] font-bold text-slate-800">All caught up!</p>
+                          <p className="text-[12px] text-slate-400 mt-1">No new leads waiting for a response.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {newLeads.map((lead) => {
+                            const initials = lead.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+                            return (
+                              <div key={lead.id} className="rounded-xl border border-orange-200 bg-orange-50/50 p-4">
+                                <div className="flex items-start gap-3 mb-3">
+                                  <div className="w-10 h-10 rounded-full bg-[#1B3A4B] flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0">
+                                    {initials}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[14px] font-bold text-slate-800">{lead.name}</p>
+                                    <p className="text-[12px] text-slate-500 mt-0.5">
+                                      {lead.estimate_material || "Contact form"}
+                                      {lead.estimate_roof_sqft ? ` · ${lead.estimate_roof_sqft.toLocaleString()} sqft` : ""}
+                                    </p>
+                                    {lead.estimate_low && lead.estimate_high && (
+                                      <p className="text-[13px] font-bold text-slate-800 mt-1">
+                                        ${(lead.estimate_low / 1000).toFixed(1)}K – ${(lead.estimate_high / 1000).toFixed(1)}K
+                                      </p>
+                                    )}
+                                    <p className="text-[10px] text-slate-400 mt-1">{formatTimeAgo(lead.created_at)}</p>
+                                  </div>
+                                </div>
+                                {lead.phone && (
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <a
+                                      href={`tel:${lead.phone}`}
+                                      className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1B3A4B] text-white text-[12px] font-bold hover:bg-[#1B3A4B]/90 transition-colors"
+                                    >
+                                      <Phone className="w-3.5 h-3.5" />
+                                      Call
+                                    </a>
+                                    <a
+                                      href={`sms:${lead.phone}?body=${encodeURIComponent(`Hey ${lead.name.split(" ")[0]}, this is ${businessName}. Thanks for getting an estimate on your roof! What day works best for a free inspection?`)}`}
+                                      className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-100 text-slate-700 text-[12px] font-bold hover:bg-slate-200 transition-colors"
+                                    >
+                                      <MessageCircle className="w-3.5 h-3.5" />
+                                      Text
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ---- SPEED POPUP ---- */}
+                {activePopup === "speed" && (
+                  <div>
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-emerald-500" />
+                        <h3 className="text-[16px] font-bold text-slate-800">Response Speed</h3>
+                      </div>
+                      <button onClick={() => setActivePopup(null)} className="text-slate-300 hover:text-slate-500">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="p-5">
+                      {/* Overall stat */}
+                      <div className="text-center mb-5 pb-5 border-b border-slate-100">
+                        <p className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Avg Response Time</p>
+                        <p className="text-[36px] font-extrabold text-emerald-600 leading-none">{avgResponse || "—"}</p>
+                        {avgResponse && (
+                          <p className="text-[11px] text-emerald-600 font-semibold mt-2">⚡ Faster than 90% of roofers</p>
+                        )}
+                      </div>
+
+                      {/* Per-lead timelines */}
+                      <p className="text-[11px] font-bold text-slate-800 uppercase tracking-wide mb-3">Lead Timeline</p>
+                      <div className="space-y-4">
+                        {leads.filter((l) => l.contacted_at).slice(0, 5).map((lead) => {
+                          const timeline = getLeadTimeline(lead);
+                          const speed = getSpeedToLead(lead);
+                          return (
+                            <div key={lead.id} className="rounded-lg bg-slate-50 p-3">
+                              <div className="flex items-center justify-between mb-3">
+                                <p className="text-[13px] font-bold text-slate-800">{lead.name}</p>
+                                {speed && (
+                                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                                    ⚡ {speed}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                {/* Lead arrived */}
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-[#D4863E] flex items-center justify-center flex-shrink-0">
+                                    <Bell className="w-3 h-3 text-white" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-[11px] font-semibold text-slate-700">Lead came in</p>
+                                    <p className="text-[10px] text-slate-400">
+                                      {timeline.leadArrived.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Auto-text */}
+                                {timeline.autoTextTime && (
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                                      <Zap className="w-3 h-3 text-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-[11px] font-semibold text-slate-700">Auto-text sent</p>
+                                      <p className="text-[10px] text-slate-400">
+                                        {formatTimeDiff(timeline.leadArrived, timeline.autoTextTime)} after lead
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Roofer called */}
+                                {timeline.calledTime && (
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-[#1B3A4B] flex items-center justify-center flex-shrink-0">
+                                      <Phone className="w-3 h-3 text-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-[11px] font-semibold text-slate-700">You responded</p>
+                                      <p className="text-[10px] text-slate-400">
+                                        {formatTimeDiff(timeline.leadArrived, timeline.calledTime)} after lead
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {leads.filter((l) => l.contacted_at).length === 0 && (
+                          <div className="text-center py-6">
+                            <Zap className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                            <p className="text-[12px] text-slate-400">Respond to your first lead to see your speed timeline</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ---- PIPELINE POPUP ---- */}
+                {activePopup === "pipeline" && (
+                  <div>
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-[#1B3A4B]" />
+                        <h3 className="text-[16px] font-bold text-slate-800">Pipeline Stats</h3>
+                      </div>
+                      <button onClick={() => setActivePopup(null)} className="text-slate-300 hover:text-slate-500">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="p-5">
+                      {/* Big pipeline value */}
+                      <div className="text-center mb-5 pb-5 border-b border-slate-100">
+                        <p className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Total Pipeline</p>
+                        <p className="text-[36px] font-extrabold text-[#1B3A4B] leading-none">
+                          ${(pipelineValue / 1000).toFixed(1)}K
+                        </p>
+                      </div>
+
+                      {/* Gamified stats grid */}
+                      <div className="grid grid-cols-2 gap-3 mb-5">
+                        <div className="rounded-xl bg-slate-50 p-3 text-center">
+                          <p className="text-[20px] mb-1">📊</p>
+                          <p className="text-[18px] font-extrabold text-slate-800">{leads.length}</p>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Total Leads</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3 text-center">
+                          <p className="text-[20px] mb-1">🎯</p>
+                          <p className="text-[18px] font-extrabold text-slate-800">{pipelineCount}</p>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Open Estimates</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3 text-center">
+                          <p className="text-[20px] mb-1">💰</p>
+                          <p className="text-[18px] font-extrabold text-slate-800">
+                            {avgEstimate > 0 ? `$${(avgEstimate / 1000).toFixed(1)}K` : "—"}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Avg Estimate</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3 text-center">
+                          <p className="text-[20px] mb-1">🏆</p>
+                          <p className="text-[18px] font-extrabold text-slate-800">
+                            {highestEstimate > 0 ? `$${(highestEstimate / 1000).toFixed(1)}K` : "—"}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Highest Estimate</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3 text-center">
+                          <p className="text-[20px] mb-1">🔥</p>
+                          <p className="text-[18px] font-extrabold text-slate-800">{conversionRate}%</p>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Close Rate</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3 text-center">
+                          <p className="text-[20px] mb-1">✅</p>
+                          <p className="text-[18px] font-extrabold text-emerald-600 font-extrabold">
+                            {revenue > 0 ? `$${(revenue / 1000).toFixed(1)}K` : "$0"}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Revenue Won</p>
+                        </div>
+                      </div>
+
+                      {/* Engagement stats */}
+                      <p className="text-[11px] font-bold text-slate-800 uppercase tracking-wide mb-3">📈 Engagement</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50">
+                          <div className="flex items-center gap-2">
+                            <Eye className="w-4 h-4 text-blue-500" />
+                            <span className="text-[12px] font-semibold text-slate-700">Estimates with living links</span>
+                          </div>
+                          <span className="text-[13px] font-bold text-blue-600">{leadsWithEstimates.length}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50">
+                          <div className="flex items-center gap-2">
+                            <Share2 className="w-4 h-4 text-purple-500" />
+                            <span className="text-[12px] font-semibold text-slate-700">Leads with materials selected</span>
+                          </div>
+                          <span className="text-[13px] font-bold text-purple-600">
+                            {leads.filter((l) => l.estimate_material).length}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-amber-500" />
+                            <span className="text-[12px] font-semibold text-slate-700">Leads with financing interest</span>
+                          </div>
+                          <span className="text-[13px] font-bold text-amber-600">
+                            {leads.filter((l) => l.financing_interest === "yes").length}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ---- REVIEWS POPUP ---- */}
+                {activePopup === "reviews" && (
+                  <div>
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-amber-500" />
+                        <h3 className="text-[16px] font-bold text-slate-800">Review Stats</h3>
+                      </div>
+                      <button onClick={() => setActivePopup(null)} className="text-slate-300 hover:text-slate-500">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="p-5">
+                      {/* Stats */}
+                      <div className="grid grid-cols-3 gap-3 mb-5">
+                        <div className="rounded-xl bg-amber-50 p-3 text-center">
+                          <p className="text-[20px] mb-1">📤</p>
+                          <p className="text-[20px] font-extrabold text-slate-800">{reviewCount}</p>
+                          <p className="text-[9px] text-slate-500 font-semibold uppercase">Sent</p>
+                        </div>
+                        <div className="rounded-xl bg-emerald-50 p-3 text-center">
+                          <p className="text-[20px] mb-1">👆</p>
+                          <p className="text-[20px] font-extrabold text-slate-800">{reviewClicked}</p>
+                          <p className="text-[9px] text-slate-500 font-semibold uppercase">Clicked</p>
+                        </div>
+                        <div className="rounded-xl bg-violet-50 p-3 text-center">
+                          <p className="text-[20px] mb-1">⭐</p>
+                          <p className="text-[20px] font-extrabold text-slate-800">{reviewCompleted}</p>
+                          <p className="text-[9px] text-slate-500 font-semibold uppercase">Reviewed</p>
+                        </div>
+                      </div>
+
+                      {/* Conversion funnel */}
+                      {reviewCount > 0 && (
+                        <div className="mb-5 pb-5 border-b border-slate-100">
+                          <p className="text-[11px] font-bold text-slate-800 uppercase tracking-wide mb-3">📊 Conversion Funnel</p>
+                          <div className="space-y-2">
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[11px] text-slate-500">Sent → Clicked</span>
+                                <span className="text-[11px] font-bold text-slate-700">
+                                  {reviewCount > 0 ? Math.round((reviewClicked / reviewCount) * 100) : 0}%
+                                </span>
+                              </div>
+                              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-emerald-500 rounded-full transition-all"
+                                  style={{ width: `${reviewCount > 0 ? (reviewClicked / reviewCount) * 100 : 0}%` }}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[11px] text-slate-500">Clicked → Reviewed</span>
+                                <span className="text-[11px] font-bold text-slate-700">
+                                  {reviewClicked > 0 ? Math.round((reviewCompleted / reviewClicked) * 100) : 0}%
+                                </span>
+                              </div>
+                              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-violet-500 rounded-full transition-all"
+                                  style={{ width: `${reviewClicked > 0 ? (reviewCompleted / reviewClicked) * 100 : 0}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Google Reviews teaser */}
+                      <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-center">
+                        <p className="text-[24px] mb-2">🔗</p>
+                        <p className="text-[13px] font-bold text-slate-800 mb-1">Connect Google Reviews</p>
+                        <p className="text-[11px] text-slate-400 mb-3">
+                          See your latest Google reviews right here and reply with one click.
+                        </p>
+                        <span className="text-[11px] font-semibold text-[#1B3A4B] bg-[#1B3A4B]/10 px-3 py-1.5 rounded-lg">
+                          Coming Soon
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

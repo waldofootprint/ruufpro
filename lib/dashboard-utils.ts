@@ -1,7 +1,30 @@
 // Dashboard helper functions.
 // Pure utilities — no React, no Supabase, just data in → data out.
 
-import type { Lead, LeadTemperature } from "./types";
+import type { Lead, LeadTemperature, LeadStatus } from "./types";
+
+// Kanban column config — order matters (left to right on desktop)
+export const KANBAN_COLUMNS: {
+  status: LeadStatus;
+  label: string;
+  color: string;       // text color class
+  bg: string;           // light background
+  border: string;       // border color
+  dot: string;          // status dot color
+  headerBg: string;     // column header bg
+}[] = [
+  { status: "new", label: "New Leads", color: "text-[#D4863E]", bg: "bg-orange-50", border: "border-orange-200", dot: "bg-[#D4863E]", headerBg: "bg-orange-100" },
+  { status: "contacted", label: "Contacted", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200", dot: "bg-blue-500", headerBg: "bg-blue-100" },
+  { status: "appointment_set", label: "Appt. Set", color: "text-teal-600", bg: "bg-teal-50", border: "border-teal-200", dot: "bg-teal-500", headerBg: "bg-teal-100" },
+  { status: "quoted", label: "Quoted", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-200", dot: "bg-purple-500", headerBg: "bg-purple-100" },
+  { status: "won", label: "Won", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", dot: "bg-emerald-500", headerBg: "bg-emerald-100" },
+  { status: "lost", label: "Lost", color: "text-slate-500", bg: "bg-slate-50", border: "border-slate-200", dot: "bg-slate-400", headerBg: "bg-slate-100" },
+];
+
+// Quick lookup: status → column config
+export function getColumnConfig(status: LeadStatus) {
+  return KANBAN_COLUMNS.find((c) => c.status === status) || KANBAN_COLUMNS[0];
+}
 
 // Map timeline to temperature tag
 export function getLeadTemperature(lead: Lead): LeadTemperature | null {
@@ -13,9 +36,9 @@ export function getLeadTemperature(lead: Lead): LeadTemperature | null {
 
 // Status dot color class based on lead state + temperature
 export function getStatusDotColor(lead: Lead): string {
-  if (lead.status === "won") return "bg-green-500";
+  if (lead.status === "won" || lead.status === "completed") return "bg-green-500";
   if (lead.status === "lost") return "bg-slate-300";
-  if (lead.status === "contacted" || lead.status === "quoted") return "bg-green-500";
+  if (lead.status === "contacted" || lead.status === "quoted" || lead.status === "appointment_set") return "bg-green-500";
   // status === "new"
   const temp = getLeadTemperature(lead);
   if (temp === "hot") return "bg-red-500";
