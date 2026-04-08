@@ -1,6 +1,45 @@
 import { inngest } from "./client";
 
 // ---------------------------------------------------------------------------
+// Global Failure Handler
+// Trigger: "inngest/function.failed" — fires when ANY function exhausts retries
+// Sends alert email + Slack notification so Hannah catches failures immediately
+// ---------------------------------------------------------------------------
+export const globalFailureHandler = inngest.createFunction(
+  {
+    id: "global-failure-handler",
+    retries: 0,
+    triggers: [{ event: "inngest/function.failed" }],
+  },
+  async ({ event }) => {
+    const { sendAlert } = await import("@/lib/alerts");
+
+    const functionId = event.data?.function_id || "unknown";
+    const errorMessage = event.data?.error?.message || "Unknown error";
+    const runId = event.data?.run_id || null;
+
+    // Try to extract contractor ID from the original event data
+    const originalEvent = event.data?.event;
+    const contractorId = originalEvent?.data?.contractorId || null;
+
+    await sendAlert({
+      title: `${functionId} failed`,
+      message: errorMessage,
+      severity: "error",
+      details: {
+        "Function": functionId,
+        "Run ID": runId,
+        "Contractor": contractorId,
+        "Original Event": originalEvent?.name || null,
+        "Time": new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+      },
+    });
+
+    return { alerted: true, functionId };
+  }
+);
+
+// ---------------------------------------------------------------------------
 // Chain 1: Lead Auto-Response
 // Trigger: "sms/lead.created" — emitted from /api/notify after form submit
 // Steps: look up contractor → check SMS enabled → check opt-out → send SMS
@@ -225,6 +264,124 @@ export const crmWebhookExport = inngest.createFunction(
     });
 
     return { success: true, ...result };
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Chain 6: Inbound SMS Reply Notification
+// Trigger: "sms/reply.received" — emitted from /api/sms/webhook
+// Steps: look up contractor + lead → send email notification → send push
+// ---------------------------------------------------------------------------
+export const inboundSmsNotification = inngest.createFunction(
+  {
+    id: "inbound-sms-notification",
+    retries: 2,
+    triggers: [{ event: "sms/reply.received" }],
+  },
+  async ({ event, step }) => {
+    const { contractorId, fromNumber, body, origin } = event.data;
+
+    // Step 1: Look up contractor info + try to match phone to a lead
+    const contactInfo = await step.run("lookup-contact-info", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+
+      const { data: contractor } = await supabase
+        .from("contractors")
+        .select("email, business_name, phone")
+        .eq("id", contractorId)
+        .single();
+
+      if (!contractor?.email) return null;
+
+      // Try to match the phone number to an existing lead
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("id, name")
+        .eq("contractor_id", contractorId)
+        .eq("phone", fromNumber)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      return {
+        contractorEmail: contractor.email,
+        businessName: contractor.business_name,
+        leadName: lead?.name || null,
+        leadId: lead?.id || null,
+      };
+    });
+
+    if (!contactInfo) {
+      return { success: true, skipped: true, reason: "contractor has no email" };
+    }
+
+    const senderName = contactInfo.leadName || fromNumber;
+    const preview = body.length > 100 ? body.slice(0, 100) + "…" : body;
+
+    // Step 2: Send email notification via Resend
+    await step.run("send-email-notification", async () => {
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
+      const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <div style="background: #0F1B2D; border-radius: 12px 12px 0 0; padding: 20px 24px;">
+            <h1 style="margin: 0; font-size: 18px; color: white; font-weight: 600;">💬 New SMS Reply</h1>
+          </div>
+          <div style="background: white; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+            <h2 style="margin: 0 0 4px; font-size: 18px; color: #111827;">${senderName}</h2>
+            <p style="margin: 0 0 16px; font-size: 13px; color: #6b7280;">${fromNumber}</p>
+            <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+              <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6;">${body}</p>
+            </div>
+            <a href="tel:${fromNumber.replace(/\D/g, "")}" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; margin-right: 8px;">
+              📞 Call Back
+            </a>
+            <a href="https://ruufpro.com/dashboard/sms" style="display: inline-block; background: #111827; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
+              View in Dashboard →
+            </a>
+          </div>
+          <p style="text-align: center; font-size: 11px; color: #9ca3af; margin-top: 16px;">
+            Sent by RuufPro · Someone replied to your automated text.
+          </p>
+        </div>
+      `;
+
+      const { error } = await resend.emails.send({
+        from: "RuufPro <noreply@ruufpro.com>",
+        to: contactInfo.contractorEmail,
+        subject: `Reply from ${senderName}: "${preview}"`,
+        html,
+      });
+
+      if (error) throw new Error(`Email notification failed: ${JSON.stringify(error)}`);
+    });
+
+    // Step 3: Send push notification
+    if (origin) {
+      await step.run("send-push-notification", async () => {
+        const res = await fetch(`${origin}/api/push/send`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-internal-secret": process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          },
+          body: JSON.stringify({
+            contractor_id: contractorId,
+            title: `💬 ${senderName}`,
+            body: preview,
+            url: "/dashboard/sms",
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error(`Push notification failed: ${res.status}`);
+        }
+      });
+    }
+
+    return { success: true, notified: contactInfo.contractorEmail };
   }
 );
 

@@ -141,10 +141,13 @@ export async function sendSMS(params: SendSMSParams): Promise<SendSMSResult> {
   try {
     const client = await getOrCreateTwilioClient();
 
+    // statusCallback tells Twilio to POST delivery updates (sent/delivered/failed)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ruufpro.com";
     const message = await client.messages.create({
       to,
       from,
       body,
+      statusCallback: `${siteUrl}/api/sms/status-callback`,
     });
 
     // Log the message to our database for tracking

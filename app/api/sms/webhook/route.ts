@@ -85,6 +85,20 @@ export async function POST(request: NextRequest) {
       status: "received",
     });
 
+    // Notify contractor about regular inbound replies (not opt-out or HELP)
+    if (!isOptOut && !isHelp && contractorId && body?.trim()) {
+      const { inngest } = await import("@/lib/inngest/client");
+      await inngest.send({
+        name: "sms/reply.received",
+        data: {
+          contractorId,
+          fromNumber: from,
+          body: body.trim(),
+          origin: `https://${request.headers.get("host") || "ruufpro.com"}`,
+        },
+      });
+    }
+
     // Build TwiML response
     let twiml: string;
     if (isHelp && contractorName) {
