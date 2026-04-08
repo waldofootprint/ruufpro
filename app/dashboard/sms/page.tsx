@@ -1,8 +1,8 @@
-// SMS & Reviews — Registration progress, OTP verification, Google review URL, SMS settings.
+// SMS & Reviews — Registration, settings, and two-way conversation UI.
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDashboard } from "../DashboardContext";
 import {
@@ -20,6 +20,10 @@ import {
   Loader2,
   ArrowUpRight,
   ArrowDownLeft,
+  Send,
+  ArrowLeft,
+  User,
+  ChevronRight,
 } from "lucide-react";
 
 // Registration status matches lib/twilio-10dlc.ts RegistrationStatus type
@@ -105,6 +109,20 @@ function getStatusMessage(status: RegistrationStatus, path: string | null): { ti
   }
 }
 
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = now - then;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(dateStr).toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 export default function SmsPage() {
   const { contractorId } = useDashboard();
   const [loading, setLoading] = useState(true);
@@ -121,11 +139,16 @@ export default function SmsPage() {
   const [ssnLast4, setSsnLast4] = useState("");
   const [resendingOtp, setResendingOtp] = useState(false);
   const [otpResent, setOtpResent] = useState(false);
-  const [messages, setMessages] = useState<{ id: string; direction: string; to_number: string; from_number: string; body: string; message_type: string; status: string; created_at: string }[]>([]);
-  const [showAllMessages, setShowAllMessages] = useState(false);
+  const [messages, setMessages] = useState<{ id: string; direction: string; to_number: string; from_number: string; body: string; message_type: string; status: string; created_at: string; read_at: string | null; lead_id: string | null }[]>([]);
+  const [leads, setLeads] = useState<Record<string, { name: string; phone: string }>>({});
   const [complianceUrl, setComplianceUrl] = useState("");
   const [savingCompliance, setSavingCompliance] = useState(false);
   const [complianceSaved, setComplianceSaved] = useState(false);
+  // Conversation UI state
+  const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [sending, setSending] = useState(false);
+  const threadEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -158,14 +181,26 @@ export default function SmsPage() {
         setComplianceUrl(number.compliance_website_url || "");
       }
 
-      // Load recent SMS messages
+      // Load SMS messages (all, for conversation grouping)
       const { data: msgs } = await supabase
         .from("sms_messages")
-        .select("id, direction, to_number, from_number, body, message_type, status, created_at")
+        .select("id, direction, to_number, from_number, body, message_type, status, created_at, read_at, lead_id")
         .eq("contractor_id", contractorId)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(200);
       if (msgs) setMessages(msgs);
+
+      // Load lead names for phone number display
+      const { data: leadData } = await supabase
+        .from("leads")
+        .select("id, name, phone")
+        .eq("contractor_id", contractorId)
+        .not("phone", "is", null);
+      if (leadData) {
+        const map: Record<string, { name: string; phone: string }> = {};
+        leadData.forEach((l) => { if (l.phone) map[l.phone] = { name: l.name, phone: l.phone }; });
+        setLeads(map);
+      }
 
       setLoading(false);
     }
@@ -268,6 +303,117 @@ export default function SmsPage() {
       .limit(1)
       .maybeSingle();
     if (number) setSmsNumber(number as SmsNumber);
+  }
+
+  // Build conversations grouped by the "other party" phone number
+  const conversations = (() => {
+    const map = new Map<string, { phone: string; lastMessage: string; lastTime: string; unreadCount: number; direction: string }>();
+    // Messages are newest-first, so first occurrence = latest message per phone
+    messages.forEach((msg) => {
+      const otherPhone = msg.direction === "outbound" ? msg.to_number : msg.from_number;
+      if (!map.has(otherPhone)) {
+        const unread = messages.filter(
+          (m) => m.direction === "inbound" && m.from_number === otherPhone && !m.read_at
+        ).length;
+        map.set(otherPhone, {
+          phone: otherPhone,
+          lastMessage: msg.body,
+          lastTime: msg.created_at,
+          unreadCount: unread,
+          direction: msg.direction,
+        });
+      }
+    });
+    return Array.from(map.values());
+  })();
+
+  // Thread messages for selected conversation (chronological)
+  const threadMessages = selectedPhone
+    ? messages
+        .filter((m) => {
+          const otherPhone = m.direction === "outbound" ? m.to_number : m.from_number;
+          return otherPhone === selectedPhone;
+        })
+        .reverse()
+    : [];
+
+  // Get display name for a phone number
+  function getContactName(phone: string): string {
+    return leads[phone]?.name || phone;
+  }
+
+  // Mark messages as read when opening a conversation
+  const markAsRead = useCallback(async (phone: string) => {
+    const hasUnread = messages.some(
+      (m) => m.direction === "inbound" && m.from_number === phone && !m.read_at
+    );
+    if (!hasUnread) return;
+
+    try {
+      await fetch("/api/sms/mark-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: phone }),
+      });
+      // Update local state
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.direction === "inbound" && m.from_number === phone && !m.read_at
+            ? { ...m, read_at: new Date().toISOString() }
+            : m
+        )
+      );
+    } catch {
+      // Silent — will mark on next load
+    }
+  }, [messages]);
+
+  // Open a conversation
+  function openConversation(phone: string) {
+    setSelectedPhone(phone);
+    setReplyText("");
+    markAsRead(phone);
+    // Scroll to bottom after render
+    setTimeout(() => threadEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+  }
+
+  // Send a manual reply
+  async function handleSendReply() {
+    if (!selectedPhone || !replyText.trim() || sending) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/sms/send-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: selectedPhone, body: replyText.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Add to local state immediately
+        setMessages((prev) => [
+          {
+            id: crypto.randomUUID(),
+            direction: "outbound",
+            to_number: selectedPhone,
+            from_number: "",
+            body: replyText.trim(),
+            message_type: "manual",
+            status: "sent",
+            created_at: new Date().toISOString(),
+            read_at: null,
+            lead_id: null,
+          },
+          ...prev,
+        ]);
+        setReplyText("");
+        setTimeout(() => threadEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      } else {
+        alert(data.error || "Failed to send reply");
+      }
+    } catch {
+      alert("Network error — please try again");
+    }
+    setSending(false);
   }
 
   if (loading) {
@@ -620,76 +766,158 @@ export default function SmsPage() {
         </div>
       </div>
 
-      {/* SMS Message Log */}
+      {/* Conversations */}
       <div className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-50">
-          <h2 className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">Message Log</h2>
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            {messages.length > 0 ? `${messages.length} message${messages.length !== 1 ? "s" : ""}` : "No messages yet"}
-          </p>
+        <div className="px-5 py-3.5 border-b border-slate-50 flex items-center justify-between">
+          <div>
+            <h2 className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">
+              {selectedPhone ? (
+                <button onClick={() => setSelectedPhone(null)} className="flex items-center gap-1.5 hover:text-slate-600 transition-colors">
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  {getContactName(selectedPhone)}
+                </button>
+              ) : (
+                "Conversations"
+              )}
+            </h2>
+            {!selectedPhone && (
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {conversations.length > 0
+                  ? `${conversations.length} conversation${conversations.length !== 1 ? "s" : ""}`
+                  : "No messages yet"}
+              </p>
+            )}
+            {selectedPhone && (
+              <p className="text-[11px] text-slate-400 mt-0.5">{selectedPhone}</p>
+            )}
+          </div>
         </div>
-        {messages.length > 0 ? (
-          <div className="divide-y divide-slate-50">
-            {(showAllMessages ? messages : messages.slice(0, 10)).map((msg) => {
-              const isOutbound = msg.direction === "outbound";
-              const typeLabels: Record<string, string> = {
-                review_request: "Review Request",
-                missed_call_textback: "Missed Call",
-                follow_up: "Follow-Up",
-                on_my_way: "On My Way",
-                status_update: "Status Update",
-                manual: "Manual",
-                system: "System",
-              };
-              return (
-                <div key={msg.id} className="px-5 py-3 flex items-start gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    isOutbound ? "bg-blue-50" : "bg-emerald-50"
-                  }`}>
-                    {isOutbound ? (
-                      <ArrowUpRight className="w-3 h-3 text-blue-500" />
-                    ) : (
-                      <ArrowDownLeft className="w-3 h-3 text-emerald-500" />
-                    )}
+
+        {/* Conversation List */}
+        {!selectedPhone && (
+          conversations.length > 0 ? (
+            <div className="divide-y divide-slate-50">
+              {conversations.map((conv) => (
+                <button
+                  key={conv.phone}
+                  onClick={() => openConversation(conv.phone)}
+                  className="w-full px-5 py-3.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
+                >
+                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-slate-400" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[12px] font-semibold text-slate-700">
-                        {isOutbound ? `To ${msg.to_number}` : `From ${msg.from_number}`}
+                      <span className={`text-[13px] font-semibold truncate ${conv.unreadCount > 0 ? "text-slate-900" : "text-slate-700"}`}>
+                        {getContactName(conv.phone)}
                       </span>
-                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase ${
-                        msg.status === "delivered" ? "bg-emerald-50 text-emerald-600" :
-                        msg.status === "failed" ? "bg-red-50 text-red-600" :
-                        msg.status === "received" ? "bg-blue-50 text-blue-600" :
-                        "bg-slate-50 text-slate-500"
-                      }`}>
-                        {msg.status}
-                      </span>
-                      <span className="text-[9px] font-medium text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">
-                        {typeLabels[msg.message_type] || msg.message_type}
+                      <span className="text-[10px] text-slate-300 ml-auto flex-shrink-0">
+                        {formatRelativeTime(conv.lastTime)}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{msg.body}</p>
-                    <p className="text-[10px] text-slate-300 mt-1">
-                      {new Date(msg.created_at).toLocaleString()}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className={`text-[11px] truncate flex-1 ${conv.unreadCount > 0 ? "text-slate-600 font-medium" : "text-slate-400"}`}>
+                        {conv.direction === "outbound" && <span className="text-slate-300">You: </span>}
+                        {conv.lastMessage}
+                      </p>
+                      {conv.unreadCount > 0 && (
+                        <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center flex-shrink-0">
+                          {conv.unreadCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-            {messages.length > 10 && !showAllMessages && (
-              <button
-                onClick={() => setShowAllMessages(true)}
-                className="w-full px-5 py-3 text-[12px] font-semibold text-slate-500 hover:bg-slate-50 transition-colors"
-              >
-                Show all {messages.length} messages
-              </button>
+                  <ChevronRight className="w-4 h-4 text-slate-200 flex-shrink-0" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="px-5 py-8 text-center">
+              <MessageSquare className="w-6 h-6 text-slate-200 mx-auto mb-2" />
+              <p className="text-[12px] text-slate-400">Messages will appear here once SMS is active</p>
+            </div>
+          )
+        )}
+
+        {/* Thread View */}
+        {selectedPhone && (
+          <div className="flex flex-col">
+            {/* Messages */}
+            <div className="max-h-[400px] overflow-y-auto px-4 py-4 space-y-2">
+              {threadMessages.length === 0 ? (
+                <p className="text-[12px] text-slate-400 text-center py-8">No messages in this conversation</p>
+              ) : (
+                threadMessages.map((msg) => {
+                  const isOutbound = msg.direction === "outbound";
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex ${isOutbound ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[75%] rounded-2xl px-3.5 py-2 ${
+                          isOutbound
+                            ? "bg-blue-500 text-white rounded-br-md"
+                            : "bg-slate-100 text-slate-800 rounded-bl-md"
+                        }`}
+                      >
+                        <p className="text-[13px] leading-relaxed break-words">{msg.body}</p>
+                        <div className={`flex items-center gap-1.5 mt-1 ${isOutbound ? "justify-end" : "justify-start"}`}>
+                          <span className={`text-[9px] ${isOutbound ? "text-blue-200" : "text-slate-400"}`}>
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                          </span>
+                          {isOutbound && (
+                            <span className={`text-[9px] ${
+                              msg.status === "delivered" ? "text-blue-200" :
+                              msg.status === "failed" ? "text-red-300" :
+                              "text-blue-300"
+                            }`}>
+                              {msg.status === "delivered" ? "✓✓" : msg.status === "failed" ? "✗" : "✓"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={threadEndRef} />
+            </div>
+
+            {/* Reply Composer */}
+            {isActive && (
+              <div className="border-t border-slate-100 px-4 py-3 flex items-end gap-2">
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendReply();
+                    }
+                  }}
+                  placeholder="Type a message..."
+                  rows={1}
+                  className="flex-1 resize-none rounded-xl border border-slate-200 px-3.5 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+                />
+                <button
+                  onClick={handleSendReply}
+                  disabled={!replyText.trim() || sending}
+                  className="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 disabled:opacity-40 disabled:hover:bg-blue-500 transition-all flex-shrink-0"
+                >
+                  {sending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             )}
-          </div>
-        ) : (
-          <div className="px-5 py-8 text-center">
-            <MessageSquare className="w-6 h-6 text-slate-200 mx-auto mb-2" />
-            <p className="text-[12px] text-slate-400">Messages will appear here once SMS is active</p>
+            {!isActive && (
+              <div className="border-t border-slate-100 px-4 py-3 text-center">
+                <p className="text-[11px] text-slate-400">Replying is available once your business number is approved</p>
+              </div>
+            )}
           </div>
         )}
       </div>

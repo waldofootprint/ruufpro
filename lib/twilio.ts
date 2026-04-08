@@ -14,7 +14,8 @@ type MessageType =
   | "missed_call_textback"
   | "lead_notification"
   | "lead_auto_response"
-  | "general";
+  | "general"
+  | "manual";
 
 interface SendSMSParams {
   to: string;

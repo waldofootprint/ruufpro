@@ -11,7 +11,9 @@ interface DashboardState {
   businessName: string;
   tier: ContractorTier;
   newLeadCount: number;
+  unreadSmsCount: number;
   refreshLeadCount: () => Promise<void>;
+  refreshSmsCount: () => Promise<void>;
   loading: boolean;
 }
 
@@ -30,6 +32,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [businessName, setBusinessName] = useState("");
   const [tier, setTier] = useState<ContractorTier>("free");
   const [newLeadCount, setNewLeadCount] = useState(0);
+  const [unreadSmsCount, setUnreadSmsCount] = useState(0);
 
   // Fetch new lead count
   const refreshLeadCount = async () => {
@@ -40,6 +43,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .eq("contractor_id", contractorId)
       .eq("status", "new");
     setNewLeadCount(count || 0);
+  };
+
+  // Fetch unread SMS count
+  const refreshSmsCount = async () => {
+    if (!contractorId) return;
+    const { count } = await supabase
+      .from("sms_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("contractor_id", contractorId)
+      .eq("direction", "inbound")
+      .is("read_at", null);
+    setUnreadSmsCount(count || 0);
   };
 
   // Auth check + contractor fetch (runs once)
@@ -74,14 +89,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     init();
   }, [router]);
 
-  // Fetch lead count once we have contractorId
+  // Fetch counts once we have contractorId
   useEffect(() => {
-    if (contractorId) refreshLeadCount();
+    if (contractorId) {
+      refreshLeadCount();
+      refreshSmsCount();
+    }
   }, [contractorId]);
 
   return (
     <DashboardContext.Provider
-      value={{ contractorId, businessName, tier, newLeadCount, refreshLeadCount, loading }}
+      value={{ contractorId, businessName, tier, newLeadCount, unreadSmsCount, refreshLeadCount, refreshSmsCount, loading }}
     >
       {children}
     </DashboardContext.Provider>

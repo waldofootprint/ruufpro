@@ -21,13 +21,13 @@ import {
 import { supabase } from "@/lib/supabase";
 
 // ----- NAV CONFIG -----
-const SIDEBAR_ITEMS = [
+const SIDEBAR_ITEMS: { href: string; label: string; icon: any; showBadge?: boolean; showSmsBadge?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/leads", label: "Leads", icon: Users, showBadge: true },
   { href: "/dashboard/estimate-settings", label: "Widget Settings", icon: Calculator },
   { href: "/dashboard/addons", label: "Estimate Add-Ons", icon: Puzzle },
   { href: "/dashboard/my-site", label: "My Website", icon: Globe },
-  { href: "/dashboard/sms", label: "SMS & Reviews", icon: MessageSquare },
+  { href: "/dashboard/sms", label: "SMS & Reviews", icon: MessageSquare, showSmsBadge: true },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 }
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
-  const { businessName, newLeadCount, contractorId, loading } = useDashboard();
+  const { businessName, newLeadCount, unreadSmsCount, contractorId, loading } = useDashboard();
   const pathname = usePathname();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -131,6 +131,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 {item.showBadge && newLeadCount > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                     {newLeadCount}
+                  </span>
+                )}
+                {item.showSmsBadge && unreadSmsCount > 0 && (
+                  <span className="ml-auto bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {unreadSmsCount}
                   </span>
                 )}
               </a>
@@ -252,6 +257,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                       >
                         <MessageSquare className="w-4 h-4 text-slate-400" />
                         SMS & Reviews
+                        {unreadSmsCount > 0 && (
+                          <span className="ml-auto bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">
+                            {unreadSmsCount}
+                          </span>
+                        )}
                       </a>
                       <a
                         href="/dashboard/settings"
