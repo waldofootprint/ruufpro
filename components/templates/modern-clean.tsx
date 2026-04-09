@@ -149,7 +149,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
                     color: "#FCA5A5",
                     background: "rgba(220,38,38,0.15)",
                     border: "1px solid rgba(220,38,38,0.3)",
-                    borderRadius: "6px",
+                    borderRadius: 0,
                     padding: "6px 14px",
                     marginBottom: "16px",
                     textTransform: "uppercase",
@@ -285,7 +285,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
                     width: "100%",
                     height: "460px",
                     overflow: "hidden",
-                    borderRadius: "8px",
+                    borderRadius: 0,
                     boxShadow: "0 12px 48px rgba(0,0,0,0.3)",
                   }}
                 >

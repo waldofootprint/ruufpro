@@ -75,7 +75,7 @@ function NavDropdown({ label, items, href, itemHrefs, open, onToggle, onClose }:
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
             border: `1px solid ${THEME.border}`,
-            borderRadius: 12,
+            borderRadius: 0,
             padding: "8px 0",
             minWidth: 200,
             boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
@@ -191,7 +191,7 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
           alignItems: "center",
           gap: 24,
         }}
-        className="hidden md:flex"
+        className="nav-desktop"
       >
         <NavDropdown
           label="Services"
@@ -247,7 +247,7 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
 
       {/* Mobile hamburger button */}
       <button
-        className="md:hidden"
+        className="nav-mobile-toggle"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
         style={{
@@ -268,7 +268,7 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
       </button>
 
       {/* Right: phone + CTA */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="hidden md:flex">
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="nav-desktop">
         <a
           href={`tel:${phoneClean}`}
           style={{
@@ -314,7 +314,7 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
       {/* Mobile menu panel */}
       {mobileMenuOpen && (
         <div
-          className="md:hidden"
+          className="nav-mobile-panel"
           style={{
             position: "absolute",
             top: "calc(100% + 8px)",
@@ -324,7 +324,7 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
             border: `1px solid ${THEME.border}`,
-            borderRadius: 12,
+            borderRadius: 0,
             padding: "16px 20px",
             boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
           }}
@@ -377,7 +377,7 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
               fontWeight: 700,
               color: "#fff",
               background: THEME.ctaBg,
-              borderRadius: 10,
+              borderRadius: 0,
               textDecoration: "none",
               fontFamily: THEME.fontDisplay,
             }}
@@ -386,6 +386,18 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
           </a>
         </div>
       )}
+
+      {/* Responsive nav — CSS media queries since Tailwind classes don't apply reliably in inline-styled templates */}
+      <style>{`
+        .nav-desktop { display: flex !important; }
+        .nav-mobile-toggle { display: none !important; }
+        .nav-mobile-panel { display: none !important; }
+        @media (max-width: 768px) {
+          .nav-desktop { display: none !important; }
+          .nav-mobile-toggle { display: flex !important; }
+          .nav-mobile-panel { display: block !important; }
+        }
+      `}</style>
     </nav>
   );
 }

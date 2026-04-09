@@ -45,8 +45,8 @@ function buildCertBadges(props: AboutTrustProps): Badge[] {
     badges.push({
       title: props.licenseNumber ? `Licensed (#${props.licenseNumber}) & Insured` : "Licensed & Insured",
       desc: "Active contractor license, general liability, and workers' comp on every crew member.",
-      iconBg: "#F0EBE5",
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5A7A3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+      iconBg: THEME.primary,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
     });
   }
 
@@ -54,8 +54,8 @@ function buildCertBadges(props: AboutTrustProps): Badge[] {
     badges.push({
       title: "GAF Master Elite",
       desc: "Top 2% of roofing contractors nationwide. Factory-certified for the highest quality installations.",
-      iconBg: "#EDE8E3",
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5651D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
+      iconBg: THEME.primary,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
     });
   }
 
@@ -63,8 +63,8 @@ function buildCertBadges(props: AboutTrustProps): Badge[] {
     badges.push({
       title: "Owens Corning Preferred",
       desc: "Factory-certified Owens Corning installer with exclusive warranty options.",
-      iconBg: "#EDE8E3",
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B5344" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+      iconBg: THEME.primary,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
     });
   }
 
@@ -72,8 +72,8 @@ function buildCertBadges(props: AboutTrustProps): Badge[] {
     badges.push({
       title: "CertainTeed Select",
       desc: "ShingleMaster certified installer with advanced manufacturer training.",
-      iconBg: "#EDE8E3",
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D2B1F" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>,
+      iconBg: THEME.primary,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>,
     });
   }
 
@@ -81,8 +81,8 @@ function buildCertBadges(props: AboutTrustProps): Badge[] {
     badges.push({
       title: `${props.warrantyYears}-Year Warranty`,
       desc: `Every project backed by a ${props.warrantyYears}-year workmanship warranty.`,
-      iconBg: "#F0EBE5",
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A5518" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>,
+      iconBg: THEME.primary,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>,
     });
   }
 
@@ -90,8 +90,8 @@ function buildCertBadges(props: AboutTrustProps): Badge[] {
     badges.push({
       title: "Financing Available",
       desc: "$0 down options so you can protect your home now and pay over time.",
-      iconBg: "#F0EBE5",
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5A7A3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+      iconBg: THEME.primary,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
     });
   }
 
@@ -99,8 +99,8 @@ function buildCertBadges(props: AboutTrustProps): Badge[] {
     badges.push({
       title: `BBB Accredited${props.bbbRating ? ` (${props.bbbRating})` : ""}`,
       desc: "Accredited by the Better Business Bureau with a proven track record.",
-      iconBg: "#EDE8E3",
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D2B1F" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>,
+      iconBg: THEME.primary,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>,
     });
   }
 
@@ -113,50 +113,50 @@ const UNIVERSAL_BADGES: Badge[] = [
   {
     title: "Unmatched Workmanship",
     desc: "Every detail matters. We don't cut corners — period.",
-    iconBg: "#F0EBE5",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A5518" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
+    iconBg: THEME.primary,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
   },
   {
     title: "Superior Materials",
     desc: "We use top-tier shingles and underlayment from trusted manufacturers.",
-    iconBg: "#EDE8E3",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D2B1F" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>,
+    iconBg: THEME.primary,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>,
   },
   {
     title: "Transparent Pricing",
     desc: "Line-by-line estimates. No hidden fees, no surprise charges.",
-    iconBg: "#F0EBE5",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5A7A3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+    iconBg: THEME.primary,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
   },
   {
     title: "Experienced Roofers",
     desc: "Our crews have thousands of installs under their belts.",
-    iconBg: "#EDE8E3",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B5344" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+    iconBg: THEME.primary,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
   },
   {
     title: "We Clean Up Daily",
     desc: "Tarps, magnetic nail sweep, and full debris haul — every single day.",
-    iconBg: "#F0EBE5",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5A7A3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
+    iconBg: THEME.primary,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
   },
   {
     title: "Satisfaction Guaranteed",
     desc: "We're not done until you're happy. Final walkthrough on every job.",
-    iconBg: "#EDE8E3",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A5518" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+    iconBg: THEME.primary,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
   },
   {
     title: "Family-Owned & Local",
     desc: "Not a franchise. We live here, work here, and answer our own phone.",
-    iconBg: "#F0EBE5",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5A7A3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+    iconBg: THEME.primary,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
   },
   {
     title: "Free Inspections",
     desc: "We'll assess your roof and give you an honest answer — no charge, no obligation.",
-    iconBg: "#EDE8E3",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D2B1F" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>,
+    iconBg: THEME.primary,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>,
   },
 ];
 
@@ -229,7 +229,7 @@ export default function AboutTrust(props: AboutTrustProps) {
             style={{
               background: "#fff",
               border: `1px solid ${THEME.border}`,
-              borderRadius: 8,
+              borderRadius: 0,
               padding: "20px 18px",
               display: "flex",
               gap: 14,
@@ -242,7 +242,7 @@ export default function AboutTrust(props: AboutTrustProps) {
               style={{
                 width: 42,
                 height: 42,
-                borderRadius: 10,
+                borderRadius: 0,
                 background: badge.iconBg,
                 display: "flex",
                 alignItems: "center",

@@ -29,9 +29,8 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
         id="reviews"
         style={{
           padding: "64px 0",
-          background: THEME.primary,
+          background: THEME.bgWarm,
           borderTop: `3px solid ${THEME.accent}`,
-          borderBottom: "3px solid rgba(255,255,255,0.05)",
           fontFamily: THEME.fontBody,
           overflow: "hidden",
         }}
@@ -53,7 +52,7 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
                 fontFamily: THEME.fontDisplay,
                 fontSize: "clamp(28px, 4vw, 36px)",
                 fontWeight: 700,
-                color: "#fff",
+                color: THEME.textPrimary,
                 textTransform: "uppercase",
                 letterSpacing: "0.02em",
               }}
@@ -77,7 +76,7 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "rgba(255,255,255,0.4)",
+                    color: THEME.textMuted,
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                   }}
@@ -109,13 +108,13 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
                 style={{
                   position: "relative",
                   paddingLeft: 20,
-                  borderLeft: `2px solid rgba(212,136,15,0.3)`,
+                  borderLeft: `3px solid ${THEME.accent}`,
                 }}
               >
                 <p
                   style={{
                     fontSize: 16,
-                    color: "rgba(255,255,255,0.7)",
+                    color: THEME.textSecondary,
                     lineHeight: 1.65,
                     marginBottom: 16,
                   }}
@@ -179,7 +178,7 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
     <section
       id="reviews"
       style={{
-        background: THEME.primary,
+        background: THEME.bgWarm,
         fontFamily: THEME.fontBody,
       }}
     >
@@ -188,7 +187,7 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(${displayStats.length}, 1fr)`,
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: `1px solid ${THEME.border}`,
         }}
       >
         {displayStats.map((stat, i) => (
@@ -197,7 +196,7 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
             style={{
               padding: "40px 24px",
               textAlign: "center",
-              borderRight: i < displayStats.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+              borderRight: i < displayStats.length - 1 ? `1px solid ${THEME.border}` : "none",
             }}
           >
             <div
@@ -216,7 +215,7 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
               style={{
                 fontSize: 13,
                 fontWeight: 600,
-                color: "rgba(255,255,255,0.4)",
+                color: THEME.textMuted,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
               }}
@@ -239,7 +238,7 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
         >
           <div style={{ display: "flex", justifyContent: "center", gap: 3, marginBottom: 20 }}>
             {Array.from({ length: 5 }).map((_, i) => (
-              <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill={i < bestReview.rating ? THEME.accent : "rgba(255,255,255,0.15)"} stroke="none">
+              <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill={i < bestReview.rating ? THEME.accent : THEME.border} stroke="none">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
             ))}
@@ -247,7 +246,7 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
           <p
             style={{
               fontSize: 20,
-              color: "rgba(255,255,255,0.8)",
+              color: THEME.textSecondary,
               lineHeight: 1.65,
               fontStyle: "italic",
               marginBottom: 20,
@@ -260,13 +259,13 @@ export default function Reviews({ reviews, businessName, yearsInBusiness, warran
               fontFamily: THEME.fontDisplay,
               fontSize: 14,
               fontWeight: 700,
-              color: "#fff",
+              color: THEME.textPrimary,
               textTransform: "uppercase",
               letterSpacing: "0.06em",
             }}
           >
             {bestReview.name || "Homeowner"}{" "}
-            <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: 400, fontFamily: THEME.fontBody, textTransform: "none", letterSpacing: 0 }}>
+            <span style={{ color: THEME.textMuted, fontWeight: 400, fontFamily: THEME.fontBody, textTransform: "none", letterSpacing: 0 }}>
               — Google Review
             </span>
           </div>

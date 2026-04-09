@@ -46,7 +46,7 @@ const THEMES = {
     fontDisplay: THEME.fontDisplay,
     sectionPadding: THEME.sectionPadding,
     maxWidth: THEME.maxWidth,
-    radius: "12px",
+    radius: "0px",
   },
   blueprint: {
     colors: BLUEPRINT,
