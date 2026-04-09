@@ -154,7 +154,7 @@ export default function Services({ services }: ServicesProps) {
                 border: `1px solid ${THEME.border}`,
                 borderRadius: 14,
                 padding: "28px 24px",
-                transition: "all 0.25s ease",
+                transition: "box-shadow 0.25s ease, border-color 0.25s ease",
                 cursor: "default",
                 position: "relative",
                 overflow: "hidden",

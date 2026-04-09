@@ -252,7 +252,7 @@ export default function AboutTrust(props: AboutTrustProps) {
               display: "flex",
               gap: 14,
               alignItems: "flex-start",
-              transition: "all 0.25s ease",
+              transition: "box-shadow 0.25s ease, border-color 0.25s ease",
             }}
             className="service-card"
           >
