@@ -1,6 +1,8 @@
 // Slug generation with Supabase uniqueness check.
-// Prospect slugs are prefixed with "p-" to avoid collisions with real customers.
+// Prospect slugs use random IDs (p-abc123) to avoid trademark/liability issues.
+// Business name only appears ON the site content, never in the URL.
 
+import { randomBytes } from "crypto";
 import { supabase } from "./supabase-admin.mjs";
 
 /**
@@ -17,15 +19,14 @@ export function toSlug(name) {
 }
 
 /**
- * Generate a unique prospect slug, checking Supabase for collisions.
- * Returns "p-joes-roofing" or "p-joes-roofing-2" if taken.
+ * Generate a unique random prospect slug, checking Supabase for collisions.
+ * Returns "p-a7f3b2" (random hex). Business name NOT in URL for liability safety.
  */
-export async function generateProspectSlug(businessName) {
-  const base = `p-${toSlug(businessName)}`;
-  let slug = base;
-  let attempt = 1;
-
+export async function generateProspectSlug(_businessName) {
   while (true) {
+    const id = randomBytes(4).toString("hex"); // 8 hex chars
+    const slug = `p-${id}`;
+
     const { data } = await supabase
       .from("sites")
       .select("slug")
@@ -33,8 +34,5 @@ export async function generateProspectSlug(businessName) {
       .maybeSingle();
 
     if (!data) return slug;
-
-    attempt++;
-    slug = `${base}-${attempt}`;
   }
 }

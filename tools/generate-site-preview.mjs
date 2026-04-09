@@ -49,6 +49,8 @@ function parseArgs() {
       opts.baseUrl = args[++i];
     } else if (arg === "--no-screenshot") {
       opts.noScreenshot = true;
+    } else if (arg === "--scraped-json" && args[i + 1]) {
+      opts.scrapedJson = args[++i];
     }
   }
 
@@ -57,7 +59,7 @@ function parseArgs() {
 
 // --------------- Prospect Creation ---------------
 
-async function createProspect({ name, city, state, phone, template }) {
+async function createProspect({ name, city, state, phone, template, scraped }) {
   // Check for duplicate
   const { data: existing } = await supabase
     .from("contractors")
@@ -81,20 +83,28 @@ async function createProspect({ name, city, state, phone, template }) {
   const slug = await generateProspectSlug(name);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
 
+  // Build contractor fields — include scraped content when available
+  const contractorFields = {
+    user_id: null,
+    email: "",
+    business_name: name,
+    phone: scraped?.phone || phone || "",
+    city,
+    state,
+    business_type: "residential",
+    is_prospect: true,
+    prospect_expires_at: expiresAt,
+  };
+
+  // Add scraped service areas to contractor record
+  if (scraped?.service_areas?.length > 0) {
+    contractorFields.service_area_cities = scraped.service_areas;
+  }
+
   // Create contractor record
   const { data: contractor, error: cErr } = await supabase
     .from("contractors")
-    .insert({
-      user_id: null,
-      email: "",
-      business_name: name,
-      phone: phone || "",
-      city,
-      state,
-      business_type: "residential",
-      is_prospect: true,
-      prospect_expires_at: expiresAt,
-    })
+    .insert(contractorFields)
     .select("id")
     .single();
 
@@ -103,15 +113,25 @@ async function createProspect({ name, city, state, phone, template }) {
     return null;
   }
 
+  // Build site fields — include scraped content when available
+  const siteFields = {
+    contractor_id: contractor.id,
+    slug,
+    template: template || DEFAULT_TEMPLATE,
+    published: true,
+  };
+
+  if (scraped?.hero_headline) siteFields.hero_headline = scraped.hero_headline;
+  // Note: hero_subheadline column doesn't exist in DB yet — store tagline in hero_cta_text for now
+  if (scraped?.tagline) siteFields.hero_cta_text = "Get Your Free Estimate";
+  if (scraped?.about_text) siteFields.about_text = scraped.about_text;
+  if (scraped?.services?.length > 0) siteFields.services = scraped.services;
+  if (scraped?.reviews?.length > 0) siteFields.reviews = scraped.reviews;
+
   // Create site record
   const { data: site, error: sErr } = await supabase
     .from("sites")
-    .insert({
-      contractor_id: contractor.id,
-      slug,
-      template: template || DEFAULT_TEMPLATE,
-      published: true,
-    })
+    .insert(siteFields)
     .select("id, slug")
     .single();
 
@@ -247,15 +267,33 @@ async function main() {
     }
     const rows = readCsv(opts.csv);
     // Expected columns: name (or business_name), city, state, phone (optional)
-    prospects = rows.map((row) => ({
-      name: row.name || row.business_name || row.Name || row["Business Name"],
-      city: row.city || row.City,
-      state: row.state || row.State,
-      phone: row.phone || row.Phone || "",
-      template,
-    }));
+    // Scraped columns (from scrape-prospect-site.mjs): scraped_tagline, scraped_hero_headline, etc.
+    prospects = rows.map((row) => {
+      // Parse scraped content if present
+      let scraped = null;
+      if (row.scraped_hero_headline || row.scraped_services || row.scraped_about_text) {
+        scraped = {
+          hero_headline: row.scraped_hero_headline || null,
+          tagline: row.scraped_tagline || null,
+          about_text: row.scraped_about_text || null,
+          services: row.scraped_services ? row.scraped_services.split("; ").filter(Boolean) : [],
+          reviews: row.scraped_reviews ? JSON.parse(row.scraped_reviews) : [],
+          phone: row.scraped_phone || null,
+          service_areas: row.scraped_service_areas ? row.scraped_service_areas.split("; ").filter(Boolean) : [],
+        };
+      }
+
+      return {
+        name: row.name || row.business_name || row.Name || row["Business Name"],
+        city: row.city || row.City,
+        state: row.state || row.State,
+        phone: row.phone || row.Phone || "",
+        template,
+        scraped,
+      };
+    });
   } else if (opts.name && opts.city && opts.state) {
-    prospects = [{ name: opts.name, city: opts.city, state: opts.state, phone: opts.phone || "", template }];
+    prospects = [{ name: opts.name, city: opts.city, state: opts.state, phone: opts.phone || "", template, scraped: opts.scrapedJson ? JSON.parse(opts.scrapedJson) : null }];
   } else {
     console.error("Usage:");
     console.error('  node tools/generate-site-preview.mjs --name "Joe\'s Roofing" --city "Dallas" --state "TX"');
