@@ -96,15 +96,15 @@ export default function Services({ services }: ServicesProps) {
         style={{ marginBottom: 48 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-          <div style={{ width: 3, height: 20, background: THEME.accent, borderRadius: 2, flexShrink: 0 }} />
+          <div style={{ width: 32, height: 2, background: THEME.accent }} />
           <span
             style={{
-              fontSize: 13,
-              fontWeight: 700,
+              fontSize: 14,
+              fontWeight: 600,
               color: THEME.accent,
               textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              fontFamily: THEME.fontDisplay,
+              letterSpacing: "0.15em",
+              fontFamily: THEME.fontBody,
             }}
           >
             What we do
@@ -112,12 +112,13 @@ export default function Services({ services }: ServicesProps) {
         </div>
         <h2
           style={{
-            fontSize: "clamp(28px, 4vw, 40px)",
-            fontWeight: 800,
+            fontSize: "clamp(28px, 4vw, 42px)",
+            fontWeight: 700,
             color: THEME.textPrimary,
             lineHeight: 1.1,
-            letterSpacing: "-0.02em",
-            fontFamily: THEME.fontSerif,
+            letterSpacing: "0.02em",
+            fontFamily: THEME.fontDisplay,
+            textTransform: "uppercase" as const,
             marginBottom: 10,
           }}
         >
@@ -152,9 +153,9 @@ export default function Services({ services }: ServicesProps) {
               style={{
                 background: "#fff",
                 border: `1px solid ${THEME.border}`,
-                borderRadius: 14,
+                borderTop: `3px solid ${THEME.border}`,
                 padding: "28px 24px",
-                transition: "box-shadow 0.25s ease, border-color 0.25s ease",
+                transition: "box-shadow 0.25s ease, border-top-color 0.25s ease",
                 cursor: "default",
                 position: "relative",
                 overflow: "hidden",
@@ -167,7 +168,7 @@ export default function Services({ services }: ServicesProps) {
                     width: 42,
                     height: 42,
                     background: THEME.primary,
-                    borderRadius: 10,
+                    borderRadius: 0,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

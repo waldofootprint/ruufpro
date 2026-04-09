@@ -153,20 +153,21 @@ export default function FAQ({
       <div style={{ maxWidth: t.maxWidth, margin: "0 auto" }}>
         {/* Kicker + Heading */}
         {theme === "modern-clean" && (
-          <p
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              color: t.kicker,
-              marginBottom: 8,
-              paddingLeft: 16,
-              borderLeft: `3px solid ${t.kicker}`,
-            }}
-          >
-            FAQ
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 32, height: 2, background: t.kicker }} />
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.15em",
+                color: t.kicker,
+                fontFamily: t.font,
+              }}
+            >
+              FAQ
+            </span>
+          </div>
         )}
         {theme === "chalkboard" && (
           <p style={{ fontSize: 20, color: t.kicker, marginBottom: 8 }}>
@@ -193,10 +194,11 @@ export default function FAQ({
           style={{
             fontFamily: t.fontDisplay,
             fontSize: theme === "chalkboard" ? 32 : "clamp(24px, 4vw, 34px)",
-            fontWeight: 800,
+            fontWeight: theme === "modern-clean" ? 700 : 800,
             color: t.text,
             lineHeight: 1.15,
-            letterSpacing: theme === "modern-clean" ? "-0.02em" : undefined,
+            letterSpacing: theme === "modern-clean" ? "0.02em" : undefined,
+            textTransform: theme === "modern-clean" ? "uppercase" as const : undefined,
             marginBottom: 32,
           }}
         >

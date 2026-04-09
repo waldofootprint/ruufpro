@@ -41,15 +41,15 @@ export default function EstimateSection({
         style={{ textAlign: "center", marginBottom: 32 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, justifyContent: "center" }}>
-          <div style={{ width: 3, height: 20, background: THEME.accent, borderRadius: 2, flexShrink: 0 }} />
+          <div style={{ width: 32, height: 2, background: THEME.accent }} />
           <span
             style={{
-              fontSize: 13,
-              fontWeight: 700,
+              fontSize: 14,
+              fontWeight: 600,
               color: THEME.accent,
               textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              fontFamily: THEME.fontDisplay,
+              letterSpacing: "0.15em",
+              fontFamily: THEME.fontBody,
             }}
           >
             Instant estimate
@@ -57,13 +57,14 @@ export default function EstimateSection({
         </div>
         <h2
           style={{
-            fontSize: "clamp(26px, 4vw, 38px)",
-            fontWeight: 800,
+            fontSize: "clamp(26px, 4vw, 42px)",
+            fontWeight: 700,
             color: THEME.textPrimary,
             lineHeight: 1.1,
-            letterSpacing: "-0.02em",
+            letterSpacing: "0.02em",
             marginBottom: 10,
-            fontFamily: THEME.fontSerif,
+            fontFamily: THEME.fontDisplay,
+            textTransform: "uppercase" as const,
           }}
         >
           Get a Ballpark

@@ -9,15 +9,16 @@ import { THEME } from "../contractor-sections/theme";
 import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
 import FloatingTextUs from "../contractor-sections/floating-text-us";
 import Nav from "../contractor-sections/nav";
-import ScrollAnimation from "../scroll-animation";
+
 import ProofBar from "../contractor-sections/proof-bar";
 import Services from "../contractor-sections/services";
 import EstimateSection from "../contractor-sections/estimate-section";
 import EstimateWidgetV4 from "../estimate-widget-v4";
-import AboutTrust from "../contractor-sections/about-trust";
+
 import Reviews from "../contractor-sections/reviews";
+import AboutTrust from "../contractor-sections/about-trust";
 import FAQ from "../contractor-sections/faq";
-import Process from "../contractor-sections/process";
+import WhyChooseUs from "../contractor-sections/why-choose-us";
 import ServiceArea from "../contractor-sections/service-area";
 import CtaBand from "../contractor-sections/cta-band";
 import ContactForm from "../contractor-sections/contact-form";
@@ -26,7 +27,42 @@ import Footer from "../contractor-sections/footer";
 
 export default function ModernCleanTemplate(props: ContractorSiteData) {
   return (
-    <main style={{ background: "#fff", minHeight: "100vh" }}>
+    <main style={{ background: "#F5F3F0", minHeight: "100vh" }}>
+      {/* Subtle noise texture + section styling */}
+      <style>{`
+        .mc-section-warm {
+          background: #F5F0EB;
+          position: relative;
+        }
+        .mc-section-warm::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          opacity: 0.4;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+          pointer-events: none;
+          z-index: 0;
+        }
+        .mc-section-warm > * { position: relative; z-index: 1; }
+        .mc-dot-texture {
+          position: relative;
+        }
+        .mc-dot-texture::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(61,43,31,0.06) 1px, transparent 1px);
+          background-size: 24px 24px;
+          pointer-events: none;
+          z-index: 0;
+        }
+        .mc-dot-texture > * { position: relative; z-index: 1; }
+        /* Service card hover — amber top accent on hover */
+        .service-card:hover { border-top-color: #D4880F !important; }
+        /* Square off widget corners for C1 style */
+        .hero-section .rounded-3xl { border-radius: 0 !important; }
+        .hero-section .rounded-xl { border-radius: 0 !important; }
+      `}</style>
       <Nav
         businessName={props.businessName}
         phone={props.phone}
@@ -36,211 +72,235 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         city={props.city}
       />
 
-      {/* HERO: Figma two-column layout + research-backed conversion elements
-          Layout from figma-contractor-homepage.html: text left, image right
-          Research additions: first-person CTA (Q2,Q3), dual CTAs (Q3,Q4),
-          trust badges near CTAs (Q3), star rating (Q2), city name (Q1),
-          real photo support (Q3), urgency badge (Q4), 48px tap targets (Q2,Q3) */}
+      {/* HERO: Dark, textured, high-impact. Photo bg with overlay + text left, widget/image right.
+          Squared-off CTAs, prominent trust badges, construction-grade feel. */}
       <section
         className="hero-section"
         style={{
           position: "relative",
           overflow: "hidden",
-          padding: "120px 48px 80px",
-          maxWidth: "1280px",
-          margin: "0 auto",
+          background: "#1A1A1A",
         }}
       >
+        {/* Background photo — uses <img> to bypass Next.js optimizer for decorative bg */}
+        <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/stock-photos/metal-hero.jpg"
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </div>
+
+        {/* Dark overlay — fades to transparent on right for sky */}
         <div
-          className="hero-grid"
           style={{
-            display: "grid",
-            gridTemplateColumns: "1.15fr 0.85fr",
-            gap: "56px",
-            alignItems: "center",
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(135deg, rgba(15,15,15,0.9) 0%, rgba(15,15,15,0.6) 40%, rgba(15,15,15,0.2) 70%, transparent 100%)",
+            zIndex: 1,
+          }}
+        />
+
+        {/* Dot texture overlay — adds grit */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        />
+
+        {/* Bottom edge — clean dark cutoff, no gradient fade */}
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            padding: "120px 48px 80px",
+            maxWidth: "1280px",
+            margin: "0 auto",
           }}
         >
-          {/* Left column — text content */}
-          <div>
-            {/* Urgency badge — only renders if set */}
-            {props.urgencyBadge && (
+          <div
+            className="hero-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.2fr 0.8fr",
+              gap: "56px",
+              alignItems: "center",
+            }}
+          >
+            {/* Left column — text content */}
+            <div>
+              {/* Urgency badge — only renders if set */}
+              {props.urgencyBadge && (
+                <p
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontFamily: THEME.fontBody,
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#FCA5A5",
+                    background: "rgba(220,38,38,0.15)",
+                    border: "1px solid rgba(220,38,38,0.3)",
+                    borderRadius: "6px",
+                    padding: "6px 14px",
+                    marginBottom: "16px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  {props.urgencyBadge}
+                </p>
+              )}
+
+              {/* Kicker — line + text */}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                <div style={{ width: "32px", height: "2px", background: THEME.accent }} />
+                <span
+                  style={{
+                    fontFamily: THEME.fontBody,
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: THEME.accent,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.15em",
+                  }}
+                >
+                  {props.reviews && props.reviews.length > 0
+                    ? `Locally owned in ${props.city || "your area"} · ${props.reviews.length}+ reviews`
+                    : `Locally owned in ${props.city || "your area"}`}
+                </span>
+              </div>
+
+              {/* H1 */}
+              <h1
+                style={{
+                  fontFamily: THEME.fontDisplay,
+                  fontSize: "clamp(48px, 7vw, 80px)",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  lineHeight: 0.95,
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase" as const,
+                  marginBottom: "20px",
+                }}
+              >
+                {props.heroHeadline || `Honest roofing for ${props.city || "your"} homeowners.`}
+              </h1>
+
+              {/* Subtitle */}
               <p
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  fontFamily: "'DM Sans', system-ui, sans-serif",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#DC2626",
-                  background: "#FEF2F2",
-                  border: "1px solid #FECACA",
-                  borderRadius: "980px",
-                  padding: "6px 14px",
-                  marginBottom: "16px",
+                  fontFamily: THEME.fontBody,
+                  fontSize: "17px",
+                  color: "rgba(255,255,255,0.75)",
+                  lineHeight: 1.65,
+                  maxWidth: "500px",
+                  marginBottom: "36px",
                 }}
               >
-                {props.urgencyBadge}
+                {props.heroSubheadline || `Roof replacements, repairs, and inspections done right — with upfront pricing, clean job sites, and no pressure. ${props.city ? `Locally owned in ${props.city} and` : "Locally owned and"} fully insured.`}
               </p>
-            )}
 
-            {/* Kicker — accent bar + location/rating */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-              <div style={{ width: "3px", height: "20px", background: THEME.accent, borderRadius: "2px" }} />
-              <span
-                style={{
-                  fontFamily: "'Sora', system-ui, sans-serif",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: THEME.accent,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                }}
-              >
-                {props.reviews && props.reviews.length > 0
-                  ? `★ ${(props.reviews.reduce((sum, r) => sum + r.rating, 0) / props.reviews.length).toFixed(1)} rated · Locally owned in ${props.city || "your area"}`
-                  : `Locally owned in ${props.city || "your area"}`}
-              </span>
-            </div>
-
-            {/* H1 */}
-            <h1
-              style={{
-                fontFamily: "'Sora', system-ui, sans-serif",
-                fontSize: "clamp(40px, 5.5vw, 64px)",
-                fontWeight: 800,
-                color: "#1A1A2E",
-                lineHeight: 1.05,
-                letterSpacing: "-0.025em",
-                marginBottom: "20px",
-              }}
-            >
-              {props.heroHeadline || `Honest roofing for ${props.city || "your"} homeowners.`}
-            </h1>
-
-            {/* Subtitle */}
-            <p
-              style={{
-                fontFamily: "'DM Sans', system-ui, sans-serif",
-                fontSize: "17px",
-                color: "#64748B",
-                lineHeight: 1.65,
-                maxWidth: "500px",
-                marginBottom: "36px",
-              }}
-            >
-              {props.heroSubheadline || `Roof replacements, repairs, and inspections done right — with upfront pricing, clean job sites, and no pressure. ${props.city ? `Locally owned in ${props.city} and` : "Locally owned and"} fully insured.`}
-            </p>
-
-            {/* Dual CTAs */}
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "36px" }}>
-              <a
-                href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "15px 32px",
-                  background: THEME.ctaBg,
-                  color: "#fff",
-                  borderRadius: "99px",
-                  fontWeight: 700,
-                  fontSize: "15px",
-                  textDecoration: "none",
-                  fontFamily: "'Sora', system-ui, sans-serif",
-                  boxShadow: "0 4px 16px rgba(232,114,12,0.3)",
-                  minHeight: "48px",
-                }}
-              >
-                {props.heroCta || "Get My Free Estimate"}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </a>
-              <a
-                href={`tel:${props.phone.replace(/\D/g, "")}`}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "15px 28px",
-                  background: "transparent",
-                  color: "#1A1A2E",
-                  border: "1.5px solid #E2E8F0",
-                  borderRadius: "99px",
-                  fontWeight: 600,
-                  fontSize: "15px",
-                  textDecoration: "none",
-                  fontFamily: "'Sora', system-ui, sans-serif",
-                  minHeight: "48px",
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-                Call {props.phone}
-              </a>
-            </div>
-
-            {/* Trust badges */}
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              {(props.isLicensed || props.isInsured) && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(255,255,255,0.8)", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#64748B" }}>
-                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#059669" }} />
-                  Licensed &amp; insured
-                </div>
-              )}
-              {props.reviews && props.reviews.length > 0 && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(255,255,255,0.8)", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#64748B" }}>
-                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#F59E0B" }} />
-                  {props.reviews.length > 5 ? `${(props.reviews.reduce((s, r) => s + r.rating, 0) / props.reviews.length).toFixed(1)}-star rated` : "5-star Google rated"}
-                </div>
-              )}
-              {props.warrantyYears && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(255,255,255,0.8)", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#64748B" }}>
-                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#2563EB" }} />
-                  {props.warrantyYears}-year warranty
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right column — estimate widget */}
-          {props.hasEstimateWidget ? (
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: "16px",
-                border: `1px solid ${THEME.border}`,
-                boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
-                overflow: "hidden",
-              }}
-            >
-              <EstimateWidgetV4
-                contractorId={props.contractorId}
-                contractorName={props.businessName}
-                contractorPhone={props.phone}
-                variant="light"
-              />
-            </div>
-          ) : (
-            <div style={{ position: "relative" }}>
-              <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  height: "460px",
-                  overflow: "hidden",
-                  borderRadius: "4px 20px 20px 4px",
-                }}
-              >
-                <Image
-                  src={props.heroImage || "/images/stock-photos/roofer-nail-gun-action.png"}
-                  alt={`${props.businessName} roofing project in ${props.city || "your area"}`}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 45vw"
-                  style={{ objectFit: "cover" }}
-                  priority
-                />
+              {/* Dual CTAs — squared off */}
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                <a
+                  href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "16px 32px",
+                    background: THEME.ctaBg,
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: "16px",
+                    textDecoration: "none",
+                    fontFamily: THEME.fontDisplay,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.06em",
+                    boxShadow: "0 4px 16px rgba(212,136,15,0.3)",
+                    minHeight: "48px",
+                  }}
+                >
+                  {props.heroCta || "Get My Free Estimate"}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <a
+                  href={`tel:${props.phone.replace(/\D/g, "")}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "16px 28px",
+                    background: "rgba(255,255,255,0.12)",
+                    color: "#fff",
+                    border: "2px solid rgba(255,255,255,0.2)",
+                    fontWeight: 700,
+                    fontSize: "16px",
+                    textDecoration: "none",
+                    fontFamily: THEME.fontDisplay,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.04em",
+                    minHeight: "48px",
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                  {props.phone}
+                </a>
               </div>
             </div>
-          )}
+
+            {/* Right column — estimate widget or photo. Widget overlaps hero bottom edge. */}
+            {props.hasEstimateWidget ? (
+              <div
+                style={{
+                  background: "#fff",
+                  boxShadow: "0 16px 48px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1)",
+                  overflow: "hidden",
+                  marginBottom: "-60px",
+                  position: "relative",
+                  zIndex: 3,
+                }}
+              >
+                <EstimateWidgetV4
+                  contractorId={props.contractorId}
+                  contractorName={props.businessName}
+                  contractorPhone={props.phone}
+                  variant="light"
+                />
+              </div>
+            ) : (
+              <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: "460px",
+                    overflow: "hidden",
+                    borderRadius: "8px",
+                    boxShadow: "0 12px 48px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  <Image
+                    src={props.heroImage || "/images/stock-photos/hero-assembled-v1.png"}
+                    alt={`${props.businessName} roofing project in ${props.city || "your area"}`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 45vw"
+                    style={{ objectFit: "cover" }}
+                    priority
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Mobile responsive override */}
@@ -251,77 +311,68 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
               gap: 32px !important;
             }
             .hero-section {
-              padding: 100px 16px 48px !important;
+              padding-left: 16px !important;
+              padding-right: 16px !important;
             }
           }
         `}</style>
+
+        <ProofBar
+          isLicensed={props.isLicensed}
+          isInsured={props.isInsured}
+          offersFinancing={props.offersFinancing}
+          hasEstimateWidget={props.hasEstimateWidget}
+          yearsInBusiness={props.yearsInBusiness}
+          warrantyYears={props.warrantyYears}
+          reviews={props.reviews}
+        />
       </section>
 
-      <ProofBar
-        isLicensed={props.isLicensed}
-        isInsured={props.isInsured}
-        offersFinancing={props.offersFinancing}
-        hasEstimateWidget={props.hasEstimateWidget}
+      {/* Section order based on research: Social proof first, then services.
+          Top roofer sites: Reviews → Services → Why Choose Us → Estimate → Contact */}
+
+      <Reviews
+        reviews={props.reviews}
+        businessName={props.businessName}
         yearsInBusiness={props.yearsInBusiness}
         warrantyYears={props.warrantyYears}
-        reviews={props.reviews}
+        isLicensed={props.isLicensed}
+        isInsured={props.isInsured}
       />
 
-      {/* Section order: Problem → Promise → Proof → Path (Q3)
-          Process early = "here's how easy it is" before asking for anything
-          Reviews before estimate = social proof reduces friction */}
-
-      <Process />
-
-      {/* Process component has its own micro-CTA now */}
-
-      <Services services={props.services} />
-
-      {/* Services component has its own micro-CTA now */}
-
-      <Reviews reviews={props.reviews} />
-
-      {/* Micro-CTA: after reviews — social proof → action */}
-      <div style={{ textAlign: "center", padding: "32px 32px 0" }}>
-        <a
-          href={props.hasEstimateWidget ? "#estimate-section" : "#contact"}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            color: THEME.accent,
-            fontWeight: 600,
-            fontSize: 15,
-            fontFamily: THEME.fontDisplay,
-            textDecoration: "none",
-          }}
-        >
-          Get my free estimate <span aria-hidden="true">→</span>
-        </a>
+      <div className="mc-dot-texture">
+        <Services services={props.services} />
       </div>
 
-      {/* ANIMATION B: Cutaway X-Ray — Pro/Growth only (premium differentiator) */}
-      {props.tier !== "free" && (
-        <ScrollAnimation
-          framePath="/animations/roof-cutaway"
-          frameCount={151}
-          scrollHeight="250vh"
-          bgColor="#F9FAFB"
-          accentColor="#0F1B2D"
-          fontDisplay="'Sora', system-ui, sans-serif"
-          fontBody="'DM Sans', system-ui, sans-serif"
-          gradientMask
-          milestones={[
-            { text: "Every layer. Every detail.", startProgress: 0.0, endProgress: 0.18, style: "headline" },
-            { text: "Ice & Water Shield — Prevents leaks at vulnerable points", startProgress: 0.22, endProgress: 0.40, style: "label" },
-            { text: "Drip Edge Flashing — Channels water away from fascia", startProgress: 0.44, endProgress: 0.62, style: "label" },
-            { text: "5 layers of protection between you and the elements.", startProgress: 0.68, endProgress: 0.88, style: "headline" },
-          ]}
-          endCtaText="See What Your Roof Costs"
-          ctaScrollTarget="estimate-section"
-          mobileStaticImage="/animations/roof-cutaway/frame-0151.jpg"
+      <WhyChooseUs
+        businessName={props.businessName}
+        yearsInBusiness={props.yearsInBusiness}
+        warrantyYears={props.warrantyYears}
+        isLicensed={props.isLicensed}
+        isInsured={props.isInsured}
+        hasEstimateWidget={props.hasEstimateWidget}
+        phone={props.phone}
+      />
+
+      <div className="mc-section-warm">
+        <AboutTrust
+          businessName={props.businessName}
+          city={props.city}
+          aboutText={props.aboutText}
+          yearsInBusiness={props.yearsInBusiness}
+          isLicensed={props.isLicensed}
+          isInsured={props.isInsured}
+          gafMasterElite={props.gafMasterElite}
+          owensCorningPreferred={props.owensCorningPreferred}
+          certainteedSelect={props.certainteedSelect}
+          bbbAccredited={props.bbbAccredited}
+          bbbRating={props.bbbRating}
+          offersFinancing={props.offersFinancing}
+          warrantyYears={props.warrantyYears}
+          phone={props.phone}
+          licenseNumber={props.licenseNumber ?? undefined}
         />
-      )}
+      </div>
 
       <div id="estimate-section">
         <EstimateSection
@@ -332,23 +383,6 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         />
       </div>
 
-      <AboutTrust
-        businessName={props.businessName}
-        city={props.city}
-        aboutText={props.aboutText}
-        yearsInBusiness={props.yearsInBusiness}
-        isLicensed={props.isLicensed}
-        isInsured={props.isInsured}
-        gafMasterElite={props.gafMasterElite}
-        owensCorningPreferred={props.owensCorningPreferred}
-        certainteedSelect={props.certainteedSelect}
-        bbbAccredited={props.bbbAccredited}
-        bbbRating={props.bbbRating}
-        offersFinancing={props.offersFinancing}
-        warrantyYears={props.warrantyYears}
-        phone={props.phone}
-        licenseNumber={props.licenseNumber ?? undefined}
-      />
       <ProjectGallery
         theme={{ accent: THEME.accent, fontDisplay: THEME.fontDisplay, fontBody: THEME.fontBody, maxWidth: THEME.maxWidth, borderRadius: THEME.borderRadius }}
         businessName={props.businessName}
@@ -378,14 +412,17 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         phone={props.phone}
         city={props.city}
         hasEstimateWidget={props.hasEstimateWidget}
+        offersFinancing={props.offersFinancing}
       />
-      <ContactForm
-        businessName={props.businessName}
-        phone={props.phone}
-        city={props.city}
-        state={props.state}
-        contractorId={props.contractorId}
-      />
+      <div className="mc-dot-texture">
+        <ContactForm
+          businessName={props.businessName}
+          phone={props.phone}
+          city={props.city}
+          state={props.state}
+          contractorId={props.contractorId}
+        />
+      </div>
       <Footer
         businessName={props.businessName}
         phone={props.phone}

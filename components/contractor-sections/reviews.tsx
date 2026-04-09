@@ -1,114 +1,277 @@
 "use client";
 
-// Reviews — 3-column grid of customer testimonial cards.
-// Only renders if the roofer has at least 1 review.
+// Reviews — dynamic section that adapts based on review count.
+// 3+ good reviews (4-5 stars): Option C — amber left border quotes with rating badge
+// <3 reviews: Option D — stats bar with trust signals, optional single quote
 
 import { THEME } from "./theme";
 import type { ContractorSiteData } from "./types";
 
-type ReviewsProps = Pick<ContractorSiteData, "reviews">;
+type ReviewsProps = Pick<
+  ContractorSiteData,
+  "reviews" | "businessName" | "yearsInBusiness" | "warrantyYears" | "isLicensed" | "isInsured"
+>;
 
-export default function Reviews({ reviews }: ReviewsProps) {
-  // Don't render if no reviews
-  if (!reviews || reviews.length === 0) return null;
+export default function Reviews({ reviews, businessName, yearsInBusiness, warrantyYears, isLicensed, isInsured }: ReviewsProps) {
+  // Filter to 4+ star reviews only
+  const goodReviews = (reviews || []).filter((r) => r.rating >= 4);
+  const hasEnoughReviews = goodReviews.length >= 3;
+  const avgRating = goodReviews.length > 0
+    ? (goodReviews.reduce((sum, r) => sum + r.rating, 0) / goodReviews.length).toFixed(1)
+    : null;
+
+  // Option C: 3+ good reviews — full quotes with amber borders
+  if (hasEnoughReviews) {
+    const displayReviews = goodReviews.slice(0, 3);
+
+    return (
+      <section
+        id="reviews"
+        style={{
+          padding: "64px 0",
+          background: THEME.primary,
+          borderTop: `3px solid ${THEME.accent}`,
+          borderBottom: "3px solid rgba(255,255,255,0.05)",
+          fontFamily: THEME.fontBody,
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ maxWidth: THEME.maxWidth, margin: "0 auto", padding: "0 24px" }}>
+          {/* Header with rating badge */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 40,
+              flexWrap: "wrap",
+              gap: 16,
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: THEME.fontDisplay,
+                fontSize: "clamp(28px, 4vw, 36px)",
+                fontWeight: 700,
+                color: "#fff",
+                textTransform: "uppercase",
+                letterSpacing: "0.02em",
+              }}
+            >
+              What Homeowners Say
+            </h2>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div>
+                <div
+                  style={{
+                    fontFamily: THEME.fontDisplay,
+                    fontSize: 32,
+                    fontWeight: 700,
+                    color: THEME.accent,
+                    lineHeight: 1,
+                  }}
+                >
+                  {avgRating}
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.4)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  {goodReviews.length} Google Reviews
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 3 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill={THEME.accent} stroke="none">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Quote grid with amber left borders */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 32,
+            }}
+          >
+            {displayReviews.map((review, i) => (
+              <div
+                key={i}
+                style={{
+                  position: "relative",
+                  paddingLeft: 20,
+                  borderLeft: `2px solid rgba(212,136,15,0.3)`,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 16,
+                    color: "rgba(255,255,255,0.7)",
+                    lineHeight: 1.65,
+                    marginBottom: 16,
+                  }}
+                >
+                  &ldquo;{review.text}&rdquo;
+                </p>
+                <div
+                  style={{
+                    fontFamily: THEME.fontDisplay,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: THEME.accent,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  {review.name || "Homeowner"}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Option D: <3 reviews — stats bar with trust signals + optional single quote
+  // Build stats from whatever data the contractor has
+  const stats: { value: string; label: string }[] = [];
+
+  if (avgRating && goodReviews.length > 0) {
+    stats.push({ value: avgRating, label: "Google Rating" });
+    stats.push({ value: `${goodReviews.length}`, label: goodReviews.length === 1 ? "Review" : "Reviews" });
+  }
+
+  if (yearsInBusiness) {
+    stats.push({ value: `${yearsInBusiness}+`, label: "Years" });
+  }
+
+  if (warrantyYears) {
+    stats.push({ value: `${warrantyYears}yr`, label: "Warranty" });
+  }
+
+  if (isLicensed || isInsured) {
+    stats.push({ value: "✓", label: "Licensed & Insured" });
+  }
+
+  // Fill to at least 3-4 stats
+  if (stats.length < 3) {
+    stats.push({ value: "100%", label: "Satisfaction" });
+  }
+  if (stats.length < 3) {
+    stats.push({ value: "Free", label: "Estimates" });
+  }
+
+  // Cap at 4 stats
+  const displayStats = stats.slice(0, 4);
+  const bestReview = goodReviews.length > 0 ? goodReviews[0] : null;
 
   return (
     <section
       id="reviews"
       style={{
-        padding: THEME.sectionPadding,
-        maxWidth: THEME.maxWidth,
-        margin: "0 auto",
+        background: THEME.primary,
         fontFamily: THEME.fontBody,
       }}
     >
-      {/* Header */}
-      <div style={{ marginBottom: 40 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: THEME.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8, fontFamily: THEME.fontDisplay }}>
-          Reviews
-        </p>
-        <h2 style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 700, color: THEME.textPrimary, lineHeight: 1.15, fontFamily: THEME.fontSerif }}>
-          What our customers say
-        </h2>
-        <p style={{ fontSize: 16, color: THEME.textSecondary, marginTop: 8, maxWidth: 540, lineHeight: 1.6 }}>
-          Don't take our word for it — hear from homeowners who trusted us with their roof.
-        </p>
-      </div>
-
-      {/* Review grid */}
+      {/* Stats bar */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: 20,
+          gridTemplateColumns: `repeat(${displayStats.length}, 1fr)`,
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        {reviews.slice(0, 3).map((review, i) => {
-          // Generate initials for avatar
-          const name = review.name || "A";
-          const initials = name
-            .split(" ")
-            .map((w) => w[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase();
-
-          return (
+        {displayStats.map((stat, i) => (
+          <div
+            key={stat.label}
+            style={{
+              padding: "40px 24px",
+              textAlign: "center",
+              borderRight: i < displayStats.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+            }}
+          >
             <div
-              key={i}
-              className="review-card"
               style={{
-                background: "#fff",
-                border: `1px solid ${THEME.border}`,
-                borderRadius: THEME.borderRadiusLg,
-                padding: 32,
-                display: "flex",
-                flexDirection: "column",
-                transition: "all 0.2s ease",
+                fontFamily: THEME.fontDisplay,
+                fontSize: 48,
+                fontWeight: 700,
+                color: THEME.accent,
+                lineHeight: 1,
+                marginBottom: 6,
               }}
             >
-              {/* Stars */}
-              <div style={{ display: "flex", gap: 2, marginBottom: 16 }}>
-                {Array.from({ length: 5 }).map((_, s) => (
-                  <svg key={s} width="18" height="18" viewBox="0 0 24 24" fill={s < review.rating ? THEME.star : "#e5e7eb"} stroke="none">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                ))}
-              </div>
-
-              {/* Quote */}
-              <p style={{ fontSize: 15, color: THEME.textPrimary, fontStyle: "italic", lineHeight: 1.7, flex: 1, marginBottom: 20 }}>
-                &ldquo;{review.text}&rdquo;
-              </p>
-
-              {/* Author */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${THEME.border}`, paddingTop: 16 }}>
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: `linear-gradient(135deg, ${THEME.primary}, #3b6b99)`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: "#fff",
-                    fontFamily: THEME.fontDisplay,
-                  }}
-                >
-                  {initials}
-                </div>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: THEME.textPrimary }}>{review.name || "Homeowner"}</p>
-                  <p style={{ fontSize: 12, color: THEME.textMuted }}>Google Review</p>
-                </div>
-              </div>
+              {stat.value}
             </div>
-          );
-        })}
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.4)",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              {stat.label}
+            </div>
+          </div>
+        ))}
       </div>
+
+      {/* Single quote if available */}
+      {bestReview && (
+        <div
+          style={{
+            maxWidth: 800,
+            margin: "0 auto",
+            padding: "48px 24px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "center", gap: 3, marginBottom: 20 }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill={i < bestReview.rating ? THEME.accent : "rgba(255,255,255,0.15)"} stroke="none">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            ))}
+          </div>
+          <p
+            style={{
+              fontSize: 20,
+              color: "rgba(255,255,255,0.8)",
+              lineHeight: 1.65,
+              fontStyle: "italic",
+              marginBottom: 20,
+            }}
+          >
+            &ldquo;{bestReview.text}&rdquo;
+          </p>
+          <div
+            style={{
+              fontFamily: THEME.fontDisplay,
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#fff",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
+            {bestReview.name || "Homeowner"}{" "}
+            <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: 400, fontFamily: THEME.fontBody, textTransform: "none", letterSpacing: 0 }}>
+              — Google Review
+            </span>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

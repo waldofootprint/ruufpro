@@ -73,7 +73,7 @@ export default function Process() {
               style={{
                 width: 56,
                 height: 56,
-                borderRadius: 14,
+                borderRadius: 0,
                 background: THEME.primary,
                 display: "flex",
                 alignItems: "center",
@@ -87,10 +87,10 @@ export default function Process() {
             >
               {i + 1}
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: THEME.textPrimary, marginBottom: 6, fontFamily: THEME.fontDisplay }}>
+            <h3 style={{ fontSize: 19, fontWeight: 700, color: THEME.textPrimary, marginBottom: 8, fontFamily: THEME.fontDisplay, textTransform: "uppercase" as const, letterSpacing: "0.04em" }}>
               {step.title}
             </h3>
-            <p style={{ fontSize: 14, color: THEME.textMuted, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 15, color: THEME.textMuted, lineHeight: 1.65 }}>
               {step.desc}
             </p>
           </motion.div>

@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { DM_Sans, Sora, Plus_Jakarta_Sans, Inter, Outfit, Lora } from "next/font/google";
+import { DM_Sans, Sora, Plus_Jakarta_Sans, Inter, Outfit, Lora, Roboto_Slab, Barlow, Barlow_Condensed } from "next/font/google";
 
 // Contractor template fonts — self-hosted by Next.js for performance.
 // Modern Clean: DM Sans (body) + Sora (headings)
@@ -41,6 +41,26 @@ const lora = Lora({
   display: "swap",
 });
 
+const robotoSlab = Roboto_Slab({
+  subsets: ["latin"],
+  variable: "--font-roboto-slab",
+  display: "swap",
+});
+
+const barlow = Barlow({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-barlow",
+  display: "swap",
+});
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-barlow-condensed",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "RuufPro — Free Roofing Websites + Instant Estimates",
   description:
@@ -58,7 +78,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${sora.variable} ${plusJakarta.variable} ${inter.variable} ${outfit.variable} ${lora.variable}`}>
+    <html lang="en" className={`${dmSans.variable} ${sora.variable} ${plusJakarta.variable} ${inter.variable} ${outfit.variable} ${lora.variable} ${robotoSlab.variable} ${barlow.variable} ${barlowCondensed.variable}`}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
