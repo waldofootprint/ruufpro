@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
         .limit(1)
         .single();
 
-      if (prevBatch?.city_targets?.length > 0) {
+      if (prevBatch && prevBatch.city_targets && prevBatch.city_targets.length > 0) {
         cities = prevBatch.city_targets;
       }
 
