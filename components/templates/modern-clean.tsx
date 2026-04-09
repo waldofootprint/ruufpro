@@ -25,7 +25,7 @@ import ContactForm from "../contractor-sections/contact-form";
 import ProjectGallery from "../contractor-sections/project-gallery";
 import Footer from "../contractor-sections/footer";
 
-export default function ModernCleanTemplate(props: ContractorSiteData) {
+export default function ModernCleanTemplate(props: ContractorSiteData & { basePath?: string }) {
   return (
     <main style={{ background: "#F5F3F0", minHeight: "100vh" }}>
       {/* Subtle noise texture + section styling */}
@@ -71,6 +71,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         services={props.services}
         serviceAreaCities={props.serviceAreaCities}
         city={props.city}
+        basePath={props.basePath}
       />
 
       {/* HERO: Dark, textured, high-impact. Photo bg with overlay + text left, widget/image right.

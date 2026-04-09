@@ -10,6 +10,7 @@ import { CLASSIC } from "./theme-classic";
 import { FORGE } from "./theme-forge";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Nav from "./nav";
 
 interface ServiceCard {
   slug: string;
@@ -28,6 +29,8 @@ interface Props {
   hasEstimateWidget: boolean;
   template: string;
   siteSlug: string;
+  serviceNames?: string[];
+  serviceAreaCities?: string[];
 }
 
 // Theme resolver
@@ -171,80 +174,24 @@ export default function ServicesPageContent({
   hasEstimateWidget,
   template,
   siteSlug,
+  serviceNames = [],
+  serviceAreaCities = [],
 }: Props) {
   const t = getTheme(template);
   const phoneClean = phone.replace(/\D/g, "");
+  const base = siteSlug === "demo" ? "/demo" : `/site/${siteSlug}`;
 
   return (
     <div style={{ background: t.bg, minHeight: "100vh", fontFamily: t.fontBody }}>
-      {/* Simple nav bar */}
-      <nav
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          background: t.isDark ? "rgba(42,45,42,0.95)" : "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          borderBottom: `1px solid ${t.border}`,
-          padding: "14px 24px",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: t.maxWidth,
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <a
-            href={`/site/${siteSlug}`}
-            style={{
-              fontFamily: t.fontDisplay,
-              fontWeight: 800,
-              fontSize: 17,
-              color: t.text,
-              textDecoration: "none",
-            }}
-          >
-            {businessName}
-          </a>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <a
-              href={`/site/${siteSlug}`}
-              style={{ fontSize: 14, fontWeight: 500, color: t.textSecondary, textDecoration: "none" }}
-            >
-              Home
-            </a>
-            <a
-              href={`tel:${phoneClean}`}
-              style={{ fontSize: 14, fontWeight: 600, color: t.text, textDecoration: "none" }}
-              className="hidden sm:inline!"
-            >
-              {phone}
-            </a>
-            <a
-              href={hasEstimateWidget ? `/site/${siteSlug}#estimate` : `/site/${siteSlug}#contact`}
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: t.isDark ? t.bg : "#fff",
-                background: t.accent,
-                padding: "8px 20px",
-                borderRadius: 9999,
-                textDecoration: "none",
-                transition: "background 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = t.accentHover)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}
-            >
-              Free Estimate
-            </a>
-          </div>
-        </div>
-      </nav>
+      <Nav
+        businessName={businessName}
+        phone={phone}
+        hasEstimateWidget={hasEstimateWidget}
+        services={serviceNames}
+        serviceAreaCities={serviceAreaCities}
+        city={city}
+        basePath={base}
+      />
 
       {/* Hero section */}
       <section
@@ -263,7 +210,7 @@ export default function ServicesPageContent({
           {/* Breadcrumb */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
             <a
-              href={`/site/${siteSlug}`}
+              href={`${base}`}
               style={{ fontSize: 13, color: t.textSecondary, textDecoration: "none" }}
             >
               Home
@@ -320,7 +267,7 @@ export default function ServicesPageContent({
           {services.map((svc) => (
             <motion.div key={svc.slug} variants={cardFade}>
               <Link
-                href={`/services/${svc.slug}`}
+                href={`${base}/services/${svc.slug}`}
                 style={{ textDecoration: "none", display: "block", height: "100%" }}
               >
                 <div

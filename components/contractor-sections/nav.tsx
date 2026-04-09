@@ -7,8 +7,11 @@ import { useState, useRef, useEffect } from "react";
 import { THEME } from "./theme";
 import type { ContractorSiteData } from "./types";
 import { getServiceContent } from "@/lib/service-page-content";
+import { cityToSlug } from "@/lib/city-page-content";
 
-type NavProps = Pick<ContractorSiteData, "businessName" | "phone" | "hasEstimateWidget" | "services" | "serviceAreaCities" | "city">;
+type NavProps = Pick<ContractorSiteData, "businessName" | "phone" | "hasEstimateWidget" | "services" | "serviceAreaCities" | "city"> & {
+  basePath?: string;
+};
 
 const SERVICE_DEFAULTS = ["Roof Replacement", "Roof Repair", "Inspections", "Gutters", "Storm Damage", "Ventilation"];
 
@@ -50,6 +53,8 @@ function NavDropdown({ label, items, href, itemHrefs, open, onToggle, onClose }:
           fontFamily: THEME.fontBody,
           transition: "color 0.2s",
           padding: 0,
+          textTransform: "uppercase" as const,
+          letterSpacing: "0.04em",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
         onMouseLeave={(e) => { if (!open) e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
@@ -131,7 +136,7 @@ function NavDropdown({ label, items, href, itemHrefs, open, onToggle, onClose }:
   );
 }
 
-export default function Nav({ businessName, phone, hasEstimateWidget, services, serviceAreaCities, city }: NavProps) {
+export default function Nav({ businessName, phone, hasEstimateWidget, services, serviceAreaCities, city, basePath = "" }: NavProps) {
   const phoneClean = phone.replace(/\D/g, "");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -142,7 +147,7 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
   // Resolve service names to slugs for per-item links
   const serviceHrefs = serviceList.map((svc) => {
     const entry = getServiceContent(svc);
-    return entry ? `/services/${entry.slug}` : "/services";
+    return entry ? `${basePath}/services/${entry.slug}` : `${basePath}/services`;
   });
 
   return (
@@ -196,7 +201,7 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
         <NavDropdown
           label="Services"
           items={serviceList}
-          href="/services"
+          href={`${basePath}/services`}
           itemHrefs={serviceHrefs}
           open={openDropdown === "services"}
           onToggle={() => setOpenDropdown(openDropdown === "services" ? null : "services")}
@@ -225,6 +230,7 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
           label="Service Areas"
           items={areaCities}
           href="#service-area"
+          itemHrefs={areaCities.map((c) => `${basePath}/${cityToSlug(c)}`)}
           open={openDropdown === "areas"}
           onToggle={() => setOpenDropdown(openDropdown === "areas" ? null : "areas")}
           onClose={() => setOpenDropdown(null)}
@@ -237,6 +243,8 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
             color: "rgba(255,255,255,0.6)",
             textDecoration: "none",
             transition: "color 0.2s",
+            textTransform: "uppercase" as const,
+            letterSpacing: "0.04em",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
           onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}

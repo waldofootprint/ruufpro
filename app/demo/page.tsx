@@ -68,5 +68,5 @@ const mockData: ContractorSiteData = {
 };
 
 export default function DemoPage() {
-  return <ModernCleanTemplate {...mockData} />;
+  return <ModernCleanTemplate {...mockData} basePath="/demo" />;
 }
