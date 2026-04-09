@@ -119,6 +119,7 @@ export default function OpsPage() {
   const [scrapeCities, setScrapeCities] = useState("");
   const [newBatchOpen, setNewBatchOpen] = useState(false);
   const [newBatchCities, setNewBatchCities] = useState("");
+  const [newBatchCount, setNewBatchCount] = useState(25);
   const [creatingBatch, setCreatingBatch] = useState(false);
 
   function openScrapePanel(batchId: string, cities: string[]) {
@@ -157,19 +158,36 @@ export default function OpsPage() {
     if (cities.length === 0) { alert("Enter at least one city"); return; }
     setCreatingBatch(true);
     try {
+      // Step 1: Create batch
       const res = await fetch("/api/ops/pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ city_targets: cities }),
       });
-      if (res.ok) {
-        setNewBatchOpen(false);
-        setNewBatchCities("");
-        await fetchPipeline();
-      } else {
+      if (!res.ok) {
         const data = await res.json();
         alert(`Failed: ${data.error}`);
+        return;
       }
+      const { batch } = await res.json();
+
+      // Step 2: Scrape leads into it
+      const scrapeRes = await fetch("/api/ops/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: batch.id, limit: newBatchCount, cities }),
+      });
+      const scrapeData = await scrapeRes.json();
+      if (scrapeRes.ok) {
+        alert(`Batch created! Scraped ${scrapeData.inserted} leads.\nAPI cost: ${scrapeData.estimated_cost}`);
+      } else {
+        alert(`Batch created but scrape failed: ${scrapeData.error}`);
+      }
+
+      setNewBatchOpen(false);
+      setNewBatchCities("");
+      setNewBatchCount(25);
+      await fetchPipeline();
     } catch (err) { alert("Failed to create batch"); }
     finally { setCreatingBatch(false); }
   }
@@ -419,12 +437,13 @@ export default function OpsPage() {
 
         {/* ═══ NEW BATCH BUTTON + MODAL ═══ */}
         {newBatchOpen && (
-          <div className="bg-white border border-[#E5E5EA] rounded-xl shadow-lg overflow-hidden">
+          <div className="bg-white border border-[#34C75933] rounded-xl shadow-lg overflow-hidden">
             <div className="px-5 py-3 border-b border-[#F2F2F7] flex justify-between items-center">
-              <div className="text-xs font-bold uppercase tracking-[0.05em]">Create New Batch</div>
+              <div className="text-xs font-bold uppercase tracking-[0.05em] text-[#34C759]">New Batch — Scrape Leads</div>
               <button onClick={() => setNewBatchOpen(false)} className="text-[#8E8E93] hover:text-[#1D1D1F] text-sm">✕</button>
             </div>
-            <div className="p-5 space-y-3">
+            <div className="p-5 space-y-4">
+              {/* Cities */}
               <div>
                 <label className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] block mb-1">City Targets</label>
                 <input
@@ -434,15 +453,61 @@ export default function OpsPage() {
                   placeholder="Tampa, Orlando, Jacksonville"
                   className="w-full text-sm border border-[#E5E5EA] rounded-lg px-3 py-2 focus:outline-none focus:border-[#007AFF] transition-colors"
                 />
-                <div className="text-[10px] text-[#AEAEB2] mt-1">Comma-separated cities for this week&apos;s scraping batch.</div>
+                <div className="text-[10px] text-[#AEAEB2] mt-1">Comma-separated. Leads split evenly across cities.</div>
               </div>
-              <div className="flex justify-end">
+
+              {/* Count */}
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] block mb-1">Number of Leads</label>
+                <div className="flex gap-1.5">
+                  {[10, 25, 50, 100, 250, 500].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setNewBatchCount(n)}
+                      className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                        newBatchCount === n
+                          ? "bg-[#34C759] text-white"
+                          : "bg-[#F5F5F7] text-[#3C3C43] hover:bg-[#E5E5EA]"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="bg-[#F5F5F7] rounded-lg p-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">Scrape Filters</div>
+                <div className="space-y-1 text-[11px] text-[#3C3C43]">
+                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Google Maps type: roofing_contractor</div>
+                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Business status: OPERATIONAL only</div>
+                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Deduplication: skip existing leads</div>
+                  <div className="flex items-center gap-2"><span className="text-[#8E8E93]">○</span> No rating/review minimum (all captured)</div>
+                </div>
+              </div>
+
+              {/* Cost estimate */}
+              <div className="bg-[#FFF8E1] rounded-lg p-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#F57F17]">Estimated API Cost</div>
+                    <div className="text-sm font-bold text-[#92400E] mt-0.5">~${(newBatchCount * 0.05).toFixed(2)}</div>
+                    <div className="text-[10px] text-[#B45309] mt-0.5">~$0.05/lead (Text Search $0.032 + Details $0.017)</div>
+                  </div>
+                  <a href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#007AFF] font-medium hover:underline">Check billing →</a>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-between items-center pt-1">
+                <a href="https://console.cloud.google.com/google/maps-apis/metrics" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#007AFF] font-medium hover:underline">Google Maps API usage →</a>
                 <button
                   onClick={handleCreateBatch}
                   disabled={creatingBatch || !newBatchCities.trim()}
-                  className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-4 py-2 rounded-lg transition-colors"
+                  className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-5 py-2 rounded-lg transition-colors"
                 >
-                  {creatingBatch ? "Creating..." : "Create Batch"}
+                  {creatingBatch ? "Creating & Scraping..." : `Create Batch & Scrape ${newBatchCount} Leads`}
                 </button>
               </div>
             </div>
