@@ -55,6 +55,44 @@ const STAGE_PILL: Record<string, string> = {
   unsubscribed: "bg-red-100 text-red-600",
 };
 
+// ── ICP quality scoring ─────────────────────────────────────────────
+function getIcpScore(lead: any): { tier: "gold" | "silver" | "bronze"; score: number; signals: string[] } {
+  let score = 0;
+  const signals: string[] = [];
+
+  // Has a website (we can scrape content for preview)
+  if (lead.their_website_url) { score += 2; signals.push("Has website"); }
+  else { signals.push("No website — needs one"); score += 1; }
+
+  // Google rating
+  if (lead.rating >= 4.5) { score += 3; signals.push(`${lead.rating}★ rating (excellent)`); }
+  else if (lead.rating >= 4.0) { score += 2; signals.push(`${lead.rating}★ rating (good)`); }
+  else if (lead.rating) { score += 1; signals.push(`${lead.rating}★ rating (low)`); }
+  else { signals.push("No Google rating"); }
+
+  // Review count (social proof = established business)
+  if (lead.reviews_count >= 50) { score += 3; signals.push(`${lead.reviews_count} reviews (established)`); }
+  else if (lead.reviews_count >= 20) { score += 2; signals.push(`${lead.reviews_count} reviews (growing)`); }
+  else if (lead.reviews_count > 0) { score += 1; signals.push(`${lead.reviews_count} reviews (new)`); }
+  else { signals.push("No reviews"); }
+
+  // Has phone (reachable)
+  if (lead.phone) { score += 1; signals.push("Phone listed"); }
+  else { signals.push("No phone listed"); }
+
+  // Has owner email (enriched)
+  if (lead.owner_email) { score += 1; signals.push("Email found"); }
+
+  const tier = score >= 8 ? "gold" : score >= 5 ? "silver" : "bronze";
+  return { tier, score, signals };
+}
+
+const ICP_STYLES = {
+  gold: { bg: "bg-[#FFF8E1]", text: "text-[#92400E]", border: "border-[#FDE68A]", label: "Gold" },
+  silver: { bg: "bg-[#F5F5F7]", text: "text-[#3C3C43]", border: "border-[#D1D1D6]", label: "Silver" },
+  bronze: { bg: "bg-[#FFF3E0]", text: "text-[#BF360C]", border: "border-[#FFCC80]", label: "Bronze" },
+};
+
 // ── Types for attention items ───────────────────────────────────────
 interface AttentionItem {
   id: string;
@@ -75,6 +113,66 @@ export default function OpsPage() {
   const [approving, setApproving] = useState<string | null>(null);
   const [attentionOpen, setAttentionOpen] = useState(true);
   const [expandedGate, setExpandedGate] = useState<string | null>(null);
+  const [scrapeOpen, setScrapeOpen] = useState<string | null>(null);
+  const [scraping, setScraping] = useState<string | null>(null);
+  const [scrapeCount, setScrapeCount] = useState(25);
+  const [scrapeCities, setScrapeCities] = useState("");
+  const [newBatchOpen, setNewBatchOpen] = useState(false);
+  const [newBatchCities, setNewBatchCities] = useState("");
+  const [creatingBatch, setCreatingBatch] = useState(false);
+
+  function openScrapePanel(batchId: string, cities: string[]) {
+    setScrapeOpen(batchId);
+    setScrapeCities(cities.join(", "));
+    setScrapeCount(25);
+  }
+
+  async function handleScrapeMore(batchId: string) {
+    setScraping(batchId);
+    const cities = scrapeCities.split(",").map(c => c.trim()).filter(Boolean);
+    try {
+      const res = await fetch("/api/ops/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: batchId, limit: scrapeCount, cities }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Scraped ${data.inserted} new leads (${data.duplicates_skipped} duplicates skipped)\nAPI cost: ${data.estimated_cost}`);
+        setScrapeOpen(null);
+        await fetchPipeline();
+      } else {
+        alert(`Scrape failed: ${data.error}`);
+      }
+    } catch (err) {
+      console.error("Scrape failed:", err);
+      alert("Scrape request failed — check console");
+    } finally {
+      setScraping(null);
+    }
+  }
+
+  async function handleCreateBatch() {
+    const cities = newBatchCities.split(",").map(c => c.trim()).filter(Boolean);
+    if (cities.length === 0) { alert("Enter at least one city"); return; }
+    setCreatingBatch(true);
+    try {
+      const res = await fetch("/api/ops/pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ city_targets: cities }),
+      });
+      if (res.ok) {
+        setNewBatchOpen(false);
+        setNewBatchCities("");
+        await fetchPipeline();
+      } else {
+        const data = await res.json();
+        alert(`Failed: ${data.error}`);
+      }
+    } catch (err) { alert("Failed to create batch"); }
+    finally { setCreatingBatch(false); }
+  }
 
   const fetchPipeline = useCallback(async () => {
     try {
@@ -224,6 +322,133 @@ export default function OpsPage() {
           </div>
         )}
 
+        {/* ═══ SCRAPE POPOVER (floats over content) ═══ */}
+        {scrapeOpen && (
+          <div className="bg-white border border-[#007AFF33] rounded-xl shadow-lg overflow-hidden">
+            <div className="px-5 py-3 border-b border-[#F2F2F7] flex justify-between items-center">
+              <div className="text-xs font-bold uppercase tracking-[0.05em] text-[#007AFF]">Scrape More Leads</div>
+              <button onClick={() => setScrapeOpen(null)} className="text-[#8E8E93] hover:text-[#1D1D1F] text-sm">✕</button>
+            </div>
+            <div className="p-5 space-y-4">
+              {/* Cities */}
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] block mb-1">City Targets</label>
+                <input
+                  type="text"
+                  value={scrapeCities}
+                  onChange={(e) => setScrapeCities(e.target.value)}
+                  placeholder="Tampa, Orlando, Jacksonville"
+                  className="w-full text-sm border border-[#E5E5EA] rounded-lg px-3 py-2 focus:outline-none focus:border-[#007AFF] transition-colors"
+                />
+                <div className="text-[10px] text-[#AEAEB2] mt-1">Comma-separated. Leads split evenly across cities.</div>
+              </div>
+
+              {/* Count */}
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] block mb-1">Number of Leads</label>
+                <div className="flex gap-1.5">
+                  {[10, 25, 50, 100, 250, 500].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setScrapeCount(n)}
+                      className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                        scrapeCount === n
+                          ? "bg-[#007AFF] text-white"
+                          : "bg-[#F5F5F7] text-[#3C3C43] hover:bg-[#E5E5EA]"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="bg-[#F5F5F7] rounded-lg p-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">Scrape Filters</div>
+                <div className="space-y-1 text-[11px] text-[#3C3C43]">
+                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Google Maps type: roofing_contractor</div>
+                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Business status: OPERATIONAL only</div>
+                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Deduplication: skip existing leads in batch</div>
+                  <div className="flex items-center gap-2"><span className="text-[#8E8E93]">○</span> No rating/review minimum (all captured)</div>
+                </div>
+              </div>
+
+              {/* Cost estimate */}
+              <div className="bg-[#FFF8E1] rounded-lg p-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#F57F17]">Estimated API Cost</div>
+                    <div className="text-sm font-bold text-[#92400E] mt-0.5">
+                      ~${(scrapeCount * 0.05).toFixed(2)}
+                    </div>
+                    <div className="text-[10px] text-[#B45309] mt-0.5">~$0.05/lead (Text Search $0.032 + Details $0.017)</div>
+                  </div>
+                  <a
+                    href="https://console.cloud.google.com/billing"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-[#007AFF] font-medium hover:underline"
+                  >
+                    Check billing →
+                  </a>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-between items-center pt-1">
+                <a
+                  href="https://console.cloud.google.com/google/maps-apis/metrics"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-[#007AFF] font-medium hover:underline"
+                >
+                  Google Maps API usage dashboard →
+                </a>
+                <button
+                  onClick={() => handleScrapeMore(scrapeOpen)}
+                  disabled={scraping === scrapeOpen || !scrapeCities.trim()}
+                  className="text-[11px] font-semibold text-white bg-[#007AFF] hover:bg-[#0056D6] disabled:bg-[#B0D4FF] px-5 py-2 rounded-lg transition-colors"
+                >
+                  {scraping === scrapeOpen ? "Scraping..." : `Scrape ${scrapeCount} Leads`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ NEW BATCH BUTTON + MODAL ═══ */}
+        {newBatchOpen && (
+          <div className="bg-white border border-[#E5E5EA] rounded-xl shadow-lg overflow-hidden">
+            <div className="px-5 py-3 border-b border-[#F2F2F7] flex justify-between items-center">
+              <div className="text-xs font-bold uppercase tracking-[0.05em]">Create New Batch</div>
+              <button onClick={() => setNewBatchOpen(false)} className="text-[#8E8E93] hover:text-[#1D1D1F] text-sm">✕</button>
+            </div>
+            <div className="p-5 space-y-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] block mb-1">City Targets</label>
+                <input
+                  type="text"
+                  value={newBatchCities}
+                  onChange={(e) => setNewBatchCities(e.target.value)}
+                  placeholder="Tampa, Orlando, Jacksonville"
+                  className="w-full text-sm border border-[#E5E5EA] rounded-lg px-3 py-2 focus:outline-none focus:border-[#007AFF] transition-colors"
+                />
+                <div className="text-[10px] text-[#AEAEB2] mt-1">Comma-separated cities for this week&apos;s scraping batch.</div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleCreateBatch}
+                  disabled={creatingBatch || !newBatchCities.trim()}
+                  className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-4 py-2 rounded-lg transition-colors"
+                >
+                  {creatingBatch ? "Creating..." : "Create Batch"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ═══ PIPELINE CONTENT ═══ */}
         {loading ? (
           <div className="bg-white rounded-xl border border-[#E5E5EA] p-12 text-center text-[#8E8E93] text-sm">
@@ -232,7 +457,15 @@ export default function OpsPage() {
         ) : !pipeline || pipeline.batches.length === 0 ? (
           <div className="bg-white rounded-xl border border-[#E5E5EA] p-12 text-center">
             <p className="text-[#8E8E93] text-sm font-medium">No batches yet</p>
-            <p className="text-[#C7C7CC] text-xs mt-1">Weekly auto-scrape will create your first batch on Monday</p>
+            <p className="text-[#C7C7CC] text-xs mt-1">Create your first batch to start scraping leads</p>
+            {!newBatchOpen && (
+              <button
+                onClick={() => setNewBatchOpen(true)}
+                className="mt-3 text-xs font-semibold text-white bg-[#007AFF] hover:bg-[#0056D6] px-4 py-2 rounded-lg transition-colors"
+              >
+                + New Batch
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -240,7 +473,15 @@ export default function OpsPage() {
             <div className="bg-white rounded-xl border border-[#E5E5EA] px-5 py-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8E8E93]">Pipeline Totals</h2>
-                <span className="text-[11px] text-[#C7C7CC]">{pipeline.batches.length} batch{pipeline.batches.length !== 1 ? "es" : ""} active</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-[#C7C7CC]">{pipeline.batches.length} batch{pipeline.batches.length !== 1 ? "es" : ""} active</span>
+                  <button
+                    onClick={() => setNewBatchOpen(true)}
+                    className="text-[10px] font-semibold text-[#34C759] bg-[#E8F5E9] hover:bg-[#C8E6C9] border border-[#34C75933] px-2.5 py-1 rounded-lg transition-colors"
+                  >
+                    + New Batch
+                  </button>
+                </div>
               </div>
               <div className="flex">
                 {DISPLAY_STAGES.map((stage) => {
@@ -280,6 +521,14 @@ export default function OpsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* Scrape more button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openScrapePanel(batch.id, batch.city_targets); }}
+                        disabled={scraping === batch.id}
+                        className="text-[10px] font-semibold text-[#007AFF] bg-[#EFF6FF] hover:bg-[#DBEAFE] border border-[#007AFF33] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {scraping === batch.id ? "Scraping..." : "+ Scrape More"}
+                      </button>
                       {isCompleted && (
                         <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-1 rounded-[10px]">✓ Complete</span>
                       )}
@@ -673,6 +922,8 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
 // ═══════════════════════════════════════════════════════════════════
 function LeadRow({ lead, isExpanded, onToggle }: { lead: any; isExpanded: boolean; onToggle: () => void }) {
   const td = "text-xs px-3 py-2.5 border-b border-[#F5F5F5]";
+  const icp = getIcpScore(lead);
+  const icpStyle = ICP_STYLES[icp.tier];
 
   // Build timeline from timestamps
   const timeline: { label: string; date: string | null; status: "done" | "active" | "pending" }[] = [
@@ -692,7 +943,14 @@ function LeadRow({ lead, isExpanded, onToggle }: { lead: any; isExpanded: boolea
   return (
     <>
       <tr className={`cursor-pointer transition-colors ${isExpanded ? "bg-[#F0F7FF]" : "hover:bg-[#F8FAFC]"}`} onClick={onToggle}>
-        <td className={`${td} font-semibold text-[#1D1D1F]`}>{lead.business_name || "—"}</td>
+        <td className={`${td} font-semibold text-[#1D1D1F]`}>
+          <div className="flex items-center gap-2">
+            {lead.business_name || "—"}
+            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>
+              {icpStyle.label}
+            </span>
+          </div>
+        </td>
         <td className={td}>{lead.city ? `${lead.city}, ${lead.state || ""}` : "—"}</td>
         <td className={td}>
           {lead.their_website_url ? (
@@ -734,7 +992,7 @@ function LeadRow({ lead, isExpanded, onToggle }: { lead: any; isExpanded: boolea
           <td colSpan={8} className="p-0">
             <div className="bg-[#F8FAFF] border-b border-[#E5E5EA] p-5">
               <div className="grid grid-cols-3 gap-4">
-                {/* Column 1: Contact Info */}
+                {/* Column 1: Contact Info + ICP */}
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">Contact Info</div>
                   <div className="space-y-1">
@@ -756,6 +1014,26 @@ function LeadRow({ lead, isExpanded, onToggle }: { lead: any; isExpanded: boolea
                         <a href={lead.preview_site_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] font-medium">View ↗</a>
                       </div>
                     )}
+                  </div>
+
+                  {/* ICP Qualification */}
+                  <div className="mt-3 pt-3 border-t border-[#E5E5EA]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93]">ICP Quality</div>
+                      <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>
+                        {icpStyle.label} ({icp.score}pt)
+                      </span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {icp.signals.map((signal, i) => (
+                        <div key={i} className="flex items-center gap-1.5 text-[11px]">
+                          <span className={signal.includes("No ") || signal.includes("low") ? "text-[#C7C7CC]" : "text-[#34C759]"}>
+                            {signal.includes("No ") || signal.includes("low") ? "○" : "✓"}
+                          </span>
+                          <span className={signal.includes("No ") || signal.includes("low") ? "text-[#AEAEB2]" : "text-[#3C3C43]"}>{signal}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

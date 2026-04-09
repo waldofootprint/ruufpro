@@ -1,7 +1,7 @@
 // Pipeline API — returns weekly batch data with stage counts and gate status.
-// Used by the /ops dashboard to render the batch pipeline view.
+// GET: used by /ops dashboard. POST: creates a new batch.
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createAuthSupabase } from "@/lib/supabase-server";
 import type { PipelineStage, GateStatus, ProspectBatch, PipelineResponse } from "@/lib/ops-pipeline";
@@ -110,4 +110,66 @@ export async function GET() {
   };
 
   return NextResponse.json(response);
+}
+
+// ── POST: Create a new batch ────────────────────────────────────────
+export async function POST(req: NextRequest) {
+  const authSupabase = createAuthSupabase();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  try {
+    const body = await req.json();
+    const cityTargets: string[] = body.city_targets || [];
+
+    if (cityTargets.length === 0) {
+      return NextResponse.json({ error: "city_targets required" }, { status: 400 });
+    }
+
+    // Calculate current ISO week
+    const now = new Date();
+    const jan1 = new Date(now.getFullYear(), 0, 1);
+    const days = Math.floor((now.getTime() - jan1.getTime()) / 86400000);
+    const weekNumber = Math.ceil((days + jan1.getDay() + 1) / 7);
+    const weekYear = now.getFullYear();
+
+    // Week start (Monday) and end (Sunday)
+    const dayOfWeek = now.getDay() || 7; // Sunday = 7
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - dayOfWeek + 1);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const { data: batch, error } = await supabase
+      .from("prospect_batches")
+      .insert({
+        week_number: weekNumber,
+        week_year: weekYear,
+        week_start: weekStart.toISOString().slice(0, 10),
+        week_end: weekEnd.toISOString().slice(0, 10),
+        city_targets: cityTargets,
+        lead_count: 0,
+        status: "active",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      // Unique constraint on week_number + week_year — append a suffix
+      if (error.code === "23505") {
+        return NextResponse.json({ error: "A batch already exists for this week. Use the existing one or wait until next week." }, { status: 409 });
+      }
+      throw error;
+    }
+
+    return NextResponse.json({ success: true, batch });
+  } catch (err: any) {
+    console.error("Create batch error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
