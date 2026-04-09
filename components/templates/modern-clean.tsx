@@ -60,8 +60,9 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         /* Service card hover — amber top accent on hover */
         .service-card:hover { border-top-color: #D4880F !important; }
         /* Square off widget corners for C1 style */
-        .hero-section .rounded-3xl { border-radius: 0 !important; }
-        .hero-section .rounded-xl { border-radius: 0 !important; }
+        .hero-section .rounded-3xl, .estimate-band .rounded-3xl { border-radius: 0 !important; }
+        .hero-section .rounded-xl, .estimate-band .rounded-xl { border-radius: 0 !important; }
+        .hero-section [class*="rounded-"], .estimate-band [class*="rounded-"] { border-radius: 0 !important; }
       `}</style>
       <Nav
         businessName={props.businessName}
@@ -275,6 +276,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
                   contractorName={props.businessName}
                   contractorPhone={props.phone}
                   variant="light"
+                  accentColor={THEME.accent}
                 />
               </div>
             ) : (
@@ -344,44 +346,43 @@ export default function ModernCleanTemplate(props: ContractorSiteData) {
         <Services services={props.services} />
       </div>
 
-      <WhyChooseUs
-        businessName={props.businessName}
-        yearsInBusiness={props.yearsInBusiness}
-        warrantyYears={props.warrantyYears}
-        isLicensed={props.isLicensed}
-        isInsured={props.isInsured}
+      <div style={{ padding: "80px 24px", background: THEME.bg }}>
+        <div style={{ maxWidth: THEME.maxWidth, margin: "0 auto" }}>
+          <WhyChooseUs
+            businessName={props.businessName}
+            yearsInBusiness={props.yearsInBusiness}
+            warrantyYears={props.warrantyYears}
+            isLicensed={props.isLicensed}
+            isInsured={props.isInsured}
+            hasEstimateWidget={props.hasEstimateWidget}
+            phone={props.phone}
+          />
+          <AboutTrust
+            businessName={props.businessName}
+            city={props.city}
+            aboutText={props.aboutText}
+            yearsInBusiness={props.yearsInBusiness}
+            isLicensed={props.isLicensed}
+            isInsured={props.isInsured}
+            gafMasterElite={props.gafMasterElite}
+            owensCorningPreferred={props.owensCorningPreferred}
+            certainteedSelect={props.certainteedSelect}
+            bbbAccredited={props.bbbAccredited}
+            bbbRating={props.bbbRating}
+            offersFinancing={props.offersFinancing}
+            warrantyYears={props.warrantyYears}
+            phone={props.phone}
+            licenseNumber={props.licenseNumber ?? undefined}
+          />
+        </div>
+      </div>
+
+      <EstimateSection
         hasEstimateWidget={props.hasEstimateWidget}
+        contractorId={props.contractorId}
+        businessName={props.businessName}
         phone={props.phone}
       />
-
-      <div className="mc-section-warm">
-        <AboutTrust
-          businessName={props.businessName}
-          city={props.city}
-          aboutText={props.aboutText}
-          yearsInBusiness={props.yearsInBusiness}
-          isLicensed={props.isLicensed}
-          isInsured={props.isInsured}
-          gafMasterElite={props.gafMasterElite}
-          owensCorningPreferred={props.owensCorningPreferred}
-          certainteedSelect={props.certainteedSelect}
-          bbbAccredited={props.bbbAccredited}
-          bbbRating={props.bbbRating}
-          offersFinancing={props.offersFinancing}
-          warrantyYears={props.warrantyYears}
-          phone={props.phone}
-          licenseNumber={props.licenseNumber ?? undefined}
-        />
-      </div>
-
-      <div id="estimate-section">
-        <EstimateSection
-          hasEstimateWidget={props.hasEstimateWidget}
-          contractorId={props.contractorId}
-          businessName={props.businessName}
-          phone={props.phone}
-        />
-      </div>
 
       <ProjectGallery
         theme={{ accent: THEME.accent, fontDisplay: THEME.fontDisplay, fontBody: THEME.fontBody, maxWidth: THEME.maxWidth, borderRadius: THEME.borderRadius }}

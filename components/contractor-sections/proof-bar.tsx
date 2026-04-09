@@ -44,16 +44,29 @@ export default function ProofBar({ isLicensed, isInsured, offersFinancing, hasEs
         {pills.map((pill) => (
           <div
             key={pill}
+            className="proof-pill"
             style={{
               display: "flex",
               alignItems: "center",
               gap: 8,
-              background: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.25)",
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.15)",
               padding: "8px 16px",
               fontSize: 13,
               fontWeight: 600,
-              color: "#fff",
+              color: "rgba(255,255,255,0.85)",
+              cursor: "default",
+              transition: "all 0.25s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)";
+              e.currentTarget.style.color = "#fff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+              e.currentTarget.style.color = "rgba(255,255,255,0.85)";
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4880F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
