@@ -24,10 +24,6 @@
     {
       "path": "/api/cron/morning-summary",
       "schedule": "0 11 * * *"
-    },
-    {
-      "path": "/api/cron/weekly-scrape",
-      "schedule": "0 10 * * 1-5"
     }
   ],
   "headers": [
