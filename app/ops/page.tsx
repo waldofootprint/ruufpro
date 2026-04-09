@@ -603,7 +603,7 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
     return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
   });
 
-  const stages = [...new Set(leads.map((l) => l.stage))];
+  const stages = Array.from(new Set(leads.map((l: any) => l.stage as string)));
   const thCls = "text-[10px] uppercase tracking-[0.06em] text-[#AEAEB2] font-semibold text-left px-3 py-2 cursor-pointer hover:text-[#1D1D1F] select-none";
 
   return (
