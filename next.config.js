@@ -13,10 +13,6 @@ const nextConfig = {
     ],
   },
 
-  // Reduce webpack memory usage for Vercel builds
-  experimental: {
-    webpackMemoryOptimizations: true,
-  },
 };
 
 module.exports = nextConfig;
