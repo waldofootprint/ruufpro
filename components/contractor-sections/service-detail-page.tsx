@@ -156,7 +156,7 @@ export default function ServiceDetailContent({
 }: Props) {
   const t = getTheme(template);
   const phoneClean = phone.replace(/\D/g, "");
-  const base = siteSlug === "demo" ? "/demo" : `${base}`;
+  const base = siteSlug === "demo" ? "/demo" : `/site/${siteSlug}`;
 
   return (
     <div style={{ background: t.bg, minHeight: "100vh", fontFamily: t.fontBody }}>

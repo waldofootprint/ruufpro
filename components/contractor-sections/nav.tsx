@@ -297,7 +297,6 @@ export default function Nav({ businessName, phone, hasEstimateWidget, services, 
           style={{
             fontSize: 13,
             fontWeight: 600,
-            color: "#fff",
             background: THEME.accent,
             color: THEME.primary,
             padding: "10px 24px",

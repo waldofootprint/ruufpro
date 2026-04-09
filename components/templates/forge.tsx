@@ -55,7 +55,14 @@ export default function ForgeTemplate(props: ContractorSiteData) {
         aboutText={props.aboutText}
         yearsInBusiness={props.yearsInBusiness}
       />
-      <Reviews reviews={props.reviews} />
+      <Reviews
+        reviews={props.reviews}
+        businessName={props.businessName}
+        yearsInBusiness={props.yearsInBusiness}
+        isLicensed={props.isLicensed}
+        isInsured={props.isInsured}
+        warrantyYears={props.warrantyYears}
+      />
       <FAQ
         businessName={props.businessName}
         city={props.city}
