@@ -126,9 +126,15 @@ export async function POST(request: NextRequest) {
       ? `New Estimate Lead${timelineLabel}`
       : "New Contact Form Lead";
 
+    // Build idempotency key to prevent double-sends on form resubmit or network retry.
+    // Rounded to the minute so the same lead can legitimately submit again after 60s.
+    const minuteStamp = Math.floor(Date.now() / 60_000);
+    const idempotencyKey = `lead-${contractor_id}-${lead_phone || lead_email || lead_name}-${minuteStamp}`;
+
     // Emit event to Inngest — handles push notification + auto-response SMS + CRM webhook
     // with retry, monitoring, and no silent failures
     await inngest.send({
+      id: idempotencyKey,
       name: "sms/lead.created",
       data: {
         contractorId: contractor_id,

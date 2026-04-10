@@ -50,8 +50,21 @@ export async function GET(
       .update(updates)
       .eq("id", reviewRequest.id);
 
-    // Redirect to the actual Google review URL
-    return NextResponse.redirect(reviewRequest.google_review_url, 302);
+    // Validate the redirect URL is a legitimate Google review URL (prevent open redirect)
+    const reviewUrl = reviewRequest.google_review_url;
+    const isGoogleUrl = reviewUrl &&
+      (reviewUrl.startsWith("https://www.google.com/") ||
+       reviewUrl.startsWith("https://maps.google.com/") ||
+       reviewUrl.startsWith("https://g.page/") ||
+       reviewUrl.startsWith("https://search.google.com/"));
+
+    if (!isGoogleUrl) {
+      console.error(`Review track: invalid redirect URL for request ${reviewRequest.id}: ${reviewUrl}`);
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+      return NextResponse.redirect(`${baseUrl}/thanks`, 302);
+    }
+
+    return NextResponse.redirect(reviewUrl, 302);
   } catch (err) {
     console.error("Review track error:", err);
     // On error, still try to redirect somewhere reasonable

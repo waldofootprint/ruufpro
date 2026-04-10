@@ -60,6 +60,7 @@ const POLICY_SECONDARY_CUSTOMER_PROFILE = "RNdfbf3fae0e1107f8aded0e7cead80bf5";
 const POLICY_SOLE_PROP_STARTER = "RN806dd6cd175f314e1f96a9727ee271f4";
 
 // RuufPro's Primary Customer Profile SID (set after one-time ISV setup in Twilio Console)
+// Required for ISV flow — without it, contractor brands won't be linked to our ISV profile.
 const PRIMARY_PROFILE_SID = process.env.TWILIO_PRIMARY_PROFILE_SID || "";
 
 // Webhook base URL
@@ -96,6 +97,11 @@ async function getClient() {
 export async function startRegistration(
   data: ContractorRegistrationData
 ): Promise<RegistrationResult> {
+  // Guard: PRIMARY_PROFILE_SID must be set for ISV flow
+  if (!PRIMARY_PROFILE_SID) {
+    throw new Error("TWILIO_PRIMARY_PROFILE_SID env var is not set — cannot register contractors without ISV profile linkage");
+  }
+
   // Respect the contractor's stated business type — never silently downgrade to sole prop.
   // The registration API already validates that LLCs have an EIN before reaching here.
   const isSoleProp = data.legalEntityType === "sole_proprietor";
@@ -198,12 +204,10 @@ async function registerSoleProprietor(
     .customerProfiles(profile.sid)
     .customerProfilesEntityAssignments.create({ objectSid: addressDoc.sid });
 
-  // Attach Primary ISV Profile
-  if (PRIMARY_PROFILE_SID) {
-    await client.trusthub.v1
-      .customerProfiles(profile.sid)
-      .customerProfilesEntityAssignments.create({ objectSid: PRIMARY_PROFILE_SID });
-  }
+  // Attach Primary ISV Profile (guaranteed set by startRegistration guard)
+  await client.trusthub.v1
+    .customerProfiles(profile.sid)
+    .customerProfilesEntityAssignments.create({ objectSid: PRIMARY_PROFILE_SID });
 
   // Step 5: Evaluate + Submit Starter Profile
   await client.trusthub.v1
@@ -379,10 +383,8 @@ async function registerStandardBrand(
     supportDoc.sid,
   ];
 
-  // Attach ISV Primary Profile if configured
-  if (PRIMARY_PROFILE_SID) {
-    entitiesToAttach.push(PRIMARY_PROFILE_SID);
-  }
+  // Attach ISV Primary Profile (guaranteed set by startRegistration guard)
+  entitiesToAttach.push(PRIMARY_PROFILE_SID);
 
   for (const objectSid of entitiesToAttach) {
     await client.trusthub.v1
@@ -485,6 +487,17 @@ export async function registerBrand(contractorId: string): Promise<RegistrationR
 
   if (error || !record) {
     return { success: false, status: "failed", error: "No registration record found" };
+  }
+
+  // Guard: if brand already registered (e.g., cron retry after DB write failure),
+  // skip creation to avoid duplicate TCR registrations ($4+ each).
+  if (record.brand_registration_sid) {
+    console.log(`registerBrand: brand already exists for ${contractorId} (${record.brand_registration_sid}), skipping creation`);
+    return {
+      success: true,
+      status: record.registration_status,
+      brandRegistrationSid: record.brand_registration_sid,
+    };
   }
 
   const isSoleProp = record.registration_path === "sole_proprietor";

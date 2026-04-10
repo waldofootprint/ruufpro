@@ -126,6 +126,7 @@ function formatRelativeTime(dateStr: string): string {
 export default function SmsPage() {
   const { contractorId } = useDashboard();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [smsNumber, setSmsNumber] = useState<SmsNumber | null>(null);
   const [googleReviewUrl, setGoogleReviewUrl] = useState("");
   const [missedCallTextback, setMissedCallTextback] = useState(false);
@@ -155,7 +156,9 @@ export default function SmsPage() {
   useEffect(() => {
     async function load() {
       if (!contractorId) return;
+      setLoadError(null);
 
+      try {
       // Load contractor SMS settings + fields needed for pre-flight check
       const { data: contractor } = await supabase
         .from("contractors")
@@ -215,6 +218,11 @@ export default function SmsPage() {
       }
 
       setLoading(false);
+      } catch (err: any) {
+        console.error("SMS page load error:", err);
+        setLoadError("Failed to load SMS settings. Please try refreshing the page.");
+        setLoading(false);
+      }
     }
     load();
   }, [contractorId]);
@@ -475,6 +483,17 @@ export default function SmsPage() {
 
   if (loading) {
     return <div className="text-slate-400 text-sm py-12 text-center">Loading SMS settings...</div>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-red-400 text-sm mb-3">{loadError}</p>
+        <button onClick={() => { setLoading(true); setLoadError(null); window.location.reload(); }} className="text-sm text-amber-500 hover:text-amber-400 underline">
+          Try again
+        </button>
+      </div>
+    );
   }
 
   const regStatus = smsNumber?.registration_status || "not_started";
