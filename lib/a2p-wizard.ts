@@ -68,17 +68,30 @@ export async function generateComplianceWebsite(
     );
   }
 
-  const browser = await chromium.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  // Browser connection: Browserless.io (cloud) or local Chrome (dev/testing).
+  // Set BROWSERLESS_TOKEN in env to use cloud — works on Vercel serverless.
+  // Without it, launches local Chromium (requires npx playwright install chromium).
+  const browserlessToken = process.env.BROWSERLESS_TOKEN;
+  const browser = browserlessToken
+    ? await chromium.connectOverCDP(
+        `wss://chrome.browserless.io?token=${browserlessToken}`
+      )
+    : await chromium.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+
+  const isCloud = !!browserlessToken;
+  console.log(`A2P Wizard: using ${isCloud ? "Browserless.io (cloud)" : "local Chromium"}`);
 
   try {
-    const context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      viewport: { width: 1280, height: 900 },
-    });
+    const context = isCloud
+      ? browser.contexts()[0] || await browser.newContext()
+      : await browser.newContext({
+          userAgent:
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          viewport: { width: 1280, height: 900 },
+        });
 
     const page = await context.newPage();
 
@@ -305,7 +318,9 @@ export async function generateAndSaveComplianceUrl(
  * Random delay between 1.5-4 seconds — mimics human typing pace.
  */
 async function randomDelay(page: any): Promise<void> {
-  const ms = 1500 + Math.random() * 2500;
+  // Keep delays short to stay within Browserless 60s session limit.
+  // Total form fill ~8 fields × ~1.5s avg = ~12s, well within budget.
+  const ms = 800 + Math.random() * 1400;
   await page.waitForTimeout(ms);
 }
 
