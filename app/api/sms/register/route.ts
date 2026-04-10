@@ -70,6 +70,12 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    if (!contractor.phone) {
+      return NextResponse.json(
+        { error: "Phone number is required for SMS registration. Please add it in your business details." },
+        { status: 400 }
+      );
+    }
     if (!contractor.address || !contractor.zip) {
       return NextResponse.json(
         { error: "Street address and ZIP code are required for SMS registration. Please add them in your business details." },

@@ -3,7 +3,7 @@
 
 import { nanoid } from "nanoid";
 import { createServerSupabase } from "./supabase-server";
-import { sendSMS, getContractorNumber } from "./twilio";
+import { sendSMS, getContractorNumber, isOptedOut } from "./twilio";
 
 // ---------------------------------------------------------------------------
 // sendReviewRequest — asks a customer to leave a Google review after a job
@@ -88,7 +88,7 @@ export async function sendReviewRequest(
     const { data: smsMsg } = await supabase
       .from("sms_messages")
       .select("id")
-      .eq("twilio_message_sid", smsResult.messageSid)
+      .eq("twilio_sid", smsResult.messageSid)
       .single();
     smsMessageId = smsMsg?.id || null;
   }
@@ -224,16 +224,8 @@ export async function sendLeadAutoResponse(
     return { success: false, error: "SMS not provisioned for this contractor" };
   }
 
-  // Check opt-out list
-  const { data: optOut } = await supabase
-    .from("sms_opt_outs")
-    .select("id")
-    .eq("phone", leadPhone)
-    .eq("contractor_id", contractorId)
-    .limit(1)
-    .single();
-
-  if (optOut) {
+  // Check opt-out list (uses correct column + fails closed on DB error)
+  if (await isOptedOut(leadPhone, contractorId)) {
     return { success: false, error: "Phone number has opted out" };
   }
 

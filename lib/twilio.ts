@@ -139,19 +139,26 @@ export async function sendSMS(params: SendSMSParams): Promise<SendSMSResult> {
     }
   }
 
+  // Step 1: Send via Twilio
+  let message: any;
   try {
     const client = await getOrCreateTwilioClient();
 
     // statusCallback tells Twilio to POST delivery updates (sent/delivered/failed)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ruufpro.com";
-    const message = await client.messages.create({
+    message = await client.messages.create({
       to,
       from,
       body,
       statusCallback: `${siteUrl}/api/sms/status-callback`,
     });
+  } catch (err: any) {
+    console.error("Twilio sendSMS error:", err.message || err);
+    return { success: false, error: err.message || "Unknown Twilio error" };
+  }
 
-    // Log the message to our database for tracking
+  // Step 2: Log to database (separate try/catch — SMS was already sent)
+  try {
     await supabase.from("sms_messages").insert({
       twilio_sid: message.sid,
       contractor_id: contractorId || null,
@@ -163,13 +170,13 @@ export async function sendSMS(params: SendSMSParams): Promise<SendSMSResult> {
       status: message.status,
       sent_at: new Date().toISOString(),
     });
-
-    console.log(`SMS sent to ${to} — SID: ${message.sid}`);
-    return { success: true, messageSid: message.sid };
-  } catch (err: any) {
-    console.error("Twilio sendSMS error:", err.message || err);
-    return { success: false, error: err.message || "Unknown Twilio error" };
+  } catch (dbErr: any) {
+    // SMS was sent but DB log failed — this is a data loss event, not a send failure
+    console.error(`CRITICAL: SMS sent (SID: ${message.sid}) but DB log failed:`, dbErr.message || dbErr);
   }
+
+  console.log(`SMS sent to ${to} — SID: ${message.sid}`);
+  return { success: true, messageSid: message.sid };
 }
 
 // ---------------------------------------------------------------------------
