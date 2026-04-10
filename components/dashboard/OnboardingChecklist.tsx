@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useDashboard } from "@/app/dashboard/DashboardContext";
 import { Check, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface Step {
@@ -35,6 +36,7 @@ const STEPS: Step[] = [
 
 export default function OnboardingChecklist() {
   const { onboarding, tier } = useDashboard();
+  const router = useRouter();
   const [expanded, setExpanded] = useState(true);
 
   // Only show for Pro/Growth users who haven't finished setup
@@ -114,10 +116,21 @@ export default function OnboardingChecklist() {
             }
 
             return (
-              <Link
+              <a
                 key={step.number}
                 href={step.href}
-                className={`flex items-center gap-3 px-5 py-3 hover:bg-amber-50 transition group ${!isLast ? "border-b border-amber-100/50" : ""}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  const [path, hash] = step.href.split("#");
+                  router.push(path);
+                  if (hash) {
+                    // Wait for page to render, then scroll to anchor
+                    setTimeout(() => {
+                      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+                    }, 300);
+                  }
+                }}
+                className={`flex items-center gap-3 px-5 py-3 hover:bg-amber-50 transition group cursor-pointer ${!isLast ? "border-b border-amber-100/50" : ""}`}
               >
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                   isNext ? "border-amber-400" : "border-slate-300"
@@ -138,7 +151,7 @@ export default function OnboardingChecklist() {
                   {step.cta}
                   <ChevronRight className="w-3 h-3" />
                 </span>
-              </Link>
+              </a>
             );
           })}
         </div>
