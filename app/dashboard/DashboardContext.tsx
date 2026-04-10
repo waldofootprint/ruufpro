@@ -6,6 +6,18 @@ import { supabase } from "@/lib/supabase";
 import type { ContractorTier } from "@/lib/types";
 import { getTierFromContractor } from "@/lib/types";
 
+export interface OnboardingSteps {
+  hasRates: boolean;
+  hasAddons: boolean;
+  hasZips: boolean;
+  hasWebhook: boolean;
+}
+
+export interface OnboardingState {
+  steps: OnboardingSteps;
+  complete: boolean;
+}
+
 interface DashboardState {
   contractorId: string;
   businessName: string;
@@ -14,6 +26,8 @@ interface DashboardState {
   unreadSmsCount: number;
   refreshLeadCount: () => Promise<void>;
   refreshSmsCount: () => Promise<void>;
+  onboarding: OnboardingState | null;
+  refreshOnboarding: () => Promise<void>;
   loading: boolean;
 }
 
@@ -33,6 +47,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [tier, setTier] = useState<ContractorTier>("free");
   const [newLeadCount, setNewLeadCount] = useState(0);
   const [unreadSmsCount, setUnreadSmsCount] = useState(0);
+  const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 
   // Fetch new lead count
   const refreshLeadCount = async () => {
@@ -55,6 +70,45 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .eq("direction", "inbound")
       .is("read_at", null);
     setUnreadSmsCount(count || 0);
+  };
+
+  // Fetch onboarding completion state
+  const refreshOnboarding = async () => {
+    if (!contractorId) return;
+
+    // Check estimate settings for rates + service zips
+    const { data: settings } = await supabase
+      .from("estimate_settings")
+      .select("asphalt_low, asphalt_high, metal_low, metal_high, tile_low, tile_high, flat_low, flat_high, service_zips")
+      .eq("contractor_id", contractorId)
+      .single();
+
+    const hasRates = !!(settings && (
+      settings.asphalt_low || settings.asphalt_high ||
+      settings.metal_low || settings.metal_high ||
+      settings.tile_low || settings.tile_high ||
+      settings.flat_low || settings.flat_high
+    ));
+    const hasZips = !!(settings?.service_zips && settings.service_zips.length > 0);
+
+    // Check addons
+    const { count: addonCount } = await supabase
+      .from("estimate_addons")
+      .select("*", { count: "exact", head: true })
+      .eq("contractor_id", contractorId);
+    const hasAddons = (addonCount || 0) > 0;
+
+    // Check webhook from contractor record
+    const { data: contractor } = await supabase
+      .from("contractors")
+      .select("webhook_enabled, webhook_url")
+      .eq("id", contractorId)
+      .single();
+    const hasWebhook = !!(contractor?.webhook_enabled && contractor?.webhook_url);
+
+    const steps: OnboardingSteps = { hasRates, hasAddons, hasZips, hasWebhook };
+    const complete = hasRates && hasAddons && hasZips && hasWebhook;
+    setOnboarding({ steps, complete });
   };
 
   // Auth check + contractor fetch (runs once)
@@ -89,17 +143,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     init();
   }, [router]);
 
-  // Fetch counts once we have contractorId
+  // Fetch counts + onboarding once we have contractorId
   useEffect(() => {
     if (contractorId) {
       refreshLeadCount();
       refreshSmsCount();
+      refreshOnboarding();
     }
   }, [contractorId]);
 
   return (
     <DashboardContext.Provider
-      value={{ contractorId, businessName, tier, newLeadCount, unreadSmsCount, refreshLeadCount, refreshSmsCount, loading }}
+      value={{ contractorId, businessName, tier, newLeadCount, unreadSmsCount, refreshLeadCount, refreshSmsCount, onboarding, refreshOnboarding, loading }}
     >
       {children}
     </DashboardContext.Provider>

@@ -33,6 +33,7 @@ export default function AddonsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showStarterHint, setShowStarterHint] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -42,7 +43,22 @@ export default function AddonsPage() {
         .select("*")
         .eq("contractor_id", contractorId)
         .order("sort_order", { ascending: true });
-      setAddons((data as Addon[]) || []);
+      const existing = (data as Addon[]) || [];
+      if (existing.length === 0) {
+        // Auto-add top 3 suggested add-ons for new users
+        const starters = SUGGESTED_ADDONS.slice(0, 3).map((s, i) => ({
+          id: `new-${Date.now()}-${i}`,
+          name: s.name,
+          description: s.description,
+          price: s.price,
+          is_active: true,
+          sort_order: i,
+        }));
+        setAddons(starters);
+        setShowStarterHint(true);
+      } else {
+        setAddons(existing);
+      }
       setLoading(false);
     }
     load();
@@ -115,6 +131,7 @@ export default function AddonsPage() {
         .eq("contractor_id", contractorId)
         .order("sort_order", { ascending: true });
       setAddons((data as Addon[]) || []);
+      setShowStarterHint(false);
       setSuccess("Add-ons saved!");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -151,6 +168,16 @@ export default function AddonsPage() {
           {saving ? "Saving..." : "Save"}
         </button>
       </div>
+
+      {showStarterHint && (
+        <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-3">
+          <span className="text-amber-500 text-lg leading-none mt-0.5">*</span>
+          <div>
+            <p className="text-sm font-semibold text-slate-900">We added 3 popular add-ons to get you started</p>
+            <p className="text-xs text-slate-500 mt-0.5">Adjust prices to match your area, remove any you don&apos;t offer, then hit Save.</p>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">

@@ -57,6 +57,7 @@ export default function EstimateSettingsPage() {
   const [financingTermMonths, setFinancingTermMonths] = useState("120");
   const [financingApr, setFinancingApr] = useState("");
   const [financingNote, setFinancingNote] = useState("");
+  const [isNewSettings, setIsNewSettings] = useState(false);
 
   const [rates, setRates] = useState<Rates>({
     asphalt_low: "", asphalt_high: "",
@@ -123,6 +124,7 @@ export default function EstimateSettingsPage() {
           flat_low: defaults.flat_low.toString(),
           flat_high: defaults.flat_high.toString(),
         });
+        setIsNewSettings(true);
       }
 
       setLoading(false);
@@ -168,6 +170,7 @@ export default function EstimateSettingsPage() {
       setError(saveErr.message);
     } else {
       setSuccess("Settings saved! Your estimate widget is ready.");
+      setIsNewSettings(false);
     }
     setSaving(false);
   }
@@ -196,6 +199,16 @@ export default function EstimateSettingsPage() {
         Set your pricing per square foot for each material. These rates are
         used to calculate instant estimates for homeowners.
       </p>
+
+      {isNewSettings && (
+        <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-3">
+          <span className="text-amber-500 text-lg leading-none mt-0.5">*</span>
+          <div>
+            <p className="text-sm font-semibold text-slate-900">We pre-filled {regionName} averages for you</p>
+            <p className="text-xs text-slate-500 mt-0.5">Adjust to match your pricing, then hit Save to activate your widget.</p>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">

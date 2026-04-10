@@ -341,7 +341,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Integrations — CRM Webhook */}
-      <div className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden">
+      <div id="integrations" className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden scroll-mt-8">
         <div className="px-5 py-3.5 border-b border-slate-50">
           <h2 className="text-[13px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
             <Zap className="w-3.5 h-3.5" />
@@ -381,14 +381,14 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-slate-400 mt-1">Create a Zap with &quot;Webhooks by Zapier&quot; as the trigger, then paste the URL here.</p>
               </div>
               <div className="rounded-lg bg-slate-50 border border-slate-100 px-4 py-3 space-y-1.5">
-                <p className="text-[11px] font-semibold text-slate-600">Quick setup</p>
+                <p className="text-[11px] font-semibold text-slate-600">How it works</p>
                 <ol className="text-[11px] text-slate-500 space-y-1 list-decimal list-inside">
-                  <li>In Zapier, create a new Zap → trigger = <span className="font-mono text-[10px]">Webhooks by Zapier</span> → Catch Hook</li>
-                  <li>Copy the webhook URL and paste it above</li>
-                  <li>Click &quot;Send Test&quot; below to send a sample lead</li>
-                  <li>Back in Zapier, add an action to create a contact in Jobber, Housecall Pro, or your CRM</li>
-                  <li>Map the fields: name, phone, email, address, estimate, and <strong>tags</strong> (so leads show up labeled &quot;RuufPro&quot;)</li>
+                  <li>Go to <strong>zapier.com</strong> → Create a Zap → search for &quot;Webhooks by Zapier&quot; as your trigger</li>
+                  <li>Zapier gives you a URL — paste it above</li>
+                  <li>Hit &quot;Send Test&quot; below so Zapier sees what a lead looks like</li>
+                  <li>Pick your CRM (Jobber, Housecall Pro, etc.) as the action — Zapier walks you through connecting it</li>
                 </ol>
+                <p className="text-[10px] text-slate-400 mt-1">Need help? We&apos;ll set it up for you — just ask in chat.</p>
               </div>
               <WebhookTestButton webhookUrl={profile.webhook_url} contractorId={contractorId || ""} />
             </div>

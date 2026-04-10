@@ -18,6 +18,7 @@ import {
   Puzzle,
   MessageSquare,
 } from "lucide-react";
+import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 import { supabase } from "@/lib/supabase";
 
 // ----- NAV CONFIG -----
@@ -208,6 +209,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
         {/* Page content */}
         <main className="flex-1 p-5 lg:px-8 lg:py-7 pb-24 lg:pb-7 bg-white">
+          <OnboardingChecklist />
           {children}
         </main>
       </div>
