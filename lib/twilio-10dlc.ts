@@ -616,6 +616,13 @@ export async function completeCampaignRegistration(
 export async function activateSMS(contractorId: string): Promise<void> {
   const supabase = createServerSupabase();
 
+  // Get the provisioned phone number so we can sync it to the contractors table
+  const { data: smsNumber } = await supabase
+    .from("sms_numbers")
+    .select("phone_number")
+    .eq("contractor_id", contractorId)
+    .single();
+
   await supabase
     .from("sms_numbers")
     .update({
@@ -626,15 +633,79 @@ export async function activateSMS(contractorId: string): Promise<void> {
     })
     .eq("contractor_id", contractorId);
 
+  // Sync twilio_number + sms_enabled to contractors table.
+  // Without twilio_number, inbound SMS webhooks can't match this contractor,
+  // which means STOP keywords silently fail (TCPA compliance risk).
   await supabase
     .from("contractors")
     .update({
       sms_enabled: true,
+      twilio_number: smsNumber?.phone_number || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", contractorId);
 
-  console.log(`SMS activated for contractor ${contractorId}`);
+  // Send activation email to the contractor so they know SMS is live
+  try {
+    const { data: contractor } = await supabase
+      .from("contractors")
+      .select("email, business_name")
+      .eq("id", contractorId)
+      .single();
+
+    if (contractor?.email) {
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const phoneDisplay = smsNumber?.phone_number
+        ? smsNumber.phone_number.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3")
+        : "your new number";
+
+      await resend.emails.send({
+        from: "RuufPro <noreply@ruufpro.com>",
+        to: contractor.email,
+        subject: `🎉 Your business number is live — ${phoneDisplay}`,
+        html: `
+          <div style="font-family:-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;">
+            <h2 style="margin:0 0 12px;">Your SMS is live!</h2>
+            <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 20px;">
+              Great news — your dedicated business number <strong>${phoneDisplay}</strong> has been approved and activated for ${contractor.business_name}.
+            </p>
+            <p style="font-size:15px;line-height:1.6;margin:0 0 8px;font-weight:600;">Here's what's now active:</p>
+            <ul style="color:#6b7280;font-size:14px;line-height:1.8;padding-left:20px;margin:0 0 20px;">
+              <li><strong>Lead auto-response</strong> — instant text when a homeowner submits a form</li>
+              <li><strong>Missed-call text-back</strong> — automatic text when you miss a call</li>
+              <li><strong>Review requests</strong> — one-tap SMS asking customers for Google reviews</li>
+            </ul>
+            <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 20px;">
+              No setup needed — everything runs automatically. You can manage settings in your dashboard.
+            </p>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/sms"
+               style="display:inline-block;background:#1D1D1F;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">
+              View SMS Dashboard →
+            </a>
+            <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:24px;">RuufPro · Your leads, faster.</p>
+          </div>
+        `,
+      });
+    }
+  } catch (emailErr) {
+    // Don't let email failure block activation — SMS is already live
+    console.error("Activation email failed (non-blocking):", emailErr);
+  }
+
+  // Alert Hannah in Slack + email that a contractor just went live
+  try {
+    const { sendAlert } = await import("@/lib/alerts");
+    await sendAlert({
+      title: "SMS activated",
+      message: `Contractor ${contractorId} is now live with number ${smsNumber?.phone_number || "unknown"}`,
+      severity: "info",
+    });
+  } catch {
+    // Non-blocking
+  }
+
+  console.log(`SMS activated for contractor ${contractorId} — number: ${smsNumber?.phone_number || "unknown"}`);
 }
 
 // ---------------------------------------------------------------------------

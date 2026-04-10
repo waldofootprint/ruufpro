@@ -37,22 +37,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // Look up which contractor owns this Twilio number
+    const { data: contractor } = await supabase
+      .from("contractors")
+      .select("id, business_name, phone")
+      .eq("twilio_number", to)
+      .single();
+
     // Only fire textback for unanswered calls
     const missedStatuses = ["no-answer", "busy", "failed"];
-    if (callStatus && missedStatuses.includes(callStatus)) {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
+    if (callStatus && missedStatuses.includes(callStatus) && contractor) {
 
-      // Look up which contractor owns this Twilio number
-      const { data: contractor } = await supabase
-        .from("contractors")
-        .select("id, business_name")
-        .eq("twilio_number", to)
-        .single();
-
-      if (contractor) {
         // Emit event to Inngest — handles textback with dedup + retry
         await inngest.send({
           name: "sms/call.missed",
@@ -74,17 +74,23 @@ export async function POST(request: NextRequest) {
           twilio_sid: callSid || null,
           status: "received",
         });
-      }
     }
 
-    // Return TwiML: ring contractor's phone for 20 seconds, then hang up.
-    // The actual forwarding number is configured on the Twilio number itself.
-    // This response handles the initial call flow if used as the primary webhook.
-    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+    // Return TwiML: forward call to contractor's personal phone for 20 seconds.
+    // If no answer, Twilio posts back with CallStatus='no-answer' and we send a textback.
+    // If we can't find the contractor or they have no phone, just say sorry and hang up.
+    const forwardNumber = contractor?.phone || null;
+    const twiml = forwardNumber
+      ? `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial timeout="20">
-    <!-- Twilio forwards to contractor's personal phone (configured per number) -->
+  <Dial timeout="20" action="${process.env.NEXT_PUBLIC_SITE_URL || ""}/api/sms/voice-webhook">
+    <Number>${forwardNumber}</Number>
   </Dial>
+  <Say>Sorry, no one is available right now. We'll text you back shortly. Goodbye.</Say>
+  <Hangup/>
+</Response>`
+      : `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
   <Say>Sorry, no one is available right now. We'll text you back shortly. Goodbye.</Say>
   <Hangup/>
 </Response>`;
