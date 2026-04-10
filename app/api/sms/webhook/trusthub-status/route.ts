@@ -77,11 +77,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── APPROVAL: Brand → start campaign registration ───────────────
-    if (
-      (normalStatus === "approved" && resourceSid === record.brand_registration_sid) ||
-      // Twilio sometimes sends uppercase
-      (status === "APPROVED" && resourceSid === record.brand_registration_sid)
-    ) {
+    if (normalStatus === "approved" && resourceSid === record.brand_registration_sid) {
       console.log(`Brand approved for ${cid}`);
 
       if (record.compliance_website_url) {
@@ -101,10 +97,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── APPROVAL: Campaign verified → activate SMS ──────────────────
-    if (
-      (normalStatus === "verified" || status === "VERIFIED") &&
-      record.registration_status === "campaign_pending"
-    ) {
+    if (normalStatus === "verified" && record.registration_status === "campaign_pending") {
       console.log(`Campaign approved for ${cid} — activating SMS!`);
 
       const { activateSMS } = await import("@/lib/twilio-10dlc");
@@ -146,9 +139,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    console.error("Trust Hub webhook error:", err.message);
-    // Return 200 so Twilio doesn't keep retrying on our errors
-    return NextResponse.json({ ok: true });
+    console.error("Trust Hub webhook error:", err.message || err);
+    // Return 500 so Twilio retries — we want to re-process on transient failures.
+    // Twilio retries up to 3 times with backoff, which is what we want.
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
 

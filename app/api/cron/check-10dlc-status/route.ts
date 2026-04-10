@@ -5,11 +5,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  // Verify this is coming from Vercel Cron (not a random request)
+  // Verify this is coming from Vercel Cron (not a random request).
+  // If CRON_SECRET is not set, reject ALL requests — fail closed.
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

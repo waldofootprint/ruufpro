@@ -144,6 +144,8 @@ export default function SmsPage() {
   const [complianceUrl, setComplianceUrl] = useState("");
   const [savingCompliance, setSavingCompliance] = useState(false);
   const [complianceSaved, setComplianceSaved] = useState(false);
+  // Pre-flight: missing fields that block registration
+  const [missingFields, setMissingFields] = useState<string[]>([]);
   // Conversation UI state
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -154,10 +156,10 @@ export default function SmsPage() {
     async function load() {
       if (!contractorId) return;
 
-      // Load contractor SMS settings
+      // Load contractor SMS settings + fields needed for pre-flight check
       const { data: contractor } = await supabase
         .from("contractors")
-        .select("google_review_url, missed_call_textback_enabled, review_request_enabled")
+        .select("google_review_url, missed_call_textback_enabled, review_request_enabled, legal_entity_type, ein, address, zip, owner_first_name, owner_last_name, phone")
         .eq("id", contractorId)
         .single();
 
@@ -165,6 +167,16 @@ export default function SmsPage() {
         setGoogleReviewUrl(contractor.google_review_url || "");
         setMissedCallTextback(contractor.missed_call_textback_enabled || false);
         setReviewRequestEnabled(contractor.review_request_enabled || false);
+
+        // Pre-flight: check which fields are missing for SMS registration
+        const missing: string[] = [];
+        if (!contractor.legal_entity_type) missing.push("Business type (LLC, Corporation, or Sole Proprietor)");
+        if (contractor.legal_entity_type && contractor.legal_entity_type !== "sole_proprietor" && !contractor.ein) missing.push("EIN");
+        if (!contractor.address) missing.push("Street address");
+        if (!contractor.zip) missing.push("ZIP code");
+        if (!contractor.owner_first_name || !contractor.owner_last_name) missing.push("Owner name");
+        if (!contractor.phone) missing.push("Business phone number");
+        setMissingFields(missing);
       }
 
       // Load SMS number registration status
@@ -206,6 +218,33 @@ export default function SmsPage() {
     }
     load();
   }, [contractorId]);
+
+  // Auto-poll registration status every 30s while in a pending state.
+  // Contractor doesn't have to manually click "Refresh" — it just updates.
+  useEffect(() => {
+    if (!contractorId || !smsNumber) return;
+    const pendingStatuses = ["profile_pending", "profile_approved", "brand_pending", "brand_otp_required", "campaign_pending"];
+    if (!pendingStatuses.includes(smsNumber.registration_status)) return;
+
+    const interval = setInterval(async () => {
+      const { data: number } = await supabase
+        .from("sms_numbers")
+        .select("*")
+        .eq("contractor_id", contractorId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (number) {
+        const updated = number as SmsNumber;
+        // Only update if status actually changed (prevents unnecessary re-renders)
+        if (updated.registration_status !== smsNumber.registration_status) {
+          setSmsNumber(updated);
+        }
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [contractorId, smsNumber?.registration_status]);
 
   async function handleStartRegistration() {
     setRegistering(true);
@@ -285,12 +324,30 @@ export default function SmsPage() {
       .update({ compliance_website_url: complianceUrl || null })
       .eq("contractor_id", contractorId);
 
-    setSavingCompliance(false);
-    if (!error) {
-      setComplianceSaved(true);
-      setSmsNumber({ ...smsNumber, compliance_website_url: complianceUrl || null });
-      setTimeout(() => setComplianceSaved(false), 3000);
+    if (error) {
+      setSavingCompliance(false);
+      return;
     }
+
+    setComplianceSaved(true);
+    setSmsNumber({ ...smsNumber, compliance_website_url: complianceUrl || null });
+
+    // Auto-trigger campaign registration immediately instead of waiting for daily cron.
+    // Only if brand is approved and we just saved a valid URL.
+    if (smsNumber.registration_status === "brand_approved" && complianceUrl) {
+      try {
+        const res = await fetch("/api/sms/submit-campaign", { method: "POST" });
+        if (res.ok) {
+          // Refresh status to show campaign_pending
+          await refreshStatus();
+        }
+      } catch {
+        // Non-blocking — daily cron will pick it up as fallback
+      }
+    }
+
+    setSavingCompliance(false);
+    setTimeout(() => setComplianceSaved(false), 3000);
   }
 
   async function refreshStatus() {
@@ -532,10 +589,18 @@ export default function SmsPage() {
               <div className="flex items-start gap-3">
                 <Smartphone className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-[13px] font-bold text-amber-800">Check Your Phone</p>
-                  <p className="text-[12px] text-amber-600 mt-1">
-                    A 6-digit verification code was sent to your mobile number.
-                    Enter the code in the text message to verify your business. The code expires in 24 hours.
+                  <p className="text-[13px] font-bold text-amber-800">Verify Your Phone Number</p>
+                  <p className="text-[12px] text-amber-600 mt-1 leading-relaxed">
+                    We sent a <strong>6-digit code</strong> to your mobile number via text message.
+                  </p>
+                  <ol className="text-[12px] text-amber-700 mt-2 space-y-1 list-decimal list-inside">
+                    <li>Open your <strong>SMS/text messages</strong> app on your phone</li>
+                    <li>Find the text from Twilio with your 6-digit code</li>
+                    <li><strong>Reply to that text</strong> with just the code (e.g. &quot;123456&quot;)</li>
+                  </ol>
+                  <p className="text-[11px] text-amber-500 mt-2">
+                    This page updates automatically — once verified, you&apos;ll see the next step appear.
+                    Code expires in 24 hours.
                   </p>
                   <div className="flex items-center gap-2 mt-3">
                     <button
@@ -551,16 +616,7 @@ export default function SmsPage() {
                         <><RefreshCw className="w-3 h-3" /> Resend Code</>
                       )}
                     </button>
-                    <button
-                      onClick={refreshStatus}
-                      className="px-3 py-1.5 rounded-lg border border-amber-300 text-[12px] font-semibold text-amber-700 hover:bg-amber-100 transition-all flex items-center gap-1.5"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Check Status
-                    </button>
                   </div>
-                  <p className="text-[10px] text-amber-500 mt-2">
-                    Reply to the text message with the code. Then tap &quot;Check Status&quot; above.
-                  </p>
                 </div>
               </div>
             </div>
@@ -665,28 +721,51 @@ export default function SmsPage() {
                   Required by carriers to verify your identity. Sent securely to the carrier registry — never stored by RuufPro.
                 </p>
               </div>
-              <p className="text-[10px] text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
-                Your business details (name, address, EIN) from your profile will be used for carrier verification.
-                Make sure they&apos;re up to date in your business settings.
-              </p>
-              <button
-                onClick={handleStartRegistration}
-                disabled={registering}
-                className="w-full px-5 py-3.5 rounded-xl bg-slate-800 text-[13px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-              >
-                {registering ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Setting Up...</>
-                ) : (
-                  <><Shield className="w-4 h-4" /> Set Up Business Number</>
-                )}
-              </button>
-              {registerError && (
-                <p className="text-[12px] text-red-500 mt-2 text-center">{registerError}</p>
+              {/* Pre-flight: show missing fields before they hit the button */}
+              {missingFields.length > 0 ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-[13px] font-bold text-amber-800 mb-2">Complete your business details first</p>
+                  <p className="text-[12px] text-amber-600 mb-2">These fields are required for carrier registration:</p>
+                  <ul className="text-[12px] text-amber-700 space-y-1">
+                    {missingFields.map((field) => (
+                      <li key={field} className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                        {field}
+                      </li>
+                    ))}
+                  </ul>
+                  <a
+                    href="/onboarding"
+                    className="inline-block mt-3 px-4 py-2 rounded-lg bg-amber-600 text-[12px] font-semibold text-white hover:bg-amber-700 transition-all"
+                  >
+                    Go to Business Details →
+                  </a>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[10px] text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
+                    Your business details (name, address, EIN) from your profile will be used for carrier verification.
+                  </p>
+                  <button
+                    onClick={handleStartRegistration}
+                    disabled={registering}
+                    className="w-full px-5 py-3.5 rounded-xl bg-slate-800 text-[13px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    {registering ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Setting Up...</>
+                    ) : (
+                      <><Shield className="w-4 h-4" /> Set Up Business Number</>
+                    )}
+                  </button>
+                  {registerError && (
+                    <p className="text-[12px] text-red-500 mt-2 text-center">{registerError}</p>
+                  )}
+                  <p className="text-[11px] text-slate-400 text-center">
+                    We&apos;ll register a local phone number matching your area code.
+                    Carrier review typically takes 2-5 business days.
+                  </p>
+                </>
               )}
-              <p className="text-[11px] text-slate-400 text-center">
-                We&apos;ll register a local phone number matching your area code.
-                Carrier review typically takes 2-5 business days.
-              </p>
             </div>
           )}
         </div>

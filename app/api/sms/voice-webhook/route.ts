@@ -42,12 +42,37 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Look up which contractor owns this Twilio number
-    const { data: contractor } = await supabase
+    // Look up which contractor owns this Twilio number.
+    // Primary: check contractors.twilio_number (synced at activation).
+    // Fallback: check sms_numbers.phone_number (in case twilio_number sync hasn't fired yet).
+    let contractor: { id: string; business_name: string; phone: string } | null = null;
+
+    const { data: directMatch } = await supabase
       .from("contractors")
       .select("id, business_name, phone")
       .eq("twilio_number", to)
       .single();
+
+    if (directMatch) {
+      contractor = directMatch;
+    } else {
+      // Fallback: lookup via sms_numbers table
+      const { data: smsMatch } = await supabase
+        .from("sms_numbers")
+        .select("contractor_id")
+        .eq("phone_number", to)
+        .eq("status", "active")
+        .single();
+
+      if (smsMatch) {
+        const { data: fallbackContractor } = await supabase
+          .from("contractors")
+          .select("id, business_name, phone")
+          .eq("id", smsMatch.contractor_id)
+          .single();
+        contractor = fallbackContractor;
+      }
+    }
 
     // Only fire textback for unanswered calls
     const missedStatuses = ["no-answer", "busy", "failed"];
