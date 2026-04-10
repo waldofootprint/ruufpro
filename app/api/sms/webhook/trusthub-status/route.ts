@@ -86,13 +86,25 @@ export async function POST(req: NextRequest) {
         await completeCampaignRegistration(cid);
         await notifyOps(supabase, cid, "info", "Brand approved. Campaign registration submitted automatically.");
       } else {
-        // No compliance URL — park at brand_approved, alert Hannah
+        // No compliance URL — park at brand_approved, trigger A2P Wizard automation
         await supabase
           .from("sms_numbers")
           .update({ registration_status: "brand_approved", updated_at: new Date().toISOString() })
           .eq("contractor_id", cid);
 
-        await notifyOps(supabase, cid, "warning", "Brand approved but no compliance URL. Add A2P Wizard URL to continue.");
+        // Fire Inngest event to auto-generate compliance website
+        try {
+          const { inngest } = await import("@/lib/inngest/client");
+          await inngest.send({
+            name: "sms/brand.approved",
+            data: { contractorId: cid },
+          });
+          await notifyOps(supabase, cid, "info", "Brand approved. A2P Wizard automation triggered — compliance website generating.");
+        } catch (inngestErr: any) {
+          console.error("Failed to trigger A2P Wizard automation:", inngestErr.message);
+          // Fallback: alert Hannah to do it manually
+          await notifyOps(supabase, cid, "warning", "Brand approved but A2P Wizard automation failed. Generate compliance URL manually.");
+        }
       }
     }
 

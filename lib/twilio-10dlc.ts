@@ -861,27 +861,34 @@ export async function checkAllPendingRegistrations(): Promise<void> {
         const brandStatus = (brand.status || "").toUpperCase();
         if (brandStatus === "APPROVED") {
           if (!record.compliance_website_url) {
-            // Only notify if we haven't notified in the last 3 days (prevent spam)
-            const lastNotified = record.a2p_wizard_notified_at
-              ? new Date(record.a2p_wizard_notified_at)
-              : null;
-            const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+            await supabase
+              .from("sms_numbers")
+              .update({
+                registration_status: "brand_approved",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("contractor_id", record.contractor_id);
 
-            if (!lastNotified || lastNotified < threeDaysAgo) {
-              await notifyA2PWizardNeeded(record.contractor_id, supabase);
-              await supabase
-                .from("sms_numbers")
-                .update({
-                  registration_status: "brand_approved",
-                  a2p_wizard_notified_at: new Date().toISOString(),
-                })
-                .eq("contractor_id", record.contractor_id);
-            } else {
-              // Just update status without re-notifying
-              await supabase
-                .from("sms_numbers")
-                .update({ registration_status: "brand_approved" })
-                .eq("contractor_id", record.contractor_id);
+            // Trigger A2P Wizard automation via Inngest
+            try {
+              const { inngest } = await import("@/lib/inngest/client");
+              await inngest.send({
+                name: "sms/brand.approved",
+                data: { contractorId: record.contractor_id },
+              });
+            } catch {
+              // Fallback: notify Hannah to do it manually (throttled to every 3 days)
+              const lastNotified = record.a2p_wizard_notified_at
+                ? new Date(record.a2p_wizard_notified_at)
+                : null;
+              const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+              if (!lastNotified || lastNotified < threeDaysAgo) {
+                await notifyA2PWizardNeeded(record.contractor_id, supabase);
+                await supabase
+                  .from("sms_numbers")
+                  .update({ a2p_wizard_notified_at: new Date().toISOString() })
+                  .eq("contractor_id", record.contractor_id);
+              }
             }
           } else {
             await completeCampaignRegistration(record.contractor_id);

@@ -711,6 +711,43 @@ async function pushToJobber(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Chain 10: A2P Wizard Compliance Website Generation
+// Trigger: "sms/brand.approved" — emitted when brand is approved but no compliance URL
+// Steps: generate compliance website via Playwright → save URL → campaign auto-fires
+// NOTE: This function requires a browser runtime (not Vercel serverless).
+//       Run via Inngest self-hosted runner or Browserless.io.
+// ---------------------------------------------------------------------------
+export const a2pWizardCompliance = inngest.createFunction(
+  {
+    id: "a2p-wizard-compliance",
+    retries: 2,
+    triggers: [{ event: "sms/brand.approved" }],
+  },
+  async ({ event, step }) => {
+    const { contractorId } = event.data;
+
+    const result = await step.run("generate-compliance-website", async () => {
+      const { generateAndSaveComplianceUrl } = await import("@/lib/a2p-wizard");
+      return generateAndSaveComplianceUrl(contractorId);
+    });
+
+    if (!result.success) {
+      throw new Error(`A2P Wizard failed: ${result.error}`);
+    }
+
+    // Compliance URL is saved — now trigger campaign registration
+    if (result.complianceUrl && !result.error?.includes("already exists")) {
+      await step.run("submit-campaign-registration", async () => {
+        const { completeCampaignRegistration } = await import("@/lib/twilio-10dlc");
+        return completeCampaignRegistration(contractorId);
+      });
+    }
+
+    return result;
+  }
+);
+
 // --- Housecall Pro: Create customer + job via REST ---
 async function pushToHousecallPro(
   accessToken: string,
