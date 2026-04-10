@@ -8,6 +8,8 @@ import {
   reviewEmailFollowup,
   leadPushNotification,
   crmWebhookExport,
+  crmDirectPush,
+  crmTokenRefresh,
   inboundSmsNotification,
 } from "@/lib/inngest/functions";
 
@@ -21,6 +23,8 @@ export const { GET, POST, PUT } = serve({
     reviewEmailFollowup,
     leadPushNotification,
     crmWebhookExport,
+    crmDirectPush,
+    crmTokenRefresh,
     inboundSmsNotification,
   ],
 });

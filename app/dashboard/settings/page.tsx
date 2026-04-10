@@ -3,9 +3,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useDashboard } from "../DashboardContext";
-import { Check, Eye, EyeOff, Zap, Send } from "lucide-react";
+import { Check, Eye, EyeOff, Zap, Send, Link2, Unlink, ChevronDown, ChevronUp } from "lucide-react";
 
 interface ProfileData {
   business_name: string;
@@ -52,6 +53,9 @@ const TRUST_SIGNALS = [
 
 export default function SettingsPage() {
   const { contractorId } = useDashboard();
+  const searchParams = useSearchParams();
+  const crmConnected = searchParams.get("crm_connected");
+  const crmError = searchParams.get("crm_error");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -180,6 +184,21 @@ export default function SettingsPage() {
   return (
     <div className="max-w-[640px] mx-auto space-y-5">
       <h1 className="text-[20px] font-extrabold text-slate-800 tracking-tight">Settings</h1>
+
+      {/* CRM connection feedback */}
+      {crmConnected && (
+        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2.5 text-[13px] text-green-700 font-medium flex items-center gap-2">
+          <Check className="w-4 h-4" />
+          {crmConnected === "jobber" ? "Jobber" : "Housecall Pro"} connected! New leads will automatically appear in your CRM.
+        </div>
+      )}
+      {crmError && (
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-[13px] text-red-600 font-medium">
+          {crmError === "denied" ? "Connection cancelled. You can try again anytime." :
+           crmError === "token_failed" ? "Connection failed — please try again." :
+           "Something went wrong. Please try connecting again."}
+        </div>
+      )}
 
       {/* Business Info */}
       <div className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden">
@@ -340,59 +359,24 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Integrations — CRM Webhook */}
+      {/* Integrations — CRM Connect */}
       <div id="integrations" className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden scroll-mt-8">
         <div className="px-5 py-3.5 border-b border-slate-50">
           <h2 className="text-[13px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
             <Zap className="w-3.5 h-3.5" />
             Integrations
           </h2>
-          <p className="text-[11px] text-slate-400 mt-0.5">Automatically push new leads to your CRM via Zapier.</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Connect your CRM so new leads appear automatically — no Zapier needed.</p>
         </div>
         <div className="p-5 space-y-4">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <button
-              type="button"
-              onClick={() => updateField("webhook_enabled", !profile.webhook_enabled)}
-              className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center transition-all border ${
-                profile.webhook_enabled
-                  ? "bg-slate-800 border-slate-800"
-                  : "bg-white border-[#e2e8f0]"
-              }`}
-            >
-              {profile.webhook_enabled && <Check className="w-3 h-3 text-white" />}
-            </button>
-            <div>
-              <div className="text-[13px] font-semibold text-slate-800">Send new leads to my CRM</div>
-              <div className="text-[11px] text-slate-400">Every new lead is automatically sent to Zapier, which routes it to Jobber, Housecall Pro, or any CRM you use</div>
-            </div>
-          </label>
+          <CrmConnections contractorId={contractorId || ""} />
 
-          {profile.webhook_enabled && (
-            <div className="space-y-3">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Webhook URL</label>
-                <input
-                  className="w-full px-3 py-2.5 rounded-lg border border-[#e2e8f0] text-[14px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 font-mono text-[13px]"
-                  value={profile.webhook_url}
-                  onChange={(e) => updateField("webhook_url", e.target.value)}
-                  placeholder="https://hooks.zapier.com/hooks/catch/..."
-                />
-                <p className="text-[10px] text-slate-400 mt-1">Create a Zap with &quot;Webhooks by Zapier&quot; as the trigger, then paste the URL here.</p>
-              </div>
-              <div className="rounded-lg bg-slate-50 border border-slate-100 px-4 py-3 space-y-1.5">
-                <p className="text-[11px] font-semibold text-slate-600">How it works</p>
-                <ol className="text-[11px] text-slate-500 space-y-1 list-decimal list-inside">
-                  <li>Go to <strong>zapier.com</strong> → Create a Zap → search for &quot;Webhooks by Zapier&quot; as your trigger</li>
-                  <li>Zapier gives you a URL — paste it above</li>
-                  <li>Hit &quot;Send Test&quot; below so Zapier sees what a lead looks like</li>
-                  <li>Pick your CRM (Jobber, Housecall Pro, etc.) as the action — Zapier walks you through connecting it</li>
-                </ol>
-                <p className="text-[10px] text-slate-400 mt-1">Need help? We&apos;ll set it up for you — just ask in chat.</p>
-              </div>
-              <WebhookTestButton webhookUrl={profile.webhook_url} contractorId={contractorId || ""} />
-            </div>
-          )}
+          {/* Webhook fallback — collapsible */}
+          <WebhookFallback
+            profile={profile}
+            updateField={updateField}
+            contractorId={contractorId || ""}
+          />
         </div>
       </div>
 
@@ -452,6 +436,236 @@ export default function SettingsPage() {
           {saving ? "Saving..." : saved ? <><Check className="w-4 h-4" /> Saved</> : "Save Changes"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ---- CRM Connections ----
+
+const CRM_PROVIDERS = [
+  {
+    id: "jobber" as const,
+    name: "Jobber",
+    color: "bg-[#7AC142]",
+    authUrl: "https://api.getjobber.com/api/oauth/authorize",
+  },
+  {
+    id: "housecall_pro" as const,
+    name: "Housecall Pro",
+    color: "bg-[#026CDF]",
+    authUrl: "https://api.housecallpro.com/oauth/authorize",
+  },
+];
+
+interface CrmConnection {
+  id: string;
+  provider: string;
+  status: string;
+  connected_at: string;
+}
+
+function CrmConnections({ contractorId }: { contractorId: string }) {
+  const [connections, setConnections] = useState<CrmConnection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<Record<string, "success" | "error">>({});
+
+  useEffect(() => {
+    async function loadConnections() {
+      if (!contractorId) return;
+      const { data } = await supabase
+        .from("crm_connections")
+        .select("id, provider, status, connected_at")
+        .eq("contractor_id", contractorId)
+        .eq("status", "active");
+      setConnections(data || []);
+      setLoading(false);
+    }
+    loadConnections();
+  }, [contractorId]);
+
+  function handleConnect(provider: typeof CRM_PROVIDERS[number]) {
+    const clientId = provider.id === "jobber"
+      ? process.env.NEXT_PUBLIC_JOBBER_CLIENT_ID
+      : process.env.NEXT_PUBLIC_HCP_CLIENT_ID;
+
+    const redirectUri = `${window.location.origin}/api/integrations/callback`;
+    const state = `${contractorId}:${provider.id}`;
+
+    const url = `${provider.authUrl}?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${encodeURIComponent(state)}`;
+    window.location.href = url;
+  }
+
+  async function handleDisconnect(connectionId: string) {
+    setDisconnecting(connectionId);
+    await supabase
+      .from("crm_connections")
+      .update({ status: "disconnected", disconnected_at: new Date().toISOString() })
+      .eq("id", connectionId);
+    setConnections((prev) => prev.filter((c) => c.id !== connectionId));
+    setDisconnecting(null);
+  }
+
+  async function handleTestLead(providerId: string) {
+    setTesting(providerId);
+    setTestResult((prev) => ({ ...prev, [providerId]: undefined as unknown as "success" | "error" }));
+    try {
+      const resp = await fetch("/api/integrations/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contractorId, provider: providerId }),
+      });
+      setTestResult((prev) => ({ ...prev, [providerId]: resp.ok ? "success" : "error" }));
+    } catch {
+      setTestResult((prev) => ({ ...prev, [providerId]: "error" }));
+    }
+    setTesting(null);
+    setTimeout(() => setTestResult((prev) => ({ ...prev, [providerId]: undefined as unknown as "success" | "error" })), 4000);
+  }
+
+  if (loading) {
+    return <div className="text-[12px] text-slate-400">Loading connections...</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {CRM_PROVIDERS.map((provider) => {
+        const connection = connections.find((c) => c.provider === provider.id);
+
+        if (connection) {
+          // Connected state
+          const connectedDate = new Date(connection.connected_at).toLocaleDateString("en-US", {
+            month: "short", day: "numeric", year: "numeric",
+          });
+          return (
+            <div key={provider.id} className="rounded-lg border border-green-200 bg-green-50 overflow-hidden">
+              <div className="flex items-center justify-between p-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg ${provider.color} flex items-center justify-center`}>
+                    <Link2 className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-semibold text-slate-800 flex items-center gap-2">
+                      {provider.name}
+                      <span className="text-[10px] font-medium text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">Connected</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400">Since {connectedDate}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleTestLead(provider.id)}
+                    disabled={testing === provider.id}
+                    className="text-[11px] font-medium text-slate-500 hover:text-slate-700 transition-colors flex items-center gap-1 px-2 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50"
+                  >
+                    <Send className="w-3 h-3" />
+                    {testing === provider.id ? "Sending..." : "Test"}
+                  </button>
+                  <button
+                    onClick={() => handleDisconnect(connection.id)}
+                    disabled={disconnecting === connection.id}
+                    className="text-[11px] font-medium text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1"
+                  >
+                    <Unlink className="w-3 h-3" />
+                    {disconnecting === connection.id ? "..." : "Disconnect"}
+                  </button>
+                </div>
+              </div>
+              {testResult[provider.id] === "success" && (
+                <div className="px-3 pb-2 text-[11px] text-green-600 font-medium flex items-center gap-1">
+                  <Check className="w-3 h-3" /> Test lead sent to {provider.name}
+                </div>
+              )}
+              {testResult[provider.id] === "error" && (
+                <div className="px-3 pb-2 text-[11px] text-red-500 font-medium">
+                  Failed to send test — try reconnecting
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // Not connected — show connect button
+        return (
+          <button
+            key={provider.id}
+            onClick={() => handleConnect(provider)}
+            className="w-full flex items-center gap-3 p-3 rounded-lg border border-[#e2e8f0] hover:border-slate-300 hover:bg-slate-50 transition-all text-left"
+          >
+            <div className={`w-8 h-8 rounded-lg ${provider.color} flex items-center justify-center`}>
+              <Link2 className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="text-[13px] font-semibold text-slate-800">Connect {provider.name}</div>
+              <div className="text-[11px] text-slate-400">New leads auto-appear in {provider.name} — zero setup</div>
+            </div>
+            <span className="text-[11px] font-medium text-slate-400">→</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---- Webhook Fallback (collapsible) ----
+
+function WebhookFallback({
+  profile,
+  updateField,
+  contractorId,
+}: {
+  profile: ProfileData;
+  updateField: (key: keyof ProfileData, value: string | boolean | number | null) => void;
+  contractorId: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-t border-slate-100 pt-3">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors"
+      >
+        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        Use a different CRM? Connect via webhook
+      </button>
+      {expanded && (
+        <div className="mt-3 space-y-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <button
+              type="button"
+              onClick={() => updateField("webhook_enabled", !profile.webhook_enabled)}
+              className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center transition-all border ${
+                profile.webhook_enabled
+                  ? "bg-slate-800 border-slate-800"
+                  : "bg-white border-[#e2e8f0]"
+              }`}
+            >
+              {profile.webhook_enabled && <Check className="w-3 h-3 text-white" />}
+            </button>
+            <div>
+              <div className="text-[13px] font-semibold text-slate-800">Send leads via webhook</div>
+              <div className="text-[11px] text-slate-400">Works with Zapier, Make, or any webhook URL</div>
+            </div>
+          </label>
+
+          {profile.webhook_enabled && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Webhook URL</label>
+                <input
+                  className="w-full px-3 py-2.5 rounded-lg border border-[#e2e8f0] text-[14px] text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 font-mono text-[13px]"
+                  value={profile.webhook_url}
+                  onChange={(e) => updateField("webhook_url", e.target.value)}
+                  placeholder="https://hooks.zapier.com/hooks/catch/..."
+                />
+              </div>
+              <WebhookTestButton webhookUrl={profile.webhook_url} contractorId={contractorId} />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
