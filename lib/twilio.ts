@@ -216,65 +216,6 @@ export async function getContractorNumber(contractorId: string): Promise<string 
 }
 
 // ---------------------------------------------------------------------------
-// provisionNumber — buy a local number for a contractor
-// ---------------------------------------------------------------------------
-
-/**
- * Search Twilio for an available local number in the given area code,
- * buy it, and save it to sms_numbers with status 'pending_registration'.
- */
-export async function provisionNumber(
-  contractorId: string,
-  areaCode: string
-): Promise<{ success: boolean; phoneNumber?: string; error?: string }> {
-  try {
-    const client = await getOrCreateTwilioClient();
-    const supabase = createServerSupabase();
-
-    // Search for available local numbers in the requested area code
-    const available = await client.availablePhoneNumbers("US").local.list({
-      areaCode,
-      smsEnabled: true,
-      limit: 1,
-    });
-
-    if (!available || available.length === 0) {
-      return { success: false, error: `No numbers available in area code ${areaCode}` };
-    }
-
-    const numberToBuy = available[0].phoneNumber;
-
-    // Purchase the number
-    const purchased = await client.incomingPhoneNumbers.create({
-      phoneNumber: numberToBuy,
-      smsMethod: "POST",
-      // The webhook URL will be configured once we build the inbound SMS handler
-      // smsUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/sms/inbound`,
-    });
-
-    // Save to our database
-    const { error: dbError } = await supabase.from("sms_numbers").insert({
-      contractor_id: contractorId,
-      phone_number: purchased.phoneNumber,
-      twilio_sid: purchased.sid,
-      status: "pending_registration",
-      provisioned_at: new Date().toISOString(),
-    });
-
-    if (dbError) {
-      console.error("Failed to save provisioned number to DB:", dbError);
-      // The number is bought but DB insert failed — log it so we can fix manually
-    }
-
-    console.log(`Provisioned ${purchased.phoneNumber} for contractor ${contractorId}`);
-    return { success: true, phoneNumber: purchased.phoneNumber };
-  } catch (err: any) {
-    console.error("provisionNumber error:", err.message || err);
-    return { success: false, error: err.message || "Failed to provision number" };
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Opt-out management — TCPA compliance
 // ---------------------------------------------------------------------------
 

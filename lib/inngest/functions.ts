@@ -718,6 +718,89 @@ async function pushToJobber(
 // NOTE: This function requires a browser runtime (not Vercel serverless).
 //       Run via Inngest self-hosted runner or Browserless.io.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Chain 10: Sole Proprietor 10DLC Registration (Durable)
+// Trigger: "sms/registration.sole-prop" — from /api/sms/register
+// Two phases with 30s durable sleep between them.
+// Prevents Vercel serverless timeout + orphaned Twilio resources on failure.
+// ---------------------------------------------------------------------------
+export const soleProprietorRegistration = inngest.createFunction(
+  {
+    id: "sole-prop-10dlc-registration",
+    retries: 2,
+    triggers: [{ event: "sms/registration.sole-prop" }],
+  },
+  async ({ event, step }) => {
+    const data = event.data;
+
+    // Phase 1: Create Starter Customer Profile (Twilio steps 1-5)
+    const phase1 = await step.run("create-starter-profile", async () => {
+      const { createSoleProprietorStarterProfile } = await import("@/lib/twilio-10dlc");
+      return createSoleProprietorStarterProfile({
+        contractorId: data.contractorId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        businessName: data.businessName,
+        email: data.email,
+        phone: data.phone,
+        street: data.street,
+        city: data.city,
+        state: data.state,
+        zip: data.zip,
+      });
+    });
+
+    // Durable sleep — Twilio needs ~30s to process the starter profile
+    await step.sleep("wait-for-twilio-processing", "30s");
+
+    // Phase 2: Create A2P Trust Bundle (Twilio steps 6-9)
+    const phase2 = await step.run("create-trust-bundle", async () => {
+      const { createSoleProprietorTrustBundle } = await import("@/lib/twilio-10dlc");
+      return createSoleProprietorTrustBundle({
+        contractorId: data.contractorId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        businessName: data.businessName,
+        email: data.email,
+        phone: data.phone,
+        mobilePhone: data.mobilePhone,
+        ssnLast4: data.ssnLast4,
+        profileSid: phase1.profileSid,
+      });
+    });
+
+    // Save final state to database
+    await step.run("save-registration-state", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+
+      const { error } = await supabase
+        .from("sms_numbers")
+        .upsert({
+          contractor_id: data.contractorId,
+          registration_path: "sole_proprietor",
+          registration_status: "brand_otp_required",
+          customer_profile_sid: phase1.profileSid,
+          trust_product_sid: phase2.trustProductSid,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "contractor_id" });
+
+      if (error) throw new Error(`Failed to save registration: ${error.message}`);
+      return { saved: true };
+    });
+
+    return {
+      success: true,
+      status: "brand_otp_required",
+      customerProfileSid: phase1.profileSid,
+      trustProductSid: phase2.trustProductSid,
+    };
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Chain 11: A2P Wizard Compliance
+// ---------------------------------------------------------------------------
 export const a2pWizardCompliance = inngest.createFunction(
   {
     id: "a2p-wizard-compliance",

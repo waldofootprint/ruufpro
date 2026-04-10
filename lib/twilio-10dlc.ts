@@ -5,6 +5,7 @@
 // Uses lazy Twilio client initialization (same pattern as lib/twilio.ts).
 
 import { createServerSupabase } from "./supabase-server";
+import { inngest } from "./inngest/client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -125,12 +126,45 @@ export async function startRegistration(
     }
   }
 
+  if (isSoleProp) {
+    // Sole prop flow has a 30s wait between phases — run via Inngest for durability.
+    // This prevents Vercel serverless timeout and orphaned Twilio resources on failure.
+    await supabase
+      .from("sms_numbers")
+      .upsert({
+        contractor_id: data.contractorId,
+        registration_path: "sole_proprietor",
+        registration_status: "profile_pending",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "contractor_id" });
+
+    await inngest.send({
+      name: "sms/registration.sole-prop",
+      data: {
+        contractorId: data.contractorId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        businessName: data.businessName,
+        email: data.email,
+        phone: data.phone,
+        mobilePhone: data.mobilePhone || data.phone,
+        street: data.street,
+        city: data.city,
+        state: data.state,
+        zip: data.zip,
+        websiteUrl: data.websiteUrl,
+        ssnLast4: data.ssnLast4 || null,
+      },
+    });
+
+    return {
+      success: true,
+      status: "profile_pending",
+    };
+  }
+
   try {
-    if (isSoleProp) {
-      return await registerSoleProprietor(data, supabase);
-    } else {
-      return await registerStandardBrand(data, supabase);
-    }
+    return await registerStandardBrand(data, supabase);
   } catch (err: any) {
     console.error("10DLC registration error:", err.message || err);
 
@@ -150,14 +184,28 @@ export async function startRegistration(
 
 // ---------------------------------------------------------------------------
 // Sole Proprietor Path (no EIN, OTP verification)
+// Split into two phases for Inngest durability:
+//   Phase 1: Create starter profile (steps 1-5) — returns profile SID
+//   Phase 2: Create trust bundle (steps 6-9) — runs after 30s Inngest sleep
 // ---------------------------------------------------------------------------
 
-async function registerSoleProprietor(
-  data: ContractorRegistrationData,
-  supabase: any
-): Promise<RegistrationResult> {
+/**
+ * Phase 1: Creates the Starter Customer Profile in Twilio Trust Hub.
+ * Called from the Inngest sole-prop registration function.
+ */
+export async function createSoleProprietorStarterProfile(data: {
+  contractorId: string;
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  email: string;
+  phone: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}): Promise<{ profileSid: string }> {
   const client = await getClient();
-  const mobilePhone = data.mobilePhone || data.phone;
 
   // Step 1: Create Starter Customer Profile
   const profile = await client.trusthub.v1.customerProfiles.create({
@@ -194,12 +242,10 @@ async function registerSoleProprietor(
   });
 
   // Step 4: Attach components to Starter Profile
-  // Attach EndUser
   await client.trusthub.v1
     .customerProfiles(profile.sid)
     .customerProfilesEntityAssignments.create({ objectSid: endUser.sid });
 
-  // Attach Address document
   await client.trusthub.v1
     .customerProfiles(profile.sid)
     .customerProfilesEntityAssignments.create({ objectSid: addressDoc.sid });
@@ -218,8 +264,25 @@ async function registerSoleProprietor(
     status: "pending-review",
   });
 
-  // Wait 30s for Twilio to process (per Twilio docs for sole prop flow)
-  await delay(30000);
+  return { profileSid: profile.sid };
+}
+
+/**
+ * Phase 2: Creates the A2P Trust Bundle after Twilio processes the starter profile.
+ * Called from the Inngest sole-prop registration function after step.sleep("30s").
+ */
+export async function createSoleProprietorTrustBundle(data: {
+  contractorId: string;
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  email: string;
+  phone: string;
+  mobilePhone: string;
+  ssnLast4: string | null;
+  profileSid: string;
+}): Promise<{ trustProductSid: string }> {
+  const client = await getClient();
 
   // Step 6: Create Sole Proprietor A2P Trust Bundle
   const trustProduct = await client.trusthub.v1.trustProducts.create({
@@ -238,7 +301,7 @@ async function registerSoleProprietor(
       last_name: data.lastName,
       email: data.email,
       phone_number: data.phone,
-      mobile_phone_number: mobilePhone,
+      mobile_phone_number: data.mobilePhone,
       brand_name: data.businessName,
       vertical: "CONSTRUCTION",
       ...(data.ssnLast4 ? { last_4_digits_ssn: data.ssnLast4 } : {}),
@@ -252,7 +315,7 @@ async function registerSoleProprietor(
 
   await client.trusthub.v1
     .trustProducts(trustProduct.sid)
-    .trustProductsEntityAssignments.create({ objectSid: profile.sid });
+    .trustProductsEntityAssignments.create({ objectSid: data.profileSid });
 
   // Step 9: Evaluate + Submit Trust Bundle
   await client.trusthub.v1
@@ -263,25 +326,7 @@ async function registerSoleProprietor(
     status: "pending-review",
   });
 
-  // Save progress to database — brand will be auto-created by Twilio,
-  // OTP will be sent to the contractor's mobile phone
-  await supabase
-    .from("sms_numbers")
-    .upsert({
-      contractor_id: data.contractorId,
-      registration_path: "sole_proprietor",
-      registration_status: "brand_otp_required",
-      customer_profile_sid: profile.sid,
-      trust_product_sid: trustProduct.sid,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "contractor_id" });
-
-  return {
-    success: true,
-    status: "brand_otp_required",
-    customerProfileSid: profile.sid,
-    trustProductSid: trustProduct.sid,
-  };
+  return { trustProductSid: trustProduct.sid };
 }
 
 // ---------------------------------------------------------------------------
@@ -998,12 +1043,21 @@ export async function resendOTP(contractorId: string): Promise<{ success: boolea
 
   const { data: record } = await supabase
     .from("sms_numbers")
-    .select("brand_registration_sid")
+    .select("brand_registration_sid, last_otp_sent_at")
     .eq("contractor_id", contractorId)
     .single();
 
   if (!record?.brand_registration_sid) {
     return { success: false, error: "No brand registration found" };
+  }
+
+  // Server-side rate limit — enforce 60s cooldown regardless of UI
+  if (record.last_otp_sent_at) {
+    const elapsed = Date.now() - new Date(record.last_otp_sent_at).getTime();
+    if (elapsed < 60_000) {
+      const waitSec = Math.ceil((60_000 - elapsed) / 1000);
+      return { success: false, error: `Please wait ${waitSec} seconds before requesting another code` };
+    }
   }
 
   try {
@@ -1046,6 +1100,7 @@ export async function releaseContractorNumber(contractorId: string): Promise<{ s
   }
 
   const client = await getClient();
+  const errors: string[] = [];
 
   // Release the phone number from Twilio (stops billing)
   if (record.twilio_sid) {
@@ -1053,15 +1108,14 @@ export async function releaseContractorNumber(contractorId: string): Promise<{ s
       await client.incomingPhoneNumbers(record.twilio_sid).remove();
       console.log(`Released number ${record.phone_number} (${record.twilio_sid}) for contractor ${contractorId}`);
     } catch (err: any) {
-      // 404 = already released, that's fine
       if (!err.message?.includes("404")) {
         console.error(`Failed to release number ${record.twilio_sid}:`, err.message);
-        return { success: false, error: err.message };
+        errors.push(`Number release: ${err.message}`);
       }
     }
   }
 
-  // Delete the messaging service
+  // Always clean up messaging service — even if number release failed (stops billing leak)
   if (record.messaging_service_sid) {
     try {
       await client.messaging.v1.services(record.messaging_service_sid).remove();
@@ -1069,12 +1123,13 @@ export async function releaseContractorNumber(contractorId: string): Promise<{ s
     } catch (err: any) {
       if (!err.message?.includes("404")) {
         console.error(`Failed to delete messaging service ${record.messaging_service_sid}:`, err.message);
+        errors.push(`Messaging service: ${err.message}`);
       }
     }
   }
 
-  // Update DB — mark as released
-  await supabase
+  // Update DB — mark as released (always, even on partial Twilio failure)
+  const { error: smsError } = await supabase
     .from("sms_numbers")
     .update({
       status: "released",
@@ -1087,8 +1142,10 @@ export async function releaseContractorNumber(contractorId: string): Promise<{ s
     })
     .eq("contractor_id", contractorId);
 
+  if (smsError) errors.push(`DB sms_numbers: ${smsError.message}`);
+
   // Clear contractor's SMS fields
-  await supabase
+  const { error: contractorError } = await supabase
     .from("contractors")
     .update({
       sms_enabled: false,
@@ -1096,6 +1153,13 @@ export async function releaseContractorNumber(contractorId: string): Promise<{ s
       updated_at: new Date().toISOString(),
     })
     .eq("id", contractorId);
+
+  if (contractorError) errors.push(`DB contractors: ${contractorError.message}`);
+
+  if (errors.length > 0) {
+    console.error(`releaseContractorNumber partial failures for ${contractorId}:`, errors);
+    return { success: false, error: errors.join("; ") };
+  }
 
   return { success: true };
 }
@@ -1211,6 +1275,3 @@ function extractAreaCode(phone: string): string {
   return cleaned.slice(0, 3);
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}

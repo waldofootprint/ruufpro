@@ -108,6 +108,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Duplicate prevention — don't send two review texts for the same lead
+    const { data: existingRequest } = await supabase
+      .from("review_requests")
+      .select("id")
+      .eq("lead_id", leadId)
+      .eq("contractor_id", contractor.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingRequest) {
+      return NextResponse.json(
+        { error: "A review request was already sent for this lead" },
+        { status: 409 }
+      );
+    }
+
     // Emit event to Inngest — handles review SMS with retry + monitoring
     const { inngest } = await import("@/lib/inngest/client");
     await inngest.send({

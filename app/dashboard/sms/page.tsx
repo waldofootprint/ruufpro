@@ -145,6 +145,7 @@ export default function SmsPage() {
   const [complianceUrl, setComplianceUrl] = useState("");
   const [savingCompliance, setSavingCompliance] = useState(false);
   const [complianceSaved, setComplianceSaved] = useState(false);
+  const [complianceError, setComplianceError] = useState("");
   // Pre-flight: missing fields that block registration
   const [missingFields, setMissingFields] = useState<string[]>([]);
   // Conversation UI state
@@ -333,9 +334,11 @@ export default function SmsPage() {
       .eq("contractor_id", contractorId);
 
     if (error) {
+      setComplianceError("Failed to save compliance URL. Please try again.");
       setSavingCompliance(false);
       return;
     }
+    setComplianceError("");
 
     setComplianceSaved(true);
     setSmsNumber({ ...smsNumber, compliance_website_url: complianceUrl || null });
@@ -682,6 +685,9 @@ export default function SmsPage() {
                         <ExternalLink className="w-3 h-3" /> Open A2P Wizard
                       </a>
                     </div>
+                    {complianceError && (
+                      <p className="text-[11px] text-red-600 font-medium mt-1">{complianceError}</p>
+                    )}
                   </div>
                   <p className="text-[10px] text-blue-500 mt-2">
                     Once saved, the system will automatically submit the campaign registration on the next daily check.

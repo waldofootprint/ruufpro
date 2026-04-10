@@ -46,6 +46,10 @@ export async function sendReviewRequest(
     return { success: false, error: "Contractor not found" };
   }
 
+  if (!contractor.google_review_url) {
+    return { success: false, error: "No Google review URL configured for this contractor" };
+  }
+
   // Figure out which phone number to send from
   const fromNumber = await getContractorNumber(contractorId);
   if (!fromNumber) {

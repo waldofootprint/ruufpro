@@ -11,6 +11,7 @@ import {
   crmDirectPush,
   crmTokenRefresh,
   inboundSmsNotification,
+  soleProprietorRegistration,
   a2pWizardCompliance,
 } from "@/lib/inngest/functions";
 
@@ -27,6 +28,7 @@ export const { GET, POST, PUT } = serve({
     crmDirectPush,
     crmTokenRefresh,
     inboundSmsNotification,
+    soleProprietorRegistration,
     a2pWizardCompliance,
   ],
 });
