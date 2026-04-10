@@ -525,21 +525,16 @@ export async function completeCampaignRegistration(
     useInboundWebhookOnNumber: false,
   });
 
-  // Buy local number matching contractor's area code
+  // Buy local number — try contractor's area code first, then fall back
   const areaCode = extractAreaCode(contractor.phone);
-  const available = await client.availablePhoneNumbers("US").local.list({
-    areaCode: areaCode || undefined,
-    smsEnabled: true,
-    voiceEnabled: true,
-    limit: 1,
-  });
+  const available = await findAvailableNumber(client, areaCode, contractor.state);
 
-  if (!available || available.length === 0) {
-    throw new Error(`No numbers available in area code ${areaCode}`);
+  if (!available) {
+    throw new Error(`No numbers available in area code ${areaCode} or state ${contractor.state}. Contact support.`);
   }
 
   const purchased = await client.incomingPhoneNumbers.create({
-    phoneNumber: available[0].phoneNumber,
+    phoneNumber: available.phoneNumber,
     friendlyName: `${contractor.business_name} 10DLC`,
     smsMethod: "POST",
     smsUrl: `${WEBHOOK_BASE}/api/sms/webhook`,
@@ -824,6 +819,50 @@ async function notifyA2PWizardNeeded(
   } catch (err: any) {
     console.error(`Failed to send A2P Wizard notification for ${contractorId}:`, err.message);
   }
+}
+
+/**
+ * Try to find an available local number — falls back through:
+ * 1. Contractor's area code (ideal — matches their business phone)
+ * 2. Same state, any area code
+ * 3. Any US local number
+ */
+async function findAvailableNumber(
+  client: any,
+  areaCode: string,
+  state: string
+): Promise<{ phoneNumber: string } | null> {
+  // Attempt 1: exact area code
+  if (areaCode) {
+    const exact = await client.availablePhoneNumbers("US").local.list({
+      areaCode,
+      smsEnabled: true,
+      voiceEnabled: true,
+      limit: 1,
+    });
+    if (exact && exact.length > 0) return exact[0];
+  }
+
+  // Attempt 2: same state
+  if (state) {
+    const sameState = await client.availablePhoneNumbers("US").local.list({
+      inRegion: state,
+      smsEnabled: true,
+      voiceEnabled: true,
+      limit: 1,
+    });
+    if (sameState && sameState.length > 0) return sameState[0];
+  }
+
+  // Attempt 3: any US number
+  const anyUS = await client.availablePhoneNumbers("US").local.list({
+    smsEnabled: true,
+    voiceEnabled: true,
+    limit: 1,
+  });
+  if (anyUS && anyUS.length > 0) return anyUS[0];
+
+  return null;
 }
 
 function extractAreaCode(phone: string): string {

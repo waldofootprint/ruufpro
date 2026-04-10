@@ -95,6 +95,13 @@ export default function OnboardingPage() {
   const [yearsInBusiness, setYearsInBusiness] = useState<number | null>(null);
   const [legalEntityType, setLegalEntityType] = useState("sole_proprietor");
 
+  // Editor — business details (for SMS registration)
+  const [ownerFirstName, setOwnerFirstName] = useState("");
+  const [ownerLastName, setOwnerLastName] = useState("");
+  const [ein, setEin] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [zip, setZip] = useState("");
+
   // Editor — about
   const [showAbout, setShowAbout] = useState(true);
   const [aboutText, setAboutText] = useState("");
@@ -188,6 +195,11 @@ export default function OnboardingPage() {
         user_id: userId,
         email: (await supabase.auth.getUser()).data.user?.email || "",
         business_name: businessName, phone, city, state,
+        zip: zip || null,
+        address: streetAddress || null,
+        owner_first_name: ownerFirstName || null,
+        owner_last_name: ownerLastName || null,
+        ein: legalEntityType !== "sole_proprietor" ? (ein || null) : null,
         business_type: "residential",
         legal_entity_type: legalEntityType,
         is_licensed: showTrust ? isLicensed : false,
@@ -391,6 +403,57 @@ export default function OnboardingPage() {
                 })}
               </div>
               {services.length === 0 && <p style={{ fontSize: 12, color: "#ef4444", marginTop: 8 }}>Select at least one service</p>}
+            </div>
+
+            {/* Business Details — needed for SMS registration */}
+            <div ref={setSectionRef("business")} data-section="business" className="bg-white rounded-xl border border-gray-200 p-5">
+              <h2 className="text-base font-semibold text-gray-900 mb-1">Business Details</h2>
+              <p className="text-xs text-gray-500 mb-3">Used to set up your dedicated business phone number for SMS.</p>
+
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <label className="block">
+                  <span className="text-xs font-medium text-gray-600">Owner First Name</span>
+                  <input type="text" value={ownerFirstName} onChange={(e) => setOwnerFirstName(e.target.value)} placeholder="Joe"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-medium text-gray-600">Owner Last Name</span>
+                  <input type="text" value={ownerLastName} onChange={(e) => setOwnerLastName(e.target.value)} placeholder="Smith"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+                </label>
+              </div>
+
+              <label className="block mb-3">
+                <span className="text-xs font-medium text-gray-600">Business Type</span>
+                <select value={legalEntityType} onChange={(e) => setLegalEntityType(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900">
+                  <option value="sole_proprietor">Sole Proprietor</option>
+                  <option value="llc">LLC</option>
+                  <option value="corporation">Corporation</option>
+                  <option value="partnership">Partnership</option>
+                </select>
+              </label>
+
+              {legalEntityType !== "sole_proprietor" && (
+                <label className="block mb-3">
+                  <span className="text-xs font-medium text-gray-600">EIN (Employer Identification Number)</span>
+                  <input type="text" value={ein} onChange={(e) => setEin(e.target.value.replace(/[^\d-]/g, "").slice(0, 10))} placeholder="XX-XXXXXXX"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+                  <p className="text-[10px] text-gray-400 mt-1">Required for LLC/Corporation. Used for carrier verification only — never shared.</p>
+                </label>
+              )}
+
+              <label className="block mb-3">
+                <span className="text-xs font-medium text-gray-600">Street Address</span>
+                <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} placeholder="123 Main St"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-gray-600">ZIP Code</span>
+                <input type="text" inputMode="numeric" value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))} placeholder="33601"
+                  className="mt-1 block w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+              </label>
             </div>
 
             {/* Trust Signals */}

@@ -665,6 +665,10 @@ export default function SmsPage() {
                   Required by carriers to verify your identity. Sent securely to the carrier registry — never stored by RuufPro.
                 </p>
               </div>
+              <p className="text-[10px] text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
+                Your business details (name, address, EIN) from your profile will be used for carrier verification.
+                Make sure they&apos;re up to date in your business settings.
+              </p>
               <button
                 onClick={handleStartRegistration}
                 disabled={registering}
@@ -681,7 +685,7 @@ export default function SmsPage() {
               )}
               <p className="text-[11px] text-slate-400 text-center">
                 We&apos;ll register a local phone number matching your area code.
-                Carrier review takes 10-15 business days.
+                Carrier review typically takes 2-5 business days.
               </p>
             </div>
           )}
