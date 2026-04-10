@@ -449,12 +449,13 @@ const CRM_PROVIDERS = [
     color: "bg-[#7AC142]",
     authUrl: "https://api.getjobber.com/api/oauth/authorize",
   },
-  {
-    id: "housecall_pro" as const,
-    name: "Housecall Pro",
-    color: "bg-[#026CDF]",
-    authUrl: "https://api.housecallpro.com/oauth/authorize",
-  },
+  // HCP ready but parked — need developer account + API keys first
+  // {
+  //   id: "housecall_pro" as const,
+  //   name: "Housecall Pro",
+  //   color: "bg-[#026CDF]",
+  //   authUrl: "https://api.housecallpro.com/oauth/authorize",
+  // },
 ];
 
 interface CrmConnection {
