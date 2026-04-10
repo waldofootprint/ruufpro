@@ -96,7 +96,9 @@ async function getClient() {
 export async function startRegistration(
   data: ContractorRegistrationData
 ): Promise<RegistrationResult> {
-  const isSoleProp = data.legalEntityType === "sole_proprietor" || !data.ein;
+  // Respect the contractor's stated business type — never silently downgrade to sole prop.
+  // The registration API already validates that LLCs have an EIN before reaching here.
+  const isSoleProp = data.legalEntityType === "sole_proprietor";
   const supabase = createServerSupabase();
 
   try {

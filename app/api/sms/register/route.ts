@@ -54,8 +54,16 @@ export async function POST(req: NextRequest) {
       lastName = lastName || nameParts.slice(1).join(" ") || "Owner";
     }
 
+    // Block registration if business type not set — prevents silent sole prop downgrade
+    if (!contractor.legal_entity_type) {
+      return NextResponse.json(
+        { error: "Please select your business type (LLC, Corporation, or Sole Proprietor) in your business details before registering for SMS." },
+        { status: 400 }
+      );
+    }
+
     // Validate required fields for LLC/Corporation path
-    const isLLC = contractor.legal_entity_type && contractor.legal_entity_type !== "sole_proprietor";
+    const isLLC = contractor.legal_entity_type !== "sole_proprietor";
     if (isLLC && !contractor.ein) {
       return NextResponse.json(
         { error: "EIN is required for LLC/Corporation registration. Please add it in your business details." },
@@ -92,7 +100,7 @@ export async function POST(req: NextRequest) {
       city: contractor.city,
       state: contractor.state,
       zip: contractor.zip,
-      legalEntityType: contractor.legal_entity_type || "sole_proprietor",
+      legalEntityType: contractor.legal_entity_type,
       ein: contractor.ein || undefined,
       websiteUrl: `https://${siteSlug}.ruufpro.com`,
     });

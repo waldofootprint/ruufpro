@@ -93,7 +93,7 @@ export default function OnboardingPage() {
   const [offersFinancing, setOffersFinancing] = useState(false);
   const [warrantyYears, setWarrantyYears] = useState<number | null>(null);
   const [yearsInBusiness, setYearsInBusiness] = useState<number | null>(null);
-  const [legalEntityType, setLegalEntityType] = useState("sole_proprietor");
+  const [legalEntityType, setLegalEntityType] = useState("");
 
   // Editor — business details (for SMS registration)
   const [ownerFirstName, setOwnerFirstName] = useState("");
@@ -199,9 +199,9 @@ export default function OnboardingPage() {
         address: streetAddress || null,
         owner_first_name: ownerFirstName || null,
         owner_last_name: ownerLastName || null,
-        ein: legalEntityType !== "sole_proprietor" ? (ein || null) : null,
+        ein: legalEntityType && legalEntityType !== "sole_proprietor" ? (ein || null) : null,
         business_type: "residential",
-        legal_entity_type: legalEntityType,
+        legal_entity_type: legalEntityType || null,
         is_licensed: showTrust ? isLicensed : false,
         is_insured: showTrust ? isInsured : false,
         gaf_master_elite: showTrust ? gafMasterElite : false,
@@ -427,14 +427,15 @@ export default function OnboardingPage() {
                 <span className="text-xs font-medium text-gray-600">Business Type</span>
                 <select value={legalEntityType} onChange={(e) => setLegalEntityType(e.target.value)}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900">
-                  <option value="sole_proprietor">Sole Proprietor</option>
+                  <option value="" disabled>Select your business type</option>
                   <option value="llc">LLC</option>
                   <option value="corporation">Corporation</option>
+                  <option value="sole_proprietor">Sole Proprietor (no EIN)</option>
                   <option value="partnership">Partnership</option>
                 </select>
               </label>
 
-              {legalEntityType !== "sole_proprietor" && (
+              {legalEntityType && legalEntityType !== "sole_proprietor" && (
                 <label className="block mb-3">
                   <span className="text-xs font-medium text-gray-600">EIN (Employer Identification Number)</span>
                   <input type="text" value={ein} onChange={(e) => setEin(e.target.value.replace(/[^\d-]/g, "").slice(0, 10))} placeholder="XX-XXXXXXX"
