@@ -65,6 +65,8 @@ const mockData: ContractorSiteData = {
   zip: "75219",
   logoUrl: null,
   licenseNumber: "TX-RF-112890",
+  hasAiChatbot: false,
+  businessHours: null,
 };
 
 export default function ClassicDemoPage() {

@@ -17,6 +17,7 @@ import {
   Settings,
   Puzzle,
   MessageSquare,
+  Bot,
 } from "lucide-react";
 import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 import { supabase } from "@/lib/supabase";
@@ -29,6 +30,7 @@ const SIDEBAR_ITEMS: { href: string; label: string; icon: any; showBadge?: boole
   { href: "/dashboard/addons", label: "Estimate Add-Ons", icon: Puzzle },
   { href: "/dashboard/my-site", label: "My Website", icon: Globe },
   { href: "/dashboard/sms", label: "SMS & Reviews", icon: MessageSquare, showSmsBadge: true },
+  { href: "/dashboard/chatbot", label: "Train Riley", icon: Bot },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -257,6 +259,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                             {unreadSmsCount}
                           </span>
                         )}
+                      </a>
+                      <a
+                        href="/dashboard/chatbot"
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        <Bot className="w-4 h-4 text-slate-400" />
+                        Train Riley
                       </a>
                       <a
                         href="/dashboard/settings"

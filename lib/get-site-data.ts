@@ -53,6 +53,7 @@ export async function getSiteData(slug: string): Promise<SiteDataResult | null> 
     yearsInBusiness: contractor.years_in_business,
     serviceAreaCities: contractor.service_area_cities || [],
     hasEstimateWidget: contractor.has_estimate_widget,
+    hasAiChatbot: (contractor as any).has_ai_chatbot ?? false,
     contractorId: contractor.id,
     urgencyBadge: null, // defaults handled in hero components
     slug,
@@ -62,6 +63,8 @@ export async function getSiteData(slug: string): Promise<SiteDataResult | null> 
     zip: contractor.zip,
     logoUrl: contractor.logo_url,
     licenseNumber: contractor.license_number,
+
+    businessHours: (contractor as any).business_hours ?? null,
   };
 
   return { site: siteData, contractor, templateData };

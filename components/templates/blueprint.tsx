@@ -4,6 +4,7 @@
 import type { ContractorSiteData } from "../contractor-sections/types";
 import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
 import FloatingTextUs from "../contractor-sections/floating-text-us";
+import ChatWidget from "../chat-widget/ChatWidget";
 import BlueprintNav from "../contractor-sections/blueprint/nav";
 import BlueprintHero from "../contractor-sections/blueprint/hero";
 import BlueprintFeatures from "../contractor-sections/blueprint/features";
@@ -46,6 +47,13 @@ export default function BlueprintTemplate(props: ContractorSiteData) {
       <BlueprintFooter businessName={props.businessName} phone={props.phone} city={props.city} state={props.state} services={props.services} />
       <FloatingEstimateCTA hasEstimateWidget={props.hasEstimateWidget} phone={props.phone} />
       <FloatingTextUs phone={props.phone} />
+      <ChatWidget
+        contractorId={props.contractorId}
+        businessName={props.businessName}
+        hasAiChatbot={props.hasAiChatbot ?? false}
+        accentColor="#4A6FA5"
+        fontFamily="'Plus Jakarta Sans', sans-serif"
+      />
     </main>
   );
 }

@@ -122,7 +122,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         }
         const { data: contractor } = await supabase
           .from("contractors")
-          .select("id, business_name, has_estimate_widget, has_seo_pages, has_custom_domain")
+          .select("id, business_name, has_estimate_widget, has_seo_pages, has_custom_domain, has_ai_chatbot")
           .eq("user_id", user.id)
           .single();
         if (contractor) {

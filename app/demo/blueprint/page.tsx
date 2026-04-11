@@ -65,6 +65,8 @@ const mockData: ContractorSiteData = {
   zip: "80205",
   logoUrl: null,
   licenseNumber: "CO-RF-45612",
+  hasAiChatbot: false,
+  businessHours: null,
 };
 
 export default function BlueprintDemoPage() {

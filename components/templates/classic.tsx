@@ -5,6 +5,7 @@
 import type { ContractorSiteData } from "../contractor-sections/types";
 import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
 import FloatingTextUs from "../contractor-sections/floating-text-us";
+import ChatWidget from "../chat-widget/ChatWidget";
 import ClassicNav from "../contractor-sections/classic/nav";
 import ClassicHero from "../contractor-sections/classic/hero";
 import ClassicServices from "../contractor-sections/classic/services";
@@ -102,6 +103,13 @@ export default function ClassicTemplate(props: ContractorSiteData) {
       />
       <FloatingEstimateCTA hasEstimateWidget={props.hasEstimateWidget} phone={props.phone} />
       <FloatingTextUs phone={props.phone} />
+      <ChatWidget
+        contractorId={props.contractorId}
+        businessName={props.businessName}
+        hasAiChatbot={props.hasAiChatbot ?? false}
+        accentColor="#2D2D2D"
+        fontFamily="'Inter', sans-serif"
+      />
     </main>
   );
 }

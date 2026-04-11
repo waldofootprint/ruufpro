@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useDashboard } from "../DashboardContext";
-import { Check, Eye, EyeOff, Zap, Send, Link2, Unlink, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, Eye, EyeOff, Zap, Send, Link2, Unlink, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 
 interface ProfileData {
   business_name: string;
@@ -29,6 +29,8 @@ interface ProfileData {
   bbb_accredited: boolean;
   bbb_rating: string;
   offers_financing: boolean;
+  // AI Chatbot
+  has_ai_chatbot: boolean;
   // Integrations
   webhook_url: string;
   webhook_enabled: boolean;
@@ -52,7 +54,7 @@ const TRUST_SIGNALS = [
 ];
 
 export default function SettingsPage() {
-  const { contractorId } = useDashboard();
+  const { contractorId, tier } = useDashboard();
   const searchParams = useSearchParams();
   const crmConnected = searchParams.get("crm_connected");
   const crmError = searchParams.get("crm_error");
@@ -72,6 +74,7 @@ export default function SettingsPage() {
     is_licensed: false, is_insured: false, gaf_master_elite: false,
     owens_corning_preferred: false, certainteed_select: false,
     bbb_accredited: false, bbb_rating: "", offers_financing: false,
+    has_ai_chatbot: false,
     webhook_url: "", webhook_enabled: false,
   });
 
@@ -80,7 +83,7 @@ export default function SettingsPage() {
       if (!contractorId) return;
       const { data } = await supabase
         .from("contractors")
-        .select("business_name, phone, email, city, state, zip, tagline, logo_url, years_in_business, license_number, warranty_years, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, bbb_rating, offers_financing, webhook_url, webhook_enabled")
+        .select("business_name, phone, email, city, state, zip, tagline, logo_url, years_in_business, license_number, warranty_years, is_licensed, is_insured, gaf_master_elite, owens_corning_preferred, certainteed_select, bbb_accredited, bbb_rating, offers_financing, has_ai_chatbot, webhook_url, webhook_enabled")
         .eq("id", contractorId)
         .single();
       if (data) {
@@ -104,6 +107,7 @@ export default function SettingsPage() {
           bbb_accredited: data.bbb_accredited || false,
           bbb_rating: data.bbb_rating || "",
           offers_financing: data.offers_financing || false,
+          has_ai_chatbot: data.has_ai_chatbot || false,
           webhook_url: data.webhook_url || "",
           webhook_enabled: data.webhook_enabled || false,
         });
@@ -142,6 +146,7 @@ export default function SettingsPage() {
       bbb_accredited: profile.bbb_accredited,
       bbb_rating: profile.bbb_rating || null,
       offers_financing: profile.offers_financing,
+      has_ai_chatbot: profile.has_ai_chatbot,
       webhook_url: profile.webhook_url || null,
       webhook_enabled: profile.webhook_enabled,
     }).eq("id", contractorId);
@@ -357,6 +362,46 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* AI Chatbot — Riley */}
+      <div className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-slate-50 flex items-center justify-between">
+          <div>
+            <h2 className="text-[13px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+              <MessageSquare className="w-3.5 h-3.5" />
+              AI Chatbot — Riley
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-100 text-violet-600 uppercase tracking-wide">Pro+</span>
+            </h2>
+            <p className="text-[11px] text-slate-400 mt-0.5">24/7 AI assistant on your website that answers homeowner questions and captures leads.</p>
+          </div>
+          <button
+            onClick={() => updateField("has_ai_chatbot", !profile.has_ai_chatbot)}
+            disabled={tier === "free"}
+            className={`relative w-10 h-6 rounded-full transition-colors ${profile.has_ai_chatbot ? "bg-violet-600" : "bg-slate-200"} ${tier === "free" ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          >
+            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${profile.has_ai_chatbot ? "translate-x-5" : "translate-x-1"}`} />
+          </button>
+        </div>
+        {profile.has_ai_chatbot && (
+          <div className="p-5 space-y-3">
+            <div className="bg-slate-50 rounded-lg p-4">
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Greeting Preview</p>
+              <p className="text-[13px] text-slate-700 italic">
+                &ldquo;Hi! I&apos;m Riley from {profile.business_name || "[Business Name]"}! I can answer questions about our roofing services and help connect you with our team. What can I help you with today?&rdquo;
+              </p>
+            </div>
+            <div className="flex items-start gap-2 text-[11px] text-slate-500">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              Riley uses your services, credentials, and service area to answer homeowner questions accurately.
+            </div>
+          </div>
+        )}
+        {tier === "free" && (
+          <div className="px-5 py-3 border-t border-slate-50">
+            <p className="text-[12px] text-amber-600 font-semibold">Requires the $149/mo Pro plan.</p>
+          </div>
+        )}
       </div>
 
       {/* Integrations — CRM Connect */}

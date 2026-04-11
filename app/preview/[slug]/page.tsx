@@ -109,6 +109,8 @@ export default async function ProspectPreview({
     zip: contractor.zip,
     logoUrl: contractor.logo_url,
     licenseNumber: contractor.license_number,
+    hasAiChatbot: (contractor as any).has_ai_chatbot ?? false,
+    businessHours: (contractor as any).business_hours ?? null,
   };
 
   const template = (siteData as any).template || "modern_clean";

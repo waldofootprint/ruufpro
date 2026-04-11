@@ -8,6 +8,7 @@ import type { ContractorSiteData } from "../contractor-sections/types";
 import { THEME } from "../contractor-sections/theme";
 import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
 import FloatingTextUs from "../contractor-sections/floating-text-us";
+import ChatWidget from "../chat-widget/ChatWidget";
 import Nav from "../contractor-sections/nav";
 
 import ProofBar from "../contractor-sections/proof-bar";
@@ -436,6 +437,13 @@ export default function ModernCleanTemplate(props: ContractorSiteData & { basePa
       />
       <FloatingEstimateCTA hasEstimateWidget={props.hasEstimateWidget} phone={props.phone} />
       <FloatingTextUs phone={props.phone} />
+      <ChatWidget
+        contractorId={props.contractorId}
+        businessName={props.businessName}
+        hasAiChatbot={props.hasAiChatbot ?? false}
+        accentColor="#D4880F"
+        fontFamily="'Barlow', sans-serif"
+      />
     </main>
   );
 }

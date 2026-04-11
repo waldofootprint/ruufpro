@@ -5,6 +5,7 @@
 import type { ContractorSiteData } from "../contractor-sections/types";
 import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
 import FloatingTextUs from "../contractor-sections/floating-text-us";
+import ChatWidget from "../chat-widget/ChatWidget";
 import ForgeNav from "../contractor-sections/forge/nav";
 import ForgeHero from "../contractor-sections/forge/hero";
 import ForgeServices from "../contractor-sections/forge/services";
@@ -102,6 +103,14 @@ export default function ForgeTemplate(props: ContractorSiteData) {
       />
       <FloatingEstimateCTA hasEstimateWidget={props.hasEstimateWidget} phone={props.phone} />
       <FloatingTextUs phone={props.phone} />
+      <ChatWidget
+        contractorId={props.contractorId}
+        businessName={props.businessName}
+        hasAiChatbot={props.hasAiChatbot ?? false}
+        accentColor="#2E5090"
+        fontFamily="'Inter', sans-serif"
+        isDarkTheme
+      />
     </main>
   );
 }

@@ -1,0 +1,653 @@
+// ChatWidget — Riley, the 24/7 AI assistant on contractor websites.
+// Floating bubble (bottom-right) → slide-up chat panel.
+// Uses Vercel AI SDK v6 useChat hook for streaming responses.
+// All inline styles — no Tailwind dependency (works on embedded sites).
+
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { supabase } from "@/lib/supabase";
+
+interface ChatWidgetProps {
+  contractorId: string;
+  businessName: string;
+  hasAiChatbot: boolean;
+  accentColor: string;
+  fontFamily: string;
+  isDarkTheme?: boolean;
+}
+
+interface LeadFormData {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+}
+
+export default function ChatWidget({
+  contractorId,
+  businessName,
+  hasAiChatbot,
+  accentColor,
+  fontFamily,
+  isDarkTheme = false,
+}: ChatWidgetProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [sessionId, setSessionId] = useState("");
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [leadCaptured, setLeadCaptured] = useState(false);
+  const [leadForm, setLeadForm] = useState<LeadFormData>({ name: "", phone: "", email: "", address: "" });
+  const [submittingLead, setSubmittingLead] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [capped, setCapped] = useState(false);
+  const userMsgCountRef = useRef(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize session ID from localStorage
+  useEffect(() => {
+    const storageKey = `riley-session-${contractorId}`;
+    let id = localStorage.getItem(storageKey);
+    if (!id) {
+      id = `${contractorId}-${crypto.randomUUID()}`;
+      localStorage.setItem(storageKey, id);
+    }
+    setSessionId(id);
+
+    // Restore lead captured state
+    if (localStorage.getItem(`riley-captured-${contractorId}`) === "true") {
+      setLeadCaptured(true);
+    }
+  }, [contractorId]);
+
+  const greeting = `Hi! I'm Riley from ${businessName}! I can answer questions about our roofing services and help connect you with our team. What can I help you with today?`;
+
+  const { messages, sendMessage, status, setMessages } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: { contractorId, sessionId },
+    }),
+    messages: [
+      {
+        id: "greeting",
+        role: "assistant" as const,
+        content: greeting,
+        parts: [{ type: "text" as const, text: greeting }],
+        createdAt: new Date(),
+      },
+    ],
+    onFinish: () => {
+      const count = userMsgCountRef.current;
+      if (count >= 3 && !leadCaptured && !showLeadForm) {
+        setShowLeadForm(true);
+      }
+      if (count >= 10) {
+        setCapped(true);
+      }
+    },
+  });
+
+  const isLoading = status === "submitted" || status === "streaming";
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
+
+  // Persist messages to localStorage
+  useEffect(() => {
+    if (messages.length > 1 && sessionId) {
+      localStorage.setItem(`riley-messages-${contractorId}`, JSON.stringify(messages));
+    }
+  }, [messages, contractorId, sessionId]);
+
+  // Restore messages from localStorage on mount
+  useEffect(() => {
+    if (!sessionId) return;
+    const saved = localStorage.getItem(`riley-messages-${contractorId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 1) {
+          setMessages(parsed);
+          const userMsgCount = parsed.filter((m: { role: string }) => m.role === "user").length;
+          userMsgCountRef.current = userMsgCount;
+          if (userMsgCount >= 10) setCapped(true);
+          if (userMsgCount >= 3 && !leadCaptured) setShowLeadForm(true);
+        }
+      } catch {
+        // Ignore corrupted localStorage
+      }
+    }
+  }, [sessionId, contractorId, setMessages, leadCaptured]);
+
+  const handleSend = useCallback(() => {
+    const text = inputValue.trim();
+    if (!text || capped || isLoading) return;
+    setInputValue("");
+    userMsgCountRef.current += 1;
+    sendMessage({ text });
+  }, [inputValue, capped, isLoading, sendMessage]);
+
+  const handleFormSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleSend();
+    },
+    [handleSend]
+  );
+
+  // Lead capture submission
+  async function handleLeadSubmit() {
+    if (!leadForm.name || !leadForm.phone) return;
+    setSubmittingLead(true);
+
+    // Insert to leads table (same pattern as contact-form.tsx)
+    await supabase.from("leads").insert({
+      contractor_id: contractorId,
+      name: leadForm.name,
+      phone: leadForm.phone || null,
+      email: leadForm.email || null,
+      address: leadForm.address || null,
+      source: "ai_chatbot",
+      status: "new",
+      sms_consent: false,
+    });
+
+    // Notify contractor (fire-and-forget)
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contractor_id: contractorId,
+        lead_name: leadForm.name,
+        lead_phone: leadForm.phone,
+        lead_email: leadForm.email,
+        lead_address: leadForm.address,
+        source: "ai_chatbot",
+      }),
+    }).catch(() => {});
+
+    // Update conversation record
+    if (sessionId) {
+      supabase
+        .from("chat_conversations")
+        .update({ lead_captured: true })
+        .eq("session_id", sessionId)
+        .then(() => {});
+    }
+
+    setLeadCaptured(true);
+    setShowLeadForm(false);
+    setSubmittingLead(false);
+    localStorage.setItem(`riley-captured-${contractorId}`, "true");
+
+    // Add confirmation message
+    const confirmMsg = `Great! ${businessName} will be in touch with you soon. Is there anything else I can help you with in the meantime?`;
+    setMessages([
+      ...messages,
+      {
+        id: `lead-confirm-${Date.now()}`,
+        role: "assistant" as const,
+        content: confirmMsg,
+        parts: [{ type: "text" as const, text: confirmMsg }],
+        createdAt: new Date(),
+      },
+    ]);
+  }
+
+  if (!hasAiChatbot) return null;
+
+  // --- Colors ---
+  const panelBg = isDarkTheme ? "#1A1A1A" : "#FFFFFF";
+  const panelText = isDarkTheme ? "#F5F5F5" : "#1A1A1A";
+  const mutedText = isDarkTheme ? "#999" : "#666";
+  const inputBg = isDarkTheme ? "#2A2A2A" : "#F5F3F0";
+  const inputBorder = isDarkTheme ? "#444" : "#E2E8F0";
+  const botBubbleBg = isDarkTheme ? "#2A2A2A" : "#F0EFED";
+  const userBubbleBg = accentColor;
+  const userBubbleText = "#FFFFFF";
+
+  // Get text content from message (v6 uses parts array)
+  function getMessageText(msg: { content?: string; parts?: Array<{ type: string; text?: string }> }): string {
+    if (msg.parts) {
+      return msg.parts
+        .filter((p) => p.type === "text" && p.text)
+        .map((p) => p.text)
+        .join("");
+    }
+    return msg.content || "";
+  }
+
+  // --- Bubble (closed state) ---
+  if (!isOpen) {
+    return (
+      <>
+        <button
+          onClick={() => {
+            setIsOpen(true);
+            setTimeout(() => inputRef.current?.focus(), 300);
+          }}
+          aria-label="Chat with Riley"
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: accentColor,
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+            transition: "transform 0.2s, box-shadow 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.08)";
+            e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.35)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.25)";
+          }}
+        >
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+          </svg>
+        </button>
+        {/* Tooltip */}
+        <style>{`
+          @media (min-width: 769px) {
+            button[aria-label="Chat with Riley"]:hover + .riley-tooltip {
+              opacity: 1 !important;
+              transform: translateX(0) !important;
+            }
+          }
+        `}</style>
+        <div
+          className="riley-tooltip"
+          style={{
+            position: "fixed",
+            bottom: 36,
+            right: 88,
+            zIndex: 999,
+            background: "rgba(0,0,0,0.85)",
+            color: "#fff",
+            padding: "6px 12px",
+            borderRadius: 6,
+            fontSize: 13,
+            fontFamily,
+            fontWeight: 500,
+            whiteSpace: "nowrap",
+            opacity: 0,
+            transform: "translateX(8px)",
+            transition: "opacity 0.2s, transform 0.2s",
+            pointerEvents: "none",
+          }}
+        >
+          Chat with Riley
+        </div>
+      </>
+    );
+  }
+
+  // --- Panel (open state) ---
+  return (
+    <>
+      {/* Mobile: full-screen overlay */}
+      <style>{`
+        @media (max-width: 640px) {
+          .riley-panel {
+            width: calc(100% - 16px) !important;
+            height: 80vh !important;
+            bottom: 8px !important;
+            right: 8px !important;
+            border-radius: 16px !important;
+          }
+        }
+        @keyframes rileyBounce {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-4px); }
+        }
+      `}</style>
+      <div
+        className="riley-panel"
+        style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          zIndex: 1000,
+          width: 370,
+          height: 520,
+          maxHeight: "85vh",
+          background: panelBg,
+          borderRadius: 16,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          fontFamily,
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            background: accentColor,
+            padding: "14px 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#fff",
+              }}
+            >
+              R
+            </div>
+            <div>
+              <div style={{ color: "#fff", fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>
+                Riley
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#4ADE80",
+                    display: "inline-block",
+                  }}
+                />
+                Online 24/7
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsOpen(false)}
+            style={{
+              background: "rgba(255,255,255,0.15)",
+              border: "none",
+              borderRadius: "50%",
+              width: 28,
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              color: "#fff",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "16px 14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
+        >
+          {messages.map((msg) => {
+            const text = getMessageText(msg);
+            if (!text) return null;
+            const isUser = (msg.role as string) === "user";
+            return (
+              <div
+                key={msg.id}
+                style={{
+                  display: "flex",
+                  justifyContent: isUser ? "flex-end" : "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: "82%",
+                    padding: "10px 14px",
+                    borderRadius: isUser ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                    background: isUser ? userBubbleBg : botBubbleBg,
+                    color: isUser ? userBubbleText : panelText,
+                    fontSize: 14,
+                    lineHeight: 1.5,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {text}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Typing indicator */}
+          {isLoading && (
+            <div style={{ display: "flex", justifyContent: "flex-start" }}>
+              <div
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: "14px 14px 14px 4px",
+                  background: botBubbleBg,
+                  display: "flex",
+                  gap: 4,
+                  alignItems: "center",
+                }}
+              >
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: mutedText,
+                      display: "inline-block",
+                      animation: `rileyBounce 1.2s ease-in-out ${i * 0.15}s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Lead capture form */}
+        {showLeadForm && !leadCaptured && (
+          <div
+            style={{
+              padding: "12px 14px",
+              borderTop: `1px solid ${inputBorder}`,
+              background: isDarkTheme ? "#222" : "#FAFAF8",
+              flexShrink: 0,
+            }}
+          >
+            <p style={{ fontSize: 12, fontWeight: 600, color: accentColor, marginBottom: 8 }}>
+              Want {businessName} to follow up? Leave your info:
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <input
+                placeholder="Your name *"
+                value={leadForm.name}
+                onChange={(e) => setLeadForm((f) => ({ ...f, name: e.target.value }))}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  fontSize: 13,
+                  border: `1px solid ${inputBorder}`,
+                  borderRadius: 6,
+                  background: inputBg,
+                  color: panelText,
+                  outline: "none",
+                  fontFamily,
+                  boxSizing: "border-box" as const,
+                }}
+              />
+              <input
+                placeholder="Phone number *"
+                type="tel"
+                value={leadForm.phone}
+                onChange={(e) => setLeadForm((f) => ({ ...f, phone: e.target.value }))}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  fontSize: 13,
+                  border: `1px solid ${inputBorder}`,
+                  borderRadius: 6,
+                  background: inputBg,
+                  color: panelText,
+                  outline: "none",
+                  fontFamily,
+                  boxSizing: "border-box" as const,
+                }}
+              />
+              <input
+                placeholder="Email (optional)"
+                type="email"
+                value={leadForm.email}
+                onChange={(e) => setLeadForm((f) => ({ ...f, email: e.target.value }))}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  fontSize: 13,
+                  border: `1px solid ${inputBorder}`,
+                  borderRadius: 6,
+                  background: inputBg,
+                  color: panelText,
+                  outline: "none",
+                  fontFamily,
+                  boxSizing: "border-box" as const,
+                }}
+              />
+              <div style={{ display: "flex", gap: 6 }}>
+                <button
+                  onClick={handleLeadSubmit}
+                  disabled={!leadForm.name || !leadForm.phone || submittingLead}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    background: accentColor,
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 6,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily,
+                    opacity: !leadForm.name || !leadForm.phone || submittingLead ? 0.5 : 1,
+                  }}
+                >
+                  {submittingLead ? "Sending..." : "Connect me!"}
+                </button>
+                <button
+                  onClick={() => setShowLeadForm(false)}
+                  style={{
+                    padding: "8px 12px",
+                    background: "transparent",
+                    color: mutedText,
+                    border: `1px solid ${inputBorder}`,
+                    borderRadius: 6,
+                    fontSize: 12,
+                    cursor: "pointer",
+                    fontFamily,
+                  }}
+                >
+                  Later
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Input area */}
+        <form
+          onSubmit={handleFormSubmit}
+          style={{
+            padding: "10px 14px",
+            borderTop: `1px solid ${inputBorder}`,
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            flexShrink: 0,
+            background: panelBg,
+          }}
+        >
+          {capped ? (
+            <p style={{ fontSize: 13, color: mutedText, textAlign: "center", width: "100%", margin: 0 }}>
+              {leadCaptured
+                ? `Thanks for chatting! ${businessName} will be in touch soon.`
+                : `I'd love to keep helping — want me to have ${businessName} call you?`}
+            </p>
+          ) : (
+            <>
+              <input
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Type a message..."
+                disabled={isLoading}
+                style={{
+                  flex: 1,
+                  padding: "10px 12px",
+                  fontSize: 14,
+                  border: `1px solid ${inputBorder}`,
+                  borderRadius: 20,
+                  background: inputBg,
+                  color: panelText,
+                  outline: "none",
+                  fontFamily,
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!inputValue.trim() || isLoading}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  background: inputValue.trim() ? accentColor : isDarkTheme ? "#333" : "#E2E8F0",
+                  border: "none",
+                  cursor: inputValue.trim() ? "pointer" : "default",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "background 0.2s",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={inputValue.trim() ? "#fff" : mutedText} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" />
+                </svg>
+              </button>
+            </>
+          )}
+        </form>
+      </div>
+    </>
+  );
+}

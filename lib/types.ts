@@ -6,7 +6,7 @@ export type BusinessType = "storm_insurance" | "residential" | "full_service";
 
 export type DesignStyle = "modern_clean" | "bold_confident" | "warm_trustworthy";
 
-export type LeadSource = "contact_form" | "estimate_widget" | "external_widget";
+export type LeadSource = "contact_form" | "estimate_widget" | "external_widget" | "ai_chatbot";
 
 export type LeadStatus = "new" | "contacted" | "appointment_set" | "quoted" | "won" | "completed" | "lost";
 
@@ -64,6 +64,7 @@ export interface Contractor {
   has_auto_reply: boolean;
   has_seo_pages: boolean;
   has_custom_domain: boolean;
+  has_ai_chatbot: boolean;
 
   // Billing
   stripe_customer_id: string | null;
@@ -165,6 +166,33 @@ export interface Lead {
   estimate_segments: number | null;
 
   created_at: string;
+}
+
+export interface ChatbotConfig {
+  // Tier 1: Top 5 homeowner questions
+  price_range_low: number | null;
+  price_range_high: number | null;
+  offers_free_inspection: boolean;
+  typical_timeline_days: string | null;
+  materials_brands: string[] | null;
+  process_steps: string | null;
+
+  // Tier 2: Insurance, financing, warranty, emergency
+  does_insurance_work: boolean;
+  insurance_description: string | null;
+  financing_provider: string | null;
+  financing_terms: string | null;
+  warranty_description: string | null;
+  emergency_available: boolean;
+  emergency_description: string | null;
+
+  // Tier 3: Stickiness / differentiation
+  custom_faqs: Array<{ q: string; a: string }> | null;
+  differentiators: string | null;
+  team_description: string | null;
+  payment_methods: string[] | null;
+  current_promotions: string | null;
+  referral_program: string | null;
 }
 
 export interface EstimateSettings {
