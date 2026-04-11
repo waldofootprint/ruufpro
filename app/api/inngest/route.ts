@@ -3,7 +3,7 @@ import { inngest } from "@/lib/inngest/client";
 import {
   globalFailureHandler,
   leadAutoResponse,
-  missedCallTextback,
+  // missedCallTextback,  // PARKED FOR LAUNCH — April 11 2026. No prior consent from callers.
   reviewRequest,
   reviewEmailFollowup,
   leadPushNotification,
@@ -20,7 +20,7 @@ export const { GET, POST, PUT } = serve({
   functions: [
     globalFailureHandler,
     leadAutoResponse,
-    missedCallTextback,
+    // missedCallTextback,  // PARKED FOR LAUNCH
     reviewRequest,
     reviewEmailFollowup,
     leadPushNotification,

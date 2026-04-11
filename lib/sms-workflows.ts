@@ -134,12 +134,19 @@ export async function sendReviewRequest(
 
 // ---------------------------------------------------------------------------
 // sendMissedCallTextback — auto-reply when a contractor misses a call
+// PARKED FOR LAUNCH — April 11, 2026
+//
+// Disabled until $10K MRR + TCPA legal review.
+// Reason: Caller never gave prior SMS consent. Risk/reward doesn't justify
+// it at launch. All code preserved — uncomment to re-enable.
+//
+// To re-enable:
+// 1. Uncomment this function
+// 2. Uncomment the Inngest function in lib/inngest/functions.ts (Chain 2)
+// 3. Uncomment the Inngest event in app/api/sms/voice-webhook/route.ts
+// 4. Re-add the dashboard toggle in app/dashboard/sms/page.tsx
 // ---------------------------------------------------------------------------
-
-/**
- * Send a friendly text to someone who called but didn't get through.
- * Tries to match the caller to an existing lead in the database.
- */
+/*
 export async function sendMissedCallTextback(
   contractorId: string,
   callerPhone: string
@@ -204,6 +211,7 @@ export async function sendMissedCallTextback(
 
   return { success: true };
 }
+*/
 
 // ---------------------------------------------------------------------------
 // sendLeadAutoResponse — instant SMS when a homeowner submits a contact form

@@ -868,7 +868,9 @@ export default function SmsPage() {
             </div>
           </div>
 
-          {/* Missed Call Textback */}
+          {/* Missed Call Textback — PARKED FOR LAUNCH (April 11 2026)
+              Disabled until $10K MRR + TCPA legal review. No prior consent from callers.
+              To re-enable: uncomment this toggle + Inngest function + voice webhook event.
           <div className={`flex items-center gap-3 p-3 rounded-lg transition-colors -mx-1 ${isActive ? "hover:bg-slate-50 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}>
             <button
               type="button"
@@ -888,6 +890,7 @@ export default function SmsPage() {
               <p className="text-[11px] text-slate-400 mt-0.5">Auto-text callers you miss: &quot;Sorry I missed your call, can I help via text?&quot;</p>
             </div>
           </div>
+          */}
         </div>
       </div>
 

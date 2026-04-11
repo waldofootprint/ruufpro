@@ -107,9 +107,23 @@ export const leadAutoResponse = inngest.createFunction(
 
 // ---------------------------------------------------------------------------
 // Chain 2: Missed-Call Text-Back
+// PARKED FOR LAUNCH — April 11, 2026
+//
+// Disabled until $10K MRR + TCPA legal review.
+// Reason: Caller never gave prior SMS consent. The "conversational response"
+// defense is untested for automated systems. Risk/reward doesn't justify it
+// at launch. All code preserved — uncomment to re-enable.
+//
+// To re-enable:
+// 1. Uncomment this function
+// 2. Uncomment the Inngest event in app/api/sms/voice-webhook/route.ts
+// 3. Re-add the dashboard toggle in app/dashboard/sms/page.tsx
+// 4. Get a TCPA attorney to sign off on the consent basis
+//
 // Trigger: "sms/call.missed" — emitted from /api/sms/voice-webhook
 // Steps: dedup check → send textback SMS
 // ---------------------------------------------------------------------------
+/*
 export const missedCallTextback = inngest.createFunction(
   {
     id: "missed-call-textback",
@@ -171,6 +185,7 @@ export const missedCallTextback = inngest.createFunction(
     return result;
   }
 );
+*/
 
 // ---------------------------------------------------------------------------
 // Chain 3: Review Request

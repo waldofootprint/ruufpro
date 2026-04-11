@@ -74,21 +74,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Only fire textback for unanswered calls
+    // Only log missed calls for unanswered calls
     const missedStatuses = ["no-answer", "busy", "failed"];
     if (callStatus && missedStatuses.includes(callStatus) && contractor) {
 
-        // Emit event to Inngest — handles textback with dedup + retry
-        await inngest.send({
-          name: "sms/call.missed",
-          data: {
-            contractorId: contractor.id,
-            callerPhone: from,
-            callSid: callSid || "",
-          },
-        });
+        // PARKED FOR LAUNCH — Missed-call text-back disabled until $10K MRR + legal review.
+        // Reason: No prior SMS consent from caller. "Conversational response" defense is
+        // untested for automated systems. Re-enable by uncommenting the Inngest event below
+        // and the missedCallTextback function in lib/inngest/functions.ts.
+        // Decision: April 11 2026, SMS Audit 3.
+        //
+        // await inngest.send({
+        //   name: "sms/call.missed",
+        //   data: {
+        //     contractorId: contractor.id,
+        //     callerPhone: from,
+        //     callSid: callSid || "",
+        //   },
+        // });
 
-        // Log the missed call
+        // Still log the missed call — valuable data even without auto-textback.
+        // Contractor sees it in dashboard and can manually respond.
         await supabase.from("sms_messages").insert({
           contractor_id: contractor.id,
           direction: "inbound",
