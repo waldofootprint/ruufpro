@@ -552,7 +552,7 @@ export async function registerBrand(contractorId: string): Promise<RegistrationR
     a2PProfileBundleSid: record.trust_product_sid,
     brandType: isSoleProp ? "SOLE_PROPRIETOR" : "STANDARD",
     skipAutomaticSecVet: true,
-    mock: false,
+    mock: process.env.NODE_ENV !== "production",
   });
 
   const { error: brandUpdateError } = await supabase

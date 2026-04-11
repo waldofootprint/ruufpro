@@ -26,6 +26,23 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+// Translate raw Twilio/TCR errors to plain English for roofers
+function translateRegistrationError(raw: string): string {
+  const errorMap: Record<string, string> = {
+    "EIN mismatch": "The EIN you entered doesn't match what's on file. Double-check your number and try again.",
+    "EIN not found": "We couldn't find your EIN. Make sure it's correct and matches your IRS records.",
+    "Insufficient data": "Some required information is missing. Please fill in all fields in your business profile.",
+    "Brand creation failed": "We couldn't register your business. Please check your details and try again.",
+    "Campaign creation failed": "Your messaging campaign couldn't be created. This usually resolves — try again in a few minutes.",
+    "OTP verification failed": "The verification code didn't match. Request a new code and try again.",
+    "TWILIO_PRIMARY_PROFILE_SID": "System configuration issue — please contact support.",
+  };
+  for (const [key, msg] of Object.entries(errorMap)) {
+    if (raw.includes(key)) return msg;
+  }
+  return `Registration issue: ${raw}. If this persists, contact support.`;
+}
+
 // Registration status matches lib/twilio-10dlc.ts RegistrationStatus type
 type RegistrationStatus =
   | "not_started"
@@ -700,7 +717,7 @@ export default function SmsPage() {
           {/* Failed State */}
           {regStatus === "failed" && smsNumber?.registration_error && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-              <p className="text-[12px] text-red-600">{smsNumber.registration_error}</p>
+              <p className="text-[12px] text-red-600">{translateRegistrationError(smsNumber.registration_error)}</p>
               <button
                 onClick={handleStartRegistration}
                 disabled={registering}
@@ -831,7 +848,7 @@ export default function SmsPage() {
         </div>
         <div className="p-5 space-y-1">
           {/* Review Requests */}
-          <label className={`flex items-center gap-3 p-3 rounded-lg transition-colors -mx-1 ${isActive ? "hover:bg-slate-50 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}>
+          <div className={`flex items-center gap-3 p-3 rounded-lg transition-colors -mx-1 ${isActive ? "hover:bg-slate-50 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}>
             <button
               type="button"
               disabled={!isActive}
@@ -849,10 +866,10 @@ export default function SmsPage() {
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">Send a review request SMS when a job is marked &quot;completed&quot;</p>
             </div>
-          </label>
+          </div>
 
           {/* Missed Call Textback */}
-          <label className={`flex items-center gap-3 p-3 rounded-lg transition-colors -mx-1 ${isActive ? "hover:bg-slate-50 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}>
+          <div className={`flex items-center gap-3 p-3 rounded-lg transition-colors -mx-1 ${isActive ? "hover:bg-slate-50 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}>
             <button
               type="button"
               disabled={!isActive}
@@ -870,7 +887,7 @@ export default function SmsPage() {
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">Auto-text callers you miss: &quot;Sorry I missed your call, can I help via text?&quot;</p>
             </div>
-          </label>
+          </div>
         </div>
       </div>
 

@@ -96,7 +96,7 @@ function formatPhone(phone: string | null): string {
 function generateAlerts(contractors: SmsContractor[]): Alert[] {
   const alerts: Alert[] = [];
   const TW = "https://console.twilio.com";
-  const SB = "https://supabase.com/dashboard/project/_/sql";
+  const SB = "https://supabase.com/dashboard/project/comcpamnxjtldlnnudqc/sql";
 
   for (const c of contractors) {
     const phase = getPhaseIndex(c.registration_status, c.sms_number_status);
