@@ -44,6 +44,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
         lead_email: form.email,
         lead_message: form.message,
         source: "contact_form",
+        sms_consent: form.smsConsent,
       }),
     }).catch(() => {});
 

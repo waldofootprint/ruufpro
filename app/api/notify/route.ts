@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   );
   try {
     const body = await request.json();
-    const { contractor_id, lead_name, lead_phone, lead_email, lead_address, lead_message, source, estimate_low, estimate_high, estimate_material, estimate_roof_sqft, timeline: leadTimeline, financing_interest } = body;
+    const { contractor_id, lead_name, lead_phone, lead_email, lead_address, lead_message, source, estimate_low, estimate_high, estimate_material, estimate_roof_sqft, timeline: leadTimeline, financing_interest, sms_consent } = body;
 
     if (!contractor_id || !lead_name) {
       return NextResponse.json({ error: "contractor_id and lead_name required" }, { status: 400 });
@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
         estimateRoofSqft: estimate_roof_sqft || null,
         timeline: leadTimeline || null,
         financingInterest: financing_interest || null,
+        smsConsent: sms_consent || false,
         pushTitle,
         pushBody,
         origin: request.nextUrl.origin,

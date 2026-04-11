@@ -17,7 +17,7 @@ import { sendSMS, getContractorNumber, isOptedOut } from "./twilio";
 export async function sendReviewRequest(
   contractorId: string,
   leadId: string
-): Promise<{ success: boolean; reviewRequestId?: string; error?: string }> {
+): Promise<{ success: boolean; reviewRequestId?: string; error?: string; quietHours?: boolean; sendAt?: string }> {
   const supabase = createServerSupabase();
 
   // Look up the lead's contact info
@@ -35,15 +35,20 @@ export async function sendReviewRequest(
     return { success: false, error: "Lead has no phone number" };
   }
 
-  // Look up the contractor's business name and Google review URL
+  // Look up the contractor's business name, review URL, and automation toggle
   const { data: contractor, error: contractorError } = await supabase
     .from("contractors")
-    .select("business_name, google_review_url")
+    .select("business_name, google_review_url, review_request_enabled")
     .eq("id", contractorId)
     .single();
 
   if (contractorError || !contractor) {
     return { success: false, error: "Contractor not found" };
+  }
+
+  // Respect automation toggle — contractor can disable this in SMS dashboard
+  if (contractor.review_request_enabled === false) {
+    return { success: false, error: "Review requests disabled by contractor" };
   }
 
   if (!contractor.google_review_url) {
@@ -83,7 +88,12 @@ export async function sendReviewRequest(
   });
 
   if (!smsResult.success) {
-    return { success: false, error: smsResult.error };
+    return {
+      success: false,
+      error: smsResult.error,
+      quietHours: smsResult.quietHours,
+      sendAt: smsResult.sendAt,
+    };
   }
 
   // Look up the sms_messages record by Twilio SID to get our DB UUID
@@ -133,18 +143,23 @@ export async function sendReviewRequest(
 export async function sendMissedCallTextback(
   contractorId: string,
   callerPhone: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; quietHours?: boolean; sendAt?: string }> {
   const supabase = createServerSupabase();
 
-  // Look up the contractor's business name
+  // Look up the contractor's business name + automation toggle
   const { data: contractor, error: contractorError } = await supabase
     .from("contractors")
-    .select("business_name")
+    .select("business_name, missed_call_textback_enabled")
     .eq("id", contractorId)
     .single();
 
   if (contractorError || !contractor) {
     return { success: false, error: "Contractor not found" };
+  }
+
+  // Respect automation toggle — contractor can disable this in SMS dashboard
+  if (contractor.missed_call_textback_enabled === false) {
+    return { success: false, error: "Missed-call textback disabled by contractor" };
   }
 
   // Get the sending number
@@ -179,7 +194,12 @@ export async function sendMissedCallTextback(
   });
 
   if (!smsResult.success) {
-    return { success: false, error: smsResult.error };
+    return {
+      success: false,
+      error: smsResult.error,
+      quietHours: smsResult.quietHours,
+      sendAt: smsResult.sendAt,
+    };
   }
 
   return { success: true };
@@ -204,7 +224,7 @@ export async function sendLeadAutoResponse(
   leadPhone: string,
   leadName: string,
   estimate?: { estimateLow: number | null; estimateHigh: number | null }
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; quietHours?: boolean; sendAt?: string }> {
   const supabase = createServerSupabase();
 
   // Look up the contractor
@@ -299,7 +319,12 @@ export async function sendLeadAutoResponse(
   });
 
   if (!smsResult.success) {
-    return { success: false, error: smsResult.error };
+    return {
+      success: false,
+      error: smsResult.error,
+      quietHours: smsResult.quietHours,
+      sendAt: smsResult.sendAt,
+    };
   }
 
   return { success: true };

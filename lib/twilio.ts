@@ -30,6 +30,10 @@ interface SendSMSResult {
   success: boolean;
   messageSid?: string;
   error?: string;
+  /** True if send was blocked by quiet hours (8am-9pm local). Caller should queue. */
+  quietHours?: boolean;
+  /** UTC ISO string — earliest time the message can be sent. Use with Inngest step.sleepUntil(). */
+  sendAt?: string;
 }
 
 interface SMSNumber {
@@ -136,6 +140,50 @@ export async function sendSMS(params: SendSMSParams): Promise<SendSMSResult> {
     if (optedOut) {
       console.log(`SMS skipped — ${to} opted out for contractor ${contractorId}`);
       return { success: true, messageSid: undefined, error: "opted_out" };
+    }
+  }
+
+  // TCPA quiet hours: no automated texts before 8am or after 9pm local time.
+  // Uses contractor's state as timezone proxy (leads are local to their service area).
+  if (contractorId) {
+    const { data: contractorForTz } = await supabase
+      .from("contractors")
+      .select("state")
+      .eq("id", contractorId)
+      .single();
+
+    if (contractorForTz?.state) {
+      const { isQuietHours, nextSendWindow } = await import("@/lib/quiet-hours");
+      if (isQuietHours(contractorForTz.state)) {
+        const sendAt = nextSendWindow(contractorForTz.state);
+        console.log(`SMS blocked — quiet hours for ${contractorForTz.state}. Next window: ${sendAt.toISOString()}`);
+        return {
+          success: false,
+          error: "quiet_hours",
+          quietHours: true,
+          sendAt: sendAt.toISOString(),
+        };
+      }
+    }
+  }
+
+  // Daily send limit per contractor — prevents runaway costs and carrier flags.
+  // Sole prop 10DLC allows ~1K/day (T-Mobile). 200 is conservative + safe.
+  if (contractorId) {
+    const DAILY_LIMIT = 200;
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+
+    const { count } = await supabase
+      .from("sms_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("contractor_id", contractorId)
+      .eq("direction", "outbound")
+      .gte("sent_at", todayStart.toISOString());
+
+    if ((count || 0) >= DAILY_LIMIT) {
+      console.error(`SMS blocked — daily limit (${DAILY_LIMIT}) reached for contractor ${contractorId}`);
+      return { success: false, error: "Daily SMS limit reached" };
     }
   }
 

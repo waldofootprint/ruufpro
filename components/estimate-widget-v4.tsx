@@ -365,6 +365,7 @@ export default function EstimateWidgetV4({
           estimate_low: primaryEst?.price_low, estimate_high: primaryEst?.price_high,
           estimate_material: primaryMaterial, estimate_roof_sqft: data.roof_data?.roof_area_sqft,
           timeline: timeline || null,
+          sms_consent: agreedToSms,
         }),
       }).catch(() => {});
 

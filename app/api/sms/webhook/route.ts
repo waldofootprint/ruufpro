@@ -50,6 +50,12 @@ export async function POST(request: NextRequest) {
     const normalizedBody = body?.trim().toLowerCase() || "";
     const isOptOut = optOutKeywords.includes(normalizedBody);
 
+    // Check for opt-IN keywords (START, YES, etc.) — re-subscribe
+    // These MUST be handled per our 10DLC campaign registration which declares
+    // optInKeywords: ["START", "YES"]. Carriers audit this.
+    const optInKeywords = ["start", "yes", "unstop", "subscribe"];
+    const isOptIn = optInKeywords.includes(normalizedBody);
+
     // Check for HELP/INFO keywords — carriers require a response
     const helpKeywords = ["help", "info"];
     const isHelp = helpKeywords.includes(normalizedBody);
@@ -60,10 +66,19 @@ export async function POST(request: NextRequest) {
       await handleOptOut(from, contractorId);
     }
 
-    // Look up contractor info for HELP response
+    if (isOptIn && contractorId) {
+      // Handle re-opt-in: remove from opt-out table so messages resume
+      await supabase
+        .from("sms_opt_outs")
+        .delete()
+        .eq("phone_number", from)
+        .eq("contractor_id", contractorId);
+    }
+
+    // Look up contractor info for HELP / opt-in response
     let contractorName = "";
     let contractorPhone = "";
-    if (isHelp && contractorId) {
+    if ((isHelp || isOptIn) && contractorId) {
       const { data: contractorInfo } = await supabase
         .from("contractors")
         .select("business_name, phone")
@@ -74,19 +89,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the inbound message
+    const messageType = isOptOut ? "opt_out" : isOptIn ? "opt_in" : isHelp ? "help" : "inbound";
     await supabase.from("sms_messages").insert({
       contractor_id: contractorId,
       direction: "inbound",
       from_number: from,
       to_number: to,
       body: body || "",
-      message_type: isOptOut ? "opt_out" : isHelp ? "help" : "inbound",
+      message_type: messageType,
       twilio_sid: messageSid || null,
       status: "received",
     });
 
-    // Notify contractor about regular inbound replies (not opt-out or HELP)
-    if (!isOptOut && !isHelp && contractorId && body?.trim()) {
+    // Notify contractor about regular inbound replies (not opt-out, opt-in, or HELP)
+    if (!isOptOut && !isOptIn && !isHelp && contractorId && body?.trim()) {
       const { inngest } = await import("@/lib/inngest/client");
       await inngest.send({
         name: "sms/reply.received",
@@ -101,7 +117,10 @@ export async function POST(request: NextRequest) {
 
     // Build TwiML response
     let twiml: string;
-    if (isHelp && contractorName) {
+    if (isOptIn && contractorName) {
+      // Confirm re-subscription — required by our 10DLC campaign declaration
+      twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>You've been re-subscribed to ${contractorName} messages. Reply STOP to unsubscribe or HELP for help.</Message></Response>`;
+    } else if (isHelp && contractorName) {
       // Carriers require a response to HELP keyword
       twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${contractorName}: For help, call ${contractorPhone}. Reply STOP to unsubscribe.</Message></Response>`;
     } else {

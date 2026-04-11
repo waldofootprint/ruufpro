@@ -1,5 +1,15 @@
 import { inngest } from "./client";
 
+// Workflow results may include quiet hours data from sendSMS().
+// Inngest's JsonifyObject strips these from inferred types, so we cast.
+type WorkflowResult = {
+  success: boolean;
+  error?: string;
+  quietHours?: boolean;
+  sendAt?: string;
+  [key: string]: unknown;
+};
+
 // ---------------------------------------------------------------------------
 // Global Failure Handler
 // Trigger: "inngest/function.failed" — fires when ANY function exhausts retries
@@ -51,10 +61,16 @@ export const leadAutoResponse = inngest.createFunction(
     triggers: [{ event: "sms/lead.created" }],
   },
   async ({ event, step }) => {
-    const { contractorId, leadPhone, leadName, estimateLow, estimateHigh } = event.data;
+    const { contractorId, leadPhone, leadName, estimateLow, estimateHigh, smsConsent } = event.data;
 
     if (!leadPhone) {
       return { success: true, skipped: true, reason: "no phone number" };
+    }
+
+    // Fast-path consent check from event data — skip DB query if we know consent is false.
+    // sendLeadAutoResponse() also checks the DB as a fallback, so this is defense-in-depth.
+    if (smsConsent === false) {
+      return { success: true, skipped: true, reason: "no SMS consent" };
     }
 
     const result = await step.run("send-auto-response-sms", async () => {
@@ -63,7 +79,23 @@ export const leadAutoResponse = inngest.createFunction(
         estimateLow: estimateLow || null,
         estimateHigh: estimateHigh || null,
       });
-    });
+    }) as WorkflowResult;
+
+    // Quiet hours: sleep until the next send window, then retry
+    if (result.quietHours && result.sendAt) {
+      await step.sleepUntil("wait-for-send-window", new Date(result.sendAt));
+      const retryResult = await step.run("retry-after-quiet-hours", async () => {
+        const { sendLeadAutoResponse } = await import("@/lib/sms-workflows");
+        return sendLeadAutoResponse(contractorId, leadPhone, leadName, {
+          estimateLow: estimateLow || null,
+          estimateHigh: estimateHigh || null,
+        });
+      }) as WorkflowResult;
+      if (!retryResult.success && !retryResult.quietHours) {
+        throw new Error(`Lead auto-response failed after quiet hours: ${retryResult.error}`);
+      }
+      return retryResult;
+    }
 
     if (!result.success) {
       throw new Error(`Lead auto-response failed: ${result.error}`);
@@ -116,7 +148,21 @@ export const missedCallTextback = inngest.createFunction(
     const result = await step.run("send-missed-call-textback", async () => {
       const { sendMissedCallTextback } = await import("@/lib/sms-workflows");
       return sendMissedCallTextback(contractorId, callerPhone);
-    });
+    }) as WorkflowResult;
+
+    // Quiet hours: sleep until morning, then retry.
+    // For missed calls during quiet hours, the text arrives at 8am — still valuable.
+    if (result.quietHours && result.sendAt) {
+      await step.sleepUntil("wait-for-send-window", new Date(result.sendAt));
+      const retryResult = await step.run("retry-after-quiet-hours", async () => {
+        const { sendMissedCallTextback } = await import("@/lib/sms-workflows");
+        return sendMissedCallTextback(contractorId, callerPhone);
+      }) as WorkflowResult;
+      if (!retryResult.success && !retryResult.quietHours) {
+        throw new Error(`Missed-call textback failed after quiet hours: ${retryResult.error}`);
+      }
+      return retryResult;
+    }
 
     if (!result.success) {
       throw new Error(`Missed-call textback failed: ${result.error}`);
@@ -143,7 +189,20 @@ export const reviewRequest = inngest.createFunction(
     const result = await step.run("send-review-request", async () => {
       const { sendReviewRequest } = await import("@/lib/sms-workflows");
       return sendReviewRequest(contractorId, leadId);
-    });
+    }) as WorkflowResult;
+
+    // Quiet hours: sleep until morning, then retry
+    if (result.quietHours && result.sendAt) {
+      await step.sleepUntil("wait-for-send-window", new Date(result.sendAt));
+      const retryResult = await step.run("retry-after-quiet-hours", async () => {
+        const { sendReviewRequest } = await import("@/lib/sms-workflows");
+        return sendReviewRequest(contractorId, leadId);
+      }) as WorkflowResult;
+      if (!retryResult.success && !retryResult.quietHours) {
+        throw new Error(`Review request failed after quiet hours: ${retryResult.error}`);
+      }
+      return retryResult;
+    }
 
     if (!result.success) {
       throw new Error(`Review request failed: ${result.error}`);
