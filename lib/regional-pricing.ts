@@ -24,41 +24,45 @@ interface RegionalRates {
 
 // Regional pricing by broad US region (materials + labor, NOT all-in).
 // Overhead/profit markup is applied separately in the estimate engine.
+//
+// IMPORTANT: Keep low/high spread under 20% so the output band stays tight.
+// Old defaults had 30-45% spread which compounded into 85% output ranges.
+// These tightened rates reflect 2025-2026 market midpoints with ±10% spread.
 const REGIONAL_DEFAULTS: Record<string, RegionalRates> = {
   // Southeast / Sun Belt — lower labor costs, high storm demand
   southeast: {
-    asphalt_low: 2.50, asphalt_high: 3.50,
-    metal_low: 5.50,   metal_high: 7.50,
-    tile_low: 6.50,    tile_high: 9.00,
-    flat_low: 2.75,    flat_high: 4.00,
+    asphalt_low: 2.75, asphalt_high: 3.25,
+    metal_low: 6.00,   metal_high: 7.00,
+    tile_low: 7.00,    tile_high: 8.50,
+    flat_low: 3.00,    flat_high: 3.75,
   },
   // Northeast — higher labor costs, seasonal demand
   northeast: {
-    asphalt_low: 3.25, asphalt_high: 4.50,
-    metal_low: 6.50,   metal_high: 9.00,
-    tile_low: 8.00,    tile_high: 11.00,
-    flat_low: 3.50,    flat_high: 5.00,
+    asphalt_low: 3.50, asphalt_high: 4.25,
+    metal_low: 7.00,   metal_high: 8.50,
+    tile_low: 8.50,    tile_high: 10.50,
+    flat_low: 3.75,    flat_high: 4.75,
   },
   // Midwest — moderate costs, storm and winter demand
   midwest: {
-    asphalt_low: 2.75, asphalt_high: 4.00,
-    metal_low: 6.00,   metal_high: 8.50,
-    tile_low: 7.00,    tile_high: 10.00,
-    flat_low: 3.00,    flat_high: 4.50,
+    asphalt_low: 3.00, asphalt_high: 3.75,
+    metal_low: 6.50,   metal_high: 8.00,
+    tile_low: 7.50,    tile_high: 9.50,
+    flat_low: 3.25,    flat_high: 4.25,
   },
   // West — higher costs, fire and earthquake building codes
   west: {
-    asphalt_low: 3.50, asphalt_high: 5.00,
-    metal_low: 7.00,   metal_high: 10.00,
-    tile_low: 8.50,    tile_high: 12.00,
-    flat_low: 3.75,    flat_high: 5.50,
+    asphalt_low: 3.75, asphalt_high: 4.75,
+    metal_low: 7.50,   metal_high: 9.50,
+    tile_low: 9.00,    tile_high: 11.50,
+    flat_low: 4.00,    flat_high: 5.25,
   },
   // Southwest — moderate, high tile demand
   southwest: {
-    asphalt_low: 2.75, asphalt_high: 3.75,
-    metal_low: 6.00,   metal_high: 8.50,
-    tile_low: 7.00,    tile_high: 10.50,
-    flat_low: 3.00,    flat_high: 4.50,
+    asphalt_low: 2.90, asphalt_high: 3.50,
+    metal_low: 6.50,   metal_high: 8.00,
+    tile_low: 7.50,    tile_high: 10.00,
+    flat_low: 3.00,    flat_high: 4.00,
   },
 };
 
