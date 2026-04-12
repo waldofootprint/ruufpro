@@ -22,6 +22,7 @@ import {
   type RoofMaterial,
   type ContractorRates,
 } from "@/lib/estimate";
+import { getWeatherSurge } from "@/lib/weather-surge";
 
 function getSupabase() {
   return createClient(
@@ -110,17 +111,19 @@ export async function POST(request: NextRequest) {
       flat_high: settings.flat_high || 0,
     };
 
-    // Step 2: Get roof data
+    // Step 2: Get roof data + weather surge (parallel to avoid latency)
     let roofData = null;
     let geometry = null;
 
-    if (address) {
-      const preCoords = lat && lng ? { lat, lng } : undefined;
-      const result = await getRoofData(address, preCoords);
-      roofData = result.data;
-      if (roofData) {
-        geometry = inferRoofGeometry(roofData);
-      }
+    const preCoords = lat && lng ? { lat, lng } : undefined;
+    const [roofResult, weatherSurge] = await Promise.all([
+      address ? getRoofData(address, preCoords) : Promise.resolve({ data: null }),
+      getWeatherSurge(lat, lng),
+    ]);
+
+    roofData = roofResult.data;
+    if (roofData) {
+      geometry = inferRoofGeometry(roofData);
     }
 
     // Step 3: Determine which materials the contractor has priced
@@ -151,6 +154,7 @@ export async function POST(request: NextRequest) {
       financingInterest: financing_interest,
       rates,
       bufferPercent: settings.buffer_percent || 0,
+      weatherSurgeMultiplier: weatherSurge.multiplier,
     };
 
     // Assign Good/Better/Best tier labels based on price order
@@ -196,6 +200,13 @@ export async function POST(request: NextRequest) {
         is_satellite: firstEst.is_satellite,
         detail_display: detailDisplay,
       },
+      weather_surge: weatherSurge.isSurged
+        ? {
+            multiplier: weatherSurge.multiplier,
+            alerts: weatherSurge.alerts,
+            severity: weatherSurge.highestSeverity,
+          }
+        : null,
       // Backward compatibility: if a single material was requested, include flat response
       ...(material && estimates.find((e) => e.material === material)
         ? {

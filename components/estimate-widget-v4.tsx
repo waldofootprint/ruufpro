@@ -246,6 +246,11 @@ interface EstimateResponse {
     is_satellite: boolean;
     detail_display: string;
   };
+  weather_surge?: {
+    multiplier: number;
+    alerts: string[];
+    severity: string;
+  } | null;
 }
 
 // ----- STEP TRANSITION (enhanced with scale for 3D feel) -----
@@ -992,6 +997,26 @@ export default function EstimateWidgetV4({
                 {estimateData.roof_data.detail_display}
               </p>
             </div>
+
+            {/* Weather surge notice — only shown during active weather events */}
+            {estimateData.weather_surge && (
+              <div
+                className="rounded-xl px-4 py-3 flex items-start gap-3"
+                style={{
+                  background: variant === "light" ? "#FFF7ED" : "rgba(251,146,60,0.1)",
+                  border: `1px solid ${variant === "light" ? "#FDBA74" : "rgba(251,146,60,0.25)"}`,
+                }}
+              >
+                <span className="text-[14px] mt-0.5">&#9888;</span>
+                <p className="text-[12px] leading-relaxed" style={{ color: C.textSecondary }}>
+                  <strong style={{ color: C.text }}>Weather alert in your area.</strong>{" "}
+                  Prices may be higher than normal due to increased demand.
+                  {estimateData.weather_surge.multiplier >= 1.2 && (
+                    <> Pricing reflects current storm-related market conditions.</>
+                  )}
+                </p>
+              </div>
+            )}
 
             {/* G/B/B Material Cards — stacked for mobile-first */}
             <div className="space-y-3">
