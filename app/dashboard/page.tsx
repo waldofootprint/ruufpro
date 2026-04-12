@@ -9,6 +9,7 @@ import {
   MessageCircle, Eye, Bell, CheckCircle, X, Phone, TrendingUp,
   Target, BarChart3, Trophy, Flame, Share2, Search, Calendar, Plus,
 } from "lucide-react";
+import StormAlertBanner from "@/components/dashboard/StormAlertBanner";
 import type { Lead } from "@/lib/types";
 import {
   getAvgResponseTime,
@@ -341,6 +342,9 @@ export default function DashboardHome() {
           Add Lead
         </button>
       </div>
+
+      {/* ===== STORM ALERT ===== */}
+      <StormAlertBanner contractorId={contractorId} />
 
       {/* ===== TABS ===== */}
       <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg w-fit mb-8">

@@ -154,11 +154,15 @@ export async function POST(request: NextRequest) {
       financingInterest: financing_interest,
       rates,
       bufferPercent: settings.buffer_percent || 0,
-      // Weather surge NOT auto-applied — roofer must opt in via dashboard.
-      // weatherSurgeMultiplier is only set when roofer enables storm pricing.
-      weatherSurgeMultiplier: settings.weather_surge_enabled
-        ? (settings.weather_surge_multiplier || weatherSurge.multiplier)
-        : undefined,
+      // Weather surge — only applied when roofer has opted in AND not expired.
+      weatherSurgeMultiplier: (() => {
+        if (!settings.weather_surge_enabled) return undefined;
+        // Check if auto-expire has passed
+        if (settings.weather_surge_auto_expire && settings.weather_surge_expires_at) {
+          if (new Date(settings.weather_surge_expires_at) < new Date()) return undefined;
+        }
+        return settings.weather_surge_multiplier || weatherSurge.multiplier;
+      })(),
     };
 
     // Assign Good/Better/Best tier labels based on price order

@@ -13,6 +13,7 @@ import {
   inboundSmsNotification,
   soleProprietorRegistration,
   a2pWizardCompliance,
+  weatherStormCheck,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -30,5 +31,6 @@ export const { GET, POST, PUT } = serve({
     inboundSmsNotification,
     soleProprietorRegistration,
     a2pWizardCompliance,
+    weatherStormCheck,
   ],
 });

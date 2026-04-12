@@ -53,6 +53,13 @@ export default function EstimateSettingsPage() {
   const [propertyProtection, setPropertyProtection] = useState(false);
   const [changeOrder, setChangeOrder] = useState(false);
 
+  // Weather surge pricing — roofer has full control
+  const [weatherSurgeEnabled, setWeatherSurgeEnabled] = useState(false);
+  const [weatherSurgeMultiplier, setWeatherSurgeMultiplier] = useState("1.20");
+  const [weatherSurgeDurationDays, setWeatherSurgeDurationDays] = useState("7");
+  const [weatherSurgeAutoExpire, setWeatherSurgeAutoExpire] = useState(true);
+  const [weatherSurgeExpiresAt, setWeatherSurgeExpiresAt] = useState<string | null>(null);
+
   // Financing settings
   const [financingEnabled, setFinancingEnabled] = useState(false);
   const [financingProvider, setFinancingProvider] = useState("");
@@ -113,6 +120,11 @@ export default function EstimateSettingsPage() {
         setFinancingTermMonths(settings.financing_term_months?.toString() || "120");
         setFinancingApr(settings.financing_apr?.toString() || "");
         setFinancingNote(settings.financing_note || "");
+        setWeatherSurgeEnabled(settings.weather_surge_enabled ?? false);
+        setWeatherSurgeMultiplier(settings.weather_surge_multiplier?.toString() || "1.20");
+        setWeatherSurgeDurationDays(settings.weather_surge_duration_days?.toString() || "7");
+        setWeatherSurgeAutoExpire(settings.weather_surge_auto_expire ?? true);
+        setWeatherSurgeExpiresAt(settings.weather_surge_expires_at || null);
       } else {
         // Pre-fill with metro-level defaults (BLS data), fall back to regional
         const state = contractor.state || "TX";
@@ -168,6 +180,13 @@ export default function EstimateSettingsPage() {
         financing_term_months: financingTermMonths ? parseInt(financingTermMonths) : null,
         financing_apr: financingApr ? parseFloat(financingApr) : null,
         financing_note: financingNote || null,
+        weather_surge_enabled: weatherSurgeEnabled,
+        weather_surge_multiplier: weatherSurgeMultiplier ? parseFloat(weatherSurgeMultiplier) : null,
+        weather_surge_duration_days: weatherSurgeDurationDays ? parseInt(weatherSurgeDurationDays) : 7,
+        weather_surge_auto_expire: weatherSurgeAutoExpire,
+        weather_surge_expires_at: weatherSurgeEnabled && weatherSurgeAutoExpire && !weatherSurgeExpiresAt
+          ? new Date(Date.now() + (parseInt(weatherSurgeDurationDays) || 7) * 86400000).toISOString()
+          : weatherSurgeExpiresAt,
       });
 
     if (saveErr) {
@@ -324,6 +343,149 @@ export default function EstimateSettingsPage() {
           Example: With a 15% buffer, a $10,000-$14,000 estimate becomes $10,000-$16,100.
           The low end stays the same — only the high end widens.
         </p>
+      </div>
+
+      {/* Storm Surge Pricing — full roofer control */}
+      <div id="storm-surge" className="rounded-xl bg-white border border-gray-200/60 p-6 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-[#1B3A4B]">
+            Storm Surge Pricing
+          </h2>
+          <button
+            type="button"
+            onClick={() => setWeatherSurgeEnabled(!weatherSurgeEnabled)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              weatherSurgeEnabled ? "bg-[#D4863E]" : "bg-gray-200"
+            }`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              weatherSurgeEnabled ? "translate-x-6" : "translate-x-1"
+            }`} />
+          </button>
+        </div>
+        <p className="text-sm text-[#1B3A4B]/50 mb-4">
+          After a major storm, roofing demand spikes and prices follow. When we detect a
+          storm in your service area, we&apos;ll notify you — you decide whether to enable
+          surge pricing and exactly how much to adjust.
+        </p>
+
+        {weatherSurgeEnabled && weatherSurgeExpiresAt && (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-3 mb-4">
+            <span className="text-amber-600 text-sm font-bold leading-none mt-0.5">!</span>
+            <div>
+              <p className="text-sm font-medium text-slate-900">
+                Surge active — expires {new Date(weatherSurgeExpiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                All estimates include a +{Math.round((parseFloat(weatherSurgeMultiplier || "1.20") - 1) * 100)}% storm adjustment until then.
+                {weatherSurgeAutoExpire ? " It will auto-disable after expiry." : " You'll need to turn it off manually."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {weatherSurgeEnabled && !weatherSurgeExpiresAt && (
+          <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-start gap-3 mb-4">
+            <span className="text-emerald-600 text-sm font-bold leading-none mt-1">&#10003;</span>
+            <p className="text-sm text-slate-700">
+              Surge pricing is on with no expiry set. It will stay active until you turn it off.
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-5">
+          {/* Multiplier — how much to increase */}
+          <div>
+            <label className="block text-sm font-medium text-[#1B3A4B] mb-1">
+              Price Increase
+            </label>
+            <div className="flex gap-2">
+              {["1.10", "1.15", "1.20", "1.25", "1.35"].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setWeatherSurgeMultiplier(val)}
+                  className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+                    weatherSurgeMultiplier === val
+                      ? "bg-[#D4863E] text-white"
+                      : "bg-[#1B3A4B]/5 text-[#1B3A4B]/70 hover:bg-[#1B3A4B]/10"
+                  }`}
+                >
+                  +{Math.round((parseFloat(val) - 1) * 100)}%
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs text-[#1B3A4B]/40">Custom:</span>
+              <input
+                type="number"
+                step="0.05"
+                min="1.0"
+                max="2.0"
+                value={weatherSurgeMultiplier}
+                onChange={(e) => setWeatherSurgeMultiplier(e.target.value)}
+                className="block w-24 rounded-lg border border-gray-200/60 px-3 py-1.5 text-sm text-[#1B3A4B] focus:border-[#D4863E] focus:outline-none focus:ring-1 focus:ring-[#D4863E]"
+              />
+              <span className="text-xs text-[#1B3A4B]/40">
+                = +{Math.round((parseFloat(weatherSurgeMultiplier || "1.0") - 1) * 100)}% on all estimates
+              </span>
+            </div>
+          </div>
+
+          {/* Duration — how long surge stays active */}
+          <div>
+            <label className="block text-sm font-medium text-[#1B3A4B] mb-1">
+              Duration
+            </label>
+            <div className="flex gap-2">
+              {[
+                { val: "3", label: "3 days" },
+                { val: "7", label: "1 week" },
+                { val: "14", label: "2 weeks" },
+                { val: "30", label: "30 days" },
+              ].map((opt) => (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => setWeatherSurgeDurationDays(opt.val)}
+                  className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+                    weatherSurgeDurationDays === opt.val
+                      ? "bg-[#D4863E] text-white"
+                      : "bg-[#1B3A4B]/5 text-[#1B3A4B]/70 hover:bg-[#1B3A4B]/10"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-[#1B3A4B]/40">
+              How long surge pricing stays active after you enable it.
+            </p>
+          </div>
+
+          {/* Auto-expire toggle */}
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <span className="font-medium text-[#1B3A4B] text-sm">Auto-disable after duration</span>
+              <p className="text-xs text-[#1B3A4B]/40 mt-0.5">
+                {weatherSurgeAutoExpire
+                  ? "Surge pricing will automatically turn off when the duration ends."
+                  : "You'll need to manually turn off surge pricing when you're ready."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setWeatherSurgeAutoExpire(!weatherSurgeAutoExpire)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                weatherSurgeAutoExpire ? "bg-[#D4863E]" : "bg-gray-200"
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                weatherSurgeAutoExpire ? "translate-x-6" : "translate-x-1"
+              }`} />
+            </button>
+          </label>
+        </div>
       </div>
 
       <div className="rounded-xl bg-white border border-gray-200/60 p-6 mb-6">
