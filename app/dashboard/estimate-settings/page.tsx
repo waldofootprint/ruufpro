@@ -15,6 +15,8 @@ import { supabase } from "@/lib/supabase";
 import {
   getRegionalDefaults,
   getRegionName,
+  getMetroDefaults,
+  getMetroName,
 } from "@/lib/regional-pricing";
 import { useDashboard } from "../DashboardContext";
 
@@ -71,10 +73,10 @@ export default function EstimateSettingsPage() {
     async function loadData() {
       if (!ctxContractorId) return;
 
-      // Get contractor state for regional defaults
+      // Get contractor location for metro-level pricing defaults
       const { data: contractor } = await supabase
         .from("contractors")
-        .select("id, state")
+        .select("id, state, city")
         .eq("id", ctxContractorId)
         .single();
 
@@ -112,8 +114,10 @@ export default function EstimateSettingsPage() {
         setFinancingApr(settings.financing_apr?.toString() || "");
         setFinancingNote(settings.financing_note || "");
       } else {
-        // Pre-fill with regional defaults
-        const defaults = getRegionalDefaults(contractor.state || "TX");
+        // Pre-fill with metro-level defaults (BLS data), fall back to regional
+        const state = contractor.state || "TX";
+        const metro = getMetroDefaults(state, contractor.city || undefined);
+        const defaults = metro.rates;
         setRates({
           asphalt_low: defaults.asphalt_low.toString(),
           asphalt_high: defaults.asphalt_high.toString(),
@@ -188,6 +192,7 @@ export default function EstimateSettingsPage() {
   }
 
   const regionName = getRegionName(contractorState);
+  const metroDisplayName = getMetroName(contractorState) || regionName;
   const defaults = getRegionalDefaults(contractorState);
 
   return (
@@ -204,7 +209,7 @@ export default function EstimateSettingsPage() {
         <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-3">
           <span className="text-amber-500 text-lg leading-none mt-0.5">*</span>
           <div>
-            <p className="text-sm font-semibold text-slate-900">We pre-filled {regionName} averages for you</p>
+            <p className="text-sm font-semibold text-slate-900">We pre-filled {metroDisplayName} averages for you</p>
             <p className="text-xs text-slate-500 mt-0.5">Adjust to match your pricing, then hit Save to activate your widget.</p>
           </div>
         </div>

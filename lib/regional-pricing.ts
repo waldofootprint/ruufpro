@@ -11,7 +11,7 @@
 // Sources: RSMeans material+labor rates, HomeAdvisor contractor surveys,
 // Instant Roofer/Roofr reverse-engineered rates (2024-2026)
 
-interface RegionalRates {
+export interface RegionalRates {
   asphalt_low: number;
   asphalt_high: number;
   metal_low: number;
@@ -107,3 +107,7 @@ export function getRegionName(state: string): string {
   };
   return names[region] || "your area";
 }
+
+// Enhanced pricing: uses BLS metro-level data when city/ZIP available,
+// falls back to 5-region defaults otherwise.
+export { getMetroDefaults, getMetroName } from "./metro-pricing";
