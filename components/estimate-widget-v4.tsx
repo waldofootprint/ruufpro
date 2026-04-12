@@ -1082,9 +1082,9 @@ export default function EstimateWidgetV4({
             >
               <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: C.textTertiary }} />
               <p className="text-[12px] leading-relaxed" style={{ color: C.textSecondary }}>
-                <strong style={{ color: C.text }}>Note:</strong> These are ballpark estimates,
-                not final quotes. Actual price depends on roof condition, access, and
-                other factors assessed during a free inspection.
+                <strong style={{ color: C.text }}>Note:</strong> Estimate based on satellite
+                measurement and local market pricing. Your contractor will confirm the
+                final price after a free on-site inspection.
               </p>
             </div>
 

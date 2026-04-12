@@ -677,9 +677,9 @@ export default function EstimateWidget({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    <strong className="text-gray-700">Note:</strong> This is a ballpark estimate,
-                    not a final quote. Your actual price depends on roof condition, access, and
-                    other factors assessed during a free inspection. Final pricing may be higher or lower.
+                    <strong className="text-gray-700">Note:</strong> Estimate based on satellite
+                    measurement and local market pricing. Your contractor will confirm the
+                    final price after a free on-site inspection.
                   </p>
                 </div>
               </CardBody>

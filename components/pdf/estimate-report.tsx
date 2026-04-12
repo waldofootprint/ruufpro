@@ -672,10 +672,10 @@ export function EstimateReportPDF(props: EstimateReportProps) {
           <View style={s.disclaimer} wrap={false}>
             <Text style={s.disclaimerTitle}>Important Disclaimer</Text>
             <Text style={s.disclaimerText}>
-              This is a ballpark estimate based on {isSatellite ? "satellite imagery" : "the information provided"}, not a final quote or contract.
-              Your actual price depends on roof condition, number of existing layers, decking integrity, access
-              requirements, code compliance, and other factors that can only be assessed during an in-person inspection.
-              Final pricing may be higher or lower than this range. Material prices are subject to market fluctuations.
+              Estimate based on {isSatellite ? "satellite measurement" : "the information provided"} and local market pricing, not a final quote or contract.
+              Your contractor will confirm the final price after a free on-site inspection. Actual cost depends on
+              roof condition, existing layers, decking integrity, access requirements, and code compliance.
+              Material prices are subject to market fluctuations.
             </Text>
           </View>
 

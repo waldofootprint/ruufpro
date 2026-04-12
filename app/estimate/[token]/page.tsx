@@ -409,10 +409,10 @@ export default function LivingEstimatePage() {
         {/* Disclaimer */}
         <div className="bg-slate-100 rounded-xl p-4">
           <p className="text-[11px] text-slate-400 leading-relaxed">
-            <strong className="text-slate-500">Important:</strong> This is a ballpark estimate based on{" "}
-            {data.is_satellite ? "satellite imagery" : "the information provided"}, not a final quote or contract.
-            Your actual price depends on roof condition, number of existing layers, decking integrity, access
-            requirements, code compliance, and other factors assessed during an in-person inspection.
+            <strong className="text-slate-500">Important:</strong> Estimate based on{" "}
+            {data.is_satellite ? "satellite measurement" : "the information provided"} and local market pricing.
+            Your contractor will confirm the final price after a free on-site inspection. Actual cost depends on
+            roof condition, existing layers, decking integrity, and access requirements.
             Material prices are subject to market fluctuations. This estimate is valid for 30 days.
           </p>
         </div>
