@@ -154,7 +154,11 @@ export async function POST(request: NextRequest) {
       financingInterest: financing_interest,
       rates,
       bufferPercent: settings.buffer_percent || 0,
-      weatherSurgeMultiplier: weatherSurge.multiplier,
+      // Weather surge NOT auto-applied — roofer must opt in via dashboard.
+      // weatherSurgeMultiplier is only set when roofer enables storm pricing.
+      weatherSurgeMultiplier: settings.weather_surge_enabled
+        ? (settings.weather_surge_multiplier || weatherSurge.multiplier)
+        : undefined,
     };
 
     // Assign Good/Better/Best tier labels based on price order
@@ -200,8 +204,11 @@ export async function POST(request: NextRequest) {
         is_satellite: firstEst.is_satellite,
         detail_display: detailDisplay,
       },
+      // Weather surge: "detected" = NOAA sees alerts, "active" = roofer opted in
       weather_surge: weatherSurge.isSurged
         ? {
+            detected: true,
+            active: !!settings.weather_surge_enabled,
             multiplier: weatherSurge.multiplier,
             alerts: weatherSurge.alerts,
             severity: weatherSurge.highestSeverity,

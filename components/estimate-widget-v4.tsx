@@ -247,6 +247,8 @@ interface EstimateResponse {
     detail_display: string;
   };
   weather_surge?: {
+    detected: boolean;
+    active: boolean;  // true only when roofer opted in
     multiplier: number;
     alerts: string[];
     severity: string;
@@ -998,8 +1000,8 @@ export default function EstimateWidgetV4({
               </p>
             </div>
 
-            {/* Weather surge notice — only shown during active weather events */}
-            {estimateData.weather_surge && (
+            {/* Weather surge notice — shown when roofer has enabled storm pricing */}
+            {estimateData.weather_surge?.active && (
               <div
                 className="rounded-xl px-4 py-3 flex items-start gap-3"
                 style={{
@@ -1011,9 +1013,6 @@ export default function EstimateWidgetV4({
                 <p className="text-[12px] leading-relaxed" style={{ color: C.textSecondary }}>
                   <strong style={{ color: C.text }}>Weather alert in your area.</strong>{" "}
                   Prices may be higher than normal due to increased demand.
-                  {estimateData.weather_surge.multiplier >= 1.2 && (
-                    <> Pricing reflects current storm-related market conditions.</>
-                  )}
                 </p>
               </div>
             )}
