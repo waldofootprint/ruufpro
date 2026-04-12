@@ -1,14 +1,15 @@
 // Regional pricing defaults.
 //
 // When a roofer first configures their estimate widget, we suggest
-// $/sqft rates based on their region. This prevents two problems:
-// 1. New roofers who don't know what to enter
-// 2. Roofers who enter wildly wrong numbers (corrupting their estimates)
+// $/sqft rates based on their region. These are MATERIALS + LABOR ONLY
+// rates — waste, accessories, penetrations, and overhead are calculated
+// separately by the estimate engine. This avoids double-counting.
 //
-// These are industry averages — the roofer adjusts to match their actual pricing.
-// Over time, we'll improve these from anonymized data from our own roofers.
+// The _low and _high values define the range for the ±band display.
+// The midpoint ((low + high) / 2) is used as the best estimate.
 //
-// Sources: RSMeans, HomeAdvisor, Angi cost guides (2024-2026 averages)
+// Sources: RSMeans material+labor rates, HomeAdvisor contractor surveys,
+// Instant Roofer/Roofr reverse-engineered rates (2024-2026)
 
 interface RegionalRates {
   asphalt_low: number;
@@ -21,43 +22,43 @@ interface RegionalRates {
   flat_high: number;
 }
 
-// Regional pricing by broad US region.
-// In V2.1 we can make this per-state or per-ZIP using ATTOM data.
+// Regional pricing by broad US region (materials + labor, NOT all-in).
+// Overhead/profit markup is applied separately in the estimate engine.
 const REGIONAL_DEFAULTS: Record<string, RegionalRates> = {
   // Southeast / Sun Belt — lower labor costs, high storm demand
   southeast: {
-    asphalt_low: 4.00, asphalt_high: 6.50,
-    metal_low: 8.50,   metal_high: 13.00,
-    tile_low: 10.00,   tile_high: 16.00,
-    flat_low: 4.50,    flat_high: 7.00,
+    asphalt_low: 2.50, asphalt_high: 3.50,
+    metal_low: 5.50,   metal_high: 7.50,
+    tile_low: 6.50,    tile_high: 9.00,
+    flat_low: 2.75,    flat_high: 4.00,
   },
   // Northeast — higher labor costs, seasonal demand
   northeast: {
-    asphalt_low: 5.00, asphalt_high: 8.00,
-    metal_low: 10.00,  metal_high: 15.00,
-    tile_low: 12.00,   tile_high: 18.00,
-    flat_low: 5.50,    flat_high: 8.50,
+    asphalt_low: 3.25, asphalt_high: 4.50,
+    metal_low: 6.50,   metal_high: 9.00,
+    tile_low: 8.00,    tile_high: 11.00,
+    flat_low: 3.50,    flat_high: 5.00,
   },
   // Midwest — moderate costs, storm and winter demand
   midwest: {
-    asphalt_low: 4.50, asphalt_high: 7.00,
-    metal_low: 9.00,   metal_high: 14.00,
-    tile_low: 11.00,   tile_high: 16.50,
-    flat_low: 5.00,    flat_high: 7.50,
+    asphalt_low: 2.75, asphalt_high: 4.00,
+    metal_low: 6.00,   metal_high: 8.50,
+    tile_low: 7.00,    tile_high: 10.00,
+    flat_low: 3.00,    flat_high: 4.50,
   },
   // West — higher costs, fire and earthquake building codes
   west: {
-    asphalt_low: 5.50, asphalt_high: 9.00,
-    metal_low: 10.50,  metal_high: 16.00,
-    tile_low: 13.00,   tile_high: 20.00,
-    flat_low: 6.00,    flat_high: 9.50,
+    asphalt_low: 3.50, asphalt_high: 5.00,
+    metal_low: 7.00,   metal_high: 10.00,
+    tile_low: 8.50,    tile_high: 12.00,
+    flat_low: 3.75,    flat_high: 5.50,
   },
   // Southwest — moderate, high tile demand
   southwest: {
-    asphalt_low: 4.25, asphalt_high: 7.00,
-    metal_low: 9.00,   metal_high: 14.00,
-    tile_low: 11.00,   tile_high: 17.00,
-    flat_low: 5.00,    flat_high: 7.50,
+    asphalt_low: 2.75, asphalt_high: 3.75,
+    metal_low: 6.00,   metal_high: 8.50,
+    tile_low: 7.00,    tile_high: 10.50,
+    flat_low: 3.00,    flat_high: 4.50,
   },
 };
 
