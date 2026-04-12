@@ -411,7 +411,7 @@ export default function LivingEstimatePage() {
           <p className="text-[11px] text-slate-400 leading-relaxed">
             <strong className="text-slate-500">Important:</strong> Estimate based on{" "}
             {data.is_satellite ? "satellite measurement" : "the information provided"} and local market pricing.
-            Your contractor will confirm the final price after a free on-site inspection. Actual cost depends on
+            Final price determined after a free on-site inspection. Actual cost depends on
             roof condition, existing layers, decking integrity, and access requirements.
             Material prices are subject to market fluctuations. This estimate is valid for 30 days.
           </p>

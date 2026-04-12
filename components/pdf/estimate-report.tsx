@@ -673,7 +673,7 @@ export function EstimateReportPDF(props: EstimateReportProps) {
             <Text style={s.disclaimerTitle}>Important Disclaimer</Text>
             <Text style={s.disclaimerText}>
               Estimate based on {isSatellite ? "satellite measurement" : "the information provided"} and local market pricing, not a final quote or contract.
-              Your contractor will confirm the final price after a free on-site inspection. Actual cost depends on
+              Final price determined after a free on-site inspection. Actual cost depends on
               roof condition, existing layers, decking integrity, access requirements, and code compliance.
               Material prices are subject to market fluctuations.
             </Text>

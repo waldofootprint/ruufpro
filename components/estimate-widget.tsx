@@ -678,8 +678,8 @@ export default function EstimateWidget({
                   </svg>
                   <p className="text-xs text-gray-500 leading-relaxed">
                     <strong className="text-gray-700">Note:</strong> Estimate based on satellite
-                    measurement and local market pricing. Your contractor will confirm the
-                    final price after a free on-site inspection.
+                    measurement and local market pricing. Final price determined after
+                    a free on-site inspection.
                   </p>
                 </div>
               </CardBody>
