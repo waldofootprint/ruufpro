@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getStripe, getTierFromPriceId, PRO_FLAGS, FREE_FLAGS } from "@/lib/stripe";
+import { notifySlack } from "@/lib/slack-notify";
 
 // Disable body parsing — Stripe needs the raw body to verify signatures.
 export const runtime = "nodejs";
@@ -65,6 +66,21 @@ export async function POST(req: NextRequest) {
         .eq("id", contractorId);
 
       console.log(`[Stripe] Activated ${tier} for contractor ${contractorId}`);
+
+      // Notify Slack — impossible to miss a new Pro customer
+      const { data: proContractor } = await supabase
+        .from("contractors")
+        .select("business_name, email")
+        .eq("id", contractorId)
+        .single();
+      if (proContractor) {
+        notifySlack({
+          type: "pro_upgrade",
+          businessName: proContractor.business_name,
+          email: proContractor.email,
+          contractorId,
+        }).catch(() => {});
+      }
       break;
     }
 

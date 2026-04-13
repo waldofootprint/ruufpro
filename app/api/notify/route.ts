@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendLeadNotificationEmail } from "@/lib/notifications";
 import { inngest } from "@/lib/inngest/client";
+import { notifySlack } from "@/lib/slack-notify";
 
 // ---------------------------------------------------------------------------
 // In-memory rate limiter (per serverless instance)
@@ -156,6 +157,15 @@ export async function POST(request: NextRequest) {
         origin: request.nextUrl.origin,
       },
     });
+
+    // Notify Slack — Hannah sees every lead in real time
+    notifySlack({
+      type: "new_lead",
+      businessName: contractor.business_name,
+      homeownerName: lead_name,
+      phone: lead_phone || "no phone",
+      city: lead_address || "unknown",
+    }).catch(() => {});
 
     return NextResponse.json({ emailSent, to: contractor.email });
   } catch (err) {

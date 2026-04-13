@@ -246,7 +246,14 @@ export default function OnboardingPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contractorId: contractor.id }),
-    }).catch(() => {}); // Silent fail — emails are important but not blocking
+    }).catch(() => {});
+
+    // Notify Slack — new signup
+    fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event: "signup", data: { businessName, city, state } }),
+    }).catch(() => {});
 
     setLoading(false);
     setScreen("published");
@@ -279,6 +286,13 @@ export default function OnboardingPage() {
       setLoading(false);
       return;
     }
+
+    // Notify Slack — new signup (skip flow)
+    fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event: "signup", data: { businessName, city, state } }),
+    }).catch(() => {});
 
     router.push("/dashboard");
   }
