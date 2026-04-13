@@ -13,7 +13,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: "Is the website really free?",
-    a: <><strong>Yes, forever.</strong> No credit card, no trial that expires, no catch. Your roofing website is fully functional — contact form, click-to-call, lead capture, everything. We make money when you upgrade to Pro at $149/month or Growth at $299/month.</>,
+    a: <><strong>Yes, forever.</strong> No credit card, no trial that expires, no catch. Your roofing website is fully functional — contact form, click-to-call, lead capture, everything. We make money when you upgrade to Pro at $149/month.</>,
   },
   {
     q: "How accurate are the estimates?",

@@ -184,6 +184,14 @@ export default function OnboardingPage() {
 
     if (!slug) { setError("Please enter a valid business name."); setLoading(false); return; }
 
+    const RESERVED_SLUGS = new Set([
+      "www", "app", "api", "admin", "dashboard", "login", "signup", "onboarding",
+      "widget", "chat", "ops", "hq", "command-center", "welcome", "resources",
+      "calculator", "preview", "demo", "mission-control", "sitemap", "robots",
+      "mail", "email", "billing", "support", "help", "status", "docs",
+    ]);
+    if (RESERVED_SLUGS.has(slug)) { setError("That name is reserved. Please use a different business name."); setLoading(false); return; }
+
     const finalAbout = showAbout ? (aboutText || defaultAbout) : null;
     const finalCities = serviceAreaCities.length > 0 ? serviceAreaCities : [city];
     const finalHeadline = headline || defaultHeadline;
@@ -329,7 +337,7 @@ export default function OnboardingPage() {
   // ============================================================
   // SCREEN 3: Edit Mode — Two-column with sticky preview
   // ============================================================
-  return (
+  if (screen === "editor") return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-6xl px-4 py-6">
         {/* Header */}
@@ -537,6 +545,11 @@ export default function OnboardingPage() {
               <button
                 onClick={() => {
                   if (services.length === 0) { setError("Select at least one service."); return; }
+                  if (!ownerFirstName.trim() || !ownerLastName.trim()) { setError("Owner first and last name are required."); return; }
+                  if (!legalEntityType) { setError("Please select a business type."); return; }
+                  if (legalEntityType !== "sole_proprietor" && !ein.trim()) { setError("EIN is required for your business type."); return; }
+                  if (!streetAddress.trim()) { setError("Street address is required."); return; }
+                  if (!zip.trim()) { setError("ZIP code is required."); return; }
                   handlePublish();
                 }}
                 disabled={loading}

@@ -44,6 +44,11 @@ export interface Contractor {
   service_area_cities: string[] | null;
   years_in_business: number | null;
   license_number: string | null;
+  owner_first_name: string | null;
+  owner_last_name: string | null;
+  business_hours: string | null;
+  webhook_enabled: boolean;
+  webhook_url: string | null;
 
   // Trust signal checkboxes
   is_licensed: boolean;

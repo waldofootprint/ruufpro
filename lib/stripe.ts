@@ -18,7 +18,6 @@ export function getStripe(): Stripe {
 // Stripe Price IDs — set these in Stripe Dashboard, store in env vars.
 export const PRICES = {
   pro_monthly: process.env.STRIPE_PRICE_PRO_MONTHLY!,
-  pro_yearly: process.env.STRIPE_PRICE_PRO_YEARLY!,
 } as const;
 
 export type PlanKey = keyof typeof PRICES;
@@ -35,7 +34,7 @@ export const PRO_FLAGS: Record<string, boolean> = {
 
 // Map a Stripe price ID to tier.
 export function getTierFromPriceId(priceId: string): "pro" | null {
-  if (priceId === PRICES.pro_monthly || priceId === PRICES.pro_yearly) return "pro";
+  if (priceId === PRICES.pro_monthly) return "pro";
   return null;
 }
 

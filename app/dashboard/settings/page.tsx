@@ -58,6 +58,7 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const crmConnected = searchParams.get("crm_connected");
   const crmError = searchParams.get("crm_error");
+  const billingStatus = searchParams.get("billing");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -189,6 +190,19 @@ export default function SettingsPage() {
   return (
     <div className="max-w-[640px] mx-auto space-y-5">
       <h1 className="text-[20px] font-extrabold text-slate-800 tracking-tight">Settings</h1>
+
+      {/* Billing feedback */}
+      {billingStatus === "success" && (
+        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-[13px] text-green-700 font-medium flex items-center gap-2">
+          <Check className="w-4 h-4 flex-shrink-0" />
+          <span>Welcome to <strong>RuufPro Pro</strong>! Your estimate widget, Riley AI, reviews, and city pages are now active.</span>
+        </div>
+      )}
+      {billingStatus === "cancelled" && (
+        <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-[13px] text-slate-600 font-medium">
+          Checkout cancelled. You can upgrade anytime from Billing.
+        </div>
+      )}
 
       {/* CRM connection feedback */}
       {crmConnected && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { ContractorTier } from "@/lib/types";
 import { getTierFromContractor } from "@/lib/types";
@@ -26,6 +26,7 @@ interface DashboardState {
   unreadSmsCount: number;
   refreshLeadCount: () => Promise<void>;
   refreshSmsCount: () => Promise<void>;
+  refreshContractor: () => Promise<void>;
   onboarding: OnboardingState | null;
   refreshOnboarding: () => Promise<void>;
   loading: boolean;
@@ -41,6 +42,7 @@ export function useDashboard() {
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [contractorId, setContractorId] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -111,6 +113,22 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setOnboarding({ steps, complete });
   };
 
+  // Re-fetch contractor data (tier, flags) from DB
+  const refreshContractor = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: contractor } = await supabase
+      .from("contractors")
+      .select("id, business_name, has_estimate_widget, has_seo_pages, has_custom_domain, has_ai_chatbot")
+      .eq("user_id", user.id)
+      .single();
+    if (contractor) {
+      setContractorId(contractor.id);
+      setBusinessName(contractor.business_name);
+      setTier(getTierFromContractor(contractor));
+    }
+  };
+
   // Auth check + contractor fetch (runs once)
   useEffect(() => {
     async function init() {
@@ -130,7 +148,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           setBusinessName(contractor.business_name);
           setTier(getTierFromContractor(contractor));
         } else {
-          // User exists but no contractor record — send to onboarding
           router.push("/onboarding");
           return;
         }
@@ -143,6 +160,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     init();
   }, [router]);
 
+  // After Stripe checkout redirect, re-fetch contractor to pick up new tier
+  useEffect(() => {
+    if (searchParams.get("billing") === "success" && contractorId) {
+      refreshContractor();
+    }
+  }, [searchParams, contractorId]);
+
   // Fetch counts + onboarding once we have contractorId
   useEffect(() => {
     if (contractorId) {
@@ -154,7 +178,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   return (
     <DashboardContext.Provider
-      value={{ contractorId, businessName, tier, newLeadCount, unreadSmsCount, refreshLeadCount, refreshSmsCount, onboarding, refreshOnboarding, loading }}
+      value={{ contractorId, businessName, tier, newLeadCount, unreadSmsCount, refreshLeadCount, refreshSmsCount, refreshContractor, onboarding, refreshOnboarding, loading }}
     >
       {children}
     </DashboardContext.Provider>

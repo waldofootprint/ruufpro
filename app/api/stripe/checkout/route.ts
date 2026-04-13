@@ -29,12 +29,16 @@ export async function POST(req: NextRequest) {
 
   const { data: contractor } = await supabase
     .from("contractors")
-    .select("id, email, business_name, stripe_customer_id")
+    .select("id, email, business_name, stripe_customer_id, has_estimate_widget")
     .eq("user_id", user.id)
     .single();
 
   if (!contractor) {
     return NextResponse.json({ error: "Contractor not found" }, { status: 404 });
+  }
+
+  if (contractor.has_estimate_widget) {
+    return NextResponse.json({ error: "Already subscribed to Pro" }, { status: 400 });
   }
 
   // Reuse existing Stripe customer or create new one

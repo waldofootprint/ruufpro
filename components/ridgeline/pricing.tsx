@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Globe, Calculator, Check, X } from "lucide-react";
 
 function useCheckout() {
@@ -64,11 +63,7 @@ const PRO_FEATURES = [
 ];
 
 export default function RidgelinePricing() {
-  const [annual, setAnnual] = useState(false);
   const { checkout, loading } = useCheckout();
-  const proPrice = annual ? "$119" : "$149";
-  const period = annual ? "/ month, billed yearly" : "/ month";
-  const proPlan = annual ? "pro_yearly" : "pro_monthly";
 
   return (
     <section id="pricing" className="relative bg-[#1B3A4B] overflow-hidden">
@@ -95,39 +90,6 @@ export default function RidgelinePricing() {
             No setup fees. No contracts. No per-lead charges. Cancel anytime.
           </p>
 
-          {/* Annual toggle */}
-          <div className="inline-flex items-center gap-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-5 py-2.5">
-            <span
-              className={`text-sm font-semibold transition-colors ${
-                !annual ? "text-white" : "text-white/40"
-              }`}
-            >
-              Monthly
-            </span>
-            <button
-              onClick={() => setAnnual(!annual)}
-              className="relative w-12 h-6 rounded-full bg-white/10 transition-colors duration-300 focus:outline-none"
-              aria-label="Toggle annual pricing"
-            >
-              <motion.div
-                className="absolute top-0.5 w-5 h-5 rounded-full bg-[#D4863E]"
-                animate={{ left: annual ? "calc(100% - 1.375rem)" : "0.125rem" }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            </button>
-            <span
-              className={`text-sm font-semibold transition-colors ${
-                annual ? "text-white" : "text-white/40"
-              }`}
-            >
-              Yearly
-            </span>
-            {annual && (
-              <span className="text-[10px] font-bold text-[#D4863E] uppercase tracking-wider">
-                Save 20%
-              </span>
-            )}
-          </div>
         </div>
 
         {/* Cards — two column */}
@@ -240,9 +202,9 @@ export default function RidgelinePricing() {
                     fontFamily: '"Arial Black", Impact, sans-serif',
                   }}
                 >
-                  {proPrice}
+                  $149
                 </span>
-                <span className="text-white/40 text-sm pb-1">{period}</span>
+                <span className="text-white/40 text-sm pb-1">/ month</span>
               </div>
 
               <p className="text-xs text-white/50 mb-6">
@@ -250,11 +212,11 @@ export default function RidgelinePricing() {
               </p>
 
               <button
-                onClick={() => checkout(proPlan)}
+                onClick={() => checkout("pro_monthly")}
                 disabled={!!loading}
                 className="block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 bg-[#D4863E] text-white hover:bg-[#c0763a] disabled:opacity-50"
               >
-                {loading === proPlan ? "Redirecting..." : `Start Getting Leads — ${proPrice}/mo`}
+                {loading === "pro_monthly" ? "Redirecting..." : `Start Getting Leads — $$149/mo`}
               </button>
             </div>
 
@@ -312,7 +274,7 @@ export default function RidgelinePricing() {
           className="text-center text-sm text-white/30 mt-8 max-w-xl mx-auto"
         >
           The free website is genuinely free — no credit card, no trial, no catch.
-          We make money when you choose Pro at {proPrice}/mo.
+          We make money when you choose Pro at $149/mo.
           No per-lead fees, no setup costs, no contracts.
           No salesperson will ever call you.
         </p>

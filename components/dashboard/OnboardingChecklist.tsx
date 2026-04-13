@@ -39,9 +39,8 @@ export default function OnboardingChecklist() {
   const router = useRouter();
   const [expanded, setExpanded] = useState(true);
 
-  // Only show for Pro/Growth users who haven't finished setup
-  // TODO: restore tier check → if (!onboarding || onboarding.complete || tier === "free") return null;
-  if (!onboarding || onboarding.complete) return null;
+  // Only show for Pro users who haven't finished setup
+  if (!onboarding || onboarding.complete || tier === "free") return null;
 
   const completedCount = STEPS.filter((s) => s.isDone(onboarding.steps)).length;
   const remaining = STEPS.length - completedCount;

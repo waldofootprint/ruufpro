@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardProvider, useDashboard } from "./DashboardContext";
 import {
@@ -49,9 +49,11 @@ const TAB_ITEMS = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <DashboardProvider>
-      <DashboardShell>{children}</DashboardShell>
-    </DashboardProvider>
+    <Suspense>
+      <DashboardProvider>
+        <DashboardShell>{children}</DashboardShell>
+      </DashboardProvider>
+    </Suspense>
   );
 }
 

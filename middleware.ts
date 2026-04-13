@@ -16,6 +16,14 @@ export const config = {
   ],
 };
 
+// Reserved subdomains that must never route to /site/{slug}.
+const RESERVED_SLUGS = new Set([
+  "www", "app", "api", "admin", "dashboard", "login", "signup", "onboarding",
+  "widget", "chat", "ops", "hq", "command-center", "welcome", "resources",
+  "calculator", "preview", "demo", "mission-control", "sitemap", "robots",
+  "mail", "email", "billing", "support", "help", "status", "docs",
+]);
+
 // Simple in-memory cache for custom domain lookups (avoids DB hit on every request).
 const domainCache = new Map<string, { slug: string; expires: number }>();
 const CACHE_TTL = 5 * 60_000; // 5 minutes
@@ -43,6 +51,10 @@ export default async function middleware(req: NextRequest) {
       currentHost = hostname.split(".localhost")[0];
     } else {
       currentHost = hostname.replace(".ruufpro.com", "");
+    }
+    // Skip reserved subdomains — serve main app instead
+    if (RESERVED_SLUGS.has(currentHost)) {
+      return NextResponse.next();
     }
     url.pathname = `/site/${currentHost}${url.pathname}`;
     return NextResponse.rewrite(url);
