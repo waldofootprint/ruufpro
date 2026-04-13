@@ -1113,3 +1113,519 @@ export const weatherStormCheck = inngest.createFunction(
     };
   }
 );
+
+// ---------------------------------------------------------------------------
+// Contact Form Detection
+// Trigger: "ops/form.detect" — scans a prospect's website for contact forms.
+// Stores: form URL, field mapping, CAPTCHA status, honeypot fields.
+// Called by: /api/ops/detect-forms route (batch) or manual trigger.
+// ---------------------------------------------------------------------------
+export const prospectFormDetect = inngest.createFunction(
+  {
+    id: "prospect-form-detect",
+    retries: 2,
+    triggers: [{ event: "ops/form.detect" }],
+  },
+  async ({ event, step }) => {
+    const prospectId = event.data.prospectId as string;
+    if (!prospectId) throw new Error("Missing prospectId");
+
+    // Step 1: Load prospect data
+    const prospect = await step.run("load-prospect", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+
+      const { data, error } = await supabase
+        .from("prospect_pipeline")
+        .select("id, their_website_url, form_detected_at")
+        .eq("id", prospectId)
+        .single();
+
+      if (error || !data) throw new Error(`Prospect not found: ${prospectId}`);
+      if (data.form_detected_at) return { skip: true as const, reason: "already detected", url: "" };
+      if (!data.their_website_url) return { skip: true as const, reason: "no website", url: "" };
+
+      return { skip: false as const, reason: "", url: data.their_website_url as string };
+    });
+
+    if (prospect.skip) return { skipped: true, reason: prospect.reason };
+
+    // Step 2: Detect form on their website
+    const detection = await step.run("detect-form", async () => {
+      const { chromium } = await import("playwright");
+
+      const browserlessToken = process.env.BROWSERLESS_TOKEN;
+      const browser = browserlessToken
+        ? await chromium.connectOverCDP(
+            `wss://chrome.browserless.io?token=${browserlessToken}`
+          )
+        : await chromium.launch({ headless: true });
+
+      try {
+        const context = browserlessToken
+          ? browser.contexts()[0] || (await browser.newContext())
+          : await browser.newContext({ viewport: { width: 1280, height: 900 } });
+
+        const page = await context.newPage();
+
+        // Block heavy resources to speed up detection
+        await page.route("**/*", (route) => {
+          const type = route.request().resourceType();
+          if (["image", "media", "font"].includes(type)) {
+            route.abort();
+          } else {
+            route.continue();
+          }
+        });
+
+        let fullUrl = prospect.url as string;
+        if (!fullUrl.startsWith("http")) fullUrl = `https://${fullUrl}`;
+
+        await page.goto(fullUrl, { waitUntil: "domcontentloaded", timeout: 15000 });
+        await page.waitForTimeout(2000);
+
+        // Find contact page link
+        const contactHref: string | null = await page.evaluate(() => {
+          const links = Array.from(document.querySelectorAll("a"));
+          const patterns = /\/(contact|contact-us|get-in-touch|reach-us|get-a-quote|free-estimate|request)/i;
+          const textPatterns = /^(contact|contact us|get in touch|reach us|get a quote|free estimate|request)/i;
+          for (const link of links) {
+            const href = link.getAttribute("href") || "";
+            const text = link.textContent?.trim() || "";
+            if (patterns.test(href) || textPatterns.test(text)) return href;
+          }
+          return null;
+        });
+
+        if (contactHref) {
+          try {
+            const contactUrl = contactHref.startsWith("http")
+              ? contactHref
+              : new URL(contactHref, page.url()).href;
+            await page.goto(contactUrl, { waitUntil: "domcontentloaded", timeout: 15000 });
+            await page.waitForTimeout(1500);
+          } catch {
+            // Stay on current page
+          }
+        }
+
+        // Run the same detection logic as the scraper (inline for serverless compat)
+        const result = await page.evaluate(() => {
+          // This is the same detection logic from scrape-prospect-site.mjs detectFormOnPage()
+          // Duplicated here because this runs on Vercel serverless, not as a CLI tool
+          const res: {
+            found: boolean;
+            form_url: string;
+            form_type: string;
+            has_captcha: boolean;
+            field_mapping: Record<string, string | null> | null;
+            honeypot_fields: string[];
+            required_selects: Array<{ selector: string; value: string; required: boolean }>;
+            required_radios: Array<{ selector: string; value: string }>;
+          } = {
+            found: false,
+            form_url: window.location.href,
+            form_type: "unknown",
+            has_captcha: false,
+            field_mapping: null,
+            honeypot_fields: [],
+            required_selects: [],
+            required_radios: [],
+          };
+
+          const html = document.documentElement.innerHTML;
+          if (
+            html.includes("grecaptcha") || html.includes("data-sitekey") ||
+            html.includes("g-recaptcha") || html.includes("cf-turnstile") ||
+            html.includes("hcaptcha") || html.includes("data-netlify-recaptcha")
+          ) {
+            res.has_captcha = true;
+          }
+
+          const forms = Array.from(document.querySelectorAll("form"));
+          if (forms.length === 0) {
+            if (document.querySelector('[data-mesh-id] form, [id*="comp-"] form')) {
+              res.has_captcha = true;
+              res.form_type = "wix";
+            }
+            if (document.querySelector('iframe[src*="jotform"]')) {
+              res.has_captcha = true;
+              res.form_type = "jotform_iframe";
+            }
+            return res;
+          }
+
+          let bestForm: HTMLFormElement | null = null;
+          for (const form of forms) {
+            const action = (form.getAttribute("action") || "").toLowerCase();
+            const id = (form.id || "").toLowerCase();
+            const cn = (form.className || "").toLowerCase();
+            if (action.includes("search") || id.includes("search") || cn.includes("search")) continue;
+            if (id.includes("subscribe") || id.includes("newsletter") || cn.includes("subscribe")) continue;
+            if (id.includes("login") || id.includes("signin") || action.includes("login")) continue;
+            const inputs = form.querySelectorAll("input, textarea, select");
+            const hasTextarea = form.querySelector("textarea");
+            if (inputs.length < 2 && !hasTextarea) continue;
+            if (!bestForm || hasTextarea) {
+              bestForm = form;
+              if (hasTextarea) break;
+            }
+          }
+
+          if (!bestForm) return res;
+          res.found = true;
+
+          const fHtml = bestForm.outerHTML.toLowerCase();
+          const fClass = (bestForm.className || "").toLowerCase();
+          const fId = (bestForm.id || "").toLowerCase();
+          if (fClass.includes("wpcf7") || fHtml.includes("wpcf7")) res.form_type = "cf7";
+          else if (fClass.includes("gform") || fHtml.includes("gform") || fId.includes("gform")) res.form_type = "gravity";
+          else if (fClass.includes("wpforms") || fHtml.includes("wpforms")) res.form_type = "wpforms";
+          else if (bestForm.closest("[data-form-id]") || fHtml.includes("data-form-id")) res.form_type = "squarespace";
+          else if (fClass.includes("gdw-form") || fHtml.includes("gdw-form")) res.form_type = "godaddy";
+          else if (fHtml.includes("elementor")) res.form_type = "elementor";
+          else res.form_type = "custom";
+
+          function isHoneypot(el: Element): boolean {
+            const style = window.getComputedStyle(el);
+            if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return true;
+            if (parseInt(style.height) === 0 && style.overflow === "hidden") return true;
+            const rect = el.getBoundingClientRect();
+            if ((rect.width === 0 && rect.height === 0) || rect.left < -500 || rect.top < -500) return true;
+            const parent = el.closest("div, span, p, li");
+            if (parent && parent !== document.body) {
+              const pStyle = window.getComputedStyle(parent);
+              if (pStyle.display === "none" || pStyle.visibility === "hidden" || pStyle.opacity === "0") return true;
+              const pRect = parent.getBoundingClientRect();
+              if (pRect.left < -500 || pRect.top < -500) return true;
+            }
+            const name = (el.getAttribute("name") || "").toLowerCase();
+            if (name.includes("honeypot") || name.includes("hp-") || name === "website" || name === "url") return true;
+            return false;
+          }
+
+          function getSelector(el: Element): string {
+            if (el.id) return `#${el.id}`;
+            if (el.getAttribute("name")) return `[name="${el.getAttribute("name")}"]`;
+            if (el.getAttribute("data-q")) return `[data-q="${el.getAttribute("data-q")}"]`;
+            const tag = el.tagName.toLowerCase();
+            const siblings = bestForm!.querySelectorAll(tag);
+            const idx = Array.from(siblings).indexOf(el);
+            return `form ${tag}:nth-of-type(${idx + 1})`;
+          }
+
+          function classifyField(el: HTMLInputElement | HTMLTextAreaElement): string {
+            const name = (el.getAttribute("name") || "").toLowerCase();
+            const id = (el.id || "").toLowerCase();
+            const ph = (el.getAttribute("placeholder") || "").toLowerCase();
+            const type = ((el as HTMLInputElement).type || "").toLowerCase();
+            const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+            let lbl = "";
+            if (el.id) { const l = document.querySelector(`label[for="${el.id}"]`); if (l) lbl = l.textContent!.trim().toLowerCase(); }
+            const wl = el.closest("label"); if (wl) lbl = lbl || wl.textContent!.trim().toLowerCase();
+            const all = `${name} ${id} ${ph} ${type} ${lbl} ${aria}`;
+            if (type === "email" || all.includes("email")) return "email";
+            if (type === "tel" || all.includes("phone") || all.includes("tel")) return "phone";
+            if (el.tagName === "TEXTAREA" || all.includes("message") || all.includes("comment") || all.includes("question")) return "message";
+            if (all.includes("name") && !all.includes("company") && !all.includes("business")) return "name";
+            if (all.includes("subject")) return "subject";
+            return "unknown";
+          }
+
+          const mapping: Record<string, string | null> = {
+            name_field: null, email_field: null, phone_field: null,
+            message_field: null, subject_field: null, submit_button: null,
+          };
+
+          const allInputs = Array.from(bestForm.querySelectorAll("input, textarea"));
+          for (const el of allInputs) {
+            if ((el as HTMLInputElement).type === "hidden") continue;
+            if (isHoneypot(el)) { res.honeypot_fields.push(getSelector(el)); continue; }
+            const field = classifyField(el as HTMLInputElement | HTMLTextAreaElement);
+            const sel = getSelector(el);
+            if (field === "name" && !mapping.name_field) mapping.name_field = sel;
+            else if (field === "email" && !mapping.email_field) mapping.email_field = sel;
+            else if (field === "phone" && !mapping.phone_field) mapping.phone_field = sel;
+            else if (field === "message" && !mapping.message_field) mapping.message_field = sel;
+            else if (field === "subject" && !mapping.subject_field) mapping.subject_field = sel;
+          }
+
+          const selects = Array.from(bestForm.querySelectorAll("select"));
+          for (const sel of selects) {
+            if (isHoneypot(sel)) continue;
+            const isReq = sel.hasAttribute("required") || sel.getAttribute("aria-required") === "true";
+            const options = Array.from(sel.querySelectorAll("option"));
+            let defVal: string | null = null;
+            for (const opt of options) {
+              const v = opt.value; const t = opt.textContent!.trim().toLowerCase();
+              if (!v || v === "" || t.includes("select") || t.includes("choose") || t.includes("---") || t.includes("please")) continue;
+              defVal = v; break;
+            }
+            if (defVal) res.required_selects.push({ selector: getSelector(sel), value: defVal, required: isReq });
+          }
+
+          const radioGroups: Record<string, { selector: string; value: string }> = {};
+          const radios = Array.from(bestForm.querySelectorAll('input[type="radio"]'));
+          for (const radio of radios) {
+            const n = radio.getAttribute("name");
+            if (!n || radioGroups[n]) continue;
+            radioGroups[n] = { selector: `[name="${n}"]`, value: (radio as HTMLInputElement).value };
+          }
+          res.required_radios = Object.values(radioGroups);
+
+          const submitBtn = bestForm.querySelector('button[type="submit"], input[type="submit"]');
+          if (submitBtn) { mapping.submit_button = getSelector(submitBtn); }
+          else {
+            const buttons = Array.from(bestForm.querySelectorAll("button, [role='button']"));
+            for (const btn of buttons) {
+              const t = btn.textContent!.trim().toLowerCase();
+              if (t.includes("submit") || t.includes("send") || t.includes("contact") || t.includes("get") || t.includes("request")) {
+                mapping.submit_button = getSelector(btn); break;
+              }
+            }
+          }
+
+          if (!mapping.message_field && !mapping.email_field) { res.found = false; return res; }
+          res.field_mapping = mapping;
+          return res;
+        });
+
+        return result;
+      } finally {
+        await browser.close();
+      }
+    });
+
+    // Step 3: Save detection results
+    await step.run("save-detection", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+
+      await supabase
+        .from("prospect_pipeline")
+        .update({
+          contact_form_url: detection.found ? detection.form_url : null,
+          form_field_mapping: detection.found
+            ? {
+                ...detection.field_mapping,
+                honeypot_fields: detection.honeypot_fields || [],
+                required_selects: detection.required_selects || [],
+                required_radios: detection.required_radios || [],
+                form_type: detection.form_type,
+              }
+            : null,
+          has_captcha: detection.has_captcha,
+          form_detected_at: new Date().toISOString(),
+        })
+        .eq("id", prospectId);
+    });
+
+    return {
+      prospectId,
+      found: detection.found,
+      form_type: detection.form_type,
+      has_captcha: detection.has_captcha,
+    };
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Contact Form Submission
+// Trigger: "ops/form.submit" — submits outreach via a prospect's contact form.
+// Includes: duplicate check, idempotency guard, Slack notification on success.
+// Called by: /api/ops/submit-forms route (after Hannah clicks "Submit Forms").
+// ---------------------------------------------------------------------------
+export const prospectFormSubmit = inngest.createFunction(
+  {
+    id: "prospect-form-submit",
+    retries: 1,
+    triggers: [{ event: "ops/form.submit" }],
+  },
+  async ({ event, step }) => {
+    const prospectId = event.data.prospectId as string;
+    if (!prospectId) throw new Error("Missing prospectId");
+
+    // Step 1: Load prospect + idempotency check
+    const prospect = await step.run("load-prospect", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+
+      const { data, error } = await supabase
+        .from("prospect_pipeline")
+        .select(
+          "id, contractor_id, business_name, owner_name, phone, their_website_url, " +
+          "contact_form_url, form_field_mapping, has_captcha, " +
+          "form_submission_attempts, form_submission_status, preview_site_url"
+        )
+        .eq("id", prospectId)
+        .single();
+
+      if (error || !data) throw new Error(`Prospect not found: ${prospectId}`);
+
+      // Idempotency: don't submit twice
+      if ((data as any).form_submission_attempts >= 1) {
+        return { skip: true as const, reason: "already attempted", data: null as any };
+      }
+      if (!(data as any).contact_form_url) {
+        return { skip: true as const, reason: "no form URL", data: null as any };
+      }
+      if ((data as any).has_captcha) {
+        return { skip: true as const, reason: "captcha detected", data: null as any };
+      }
+
+      return { skip: false as const, reason: "", data: data as any };
+    });
+
+    if (prospect.skip) return { skipped: true, reason: prospect.reason };
+    const p = prospect.data as Record<string, any>;
+
+    // Step 2: Duplicate check — same phone or website already submitted
+    const isDuplicate = await step.run("check-duplicate", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+
+      // Check by phone
+      if (p.phone) {
+        const { count: phoneCount } = await supabase
+          .from("prospect_pipeline")
+          .select("*", { count: "exact", head: true })
+          .eq("phone", p.phone)
+          .eq("form_submission_status", "success")
+          .neq("id", prospectId);
+
+        if (phoneCount && phoneCount > 0) return true;
+      }
+
+      // Check by website URL
+      if (p.their_website_url) {
+        const { count: urlCount } = await supabase
+          .from("prospect_pipeline")
+          .select("*", { count: "exact", head: true })
+          .eq("their_website_url", p.their_website_url)
+          .eq("form_submission_status", "success")
+          .neq("id", prospectId);
+
+        if (urlCount && urlCount > 0) return true;
+      }
+
+      return false;
+    });
+
+    if (isDuplicate) {
+      await step.run("mark-duplicate", async () => {
+        const { createServerSupabase } = await import("@/lib/supabase-server");
+        const supabase = createServerSupabase();
+        await supabase
+          .from("prospect_pipeline")
+          .update({ form_submission_status: "duplicate_skipped" })
+          .eq("id", prospectId);
+      });
+      return { skipped: true, reason: "duplicate" };
+    }
+
+    // Step 3: Increment attempt count BEFORE submitting (idempotency guard)
+    await step.run("increment-attempt", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+      await supabase
+        .from("prospect_pipeline")
+        .update({ form_submission_attempts: 1 })
+        .eq("id", prospectId);
+    });
+
+    // Step 4: Build claim URL and submit the form
+    type SubmitResult = { success: boolean; status: string; submittedAt?: string; error?: string; screenshotPath?: string };
+
+    const result: SubmitResult = await step.run("submit-form", async () => {
+      const { submitContactForm } = await import("@/lib/form-outreach");
+
+      // Build the claim URL from the contractor's slug
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+      const { data: site } = await supabase
+        .from("sites")
+        .select("slug")
+        .eq("contractor_id", p.contractor_id)
+        .eq("published", true)
+        .single();
+
+      const slug = site?.slug || p.contractor_id;
+      const claimUrl = `https://ruufpro.com/claim/${slug}`;
+
+      const mapping = (p.form_field_mapping || {}) as Record<string, unknown>;
+
+      return await submitContactForm({
+        prospectId,
+        formUrl: p.contact_form_url as string,
+        fieldMapping: {
+          name_field: (mapping.name_field as string) || null,
+          email_field: (mapping.email_field as string) || null,
+          phone_field: (mapping.phone_field as string) || null,
+          message_field: (mapping.message_field as string) || null,
+          subject_field: (mapping.subject_field as string) || null,
+          submit_button: (mapping.submit_button as string) || null,
+        },
+        honeypotFields: (mapping.honeypot_fields as string[]) || [],
+        requiredSelects: (mapping.required_selects as Array<{ selector: string; value: string }>) || [],
+        requiredRadios: (mapping.required_radios as Array<{ selector: string; value: string }>) || [],
+        businessName: p.business_name as string,
+        ownerName: p.owner_name as string | null,
+        previewSiteUrl: p.preview_site_url as string,
+        claimUrl,
+        senderName: "Hannah Waldo",
+        senderEmail: "forms@getruufpro.com",
+      });
+    });
+
+    // Step 5: Update pipeline based on result
+    await step.run("update-pipeline", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+
+      if (result.success) {
+        await supabase
+          .from("prospect_pipeline")
+          .update({
+            stage: "sent",
+            stage_entered_at: new Date().toISOString(),
+            outreach_method: "form",
+            form_submitted_at: result.submittedAt,
+            form_submission_status: "success",
+            sent_at: result.submittedAt,
+          })
+          .eq("id", prospectId);
+      } else {
+        await supabase
+          .from("prospect_pipeline")
+          .update({
+            form_submission_status: result.status as string,
+            form_submission_error: result.error,
+          })
+          .eq("id", prospectId);
+      }
+    });
+
+    // Step 6: Slack notification on success
+    if (result.success) {
+      await step.run("notify-slack", async () => {
+        const webhookUrl = process.env.SLACK_NOTIFICATIONS_WEBHOOK_URL;
+        if (!webhookUrl) return;
+
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: `:mailbox_with_mail: *Form Submitted*\n*${p.business_name}* — via ${(p.form_field_mapping as Record<string, unknown>)?.form_type || "contact form"}\nForm URL: ${p.contact_form_url}`,
+          }),
+        });
+      });
+    }
+
+    return {
+      prospectId,
+      success: result.success,
+      status: result.status,
+      error: result.error,
+    };
+  }
+);

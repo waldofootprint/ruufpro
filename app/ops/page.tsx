@@ -121,11 +121,54 @@ export default function OpsPage() {
   const [newBatchCities, setNewBatchCities] = useState("");
   const [newBatchCount, setNewBatchCount] = useState(25);
   const [creatingBatch, setCreatingBatch] = useState(false);
+  const [detectingForms, setDetectingForms] = useState<string | null>(null);
+  const [submittingForms, setSubmittingForms] = useState<string | null>(null);
+  const [formActionResult, setFormActionResult] = useState<string | null>(null);
 
   function openScrapePanel(batchId: string, cities: string[]) {
     setScrapeOpen(batchId);
     setScrapeCities(cities.join(", "));
     setScrapeCount(25);
+  }
+
+  async function handleDetectForms(batchId: string) {
+    setDetectingForms(batchId);
+    setFormActionResult(null);
+    try {
+      const res = await fetch("/api/ops/detect-forms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: batchId }),
+      });
+      const data = await res.json();
+      setFormActionResult(`Queued ${data.queued} prospect(s) for form detection`);
+    } catch (err) {
+      setFormActionResult("Form detection failed");
+    } finally {
+      setDetectingForms(null);
+    }
+  }
+
+  async function handleSubmitForms(batchId: string) {
+    setSubmittingForms(batchId);
+    setFormActionResult(null);
+    try {
+      const res = await fetch("/api/ops/submit-forms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: batchId }),
+      });
+      const data = await res.json();
+      const parts = [`Queued ${data.queued} form submission(s)`];
+      if (data.skipped_captcha > 0) parts.push(`${data.skipped_captcha} skipped (CAPTCHA)`);
+      if (data.skipped_no_form > 0) parts.push(`${data.skipped_no_form} skipped (no form)`);
+      if (data.estimated_completion_minutes) parts.push(`~${data.estimated_completion_minutes}min to complete`);
+      setFormActionResult(parts.join(" · "));
+    } catch (err) {
+      setFormActionResult("Form submission failed");
+    } finally {
+      setSubmittingForms(null);
+    }
   }
 
   async function handleScrapeMore(batchId: string) {
@@ -594,6 +637,22 @@ export default function OpsPage() {
                       >
                         {scraping === batch.id ? "Scraping..." : "+ Scrape More"}
                       </button>
+                      {/* Detect forms button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDetectForms(batch.id); }}
+                        disabled={detectingForms === batch.id}
+                        className="text-[10px] font-semibold text-[#5E35B1] bg-[#EDE7F6] hover:bg-[#D1C4E9] border border-[#5E35B133] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {detectingForms === batch.id ? "Detecting..." : "Detect Forms"}
+                      </button>
+                      {/* Submit forms button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleSubmitForms(batch.id); }}
+                        disabled={submittingForms === batch.id}
+                        className="text-[10px] font-semibold text-[#00838F] bg-[#E0F7FA] hover:bg-[#B2EBF2] border border-[#00838F33] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {submittingForms === batch.id ? "Submitting..." : "Submit Forms"}
+                      </button>
                       {isCompleted && (
                         <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-1 rounded-[10px]">✓ Complete</span>
                       )}
@@ -676,6 +735,16 @@ export default function OpsPage() {
                   {/* ── Email Preview Panel (Gate 2 expanded) ── */}
                   {expandedGate && pendingGates.some(g => `${g.gate_type}-${batch.id}` === expandedGate && g.gate_type === "outreach_approval") && (
                     <EmailPreviewPanel batchId={batch.id} />
+                  )}
+
+                  {/* ── Form action result banner ── */}
+                  {formActionResult && (
+                    <div className="px-5 py-2 bg-[#F0F7FF] border-t border-[#DBEAFE]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-[#1E40AF] font-medium">{formActionResult}</span>
+                        <button onClick={() => setFormActionResult(null)} className="text-[10px] text-[#8E8E93] hover:text-[#3C3C43]">✕</button>
+                      </div>
+                    </div>
                   )}
 
                   {/* ── Lead Table ── */}
@@ -951,9 +1020,9 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
                 { key: "business_name", label: "Business" },
                 { key: "city", label: "City" },
                 { key: "their_website_url", label: "Their Site" },
+                { key: "_form", label: "Form" },
                 { key: "_preview", label: "Preview" },
                 { key: "stage", label: "Stage" },
-                { key: "emails_sent_count", label: "Emails" },
                 { key: "reply_category", label: "Reply" },
                 { key: "_draft", label: "Draft" },
               ].map(({ key, label }) => (
@@ -1025,16 +1094,41 @@ function LeadRow({ lead, isExpanded, onToggle }: { lead: any; isExpanded: boolea
           ) : <span className="text-[#D1D1D6] text-[11px]">No website</span>}
         </td>
         <td className={td}>
+          {lead.form_detected_at ? (
+            lead.contact_form_url ? (
+              lead.has_captcha ? (
+                <span className="text-[10px] font-semibold text-[#F57F17] bg-[#FFF8E1] px-2 py-0.5 rounded-lg">CAPTCHA</span>
+              ) : lead.form_submission_status === "success" ? (
+                <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2 py-0.5 rounded-lg">Sent ✓</span>
+              ) : lead.form_submission_status === "failed" ? (
+                <span className="text-[10px] font-semibold text-[#C62828] bg-[#FFEBEE] px-2 py-0.5 rounded-lg" title={lead.form_submission_error || ""}>Failed</span>
+              ) : (
+                <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2 py-0.5 rounded-lg">Found</span>
+              )
+            ) : (
+              <span className="text-[10px] text-[#C7C7CC]">No form</span>
+            )
+          ) : lead.their_website_url ? (
+            <span className="text-[10px] text-[#D1D1D6]">—</span>
+          ) : (
+            <span className="text-[10px] text-[#D1D1D6]">—</span>
+          )}
+        </td>
+        <td className={td}>
           {lead.preview_site_url ? (
             <a href={lead.preview_site_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
           ) : <span className="text-[#D1D1D6]">—</span>}
         </td>
         <td className={td}>
-          <span className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-lg ${STAGE_PILL[lead.stage] || "bg-gray-100 text-gray-500"}`}>
-            {STAGE_LABELS[lead.stage as PipelineStage] || lead.stage}
-          </span>
+          <div className="flex items-center gap-1">
+            <span className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-lg ${STAGE_PILL[lead.stage] || "bg-gray-100 text-gray-500"}`}>
+              {STAGE_LABELS[lead.stage as PipelineStage] || lead.stage}
+            </span>
+            {lead.outreach_method && (
+              <span className="text-[8px] text-[#8E8E93] font-medium">via {lead.outreach_method}</span>
+            )}
+          </div>
         </td>
-        <td className={td}>{lead.emails_sent_count > 0 ? lead.emails_sent_count : "—"}</td>
         <td className={td}>
           {lead.reply_category ? (
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg ${lead.reply_category === "interested" ? "bg-[#C8E6C9] text-[#1B5E20]" : lead.reply_category === "objection" ? "bg-red-50 text-red-500" : "bg-gray-100 text-gray-500"}`}>
@@ -1054,7 +1148,7 @@ function LeadRow({ lead, isExpanded, onToggle }: { lead: any; isExpanded: boolea
       {/* ── Expanded Detail Row ── */}
       {isExpanded && (
         <tr>
-          <td colSpan={8} className="p-0">
+          <td colSpan={9} className="p-0">
             <div className="bg-[#F8FAFF] border-b border-[#E5E5EA] p-5">
               <div className="grid grid-cols-3 gap-4">
                 {/* Column 1: Contact Info + ICP */}
@@ -1077,6 +1171,32 @@ function LeadRow({ lead, isExpanded, onToggle }: { lead: any; isExpanded: boolea
                       <div className="flex justify-between text-xs">
                         <span className="text-[#8E8E93]">Preview</span>
                         <a href={lead.preview_site_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] font-medium">View ↗</a>
+                      </div>
+                    )}
+                    {lead.contact_form_url && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#8E8E93]">Form</span>
+                        <a href={lead.contact_form_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] font-medium truncate max-w-[150px]">
+                          {lead.contact_form_url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")} ↗
+                        </a>
+                      </div>
+                    )}
+                    {lead.form_field_mapping?.form_type && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#8E8E93]">Form Type</span>
+                        <span className="font-semibold">{lead.form_field_mapping.form_type}</span>
+                      </div>
+                    )}
+                    {lead.outreach_method && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#8E8E93]">Outreach</span>
+                        <span className="font-semibold capitalize">{lead.outreach_method}</span>
+                      </div>
+                    )}
+                    {lead.form_submission_error && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#8E8E93]">Error</span>
+                        <span className="text-red-500 text-[10px] max-w-[180px] truncate" title={lead.form_submission_error}>{lead.form_submission_error}</span>
                       </div>
                     )}
                   </div>

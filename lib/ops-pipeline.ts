@@ -130,6 +130,16 @@ export interface PipelineProspect {
   reply_text: string | null;
   draft_response: string | null;
   draft_status: "none" | "pending" | "approved" | "sent" | "skipped";
+  // Form outreach fields
+  contact_form_url: string | null;
+  form_field_mapping: Record<string, unknown> | null;
+  has_captcha: boolean;
+  form_detected_at: string | null;
+  outreach_method: "form" | "email" | null;
+  form_submitted_at: string | null;
+  form_submission_status: "pending" | "success" | "failed" | "captcha_blocked" | "duplicate_skipped" | null;
+  form_submission_error: string | null;
+  form_submission_attempts: number;
   // Timestamps
   scraped_at: string;
   enriched_at: string | null;

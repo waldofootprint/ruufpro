@@ -14,6 +14,8 @@ import {
   soleProprietorRegistration,
   a2pWizardCompliance,
   weatherStormCheck,
+  prospectFormDetect,
+  prospectFormSubmit,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -32,5 +34,7 @@ export const { GET, POST, PUT } = serve({
     soleProprietorRegistration,
     a2pWizardCompliance,
     weatherStormCheck,
+    prospectFormDetect,
+    prospectFormSubmit,
   ],
 });
