@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import { createAuthSupabase } from "@/lib/supabase-server";
 
 // Lightweight health check for ops settings page.
 // Returns Twilio balance + Inngest failure count (24h).
 
 export async function GET() {
+  const authSupabase = createAuthSupabase();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const result: {
     twilio_balance: string | null;
     inngest_failures_24h: number | null;

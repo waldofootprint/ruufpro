@@ -9,7 +9,7 @@ type FaqItem = { q: string; a: React.ReactNode };
 const FAQS: FaqItem[] = [
   {
     q: "What's the catch?",
-    a: <>Fair question. Your website is <strong>free — no credit card, no trial, no catch.</strong> We make money when roofers choose our Pro plan at <strong>$149/mo</strong>, which turns website visitors into leads with satellite estimates, missed-call text-back, and review automation. That&apos;s <strong>57% less than Roofle</strong> ($350/mo + $2,000 setup). It&apos;s optional. Plenty of roofers use just the free site and never pay us a dime. <strong>No salesperson will ever call you.</strong> No contract. No hidden fees.</>,
+    a: <>Fair question. Your website is <strong>free — no credit card, no trial, no catch.</strong> We make money when roofers choose our Pro plan at <strong>$149/mo</strong>, which turns website visitors into leads with satellite estimates, an AI chatbot that answers homeowner questions 24/7, and review automation. That&apos;s <strong>57% less than Roofle</strong> ($350/mo + $2,000 setup). It&apos;s optional. Plenty of roofers use just the free site and never pay us a dime. <strong>No salesperson will ever call you.</strong> No contract. No hidden fees.</>,
   },
   {
     q: "Is the website really free?",
@@ -62,7 +62,7 @@ const FAQS: FaqItem[] = [
 ];
 
 const FAQ_PLAIN_ANSWERS: Record<string, string> = {
-  "What's the catch?": "Your website is free — no credit card, no trial, no catch. We make money when roofers choose our Pro plan at $149/mo, which turns website visitors into leads with satellite estimates, missed-call text-back, and review automation. That's 57% less than Roofle ($350/mo + $2,000 setup). No salesperson will ever call you. No contract. No hidden fees.",
+  "What's the catch?": "Your website is free — no credit card, no trial, no catch. We make money when roofers choose our Pro plan at $149/mo, which turns website visitors into leads with satellite estimates, an AI chatbot that answers homeowner questions 24/7, and review automation. That's 57% less than Roofle ($350/mo + $2,000 setup). No salesperson will ever call you. No contract. No hidden fees.",
   "Is the website really free?": "Yes, forever. No credit card, no trial that expires, no catch. Your roofing website is fully functional — contact form, click-to-call, lead capture, everything.",
   "How accurate are the estimates?": "These are ballpark estimates, not bids. We use Google's Solar API to measure the actual roof from satellite imagery — area, pitch, and complexity. Combined with your pricing, estimates land within ±10% of typical contract prices.",
   "How long does setup take?": "Under 5 minutes. Enter your business name, phone number, and city — your website generates instantly.",

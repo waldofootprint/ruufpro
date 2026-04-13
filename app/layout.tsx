@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { DM_Sans, Sora, Plus_Jakarta_Sans, Inter, Outfit, Lora, Roboto_Slab, Barlow, Barlow_Condensed } from "next/font/google";
+import CookieBanner from "@/components/cookie-banner";
 
 // Contractor template fonts — self-hosted by Next.js for performance.
 // Modern Clean: DM Sans (body) + Sora (headings)
@@ -85,7 +86,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="RuufPro" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieBanner />
+      </body>
     </html>
   );
 }

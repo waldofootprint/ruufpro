@@ -64,20 +64,31 @@ export default function SatelliteView({
       <div ref={containerRef} className="w-full h-[180px]" />
 
       {mapReady && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.3 }}
-          className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg text-[11px] font-medium"
-          style={{
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(8px)",
-            color: "rgba(255,255,255,0.85)",
-            letterSpacing: "0.02em",
-          }}
-        >
-          Your property
-        </motion.div>
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.3 }}
+            className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg text-[11px] font-medium"
+            style={{
+              background: "rgba(0,0,0,0.55)",
+              backdropFilter: "blur(8px)",
+              color: "rgba(255,255,255,0.85)",
+              letterSpacing: "0.02em",
+            }}
+          >
+            Your property
+          </motion.div>
+          <div
+            className="absolute bottom-1.5 right-2 text-[9px]"
+            style={{
+              color: "rgba(255,255,255,0.5)",
+              textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+            }}
+          >
+            Imagery ©Google
+          </div>
+        </>
       )}
     </motion.div>
   );

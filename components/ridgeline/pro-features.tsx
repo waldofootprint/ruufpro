@@ -303,25 +303,54 @@ export default function RidgelineProFeatures() {
 
           <StepConnector />
 
-          {/* Step 3: Missed-Call Text-Back */}
+          {/* Step 3: Riley AI Chatbot */}
           <FeatureCard
             step={3}
-            label="Missed-Call Text-Back"
-            title="You're On A Roof. Phone Rings. You Can't Answer."
-            outcome="No problem. RuufPro texts them back instantly with a professional message — the lead stays warm until you're free. Every lead syncs to your existing CRM or system automatically, so nothing falls through the cracks."
-            stat="85% of leads are lost to voicemail. Not yours."
+            label="AI Chatbot"
+            title="A Homeowner Has Questions At 11pm. Riley Has Answers."
+            outcome="Riley is your AI assistant — trained on your business, your services, your pricing. She answers homeowner questions instantly, captures their info, and hands you a qualified lead. Works 24/7, even when you're asleep."
+            stat="64% of homeowners research contractors after business hours. Riley never clocks out."
           >
-            <div>
-              <PhoneMockup>
-                <MessagesHeader initials="RC" name="Robert Chen" />
-                <div className="px-3 py-4 space-y-2.5 bg-white flex-1 flex flex-col justify-end">
-                  <p className="text-[10px] text-center text-gray-400 mb-1">Today 2:34 PM</p>
-                  <SmsBubble message="Hi Robert, this is Jenna at IronShield Roofing. Sorry I missed you! How can we help with your roof today? Reply with your address for a free inspection." time="2:34 PM" isOutgoing />
-                  <SmsBubble message="Hi! Yes I need a roof inspection. I'm at 742 Evergreen Terrace." time="2:41 PM" />
+            <div className="w-full max-w-[320px] mx-auto">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+                {/* Chat header */}
+                <div className="bg-[#1B3A4B] px-4 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#D4863E] flex items-center justify-center text-white text-xs font-bold">R</div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Riley</p>
+                    <p className="text-[10px] text-white/50">IronShield Roofing Assistant</p>
+                  </div>
+                  <div className="ml-auto w-2 h-2 rounded-full bg-emerald-400" />
                 </div>
-                <MessagesInputBar />
-              </PhoneMockup>
-              <p className="text-[10px] text-[#1B3A4B]/30 text-center mt-4">Connects to HubSpot, Jobber, AccuLynx, Google Sheets, and 5,000+ other tools.</p>
+                {/* Chat messages */}
+                <div className="px-4 py-4 space-y-3 bg-gray-50 min-h-[220px]">
+                  <div className="flex gap-2">
+                    <div className="w-6 h-6 rounded-full bg-[#D4863E] flex items-center justify-center text-white text-[8px] font-bold shrink-0 mt-0.5">R</div>
+                    <div className="bg-white border border-gray-100 rounded-xl rounded-tl-sm px-3 py-2 text-[12px] text-gray-700 leading-relaxed max-w-[85%]">
+                      Hi! I&apos;m Riley, IronShield&apos;s assistant. How can I help with your roof?
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="bg-[#1B3A4B] rounded-xl rounded-tr-sm px-3 py-2 text-[12px] text-white leading-relaxed max-w-[85%]">
+                      How much does a roof replacement cost?
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="w-6 h-6 rounded-full bg-[#D4863E] flex items-center justify-center text-white text-[8px] font-bold shrink-0 mt-0.5">R</div>
+                    <div className="bg-white border border-gray-100 rounded-xl rounded-tl-sm px-3 py-2 text-[12px] text-gray-700 leading-relaxed max-w-[85%]">
+                      Great question! For a typical home, asphalt shingle replacements run <strong>$8,000-$15,000</strong> depending on size and pitch. Want an instant estimate? Just enter your address in our calculator!
+                    </div>
+                  </div>
+                </div>
+                {/* Input */}
+                <div className="bg-white border-t border-gray-100 px-3 py-2 flex items-center gap-2">
+                  <div className="flex-1 bg-gray-50 rounded-full border border-gray-200 px-3 py-1.5 text-[11px] text-gray-400">Ask Riley anything...</div>
+                  <div className="w-7 h-7 rounded-full bg-[#D4863E] flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[10px] text-[#1B3A4B]/30 text-center mt-4">Works on your RuufPro site or embed on any existing website.</p>
             </div>
           </FeatureCard>
 

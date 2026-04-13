@@ -18,6 +18,7 @@ import {
   Puzzle,
   MessageSquare,
   Bot,
+  HelpCircle,
 } from "lucide-react";
 import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 import { supabase } from "@/lib/supabase";
@@ -162,6 +163,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               Notifications On
             </div>
           )}
+          <a
+            href="mailto:support@ruufpro.com"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all w-full"
+          >
+            <HelpCircle className="w-4 h-4" />
+            Support
+          </a>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all w-full"

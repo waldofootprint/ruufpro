@@ -5,19 +5,17 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
-/* ─── Calculator Logic ─── */
-function useMissedCallRevenue(
-  missedPerWeek: number,
-  avgJobValue: number,
-  closeRate: number
-) {
+/* ─── Speed-to-Lead Calculator Logic ─── */
+function useSpeedToLead(responseMinutes: number, leadsPerMonth: number, avgJobValue: number, closeRate: number) {
   return useMemo(() => {
-    // 85% of callers who don't reach you won't call back
-    const lostLeadsPerWeek = Math.round(missedPerWeek * 0.85);
-    const lostJobsPerWeek = lostLeadsPerWeek * (closeRate / 100);
-    const lostRevenuePerYear = Math.round(lostJobsPerWeek * avgJobValue * 52);
-    return { lostLeadsPerWeek, lostJobsPerWeek, lostRevenuePerYear };
-  }, [missedPerWeek, avgJobValue, closeRate]);
+    const rate = closeRate / 100;
+    const speedMultiplier = responseMinutes <= 5
+      ? 1
+      : Math.max(0.15, 1 - ((responseMinutes - 5) / 55) * 0.85);
+    const lostJobs = Math.round((leadsPerMonth * rate * (1 - speedMultiplier)) * 10) / 10;
+    const monthlyLost = Math.round(lostJobs * avgJobValue);
+    return { lostJobs, monthlyLost };
+  }, [responseMinutes, leadsPerMonth, avgJobValue, closeRate]);
 }
 
 /* ─── Nav ─── */
@@ -128,31 +126,43 @@ function HeroSlider({ label, value, displayValue, min, max, step, onChange, last
   );
 }
 
-/* ─── Missed Call Calculator ─── */
-function MissedCallCalculator() {
-  const [missedPerWeek, setMissedPerWeek] = useState(5);
+/* ─── Speed-to-Lead Calculator ─── */
+function SpeedToLeadCalculator() {
+  const [responseMinutes, setResponseMinutes] = useState(45);
+  const [leadsPerMonth, setLeadsPerMonth] = useState(15);
   const [avgJobValue, setAvgJobValue] = useState(8500);
   const [closeRate, setCloseRate] = useState(30);
-  const { lostLeadsPerWeek, lostJobsPerWeek, lostRevenuePerYear } =
-    useMissedCallRevenue(missedPerWeek, avgJobValue, closeRate);
+  const { lostJobs, monthlyLost } = useSpeedToLead(responseMinutes, leadsPerMonth, avgJobValue, closeRate);
+
+  const responseLabel = responseMinutes < 60
+    ? `${responseMinutes} min`
+    : responseMinutes === 60
+      ? "1 hr"
+      : `${(responseMinutes / 60).toFixed(1)} hrs`;
 
   return (
-    <div className="w-full max-w-[400px] mx-auto">
-      <div className="bg-white rounded-2xl border border-black/8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 md:p-8">
-        <p className="text-lg font-bold text-[#1A1A1A] mb-6">
-          What are missed calls costing you?
+    <div className="w-full max-w-[380px] mx-auto">
+      <div className="bg-white rounded-2xl border border-black/8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6">
+        <p className="text-base font-bold text-[#1A1A1A] mb-5">
+          How fast do you respond to leads?
         </p>
 
-        {/* Missed calls per week */}
         <HeroSlider
-          label="Missed calls per week"
-          value={missedPerWeek}
-          displayValue={`${missedPerWeek}`}
-          min={1} max={20} step={1}
-          onChange={setMissedPerWeek}
+          label="Your response time"
+          value={responseMinutes}
+          displayValue={responseLabel}
+          min={5} max={120} step={5}
+          onChange={setResponseMinutes}
         />
 
-        {/* Avg job value */}
+        <HeroSlider
+          label="Leads per month"
+          value={leadsPerMonth}
+          displayValue={`${leadsPerMonth}`}
+          min={5} max={50} step={1}
+          onChange={setLeadsPerMonth}
+        />
+
         <HeroSlider
           label="Average job value"
           value={avgJobValue}
@@ -161,9 +171,8 @@ function MissedCallCalculator() {
           onChange={setAvgJobValue}
         />
 
-        {/* Close rate */}
         <HeroSlider
-          label="Your close rate"
+          label="Close rate"
           value={closeRate}
           displayValue={`${closeRate}%`}
           min={10} max={60} step={5}
@@ -171,37 +180,30 @@ function MissedCallCalculator() {
           last
         />
 
-        {/* Divider */}
-        <div className="border-t border-black/8 my-5" />
+        <div className="border-t border-black/8 my-4" />
 
-        {/* Results */}
-        <div className="text-center mb-5">
-          <p className="text-xs text-[#1A1A1A]/50 mb-1">
-            You&apos;re losing an estimated
-          </p>
-          <p className="text-3xl md:text-4xl font-black text-[#C75B39] tracking-tight">
-            ${lostRevenuePerYear.toLocaleString()}
-            <span className="text-base font-bold text-[#1A1A1A]/40">/yr</span>
-          </p>
-          <p className="text-sm text-[#1A1A1A]/50 mt-2">
-            {lostLeadsPerWeek} lost leads/week &rarr; ~
-            {lostJobsPerWeek.toFixed(1)} jobs you never close
+        <div className="text-center mb-4">
+          <p className="text-[11px] text-[#1A1A1A]/40 mb-1">Slow responses cost you</p>
+          <p className="text-3xl font-black text-[#C75B39] tracking-tight">
+            ${monthlyLost.toLocaleString()}
+            <span className="text-sm font-bold text-[#1A1A1A]/30">/mo</span>
           </p>
         </div>
 
-        {/* Assumptions */}
-        <p className="text-[10px] text-[#1A1A1A]/30 leading-relaxed mb-5">
-          85% of callers who can&apos;t reach you won&apos;t call back — they
-          call the next roofer on Google instead.
+        <p className="text-center text-xs text-emerald-600 font-semibold mb-4">
+          RuufPro responds in under 5 seconds — 24/7
         </p>
 
-        {/* CTA */}
         <Link
           href="/signup"
-          className="block w-full py-3.5 rounded-xl bg-[#D4863E] text-white text-sm font-bold text-center hover:bg-[#c0763a] transition-colors shadow-sm"
+          className="block w-full py-3 rounded-xl bg-[#D4863E] text-white text-sm font-bold text-center hover:bg-[#c0763a] transition-colors shadow-sm"
         >
-          Never Miss a Lead — It&apos;s Free
+          Respond Instantly — Free
         </Link>
+
+        <p className="text-[10px] text-[#1A1A1A]/25 text-center mt-3">
+          Source: Lead Connect — 5 min response = 21x more conversions
+        </p>
       </div>
     </div>
   );
@@ -210,11 +212,12 @@ function MissedCallCalculator() {
 /* ─── Hero Section ─── */
 export default function RidgelineHero() {
   return (
-    <div className="bg-white w-full font-sans selection:bg-[#C75B39] selection:text-white">
+    <div className="relative bg-white w-full font-sans selection:bg-[#C75B39] selection:text-white overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1B3A4B06_1px,transparent_1px),linear-gradient(to_bottom,#1B3A4B06_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none z-0" />
       <Navbar />
 
       {/* Hero Content */}
-      <div className="max-w-[1280px] mx-auto px-6 md:px-10 pt-8 pb-16 md:pt-16 md:pb-24">
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10 pt-8 pb-16 md:pt-16 md:pb-24">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           {/* Left — 60% Copy */}
           <div className="flex-1 lg:max-w-[58%]">
@@ -259,8 +262,8 @@ export default function RidgelineHero() {
               className="text-[#1A1A1A]/60 text-base md:text-lg leading-relaxed max-w-[520px] mb-8"
             >
               Get a professional roofing website for free. Upgrade to instant
-              satellite estimates, missed-call text-back, and automated reviews
-              when you&apos;re ready.
+              satellite estimates, an AI chatbot that answers homeowner questions
+              24/7, and automated reviews when you&apos;re ready.
             </motion.p>
 
             {/* CTAs */}
@@ -318,7 +321,7 @@ export default function RidgelineHero() {
             }}
             className="w-full lg:max-w-[42%]"
           >
-            <MissedCallCalculator />
+            <SpeedToLeadCalculator />
           </motion.div>
         </div>
       </div>

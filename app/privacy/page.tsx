@@ -32,7 +32,7 @@ export default function PrivacyPolicyPage() {
         <h1 className="font-[family-name:var(--font-sora)] text-3xl md:text-4xl font-bold text-white mb-2">
           Privacy Policy
         </h1>
-        <p className="text-sm text-white/40 mb-12">Last updated April 01, 2026</p>
+        <p className="text-sm text-white/40 mb-12">Last updated April 13, 2026</p>
 
         <div className="prose prose-invert prose-sm max-w-none space-y-8 text-white/70 leading-relaxed [&_h2]:font-[family-name:var(--font-sora)] [&_h2]:text-white [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-12 [&_h2]:mb-4 [&_h3]:text-white/90 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-8 [&_h3]:mb-3 [&_a]:text-[#D4863E] [&_a]:underline [&_ul]:space-y-1 [&_ul]:ml-4 [&_li]:text-white/60">
 
@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
           </p>
           <ul>
             <li>Visit our website at ruufpro.com, or any website of ours that links to this Privacy Notice</li>
-            <li>Use RuufPro. RuufPro is a software-as-a-service (SaaS) platform that provides roofing contractors with professional websites, instant roofing estimate tools, interactive proposals, lead management, SMS messaging (including review requests and missed-call text-back), and automated customer communication features. Homeowners can receive instant roof replacement estimates by entering their property address on a contractor&apos;s RuufPro-powered website. Contractors use the RuufPro dashboard to manage leads, configure pricing, send estimates, collect electronic signatures, and communicate with customers via email and text message.</li>
+            <li>Use RuufPro. RuufPro is a software-as-a-service (SaaS) platform that provides roofing contractors with professional websites, instant roofing estimate tools, AI-powered chatbot assistants, lead management, and automated customer communication features. Homeowners can receive instant roof replacement estimates by entering their property address on a contractor&apos;s RuufPro-powered website, and interact with an AI chatbot (Riley) that answers questions about services, pricing, and availability. Contractors use the RuufPro dashboard to manage leads, configure pricing, send estimates, and communicate with customers via email.</li>
             <li>Engage with us in other related ways, including any marketing or events</li>
           </ul>
           <p>
@@ -161,10 +161,11 @@ export default function PrivacyPolicyPage() {
           <p>
             As part of our Services, we offer products, features, or tools powered by artificial intelligence, machine learning, or similar technologies (collectively, &quot;AI Products&quot;). These tools are designed to enhance your experience and provide you with innovative solutions. The terms in this Privacy Notice govern your use of the AI Products within our Services.
           </p>
-          <p><strong className="text-white/90">Use of AI Technologies.</strong> We provide AI Products through third-party service providers (&quot;AI Service Providers&quot;), including Google Cloud AI. The AI Products are used for the following functions:</p>
+          <p><strong className="text-white/90">Use of AI Technologies.</strong> We provide AI Products through third-party service providers (&quot;AI Service Providers&quot;), including Google Cloud AI and Anthropic. The AI Products are used for the following functions:</p>
           <ul>
             <li>AI predictive analytics — generating roofing cost estimates based on satellite imagery and property data</li>
             <li>AI insights — analyzing roof measurements, materials, and conditions from satellite and property data sources</li>
+            <li>AI chatbot (Riley) — answering homeowner questions about a contractor&apos;s services, pricing, and availability using information provided by the contractor. Chat conversations are stored to improve service quality and provide lead context to contractors.</li>
           </ul>
           <p><strong className="text-white/90">How We Process Your Data Using AI.</strong> All personal information processed using our AI Products is handled in line with our Privacy Notice and our agreement with third parties. This ensures high security and safeguards your personal information throughout the process, giving you peace of mind about your data&apos;s safety.</p>
 

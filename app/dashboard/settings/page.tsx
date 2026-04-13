@@ -235,7 +235,7 @@ export default function SettingsPage() {
                 value={profile.email}
                 disabled
               />
-              <p className="text-[10px] text-slate-400 mt-1">Contact support to change email</p>
+              <p className="text-[10px] text-slate-400 mt-1">Email <a href="mailto:support@ruufpro.com" className="text-[#D4863E] underline">support@ruufpro.com</a> to change</p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">

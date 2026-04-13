@@ -1,16 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { PhoneOff, Shield, Handshake } from "lucide-react";
-import { calculateROI, SLIDER_CONFIG } from "@/lib/roi-calculator";
+import { DollarSign, Shield, Handshake } from "lucide-react";
 
-// Interactive ROI calculator + trust strip.
-// Roofer drags 3 sliders, sees their personal monthly loss.
-// Source: Vault 032 (Andy Steuer, WeLevel).
+// Interactive lead cost calculator + trust strip.
+// Roofer drags sliders, sees what they're wasting on paid leads vs $0 with RuufPro.
 
 const PROMISES = [
-  { icon: PhoneOff, text: "No sales calls." },
+  { icon: DollarSign, text: "No per-lead fees. Ever." },
   { icon: Handshake, text: "No contract. Cancel anytime. Your site stays live." },
   { icon: Shield, text: "No hidden fees. No upsell tricks. No bait-and-switch." },
 ];
@@ -26,11 +24,12 @@ const fadeUp = {
 };
 
 export default function RidgelineWhatsTheCatch() {
-  const [missedCalls, setMissedCalls] = useState(SLIDER_CONFIG.missedCalls.default);
-  const [jobValue, setJobValue] = useState(SLIDER_CONFIG.jobValue.default);
-  const [closeRate, setCloseRate] = useState(SLIDER_CONFIG.closeRate.default);
+  const [leadsPerMonth, setLeadsPerMonth] = useState(20);
+  const [costPerLead, setCostPerLead] = useState(187);
+  const [avgJobValue, setAvgJobValue] = useState(8500);
 
-  const roi = calculateROI({ missedCallsPerWeek: missedCalls, avgJobValue: jobValue, closeRate });
+  const monthlyAdSpend = useMemo(() => leadsPerMonth * costPerLead, [leadsPerMonth, costPerLead]);
+  const yearlyAdSpend = monthlyAdSpend * 12;
 
   return (
     <section className="relative bg-[#0F1B2D] overflow-hidden">
@@ -58,7 +57,7 @@ export default function RidgelineWhatsTheCatch() {
                 "1px 1px 0 #0D1F2D, 2px 2px 0 #0D1F2D, 3px 3px 0 #0D1F2D, 4px 4px 0 #0D1F2D, 5px 5px 0 #0D1F2D, 6px 6px 0 #0D1F2D",
             }}
           >
-            How Much Are Missed Calls Costing <span className="text-[#D4863E]">You</span>?
+            How Much Are You Paying For <span className="text-[#D4863E]">Leads</span>?
           </h2>
           <p className="text-base text-white/45 max-w-md mx-auto">
             Drag the sliders to match your business. Watch the number.
@@ -76,31 +75,31 @@ export default function RidgelineWhatsTheCatch() {
           {/* Sliders */}
           <div className="flex flex-col gap-7 mb-8">
             <SliderRow
-              label={SLIDER_CONFIG.missedCalls.label}
-              value={missedCalls}
-              displayValue={`${missedCalls} calls`}
-              min={SLIDER_CONFIG.missedCalls.min}
-              max={SLIDER_CONFIG.missedCalls.max}
-              step={SLIDER_CONFIG.missedCalls.step}
-              onChange={setMissedCalls}
+              label="Leads per month"
+              value={leadsPerMonth}
+              displayValue={`${leadsPerMonth} leads`}
+              min={5}
+              max={100}
+              step={5}
+              onChange={setLeadsPerMonth}
             />
             <SliderRow
-              label={SLIDER_CONFIG.jobValue.label}
-              value={jobValue}
-              displayValue={`$${jobValue.toLocaleString()}`}
-              min={SLIDER_CONFIG.jobValue.min}
-              max={SLIDER_CONFIG.jobValue.max}
-              step={SLIDER_CONFIG.jobValue.step}
-              onChange={setJobValue}
+              label="Cost per lead (Google Ads avg: $187)"
+              value={costPerLead}
+              displayValue={`$${costPerLead}`}
+              min={50}
+              max={400}
+              step={10}
+              onChange={setCostPerLead}
             />
             <SliderRow
-              label={SLIDER_CONFIG.closeRate.label}
-              value={closeRate}
-              displayValue={`${closeRate}%`}
-              min={SLIDER_CONFIG.closeRate.min}
-              max={SLIDER_CONFIG.closeRate.max}
-              step={SLIDER_CONFIG.closeRate.step}
-              onChange={setCloseRate}
+              label="Average job value"
+              value={avgJobValue}
+              displayValue={`$${avgJobValue.toLocaleString()}`}
+              min={2000}
+              max={25000}
+              step={500}
+              onChange={setAvgJobValue}
             />
           </div>
 
@@ -110,19 +109,19 @@ export default function RidgelineWhatsTheCatch() {
           {/* Result */}
           <div className="text-center">
             <p className="text-sm text-white/50 mb-1">
-              You&rsquo;re losing approximately
+              You&rsquo;re spending
             </p>
             <p
               className="text-[clamp(2.5rem,6vw,4rem)] font-black text-[#D4863E] leading-none tracking-tight mb-1"
               style={{ fontFamily: '"Arial Black", Impact, sans-serif' }}
             >
-              ${roi.monthlyLost.toLocaleString()}
+              ${monthlyAdSpend.toLocaleString()}
             </p>
             <p className="text-base text-white/50 mb-3">
-              every month in missed calls
+              every month on shared leads
             </p>
             <p className="text-xs text-white/30">
-              That&rsquo;s <strong className="text-white/60">${roi.yearlyLost.toLocaleString()}/year</strong> &mdash; enough to pay for RuufPro Pro for <strong className="text-white/60">{roi.weeksOfProPaidFor}+ weeks</strong>
+              That&rsquo;s <strong className="text-white/60">${yearlyAdSpend.toLocaleString()}/year</strong> on leads that go to 3-4 other roofers too
             </p>
           </div>
         </motion.div>
@@ -136,8 +135,8 @@ export default function RidgelineWhatsTheCatch() {
           transition={{ delay: 0.3 }}
         >
           <p className="text-white/70 text-base md:text-lg leading-relaxed">
-            A free RuufPro site costs <span className="text-emerald-500 font-bold">$0</span>.
-            Not having one costs you <span className="text-[#D4863E] font-bold">${roi.monthlyLost.toLocaleString()} every month</span>.
+            With RuufPro, leads come from <span className="text-emerald-500 font-bold">your own website — $0 per lead</span>.
+            You&rsquo;re currently spending <span className="text-[#D4863E] font-bold">${monthlyAdSpend.toLocaleString()}/mo</span> for leads shared with your competitors.
           </p>
         </motion.div>
 
@@ -169,7 +168,7 @@ export default function RidgelineWhatsTheCatch() {
             href="/signup"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold uppercase tracking-wider hover:bg-[#c0763a] transition-colors duration-300 shadow-lg shadow-[#D4863E]/20"
           >
-            Stop Losing ${roi.monthlyLost.toLocaleString()}/Month
+            Stop Paying ${monthlyAdSpend.toLocaleString()}/Month for Leads
             <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
@@ -181,7 +180,7 @@ export default function RidgelineWhatsTheCatch() {
 
         {/* Source */}
         <p className="text-[11px] text-white/20 text-center mt-8">
-          Formula based on industry averages. Source: Andy Steuer, WeLevel ($6B in exits).
+          Google Ads avg CPC for roofing: $6-12. Avg cost per lead: $150-250. Source: WordStream, ServiceTitan industry benchmarks.
         </p>
       </div>
     </section>

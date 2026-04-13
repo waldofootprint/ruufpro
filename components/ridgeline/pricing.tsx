@@ -15,7 +15,7 @@ const FREE_FEATURES = [
 
 const FREE_LOCKED = [
   "Satellite estimate widget",
-  "Missed-call text-back",
+  "Riley AI chatbot",
   "Google review automation",
   "Lead dashboard",
   "CRM integration",
@@ -24,7 +24,7 @@ const FREE_LOCKED = [
 const PRO_FEATURES = [
   "Everything in Free, plus:",
   "Homeowners see pricing instantly — your phone rings, not your competitor's",
-  "Never lose a lead while you're on the roof — missed calls get auto-texted",
+  "Riley AI chatbot answers homeowner questions 24/7 — even at 11pm",
   "5-star reviews on autopilot — one text, they leave a review",
   "Know who's ready to buy — leads tagged hot, warm, or browsing",
   "Works on any website — paste one link on WordPress, Wix, anywhere",

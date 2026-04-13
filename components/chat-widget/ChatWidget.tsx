@@ -62,7 +62,7 @@ export default function ChatWidget({
     }
   }, [contractorId]);
 
-  const greeting = `Hi! I'm Riley from ${businessName}! I can answer questions about our roofing services and help connect you with our team. What can I help you with today?`;
+  const greeting = `Hi! I'm Riley, an AI assistant for ${businessName}. I can answer questions about our roofing services, pricing, and availability. What can I help you with?`;
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
@@ -377,7 +377,7 @@ export default function ChatWidget({
                     display: "inline-block",
                   }}
                 />
-                Online 24/7
+                AI Assistant · Online 24/7
               </div>
             </div>
           </div>
