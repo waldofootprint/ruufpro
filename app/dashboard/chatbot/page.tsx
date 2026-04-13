@@ -234,12 +234,20 @@ export default function ChatbotPage() {
           and knows your business inside out. Train her with your pricing, process, and FAQs.
         </p>
         <p className="text-[13px] font-semibold text-amber-600">Requires the $149/mo Pro plan.</p>
-        <a
-          href="/dashboard/settings"
+        <button
+          onClick={async () => {
+            const res = await fetch("/api/stripe/checkout", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ plan: "pro_monthly" }),
+            });
+            const data = await res.json();
+            if (data.url) window.location.href = data.url;
+          }}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-lg text-[13px] font-semibold hover:bg-violet-700 transition"
         >
           Upgrade to Pro
-        </a>
+        </button>
       </div>
     );
   }
@@ -586,6 +594,29 @@ export default function ChatbotPage() {
           </div>
         </div>
       </CollapsibleSection>
+
+      {/* Embed code for external sites */}
+      <div className="mt-6 bg-slate-50 border border-slate-200 rounded-xl p-5">
+        <h3 className="text-[14px] font-bold text-slate-800 mb-1">Embed Riley on Your Website</h3>
+        <p className="text-[12px] text-slate-500 mb-3">
+          Paste this one line before &lt;/body&gt; on any page. Works on WordPress, Wix, Squarespace, or any HTML site.
+        </p>
+        <div className="relative">
+          <code className="block bg-white border border-slate-200 rounded-lg p-3 text-[11px] text-slate-700 break-all font-mono">
+            {`<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}"></script>`}
+          </code>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(
+                `<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}"></script>`
+              );
+            }}
+            className="absolute top-2 right-2 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-semibold text-slate-600 transition"
+          >
+            Copy
+          </button>
+        </div>
+      </div>
 
       {/* Save bar */}
       <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-5 px-5 py-3 lg:-mx-8 lg:px-8 flex items-center justify-between z-10">

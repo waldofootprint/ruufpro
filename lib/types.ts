@@ -64,6 +64,7 @@ export interface Contractor {
   has_auto_reply: boolean;
   has_seo_pages: boolean;
   has_custom_domain: boolean;
+  custom_domain: string | null;
   has_ai_chatbot: boolean;
 
   // Billing

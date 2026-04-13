@@ -71,6 +71,7 @@ export default function MySitePage() {
   const [saveError, setSaveError] = useState("");
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [hasPricing, setHasPricing] = useState(true);
 
   // Editable fields
   const [headline, setHeadline] = useState("");
@@ -151,6 +152,16 @@ export default function MySitePage() {
           bbb_accredited: contractorData.bbb_accredited || false,
           offers_financing: contractorData.offers_financing || false,
         });
+      }
+
+      // Check if pricing is configured
+      if (contractorId) {
+        const { data: settings } = await supabase
+          .from("estimate_settings")
+          .select("asphalt_low, asphalt_high")
+          .eq("contractor_id", contractorId)
+          .single();
+        setHasPricing(!!(settings && (settings.asphalt_low > 0 || settings.asphalt_high > 0)));
       }
 
       setLoading(false);
@@ -607,6 +618,15 @@ export default function MySitePage() {
         <div>
           {contractor?.has_estimate_widget ? (
             <div>
+              {!hasPricing && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 mb-3 flex items-start gap-2">
+                  <span className="text-amber-500 text-sm leading-none mt-0.5">⚠</span>
+                  <div>
+                    <p className="text-[12px] font-semibold text-amber-800">Set your pricing first</p>
+                    <p className="text-[11px] text-amber-600">Homeowners can&apos;t see estimates until you <a href="/dashboard/estimate-settings" className="underline font-semibold">configure your rates</a>.</p>
+                  </div>
+                </div>
+              )}
               <p className="text-[13px] text-slate-500 mb-3">Your estimate widget is active and embedded on your site.</p>
               <div className="bg-slate-50 rounded-lg p-3">
                 <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide block mb-2">Embed Code (for other websites)</label>

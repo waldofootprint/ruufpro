@@ -4,6 +4,34 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Globe, Calculator, Zap, Check, X } from "lucide-react";
 
+function useCheckout() {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  async function checkout(plan: string) {
+    setLoading(plan);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        // Not logged in or no contractor — send to signup
+        window.location.href = "/signup";
+      }
+    } catch {
+      window.location.href = "/signup";
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  return { checkout, loading };
+}
+
 const FREE_FEATURES = [
   "Professional roofing website",
   "Looks great on any phone",
@@ -84,9 +112,12 @@ const cardVariantHighlighted = {
 
 export default function RidgelinePricing() {
   const [annual, setAnnual] = useState(false);
+  const { checkout, loading } = useCheckout();
   const proPrice = annual ? "$119" : "$149";
   const growthPrice = annual ? "$239" : "$299";
   const period = annual ? "/ month, billed yearly" : "/ month";
+  const proPlan = annual ? "pro_yearly" : "pro_monthly";
+  const growthPlan = annual ? "growth_yearly" : "growth_monthly";
 
   return (
     <section id="pricing" className="relative bg-[#1B3A4B] overflow-hidden">
@@ -267,12 +298,13 @@ export default function RidgelinePricing() {
                 Your phone rings. Your leads come to you.
               </p>
 
-              <a
-                href="/signup"
-                className="block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 bg-[#D4863E] text-white hover:bg-[#c0763a]"
+              <button
+                onClick={() => checkout(proPlan)}
+                disabled={!!loading}
+                className="block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 bg-[#D4863E] text-white hover:bg-[#c0763a] disabled:opacity-50"
               >
-                Start Getting Leads — {proPrice}/mo
-              </a>
+                {loading === proPlan ? "Redirecting..." : `Start Getting Leads — ${proPrice}/mo`}
+              </button>
             </div>
 
             <div className="mx-7 h-px bg-white/10" />
@@ -349,12 +381,13 @@ export default function RidgelinePricing() {
                 Dominate your market. Outrank every competitor.
               </p>
 
-              <a
-                href="/signup"
-                className="block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 border-2 border-[#D4863E]/50 text-white hover:bg-[#D4863E] hover:border-[#D4863E]"
+              <button
+                onClick={() => checkout(growthPlan)}
+                disabled={!!loading}
+                className="block w-full py-3 rounded-full text-center text-sm font-bold uppercase tracking-wider transition-colors duration-300 border-2 border-[#D4863E]/50 text-white hover:bg-[#D4863E] hover:border-[#D4863E] disabled:opacity-50"
               >
-                Scale My Business — {growthPrice}/mo
-              </a>
+                {loading === growthPlan ? "Redirecting..." : `Scale My Business — ${growthPrice}/mo`}
+              </button>
             </div>
 
             <div className="mx-7 h-px bg-white/10" />
