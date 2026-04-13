@@ -188,13 +188,13 @@ export const missedCallTextback = inngest.createFunction(
 */
 
 // ---------------------------------------------------------------------------
-// Chain 3: Review Request
+// Chain 3: Review Request (Email)
 // Trigger: "sms/review.requested" — emitted from /api/reviews/request
-// Steps: send review SMS (workflow handles all validation + tracking)
+// Steps: send review email via Resend (no SMS, no quiet hours)
 // ---------------------------------------------------------------------------
 export const reviewRequest = inngest.createFunction(
   {
-    id: "review-request-sms",
+    id: "review-request-email",
     retries: 3,
     triggers: [{ event: "sms/review.requested" }],
   },
@@ -204,20 +204,7 @@ export const reviewRequest = inngest.createFunction(
     const result = await step.run("send-review-request", async () => {
       const { sendReviewRequest } = await import("@/lib/sms-workflows");
       return sendReviewRequest(contractorId, leadId);
-    }) as WorkflowResult;
-
-    // Quiet hours: sleep until morning, then retry
-    if (result.quietHours && result.sendAt) {
-      await step.sleepUntil("wait-for-send-window", new Date(result.sendAt));
-      const retryResult = await step.run("retry-after-quiet-hours", async () => {
-        const { sendReviewRequest } = await import("@/lib/sms-workflows");
-        return sendReviewRequest(contractorId, leadId);
-      }) as WorkflowResult;
-      if (!retryResult.success && !retryResult.quietHours) {
-        throw new Error(`Review request failed after quiet hours: ${retryResult.error}`);
-      }
-      return retryResult;
-    }
+    });
 
     if (!result.success) {
       throw new Error(`Review request failed: ${result.error}`);
@@ -228,9 +215,9 @@ export const reviewRequest = inngest.createFunction(
 );
 
 // ---------------------------------------------------------------------------
-// Chain 4: Review Email Follow-Up
+// Chain 4: Review Reminder Email
 // Trigger: "sms/review.followup-needed" — emitted from cron job
-// Steps: send follow-up email for unclicked review links
+// Steps: send reminder email for unclicked review links (3 days after first email)
 // ---------------------------------------------------------------------------
 export const reviewEmailFollowup = inngest.createFunction(
   {

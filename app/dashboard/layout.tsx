@@ -20,6 +20,7 @@ import {
   Bot,
   HelpCircle,
   CreditCard,
+  Star,
 } from "lucide-react";
 import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 import { supabase } from "@/lib/supabase";
@@ -31,7 +32,7 @@ const SIDEBAR_ITEMS: { href: string; label: string; icon: any; showBadge?: boole
   { href: "/dashboard/estimate-settings", label: "Widget Settings", icon: Calculator },
   { href: "/dashboard/addons", label: "Estimate Add-Ons", icon: Puzzle },
   { href: "/dashboard/my-site", label: "My Website", icon: Globe },
-  { href: "/dashboard/sms", label: "SMS & Reviews", icon: MessageSquare, showSmsBadge: true },
+  { href: "/dashboard/reviews", label: "Reviews", icon: Star },
   { href: "/dashboard/chatbot", label: "Train Riley", icon: Bot },
   { href: "/dashboard/domains", label: "Custom Domain", icon: Globe },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
@@ -259,17 +260,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                         Dashboard
                       </a>
                       <a
-                        href="/dashboard/sms"
+                        href="/dashboard/reviews"
                         className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
                         onClick={() => setMoreOpen(false)}
                       >
-                        <MessageSquare className="w-4 h-4 text-slate-400" />
-                        SMS & Reviews
-                        {unreadSmsCount > 0 && (
-                          <span className="ml-auto bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">
-                            {unreadSmsCount}
-                          </span>
-                        )}
+                        <Star className="w-4 h-4 text-amber-400" />
+                        Reviews
                       </a>
                       <a
                         href="/dashboard/chatbot"

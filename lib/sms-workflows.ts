@@ -1,4 +1,4 @@
-// High-level SMS workflows — these are the functions you call from API routes.
+// High-level workflows — review requests, auto-replies, etc.
 // Each one handles the full flow: look up data, build the message, send it, log it.
 
 import { nanoid } from "nanoid";
@@ -6,24 +6,24 @@ import { createServerSupabase } from "./supabase-server";
 import { sendSMS, getContractorNumber, isOptedOut } from "./twilio";
 
 // ---------------------------------------------------------------------------
-// sendReviewRequest — asks a customer to leave a Google review after a job
+// sendReviewRequest — asks a customer to leave a Google review via email
 // ---------------------------------------------------------------------------
 
 /**
- * Send a review request SMS to a lead after their job is done.
+ * Send a review request email to a lead after their job is done.
  * Looks up the lead and contractor, builds a tracked review link,
- * sends the text, and logs it in review_requests.
+ * sends the email via Resend, and logs it in review_requests.
  */
 export async function sendReviewRequest(
   contractorId: string,
   leadId: string
-): Promise<{ success: boolean; reviewRequestId?: string; error?: string; quietHours?: boolean; sendAt?: string }> {
+): Promise<{ success: boolean; reviewRequestId?: string; error?: string }> {
   const supabase = createServerSupabase();
 
   // Look up the lead's contact info
   const { data: lead, error: leadError } = await supabase
     .from("leads")
-    .select("name, phone")
+    .select("name, email")
     .eq("id", leadId)
     .single();
 
@@ -31,8 +31,8 @@ export async function sendReviewRequest(
     return { success: false, error: "Lead not found" };
   }
 
-  if (!lead.phone) {
-    return { success: false, error: "Lead has no phone number" };
+  if (!lead.email) {
+    return { success: false, error: "Lead has no email address" };
   }
 
   // Look up the contractor's business name, review URL, and automation toggle
@@ -46,19 +46,13 @@ export async function sendReviewRequest(
     return { success: false, error: "Contractor not found" };
   }
 
-  // Respect automation toggle — contractor can disable this in SMS dashboard
+  // Respect automation toggle — contractor can disable this in dashboard
   if (contractor.review_request_enabled === false) {
     return { success: false, error: "Review requests disabled by contractor" };
   }
 
   if (!contractor.google_review_url) {
     return { success: false, error: "No Google review URL configured for this contractor" };
-  }
-
-  // Figure out which phone number to send from
-  const fromNumber = await getContractorNumber(contractorId);
-  if (!fromNumber) {
-    return { success: false, error: "SMS not provisioned for this contractor" };
   }
 
   // Generate a unique tracking token so we can track clicks
@@ -69,42 +63,47 @@ export async function sendReviewRequest(
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ruufpro.com";
   const reviewUrl = `${siteUrl}/api/reviews/track/${trackingToken}`;
 
-  // Build the SMS body — keep it short and friendly
-  const firstName = lead.name.split(" ")[0]; // Use first name only
-  const smsBody =
-    `Hi ${firstName}, thanks for choosing ${contractor.business_name}! ` +
-    `We'd love your feedback on our work. Share your experience here:\n\n` +
-    `${reviewUrl}\n\n` +
-    `Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`;
+  // Send review request email via Resend
+  const firstName = lead.name?.split(" ")[0] || "there";
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
-  // Send it
-  const smsResult = await sendSMS({
-    to: lead.phone,
-    from: fromNumber,
-    body: smsBody,
-    contractorId,
-    leadId,
-    messageType: "review_request",
-  });
+  try {
+    const { error: emailError } = await resend.emails.send({
+      from: `${contractor.business_name} via RuufPro <reviews@ruufpro.com>`,
+      to: lead.email,
+      subject: `How was your experience with ${contractor.business_name}?`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <p style="font-size: 16px; color: #111827; line-height: 1.6;">
+            Hi ${firstName},
+          </p>
+          <p style="font-size: 16px; color: #111827; line-height: 1.6;">
+            Thanks for choosing <strong>${contractor.business_name}</strong>!
+            We hope everything went well. If you have a minute, a quick review
+            would really help us out.
+          </p>
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${reviewUrl}"
+               style="display: inline-block; background: #2563eb; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+              ⭐ Leave a Review
+            </a>
+          </div>
+          <p style="font-size: 13px; color: #9ca3af; text-align: center; line-height: 1.5;">
+            Sent on behalf of ${contractor.business_name}<br/>
+            <a href="${siteUrl}" style="color: #9ca3af;">Powered by RuufPro</a>
+          </p>
+        </div>
+      `,
+    });
 
-  if (!smsResult.success) {
-    return {
-      success: false,
-      error: smsResult.error,
-      quietHours: smsResult.quietHours,
-      sendAt: smsResult.sendAt,
-    };
-  }
-
-  // Look up the sms_messages record by Twilio SID to get our DB UUID
-  let smsMessageId: string | null = null;
-  if (smsResult.messageSid) {
-    const { data: smsMsg } = await supabase
-      .from("sms_messages")
-      .select("id")
-      .eq("twilio_sid", smsResult.messageSid)
-      .single();
-    smsMessageId = smsMsg?.id || null;
+    if (emailError) {
+      console.error("Review request email error:", emailError);
+      return { success: false, error: "Email send failed" };
+    }
+  } catch (err: any) {
+    console.error("Review request email caught error:", err);
+    return { success: false, error: err.message || "Email send failed" };
   }
 
   // Log the review request in our database for tracking
@@ -115,9 +114,9 @@ export async function sendReviewRequest(
       lead_id: leadId,
       tracking_token: trackingToken,
       google_review_url: contractor.google_review_url,
-      sms_message_id: smsMessageId,
-      channel: "sms",
-      status: "sms_sent",
+      sms_message_id: null,
+      channel: "email",
+      status: "email_sent",
       sent_at: new Date().toISOString(),
     })
     .select("id")
@@ -125,8 +124,7 @@ export async function sendReviewRequest(
 
   if (insertError) {
     console.error("Failed to log review request:", insertError);
-    // SMS was sent successfully even if logging failed
-    return { success: true, error: "SMS sent but failed to log review request" };
+    return { success: true, error: "Email sent but failed to log review request" };
   }
 
   return { success: true, reviewRequestId: reviewRequest.id };
@@ -365,8 +363,8 @@ export async function scheduleReviewEmailFollowup(
     return { success: false, error: "Review request not found" };
   }
 
-  // Only follow up if: status is still 'sms_sent', no click recorded, and 3+ days old
-  if (request.status !== "sms_sent") {
+  // Only follow up if: status is still 'email_sent', no click recorded, and 3+ days old
+  if (request.status !== "email_sent") {
     return { success: false, error: "Review request already actioned" };
   }
 
@@ -397,7 +395,7 @@ export async function scheduleReviewEmailFollowup(
 
   try {
     const { error: emailError } = await resend.emails.send({
-      from: "RuufPro <noreply@ruufpro.com>",
+      from: `${contractor.business_name} via RuufPro <reviews@ruufpro.com>`,
       to: lead.email,
       subject: `How was your experience with ${contractor.business_name}?`,
       html: `
@@ -435,7 +433,7 @@ export async function scheduleReviewEmailFollowup(
   await supabase
     .from("review_requests")
     .update({
-      status: "email_sent",
+      status: "reminder_sent",
       email_followup_sent_at: new Date().toISOString(),
     })
     .eq("id", reviewRequestId);

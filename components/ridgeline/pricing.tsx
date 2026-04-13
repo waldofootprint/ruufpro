@@ -53,7 +53,7 @@ const PRO_FEATURES = [
   "Everything in Free, plus:",
   "Homeowners see pricing instantly — your phone rings, not your competitor's",
   "Riley AI chatbot answers homeowner questions 24/7 — even at 11pm",
-  "5-star reviews on autopilot — one text, they leave a review",
+  "5-star reviews on autopilot — one click, they get an email, you get a review",
   "Know who's ready to buy — leads tagged hot, warm, or browsing",
   "Works on any website — paste one link on WordPress, Wix, anywhere",
   "You control the pricing homeowners see",

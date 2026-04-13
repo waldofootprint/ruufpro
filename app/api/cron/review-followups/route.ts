@@ -1,4 +1,4 @@
-// Daily cron: sends email follow-up for review requests that were sent via SMS
+// Daily cron: sends reminder email for review requests that were sent via email
 // 3+ days ago but never clicked. Protected by CRON_SECRET.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -17,13 +17,13 @@ export async function GET(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Find review requests: SMS sent 3+ days ago, not clicked, no email follow-up yet
+  // Find review requests: email sent 3+ days ago, not clicked, no reminder yet
   const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: pendingFollowups, error } = await supabase
     .from("review_requests")
     .select("id")
-    .eq("status", "sms_sent")
+    .eq("status", "email_sent")
     .is("clicked_at", null)
     .is("email_followup_sent_at", null)
     .lt("sent_at", threeDaysAgo)

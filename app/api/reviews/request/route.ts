@@ -1,4 +1,4 @@
-// Trigger a review request SMS to a homeowner after job completion.
+// Trigger a review request email to a homeowner after job completion.
 // Protected: requires authenticated contractor. Validates lead ownership.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Look up the lead and verify it belongs to this contractor
     const { data: lead } = await supabase
       .from("leads")
-      .select("id, name, phone, contractor_id, status")
+      .select("id, name, email, phone, contractor_id, status")
       .eq("id", leadId)
       .single();
 
@@ -94,9 +94,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!lead.phone) {
+    if (!lead.email) {
       return NextResponse.json(
-        { error: "Lead has no phone number on file" },
+        { error: "Lead has no email address on file" },
         { status: 400 }
       );
     }
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Duplicate prevention — don't send two review texts for the same lead
+    // Duplicate prevention — don't send two review emails for the same lead
     const { data: existingRequest } = await supabase
       .from("review_requests")
       .select("id")

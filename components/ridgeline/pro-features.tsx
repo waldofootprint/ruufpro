@@ -361,19 +361,27 @@ export default function RidgelineProFeatures() {
             step={4}
             reverse
             label="Review Automation"
-            title="One Text After Every Job. Reviews Stack Up While You Sleep."
-            outcome="After a job is marked complete, RuufPro sends a friendly review request. No awkward asking. No forgetting. Just 5-star reviews on autopilot."
+            title="Mark the Job Done. Reviews Roll In While You Sleep."
+            outcome="After a job is marked complete, RuufPro emails the homeowner a friendly review request — your business name, one big button, done. No awkward asking. No forgetting. Just 5-star reviews on autopilot."
             stat="Roofers who ask for reviews close 5x more jobs."
           >
-            <PhoneMockup>
-              <MessagesHeader initials="SM" name="Sarah Mitchell" />
-              <div className="px-3 py-4 space-y-2.5 bg-white flex-1 flex flex-col justify-end">
-                <p className="text-[10px] text-center text-gray-400 mb-1">Today 4:15 PM</p>
-                <SmsBubble message="Hi Sarah, we hope you enjoyed your experience with IronShield Roofing! Would you mind taking a moment to leave a review? Here's the link: g.page/ironshield" time="4:15 PM" isOutgoing />
-                <SmsBubble message="Absolutely! You guys did a great job. Just left you 5 stars ⭐" time="4:22 PM" />
+            {/* Email mockup */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden max-w-[260px] mx-auto">
+              <div className="bg-gray-50 border-b border-gray-200 px-3 py-2">
+                <p className="text-[9px] text-gray-400">From: IronShield Roofing via RuufPro</p>
+                <p className="text-[9px] text-gray-400">To: sarah.mitchell@email.com</p>
+                <p className="text-[10px] font-semibold text-gray-700 mt-0.5">How was your experience with IronShield Roofing?</p>
               </div>
-              <MessagesInputBar />
-            </PhoneMockup>
+              <div className="px-4 py-4 text-center">
+                <p className="text-[11px] text-gray-600 leading-relaxed mb-3">
+                  Hi Sarah, thanks for choosing IronShield Roofing! If you have a minute, a quick review would really help us out.
+                </p>
+                <div className="bg-blue-600 text-white text-[11px] font-semibold py-2 px-4 rounded-md inline-block">
+                  ⭐ Leave a Review
+                </div>
+                <p className="text-[8px] text-gray-300 mt-3">Sent on behalf of IronShield Roofing</p>
+              </div>
+            </div>
           </FeatureCard>
         </div>
 
