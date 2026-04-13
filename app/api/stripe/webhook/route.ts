@@ -124,6 +124,66 @@ export async function POST(req: NextRequest) {
         .eq("id", contractorId);
 
       console.log(`[Stripe] Cancelled subscription for contractor ${contractorId}`);
+
+      // Notify Slack
+      const { data: cancelledContractor } = await supabase
+        .from("contractors")
+        .select("business_name, email")
+        .eq("id", contractorId)
+        .single();
+      if (cancelledContractor) {
+        notifySlack({
+          type: "trial_expired",
+          businessName: cancelledContractor.business_name,
+          email: cancelledContractor.email,
+          contractorId,
+        }).catch(() => {});
+      }
+      break;
+    }
+
+    // Trial ending soon (fires 3 days before trial ends)
+    case "customer.subscription.trial_will_end": {
+      const subscription = event.data.object;
+      const contractorId = subscription.metadata?.contractor_id;
+      if (!contractorId) break;
+
+      const { data: trialContractor } = await supabase
+        .from("contractors")
+        .select("business_name, email")
+        .eq("id", contractorId)
+        .single();
+
+      if (trialContractor) {
+        // Send reminder email
+        const { Resend } = await import("resend");
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: "RuufPro <noreply@ruufpro.com>",
+          to: trialContractor.email,
+          subject: "Your RuufPro Pro trial ends in 3 days",
+          html: `
+            <div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+              <h2 style="color:#1a1a1a;font-size:18px;">Your Pro trial ends soon</h2>
+              <p style="color:#555;font-size:14px;line-height:1.6;">
+                Hey ${trialContractor.business_name} — your 14-day Pro trial ends in 3 days.
+                After that, your site stays live but Pro features (estimate widget, Riley AI, reviews) will turn off.
+              </p>
+              <p style="color:#555;font-size:14px;line-height:1.6;">
+                If you're seeing value, your card on file will be charged $149/mo automatically. No action needed.
+              </p>
+              <p style="color:#555;font-size:14px;line-height:1.6;">
+                Want to cancel? No hard feelings — manage your subscription from your dashboard.
+              </p>
+              <a href="https://ruufpro.com/dashboard/billing" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-top:8px;">
+                Manage Subscription
+              </a>
+            </div>
+          `,
+        }).catch(() => {});
+
+        console.log(`[Stripe] Trial ending soon for contractor ${contractorId}`);
+      }
       break;
     }
   }

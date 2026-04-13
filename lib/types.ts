@@ -21,8 +21,10 @@ export type LeadTemperature = "hot" | "warm" | "browsing";
 // Pro ($149): everything — widget, Riley, reviews, city pages, connect your domain, CRM
 export type ContractorTier = "free" | "pro";
 
-export function getTierFromContractor(contractor: Pick<Contractor, "has_estimate_widget">): ContractorTier {
+export function getTierFromContractor(contractor: Pick<Contractor, "has_estimate_widget" | "trial_ends_at">): ContractorTier {
   if (contractor.has_estimate_widget) return "pro";
+  // Flow B: outreach trial — Pro features active until trial_ends_at
+  if (contractor.trial_ends_at && new Date(contractor.trial_ends_at) > new Date()) return "pro";
   return "free";
 }
 
@@ -73,6 +75,9 @@ export interface Contractor {
   // Billing
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+
+  // Trial (Flow B — outreach sites gifted Pro without card)
+  trial_ends_at: string | null;
 
   // Site ownership
   has_roofready_site: boolean;

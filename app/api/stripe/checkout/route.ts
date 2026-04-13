@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       plan,
     },
     subscription_data: {
+      trial_period_days: 14,
       metadata: {
         contractor_id: contractor.id,
         plan,
