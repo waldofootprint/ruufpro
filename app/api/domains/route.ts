@@ -1,10 +1,10 @@
 // Custom domain management API — add, remove, verify domains.
-// Growth tier only ($299/mo).
+// Pro tier ($149/mo).
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createAuthSupabase } from "@/lib/supabase-server";
-import { addDomain, removeDomain, verifyDomain } from "@/lib/vercel-domains";
+import { addDomain, removeDomain, verifyDomain, getDomainConfig } from "@/lib/vercel-domains";
 
 function getSupabase() {
   return createClient(
@@ -13,7 +13,20 @@ function getSupabase() {
   );
 }
 
-// GET — fetch contractor's current custom domain
+// Detect apex vs subdomain and return correct DNS instructions.
+function getDnsInstructions(domain: string) {
+  const parts = domain.split(".");
+  const isApex = parts.length === 2; // e.g. "example.com"
+  if (isApex) {
+    return { type: "A", name: "@", value: "76.76.21.21" };
+  }
+  return { type: "CNAME", name: parts[0], value: "cname.vercel-dns.com" };
+}
+
+// Basic domain format validation.
+const DOMAIN_REGEX = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i;
+
+// GET — fetch contractor's current custom domain with verification status
 export async function GET() {
   const authSupabase = createAuthSupabase();
   const { data: { user } } = await authSupabase.auth.getUser();
@@ -28,9 +41,19 @@ export async function GET() {
 
   if (!contractor) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  if (!contractor.custom_domain) {
+    return NextResponse.json({ domain: null, enabled: contractor.has_custom_domain });
+  }
+
+  // Check current verification status from Vercel
+  const config = await getDomainConfig(contractor.custom_domain);
+  const verified = config?.verified ?? false;
+
   return NextResponse.json({
-    domain: contractor.custom_domain || null,
+    domain: contractor.custom_domain,
     enabled: contractor.has_custom_domain,
+    verified,
+    dns: verified ? null : getDnsInstructions(contractor.custom_domain),
   });
 }
 
@@ -43,7 +66,7 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabase();
   const { data: contractor } = await supabase
     .from("contractors")
-    .select("id, has_custom_domain, slug")
+    .select("id, has_custom_domain")
     .eq("user_id", user.id)
     .single();
 
@@ -61,6 +84,11 @@ export async function POST(req: NextRequest) {
   // Sanitize domain
   const cleanDomain = domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, "").replace(/\/$/, "");
 
+  // Validate domain format
+  if (!DOMAIN_REGEX.test(cleanDomain)) {
+    return NextResponse.json({ error: "Please enter a valid domain (e.g. yourbusiness.com)" }, { status: 400 });
+  }
+
   if (action === "add") {
     const result = await addDomain(cleanDomain);
     if (!result.ok) {
@@ -75,11 +103,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       domain: result.domain,
-      dns: {
-        type: "CNAME",
-        name: cleanDomain,
-        value: "cname.vercel-dns.com",
-      },
+      dns: getDnsInstructions(cleanDomain),
     });
   }
 

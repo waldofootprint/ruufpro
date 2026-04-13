@@ -20,7 +20,11 @@ export default function DomainsPage() {
     fetch("/api/domains")
       .then((r) => r.json())
       .then((data) => {
-        if (data.domain) setCurrentDomain(data.domain);
+        if (data.domain) {
+          setCurrentDomain(data.domain);
+          setVerified(data.verified ?? false);
+          if (data.dns && !data.verified) setDnsRecord(data.dns);
+        }
       });
   }, []);
 

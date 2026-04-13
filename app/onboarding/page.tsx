@@ -252,6 +252,37 @@ export default function OnboardingPage() {
     setScreen("published");
   }
 
+  async function handleSkip() {
+    if (!userId) { router.push("/signup"); return; }
+    if (!businessName || !phone || !city || !state) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+
+    const { error: contractorErr } = await supabase
+      .from("contractors")
+      .insert({
+        user_id: userId,
+        email: (await supabase.auth.getUser()).data.user?.email || "",
+        business_name: businessName,
+        phone,
+        city,
+        state,
+        business_type: "residential",
+        service_area_cities: [city],
+      });
+
+    if (contractorErr) {
+      setError(contractorErr.message.includes("duplicate") ? "You already have an account set up." : contractorErr.message);
+      setLoading(false);
+      return;
+    }
+
+    router.push("/dashboard");
+  }
+
   if (!userId) {
     return <main className="flex min-h-screen items-center justify-center"><p className="text-gray-500">Loading...</p></main>;
   }
@@ -315,7 +346,15 @@ export default function OnboardingPage() {
             </button>
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-4">
+          <button
+            onClick={handleSkip}
+            disabled={loading}
+            className="w-full text-center text-xs text-gray-500 mt-4 hover:text-gray-700 transition-colors disabled:opacity-50"
+          >
+            I already have a website — just give me the tools →
+          </button>
+
+          <p className="text-center text-xs text-gray-400 mt-2">
             Free forever. No credit card. Your site is optimized for Google from day one.
           </p>
         </div>

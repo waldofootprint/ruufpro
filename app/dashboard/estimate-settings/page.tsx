@@ -644,17 +644,41 @@ export default function EstimateSettingsPage() {
         )}
       </div>
 
-      {contractorId && (
+      {contractorId && !isNewSettings && (
+        <div className="rounded-xl bg-[#1B3A4B]/5 border border-gray-200/60 p-6 mb-6 space-y-5">
+          <div>
+            <h2 className="text-lg font-semibold text-[#1B3A4B] mb-2">
+              Embed on Your Website
+            </h2>
+            <p className="text-sm text-[#1B3A4B]/50 mb-3">
+              Paste this on any page to add your estimate widget. Works on WordPress, Wix, Squarespace, or any HTML site.
+            </p>
+            <pre className="bg-white rounded-lg p-3 text-xs text-[#1B3A4B]/70 overflow-x-auto border border-gray-200/60">
+              {`<script src="https://ruufpro.com/widget.js" data-contractor-id="${contractorId}"></script>`}
+            </pre>
+          </div>
+
+          {tier === "pro" && (
+            <div className="border-t border-gray-200/60 pt-5">
+              <h3 className="text-sm font-semibold text-[#1B3A4B] mb-1">
+                Riley AI Chatbot
+              </h3>
+              <p className="text-sm text-[#1B3A4B]/50 mb-3">
+                Add Riley to the same page — she answers homeowner questions and captures leads 24/7.
+              </p>
+              <pre className="bg-white rounded-lg p-3 text-xs text-[#1B3A4B]/70 overflow-x-auto border border-gray-200/60">
+                {`<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}"></script>`}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+
+      {contractorId && isNewSettings && (
         <div className="rounded-xl bg-[#1B3A4B]/5 border border-gray-200/60 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-[#1B3A4B] mb-2">
-            Embed Code
-          </h2>
-          <p className="text-sm text-[#1B3A4B]/50 mb-3">
-            Paste this on any website to add your estimate widget.
+          <p className="text-sm text-[#1B3A4B]/50">
+            Save your pricing to get your embed code.
           </p>
-          <pre className="bg-white rounded-lg p-3 text-xs text-[#1B3A4B]/70 overflow-x-auto border border-gray-200/60">
-            {`<script src="https://ruufpro.com/widget.js" data-contractor="${contractorId}"></script>`}
-          </pre>
         </div>
       )}
 
