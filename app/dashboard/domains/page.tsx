@@ -1,4 +1,4 @@
-// Custom Domain — Growth tier feature. Add your own domain to your RuufPro site.
+// Connect Your Domain — Pro feature. Point your own domain to your RuufPro site.
 
 "use client";
 
@@ -24,31 +24,31 @@ export default function DomainsPage() {
       });
   }, []);
 
-  // Growth tier gate
-  if (tier !== "growth") {
+  // Pro tier gate
+  if (tier === "free") {
     return (
       <div className="max-w-[480px] mx-auto py-16 text-center space-y-4">
         <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto">
           <Globe className="w-7 h-7 text-slate-400" />
         </div>
-        <h2 className="text-[18px] font-extrabold text-slate-800">Custom Domain — Growth Feature</h2>
+        <h2 className="text-[18px] font-extrabold text-slate-800">Connect Your Domain — Pro Feature</h2>
         <p className="text-[13px] text-slate-500 leading-relaxed max-w-[360px] mx-auto">
-          Use your own domain (yourbusiness.com) instead of a ruufpro.com subdomain. Available on the Growth plan.
+          Point your own domain (yourbusiness.com) to your RuufPro site. You bring the domain, we handle the rest.
         </p>
-        <p className="text-[13px] font-semibold text-amber-600">Requires the $299/mo Growth plan.</p>
+        <p className="text-[13px] font-semibold text-amber-600">Requires the $149/mo Pro plan.</p>
         <button
           onClick={async () => {
             const res = await fetch("/api/stripe/checkout", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ plan: "growth_monthly" }),
+              body: JSON.stringify({ plan: "pro_monthly" }),
             });
             const data = await res.json();
             if (data.url) window.location.href = data.url;
           }}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white rounded-lg text-[13px] font-semibold hover:bg-slate-900 transition"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-lg text-[13px] font-semibold hover:bg-amber-700 transition"
         >
-          Upgrade to Growth
+          Upgrade to Pro
         </button>
       </div>
     );
@@ -111,9 +111,9 @@ export default function DomainsPage() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">Custom Domain</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">Connect Your Domain</h1>
       <p className="text-[13px] text-slate-500 mb-8">
-        Point your own domain to your RuufPro website. SSL is automatically provisioned.
+        Point your own domain to your RuufPro website. You bring the domain, we handle SSL automatically.
       </p>
 
       {currentDomain ? (

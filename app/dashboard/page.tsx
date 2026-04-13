@@ -29,7 +29,7 @@ type PopupType = "waiting" | "speed" | "pipeline" | "reviews" | null;
 
 export default function DashboardHome() {
   const { contractorId, businessName, tier, refreshLeadCount } = useDashboard();
-  const isPro = tier === "pro" || tier === "growth";
+  const isPro = tier === "pro";
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewCount, setReviewCount] = useState(0);

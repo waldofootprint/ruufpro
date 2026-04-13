@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   if (!contractor) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!contractor.has_custom_domain) {
-    return NextResponse.json({ error: "Growth plan required" }, { status: 403 });
+    return NextResponse.json({ error: "Pro plan required" }, { status: 403 });
   }
 
   const { action, domain } = await req.json();

@@ -18,12 +18,10 @@ export type LeadTemperature = "hot" | "warm" | "browsing";
 
 // Contractor plan tiers — derived from feature flags, not stored in DB.
 // Free: basic website only
-// Pro ($149): estimate widget + review automation + auto-reply
-// Growth ($299): everything Pro + SEO city pages + custom domain
-export type ContractorTier = "free" | "pro" | "growth";
+// Pro ($149): everything — widget, Riley, reviews, city pages, connect your domain, CRM
+export type ContractorTier = "free" | "pro";
 
-export function getTierFromContractor(contractor: Pick<Contractor, "has_estimate_widget" | "has_seo_pages" | "has_custom_domain">): ContractorTier {
-  if (contractor.has_seo_pages && contractor.has_custom_domain) return "growth";
+export function getTierFromContractor(contractor: Pick<Contractor, "has_estimate_widget">): ContractorTier {
   if (contractor.has_estimate_widget) return "pro";
   return "free";
 }

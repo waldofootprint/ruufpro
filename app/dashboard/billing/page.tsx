@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "../DashboardContext";
-import { CreditCard, ExternalLink, Zap } from "lucide-react";
+import { CreditCard, ExternalLink } from "lucide-react";
 
 export default function BillingPage() {
   const { tier } = useDashboard();
@@ -43,8 +43,8 @@ export default function BillingPage() {
     }
   }
 
-  const tierLabel = tier === "growth" ? "Growth" : tier === "pro" ? "Pro" : "Free";
-  const tierPrice = tier === "growth" ? "$299/mo" : tier === "pro" ? "$149/mo" : "$0";
+  const tierLabel = tier === "pro" ? "Pro" : "Free";
+  const tierPrice = tier === "pro" ? "$149/mo" : "$0";
 
   return (
     <div className="max-w-xl mx-auto">
@@ -63,7 +63,7 @@ export default function BillingPage() {
           </span>
         </div>
         <p className="text-[28px] font-black text-slate-900">{tierPrice}</p>
-        {tier !== "free" && (
+        {tier === "pro" && (
           <button
             onClick={openPortal}
             disabled={loading}
@@ -75,48 +75,18 @@ export default function BillingPage() {
         )}
       </div>
 
-      {/* Upgrade options */}
+      {/* Upgrade option */}
       {tier === "free" && (
-        <div className="space-y-3">
-          <button
-            onClick={() => upgrade("pro_monthly")}
-            disabled={loading}
-            className="w-full flex items-center justify-between bg-amber-600 text-white rounded-xl px-6 py-4 hover:bg-amber-700 transition disabled:opacity-50"
-          >
-            <div className="text-left">
-              <p className="text-[15px] font-bold">Upgrade to Pro</p>
-              <p className="text-[12px] text-white/70">Estimate widget + Riley AI + review automation</p>
-            </div>
-            <span className="text-[18px] font-black">$149/mo</span>
-          </button>
-          <button
-            onClick={() => upgrade("growth_monthly")}
-            disabled={loading}
-            className="w-full flex items-center justify-between bg-slate-800 text-white rounded-xl px-6 py-4 hover:bg-slate-900 transition disabled:opacity-50"
-          >
-            <div className="text-left">
-              <p className="text-[15px] font-bold">Upgrade to Growth</p>
-              <p className="text-[12px] text-white/70">Everything in Pro + SEO city pages + custom domain</p>
-            </div>
-            <span className="text-[18px] font-black">$299/mo</span>
-          </button>
-        </div>
-      )}
-
-      {tier === "pro" && (
         <button
-          onClick={() => upgrade("growth_monthly")}
+          onClick={() => upgrade("pro_monthly")}
           disabled={loading}
-          className="w-full flex items-center justify-between bg-slate-800 text-white rounded-xl px-6 py-4 hover:bg-slate-900 transition disabled:opacity-50"
+          className="w-full flex items-center justify-between bg-amber-600 text-white rounded-xl px-6 py-4 hover:bg-amber-700 transition disabled:opacity-50"
         >
           <div className="text-left">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <p className="text-[15px] font-bold">Upgrade to Growth</p>
-            </div>
-            <p className="text-[12px] text-white/70">Add SEO city pages + custom domain + competitor monitoring</p>
+            <p className="text-[15px] font-bold">Upgrade to Pro</p>
+            <p className="text-[12px] text-white/70">Estimate widget, Riley AI, reviews, city pages, your domain, CRM</p>
           </div>
-          <span className="text-[18px] font-black">$299/mo</span>
+          <span className="text-[18px] font-black">$149/mo</span>
         </button>
       )}
     </div>

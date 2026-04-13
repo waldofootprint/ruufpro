@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getStripe, getTierFromPriceId, TIER_FLAGS, FREE_FLAGS } from "@/lib/stripe";
+import { getStripe, getTierFromPriceId, PRO_FLAGS, FREE_FLAGS } from "@/lib/stripe";
 
 // Disable body parsing — Stripe needs the raw body to verify signatures.
 export const runtime = "nodejs";
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       const priceId = subscription.items.data[0]?.price?.id;
       const tier = priceId ? getTierFromPriceId(priceId) : null;
-      const flags = tier ? TIER_FLAGS[tier] : {};
+      const flags = tier ? PRO_FLAGS : {};
 
       await supabase
         .from("contractors")
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
         // Active subscription — enable tier flags
         await supabase
           .from("contractors")
-          .update(TIER_FLAGS[tier])
+          .update(PRO_FLAGS)
           .eq("id", contractorId);
 
         console.log(`[Stripe] Updated to ${tier} for contractor ${contractorId}`);

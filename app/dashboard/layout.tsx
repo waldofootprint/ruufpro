@@ -34,7 +34,7 @@ const SIDEBAR_ITEMS: { href: string; label: string; icon: any; showBadge?: boole
   { href: "/dashboard/my-site", label: "My Website", icon: Globe },
   { href: "/dashboard/reviews", label: "Reviews", icon: Star },
   { href: "/dashboard/chatbot", label: "Train Riley", icon: Bot },
-  { href: "/dashboard/domains", label: "Custom Domain", icon: Globe },
+  { href: "/dashboard/domains", label: "Your Domain", icon: Globe },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
 ];
