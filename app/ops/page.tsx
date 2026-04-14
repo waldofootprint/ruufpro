@@ -9,7 +9,7 @@ import type {
   GateStatus,
   PipelineProspect,
 } from "@/lib/ops-pipeline";
-import { DISPLAY_STAGES, STAGE_LABELS, GATE_LABELS } from "@/lib/ops-pipeline";
+import { DISPLAY_STAGES, PIPELINE_STAGES, STAGE_LABELS, GATE_LABELS } from "@/lib/ops-pipeline";
 import { scoreProspect, TIER_STYLES, OUTREACH_METHOD_LABELS } from "@/lib/prospect-scoring";
 import type { ProspectInput } from "@/lib/prospect-scoring";
 import { getCampaignType, generateEmailPreview, generateFormMessage, EMAIL_SCHEDULE } from "@/lib/outreach-templates";
@@ -116,7 +116,8 @@ export default function OpsPage() {
   const [buildingSites, setBuildingSites] = useState<string | null>(null);
   const [formActionResult, setFormActionResult] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [channelFilter, setChannelFilter] = useState<"all" | "cold_email" | "form">("all");
+  const [batchAction, setBatchAction] = useState<string | null>(null); // "batchId" of open dropdown
+  const [confirmAction, setConfirmAction] = useState<{ type: string; batchId: string; label: string } | null>(null);
   // Scrape filters
   const [scrapeMinRating, setScrapeMinRating] = useState(0);
   const [scrapeMaxReviews, setScrapeMaxReviews] = useState(100);
@@ -821,36 +822,14 @@ export default function OpsPage() {
           </div>
         ) : (
           <>
-            {/* ── Totals Bar ── */}
+            {/* ── Pipeline Overview ── */}
             <div className="bg-white rounded-xl border border-[#E5E5EA] px-5 py-4">
               <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8E8E93]">
+                  Pipeline Overview
+                </h2>
                 <div className="flex items-center gap-3">
-                  <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8E8E93]">
-                    Pipeline Totals{channelFilter !== "all" && <span className="text-[#C7C7CC] font-normal"> · showing all channels</span>}
-                  </h2>
-                  {/* Channel filter pills */}
-                  <div className="flex gap-1">
-                    {([
-                      { value: "all", label: "All" },
-                      { value: "cold_email", label: "Email" },
-                      { value: "form", label: "Form" },
-                    ] as const).map(({ value, label }) => (
-                      <button
-                        key={value}
-                        onClick={() => setChannelFilter(value)}
-                        className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${
-                          channelFilter === value
-                            ? "bg-[#007AFF] text-white"
-                            : "bg-[#F5F5F7] text-[#8E8E93] hover:bg-[#E5E5EA]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] text-[#C7C7CC]">{pipeline.batches.length} batch{pipeline.batches.length !== 1 ? "es" : ""} active</span>
+                  <span className="text-[11px] text-[#C7C7CC]">{pipeline.batches.length} batch{pipeline.batches.length !== 1 ? "es" : ""}</span>
                   <button
                     onClick={() => setNewBatchOpen(true)}
                     className="text-[10px] font-semibold text-[#34C759] bg-[#E8F5E9] hover:bg-[#C8E6C9] border border-[#34C75933] px-2.5 py-1 rounded-lg transition-colors"
@@ -860,12 +839,12 @@ export default function OpsPage() {
                 </div>
               </div>
               <div className="flex">
-                {DISPLAY_STAGES.map((stage) => {
+                {PIPELINE_STAGES.map((stage) => {
                   const count = pipeline.totals[stage] || 0;
                   return (
                     <div key={stage} className="flex-1 text-center">
-                      <div className={`text-xl font-bold leading-none ${stageColor(stage, count)}`}>{count}</div>
-                      <div className="text-[9px] uppercase tracking-[0.08em] text-[#8E8E93] mt-1">{STAGE_LABELS[stage]}</div>
+                      <div className={`text-base font-bold leading-none ${stageColor(stage, count)}`}>{count}</div>
+                      <div className="text-[8px] uppercase tracking-[0.08em] text-[#8E8E93] mt-1">{STAGE_LABELS[stage]}</div>
                     </div>
                   );
                 })}
@@ -898,55 +877,49 @@ export default function OpsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Scrape more button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openScrapePanel(batch.id, batch.city_targets); }}
-                        disabled={scraping === batch.id}
-                        className="text-[10px] font-semibold text-[#007AFF] bg-[#EFF6FF] hover:bg-[#DBEAFE] border border-[#007AFF33] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {scraping === batch.id ? "Scraping..." : "+ Scrape More"}
-                      </button>
-                      {/* Enrich button — adds owner emails via Apollo */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEnrich(batch.id); }}
-                        disabled={enriching === batch.id}
-                        className="text-[10px] font-semibold text-[#E65100] bg-[#FFF3E0] hover:bg-[#FFE0B2] border border-[#E6510033] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {enriching === batch.id ? "Enriching..." : "Enrich Emails"}
-                      </button>
-                      {/* Detect forms button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDetectForms(batch.id); }}
-                        disabled={detectingForms === batch.id}
-                        className="text-[10px] font-semibold text-[#5E35B1] bg-[#EDE7F6] hover:bg-[#D1C4E9] border border-[#5E35B133] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {detectingForms === batch.id ? "Detecting..." : "Detect Forms"}
-                      </button>
-                      {/* Enrich photos button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEnrichPhotos(batch.id); }}
-                        disabled={enrichingPhotos === batch.id}
-                        className="text-[10px] font-semibold text-[#00796B] bg-[#E0F2F1] hover:bg-[#B2DFDB] border border-[#00796B33] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {enrichingPhotos === batch.id ? "Enriching..." : "📷 Photos"}
-                      </button>
-                      {/* Build sites button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleBuildSites(batch.id); }}
-                        disabled={buildingSites === batch.id}
-                        className="text-[10px] font-semibold text-[#1565C0] bg-[#E3F2FD] hover:bg-[#BBDEFB] border border-[#1565C033] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {buildingSites === batch.id ? "Building..." : "🏠 Build Sites"}
-                      </button>
-                      {isCompleted && (
-                        <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-1 rounded-[10px]">✓ Complete</span>
-                      )}
                       {pendingGates.length > 0 && (
                         <span className="text-[10px] font-semibold text-[#F57F17] bg-[#FFF8E1] px-2.5 py-1 rounded-[10px]">
                           {pendingGates.length} gate{pendingGates.length > 1 ? "s" : ""} waiting
                         </span>
                       )}
+                      {isCompleted && (
+                        <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-1 rounded-[10px]">✓ Complete</span>
+                      )}
                       <span className="text-[11px] text-[#C7C7CC]">{batch.progress}%</span>
+                      {/* Actions dropdown */}
+                      <div className="relative" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setBatchAction(batchAction === batch.id ? null : batch.id)}
+                          className="text-[10px] font-semibold text-[#007AFF] bg-[#EFF6FF] hover:bg-[#DBEAFE] border border-[#007AFF33] px-3 py-1 rounded-lg transition-colors"
+                        >
+                          Actions ▾
+                        </button>
+                        {batchAction === batch.id && (
+                          <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl border border-[#E5E5EA] shadow-lg z-50 overflow-hidden">
+                            <button onClick={() => { setBatchAction(null); openScrapePanel(batch.id, batch.city_targets); }} className="w-full text-left px-4 py-2.5 text-[12px] text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors border-b border-[#F2F2F7]">
+                              + Scrape More Leads
+                            </button>
+                            <button onClick={() => { setBatchAction(null); handleEnrich(batch.id); }} className="w-full text-left px-4 py-2.5 text-[12px] text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors border-b border-[#F2F2F7]">
+                              Enrich Emails (Apollo)
+                            </button>
+                            <button onClick={() => { setBatchAction(null); handleEnrichPhotos(batch.id); }} className="w-full text-left px-4 py-2.5 text-[12px] text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors border-b border-[#F2F2F7]">
+                              📷 Enrich Photos + Reviews
+                            </button>
+                            <button onClick={() => { setBatchAction(null); handleDetectForms(batch.id); }} className="w-full text-left px-4 py-2.5 text-[12px] text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors border-b border-[#F2F2F7]">
+                              Detect Contact Forms
+                            </button>
+                            <button onClick={() => { setBatchAction(null); handleBuildSites(batch.id); }} className="w-full text-left px-4 py-2.5 text-[12px] text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors border-b border-[#F2F2F7]">
+                              🏠 Build Preview Sites
+                            </button>
+                            <button onClick={() => { setBatchAction(null); setConfirmAction({ type: "send_emails", batchId: batch.id, label: "Send cold emails to all approved leads in this batch?" }); }} className="w-full text-left px-4 py-2.5 text-[12px] text-[#C62828] hover:bg-[#FFEBEE] transition-colors border-b border-[#F2F2F7]">
+                              Send Emails (Instantly)
+                            </button>
+                            <button onClick={() => { setBatchAction(null); setConfirmAction({ type: "submit_forms", batchId: batch.id, label: "Submit contact forms for all approved leads?" }); }} className="w-full text-left px-4 py-2.5 text-[12px] text-[#C62828] hover:bg-[#FFEBEE] transition-colors">
+                              Submit Contact Forms
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </button>
 
@@ -961,15 +934,15 @@ export default function OpsPage() {
                     </div>
                   </div>
 
-                  {/* Stage counts */}
-                  <div className="flex px-5 py-2.5 border-t border-[#F8F8FA]">
-                    {DISPLAY_STAGES.map((stage, i) => {
+                  {/* Stage counts — all stages visible */}
+                  <div className="flex flex-wrap px-5 py-2.5 border-t border-[#F8F8FA] gap-y-1">
+                    {PIPELINE_STAGES.map((stage, i) => {
                       const count = batch.stage_counts[stage] || 0;
                       return (
-                        <div key={stage} className="flex-1 text-center relative">
-                          {i > 0 && <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[9px] text-[#E5E5EA]">→</span>}
-                          <div className={`text-[13px] font-semibold ${stageColor(stage, count)}`}>{count}</div>
-                          <div className="text-[8px] uppercase tracking-[0.1em] text-[#AEAEB2] mt-0.5">{STAGE_LABELS[stage]}</div>
+                        <div key={stage} className="w-[6.25%] min-w-[60px] text-center relative">
+                          {i > 0 && <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[8px] text-[#E5E5EA]">›</span>}
+                          <div className={`text-[12px] font-semibold ${stageColor(stage, count)}`}>{count}</div>
+                          <div className="text-[7px] uppercase tracking-[0.08em] text-[#AEAEB2] mt-0.5">{STAGE_LABELS[stage]}</div>
                         </div>
                       );
                     })}
@@ -1080,7 +1053,7 @@ export default function OpsPage() {
                   {/* ── Lead Table ── */}
                   {isExpanded && (
                     <div className="border-t border-[#F2F2F7]">
-                      <BatchLeadTable batchId={batch.id} channelFilter={channelFilter} />
+                      <BatchLeadTable batchId={batch.id} />
                     </div>
                   )}
                 </div>
@@ -1093,6 +1066,35 @@ export default function OpsPage() {
       <div className="text-center py-6 text-[11px] text-[#D1D1D6]">
         RuufPro Ops · Auto-refreshes every 60s
       </div>
+
+      {/* ═══ CONFIRMATION MODAL ═══ */}
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/40 z-[300] flex items-center justify-center" onClick={() => setConfirmAction(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="text-base font-bold text-[#1D1D1F] mb-2">Are you sure?</div>
+            <div className="text-sm text-[#3C3C43] mb-6">{confirmAction.label}</div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="text-sm font-medium text-[#8E8E93] hover:text-[#1D1D1F] px-4 py-2 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const { type, batchId } = confirmAction;
+                  setConfirmAction(null);
+                  if (type === "send_emails") handleSendEmails(batchId);
+                  if (type === "submit_forms") handleSubmitForms(batchId);
+                }}
+                className="text-sm font-semibold text-white bg-[#FF3B30] hover:bg-[#D32F2F] px-5 py-2 rounded-lg transition-colors"
+              >
+                Yes, proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1549,7 +1551,7 @@ function DraftApprovalPanel({ batchId, onDone }: { batchId: string; onDone: () =
 // ═══════════════════════════════════════════════════════════════════
 // BATCH LEAD TABLE — with expandable detail rows
 // ═══════════════════════════════════════════════════════════════════
-function BatchLeadTable({ batchId, channelFilter }: { batchId: string; channelFilter: "all" | "cold_email" | "form" }) {
+function BatchLeadTable({ batchId }: { batchId: string }) {
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
@@ -1559,14 +1561,7 @@ function BatchLeadTable({ batchId, channelFilter }: { batchId: string; channelFi
   const [sortCol, setSortCol] = useState<string>("business_name");
   const [sortAsc, setSortAsc] = useState(true);
 
-  // Apply channel filter
-  const leads = channelFilter === "all"
-    ? allLeads
-    : allLeads.filter(l => {
-        // Use stored outreach_method if available, otherwise infer
-        const method = l.outreach_method || (l.contact_form_url ? "form" : "cold_email");
-        return method === channelFilter;
-      });
+  const leads = allLeads;
 
   function handleSort(col: string) {
     if (sortCol === col) setSortAsc(!sortAsc);
@@ -1709,11 +1704,10 @@ function BatchLeadTable({ batchId, channelFilter }: { batchId: string; channelFi
   const selectedNeedPhotos = selectedLeads.filter(l => l.google_place_id && !l.photos_enriched_at);
   const selectedNeedSites = selectedLeads.filter(l => (l.stage === "scraped" || l.stage === "enriched") && !l.preview_site_url);
 
-  // Group leads by stage, ordered by pipeline progression
+  // Group leads by stage — show ALL stages so Hannah can see the full pipeline
   const STAGE_ORDER: string[] = ["scraped", "enriched", "site_built", "site_approved", "outreach_approved", "sent", "awaiting_reply", "replied", "draft_ready", "responded", "interested", "free_signup", "paid", "not_now", "objection", "unsubscribed"];
   const stageGroups = STAGE_ORDER
-    .map(stage => ({ stage, leads: leads.filter(l => l.stage === stage) }))
-    .filter(g => g.leads.length > 0);
+    .map(stage => ({ stage, leads: leads.filter(l => l.stage === stage) }));
 
   const STAGE_ICONS: Record<string, string> = {
     scraped: "🔍", enriched: "📋", site_built: "🏗", site_approved: "✅",
@@ -1821,10 +1815,8 @@ function BatchLeadTable({ batchId, channelFilter }: { batchId: string; channelFi
                           { key: "city", label: "City" },
                           { key: "rating", label: "Rating" },
                           { key: "reviews_count", label: "Reviews" },
-                          { key: "years_in_business", label: "Yrs" },
+                          { key: "_data_richness", label: "Site Readiness" },
                           { key: "their_website_url", label: "Website" },
-                          { key: "outreach_method", label: "Channel" },
-                          { key: "contact_form_url", label: "Form" },
                           { key: "preview_site_url", label: "Preview" },
                         ].map(({ key, label }) => (
                           <th
@@ -1845,6 +1837,19 @@ function BatchLeadTable({ batchId, channelFilter }: { batchId: string; channelFi
                         const domain = lead.their_website_url?.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
                         const td = "text-xs px-3 py-2.5 border-b border-[#F0F0F2]";
 
+                        // Data richness score — how much info we have to build a good site
+                        const photoCount = lead.photos?.length || 0;
+                        const reviewCount = lead.google_reviews?.length || 0;
+                        const serviceCount = lead.extracted_services?.length || 0;
+                        const hasEmail = !!lead.owner_email;
+                        const hasPhone = !!lead.phone && lead.phone !== "unknown";
+                        const hasWebsite = !!lead.their_website_url;
+                        const richnessChecks = [photoCount > 0, reviewCount > 0, serviceCount > 0, hasEmail, hasPhone];
+                        const richnessScore = richnessChecks.filter(Boolean).length;
+                        const richnessMax = richnessChecks.length;
+                        const richnessColor = richnessScore >= 4 ? "text-[#34C759]" : richnessScore >= 2 ? "text-[#FF9F0A]" : "text-[#FF3B30]";
+                        const richnessLabel = richnessScore >= 4 ? "Rich" : richnessScore >= 2 ? "Partial" : "Bare";
+
                         return (
                           <tr key={lead.id} className={`transition-colors ${isChecked ? "bg-[#EFF6FF]" : "hover:bg-white"}`}>
                             <td className={`${td} w-8`}>
@@ -1859,31 +1864,24 @@ function BatchLeadTable({ batchId, channelFilter }: { batchId: string; channelFi
                             <td className={td}>{lead.city ? `${lead.city}, ${lead.state || "FL"}` : "—"}</td>
                             <td className={td}>{lead.rating > 0 ? `${lead.rating}★` : "—"}</td>
                             <td className={td}>{lead.reviews_count > 0 ? lead.reviews_count : "—"}</td>
-                            <td className={td}>{lead.years_in_business ? `${lead.years_in_business}y` : "—"}</td>
+                            {/* Data richness — site readiness indicator */}
+                            <td className={td}>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[10px] font-bold ${richnessColor}`}>{richnessScore}/{richnessMax}</span>
+                                <div className="flex gap-0.5" title={`Photos: ${photoCount} · Reviews: ${reviewCount} · Services: ${serviceCount} · Email: ${hasEmail ? "Yes" : "No"} · Phone: ${hasPhone ? "Yes" : "No"}`}>
+                                  <span className={`text-[9px] ${photoCount > 0 ? "text-[#34C759]" : "text-[#D1D1D6]"}`} title={`${photoCount} photos`}>📷{photoCount > 0 ? photoCount : ""}</span>
+                                  <span className={`text-[9px] ${reviewCount > 0 ? "text-[#34C759]" : "text-[#D1D1D6]"}`} title={`${reviewCount} reviews`}>⭐{reviewCount > 0 ? reviewCount : ""}</span>
+                                  <span className={`text-[9px] ${serviceCount > 0 ? "text-[#34C759]" : "text-[#D1D1D6]"}`} title={`${serviceCount} services`}>🔧{serviceCount > 0 ? serviceCount : ""}</span>
+                                  <span className={`text-[9px] ${hasEmail ? "text-[#34C759]" : "text-[#D1D1D6]"}`} title={hasEmail ? lead.owner_email : "No email"}>✉</span>
+                                  <span className={`text-[9px] ${hasPhone ? "text-[#34C759]" : "text-[#D1D1D6]"}`} title={hasPhone ? lead.phone : "No phone"}>📞</span>
+                                </div>
+                                <span className={`text-[8px] font-semibold uppercase ${richnessColor}`}>{richnessLabel}</span>
+                              </div>
+                            </td>
                             <td className={td}>
                               {domain ? (
                                 <a href={lead.their_website_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">{domain}</a>
                               ) : <span className="text-[#FF9F0A] font-medium">No website</span>}
-                            </td>
-                            <td className={td}>
-                              {(() => {
-                                const method = lead.outreach_method || (lead.contact_form_url ? "form" : "cold_email");
-                                const methodStyle = OUTREACH_METHOD_LABELS[method as keyof typeof OUTREACH_METHOD_LABELS];
-                                return methodStyle ? (
-                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg ${methodStyle.color}`}>
-                                    {methodStyle.label}
-                                  </span>
-                                ) : <span className="text-[#D1D1D6]">—</span>;
-                              })()}
-                            </td>
-                            <td className={td}>
-                              {lead.contact_form_url ? (
-                                lead.has_captcha ? (
-                                  <span className="text-[10px] font-semibold text-[#F57F17] bg-[#FFF8E1] px-2 py-0.5 rounded-lg">CAPTCHA</span>
-                                ) : (
-                                  <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2 py-0.5 rounded-lg">Found</span>
-                                )
-                              ) : <span className="text-[#D1D1D6]">—</span>}
                             </td>
                             <td className={td}>
                               {lead.preview_site_url ? (
