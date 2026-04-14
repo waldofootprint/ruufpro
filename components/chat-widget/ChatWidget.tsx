@@ -24,6 +24,7 @@ interface LeadFormData {
   phone: string;
   email: string;
   address: string;
+  smsConsent: boolean;
 }
 
 export default function ChatWidget({
@@ -39,7 +40,7 @@ export default function ChatWidget({
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadDismissedAt, setLeadDismissedAt] = useState(0);
   const [leadCaptured, setLeadCaptured] = useState(false);
-  const [leadForm, setLeadForm] = useState<LeadFormData>({ name: "", phone: "", email: "", address: "" });
+  const [leadForm, setLeadForm] = useState<LeadFormData>({ name: "", phone: "", email: "", address: "", smsConsent: false });
   const [submittingLead, setSubmittingLead] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [capped, setCapped] = useState(false);
@@ -176,7 +177,7 @@ export default function ChatWidget({
       address: leadForm.address || null,
       source: "ai_chatbot",
       status: "new",
-      sms_consent: false,
+      sms_consent: leadForm.smsConsent,
     });
 
     // Notify contractor (fire-and-forget) — also marks conversation as lead_captured server-side
@@ -190,6 +191,7 @@ export default function ChatWidget({
         lead_email: leadForm.email,
         lead_address: leadForm.address,
         source: "ai_chatbot",
+        sms_consent: leadForm.smsConsent,
         chat_session_id: sessionId || undefined,
       }),
     }).catch(() => {});
@@ -581,6 +583,17 @@ export default function ChatWidget({
                   boxSizing: "border-box" as const,
                 }}
               />
+              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={leadForm.smsConsent}
+                  onChange={(e) => setLeadForm((f) => ({ ...f, smsConsent: e.target.checked }))}
+                  style={{ width: 14, height: 14, accentColor: accentColor, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 11, color: mutedText, lineHeight: 1.3 }}>
+                  OK to text me at this number
+                </span>
+              </label>
               <div style={{ display: "flex", gap: 6 }}>
                 <button
                   onClick={handleLeadSubmit}
