@@ -8,8 +8,9 @@ import { PIPELINE_STAGES } from "@/lib/ops-pipeline";
 import { requireOpsAuth } from "@/lib/ops-auth";
 
 export async function GET() {
-  // Auth handled by /ops layout (client-side admin email check).
-  // Cookie-based auth fails in API routes when session isn't synced.
+  const { softOpsAuth } = await import("@/lib/ops-auth");
+  const auth = await softOpsAuth();
+  if (!auth.authorized) return auth.response;
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

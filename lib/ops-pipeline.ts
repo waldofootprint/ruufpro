@@ -169,14 +169,29 @@ export interface PipelineProspect {
   triage_decided_at: string | null;
   parked_until: string | null;
   parked_reason: string | null;
-  // Facebook enrichment
-  facebook_page_url: string | null;
+  // Google enrichment (migration 057)
+  google_place_id: string | null;
+  photos: string[] | null;
+  google_reviews: Record<string, unknown>[] | null;
+  extracted_services: string[] | null;
+  photos_enriched_at: string | null;
+  founded_year: number | null;
+  years_in_business: number | null;
+  website_status: "none" | "has_website" | "broken" | null;
+  // Facebook enrichment (migration 057 + 060)
+  // NOTE: facebook_url (057) and facebook_page_url (060) both exist in DB.
+  // facebook_page_url is canonical — used by enrichment pipeline + dashboard.
+  // facebook_url is legacy from initial scrape. Do not use for new code.
+  facebook_url: string | null; // legacy — prefer facebook_page_url
+  facebook_page_url: string | null; // canonical
   facebook_about: string | null;
   facebook_photos: Record<string, unknown>[] | null;
-  // Facebook enrichment tracking
   facebook_enrichment_status: "success" | "no_match" | "error" | null;
   // LinkedIn
   linkedin_url: string | null;
+  // Outreach tracking
+  outreach_approved_at: string | null;
+  email_sequence_id: string | null;
   // Timestamps
   scraped_at: string;
   google_enriched_at: string | null;
