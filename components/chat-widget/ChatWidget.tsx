@@ -17,6 +17,7 @@ interface ChatWidgetProps {
   accentColor: string;
   fontFamily: string;
   isDarkTheme?: boolean;
+  customGreeting?: string | null;
 }
 
 interface LeadFormData {
@@ -34,6 +35,7 @@ export default function ChatWidget({
   accentColor,
   fontFamily,
   isDarkTheme = false,
+  customGreeting,
 }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [sessionId, setSessionId] = useState("");
@@ -65,7 +67,7 @@ export default function ChatWidget({
     }
   }, [contractorId]);
 
-  const greeting = `Hi! I'm Riley, an AI assistant for ${businessName}. I can answer questions about our roofing services, pricing, and availability. What can I help you with?`;
+  const greeting = customGreeting || `Hi! I'm Riley, an AI assistant for ${businessName}. I can answer questions about our roofing services, pricing, and availability. What can I help you with?`;
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({

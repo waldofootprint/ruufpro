@@ -1,5 +1,6 @@
 // Riley AI Chatbot — embed script for external websites.
 // Usage: <script src="https://ruufpro.com/riley.js" data-contractor-id="YOUR_ID"></script>
+// Optional: data-accent-color="#D4880F" to match your brand color.
 // Creates a floating chat bubble in the bottom-right corner.
 
 (function () {
@@ -10,16 +11,18 @@
     return;
   }
 
+  var accentColor = script.getAttribute("data-accent-color") || "#6366f1";
   var host = script.src.replace(/\/riley\.js.*$/, "");
   var isOpen = false;
 
   // Create bubble
   var bubble = document.createElement("div");
   bubble.id = "riley-bubble";
+  bubble.setAttribute("aria-label", "Chat with Riley");
   bubble.innerHTML = "💬";
   bubble.style.cssText =
     "position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;" +
-    "background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;" +
+    "background:" + accentColor + ";color:#fff;display:flex;align-items:center;justify-content:center;" +
     "font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:99999;" +
     "transition:transform 0.2s;";
   bubble.onmouseenter = function () { bubble.style.transform = "scale(1.1)"; };

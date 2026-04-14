@@ -441,6 +441,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData & { basePa
         contractorId={props.contractorId}
         businessName={props.businessName}
         hasAiChatbot={props.hasAiChatbot ?? false}
+        customGreeting={props.chatGreeting}
         accentColor="#D4880F"
         fontFamily="'Barlow', sans-serif"
       />

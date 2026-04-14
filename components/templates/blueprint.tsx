@@ -51,6 +51,7 @@ export default function BlueprintTemplate(props: ContractorSiteData) {
         contractorId={props.contractorId}
         businessName={props.businessName}
         hasAiChatbot={props.hasAiChatbot ?? false}
+        customGreeting={props.chatGreeting}
         accentColor="#4A6FA5"
         fontFamily="'Plus Jakarta Sans', sans-serif"
       />

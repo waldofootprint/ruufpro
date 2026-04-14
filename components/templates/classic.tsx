@@ -107,6 +107,7 @@ export default function ClassicTemplate(props: ContractorSiteData) {
         contractorId={props.contractorId}
         businessName={props.businessName}
         hasAiChatbot={props.hasAiChatbot ?? false}
+        customGreeting={props.chatGreeting}
         accentColor="#2D2D2D"
         fontFamily="'Inter', sans-serif"
       />

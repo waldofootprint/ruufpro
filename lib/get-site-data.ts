@@ -27,6 +27,13 @@ export async function getSiteData(slug: string): Promise<SiteDataResult | null> 
   const contractor = site.contractors as unknown as Contractor;
   const siteData = site as unknown as Site;
 
+  // Fetch custom greeting if configured
+  const { data: chatConfig } = await supabase
+    .from("chatbot_config")
+    .select("greeting_message")
+    .eq("contractor_id", contractor.id)
+    .maybeSingle();
+
   const templateData: ContractorSiteData = {
     tier: getTierFromContractor(contractor),
     businessName: contractor.business_name,
@@ -54,6 +61,7 @@ export async function getSiteData(slug: string): Promise<SiteDataResult | null> 
     serviceAreaCities: contractor.service_area_cities || [],
     hasEstimateWidget: contractor.has_estimate_widget,
     hasAiChatbot: (contractor as any).has_ai_chatbot ?? false,
+    chatGreeting: chatConfig?.greeting_message ?? null,
     contractorId: contractor.id,
     urgencyBadge: null, // defaults handled in hero components
     slug,

@@ -61,6 +61,7 @@ export default function ChalkboardTemplate(props: ContractorSiteData) {
         contractorId={props.contractorId}
         businessName={props.businessName}
         hasAiChatbot={props.hasAiChatbot ?? false}
+        customGreeting={props.chatGreeting}
         accentColor="#F6C453"
         fontFamily="'Kalam', cursive"
         isDarkTheme

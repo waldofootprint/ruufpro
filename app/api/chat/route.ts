@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
       model: anthropic("claude-haiku-4-5-20251001"),
       system: systemPrompt,
       messages,
-      maxOutputTokens: 512,
+      maxOutputTokens: 1024,
       temperature: 0.7,
     });
 

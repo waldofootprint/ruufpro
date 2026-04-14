@@ -42,6 +42,7 @@ export interface ContractorSiteData {
   // Widget
   hasEstimateWidget: boolean;
   hasAiChatbot: boolean;
+  chatGreeting?: string | null;
   contractorId: string;
 
   // Conversion

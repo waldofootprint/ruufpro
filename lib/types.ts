@@ -178,6 +178,9 @@ export interface Lead {
 }
 
 export interface ChatbotConfig {
+  // Customization
+  greeting_message: string | null;
+
   // Tier 1: Top 5 homeowner questions
   price_range_low: number | null;
   price_range_high: number | null;

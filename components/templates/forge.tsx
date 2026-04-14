@@ -107,6 +107,7 @@ export default function ForgeTemplate(props: ContractorSiteData) {
         contractorId={props.contractorId}
         businessName={props.businessName}
         hasAiChatbot={props.hasAiChatbot ?? false}
+        customGreeting={props.chatGreeting}
         accentColor="#2E5090"
         fontFamily="'Inter', sans-serif"
         isDarkTheme

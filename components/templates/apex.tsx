@@ -34,6 +34,7 @@ export default function ApexTemplate({ templateData }: ApexTemplateProps) {
         contractorId={d.contractorId}
         businessName={d.businessName}
         hasAiChatbot={d.hasAiChatbot ?? false}
+        customGreeting={d.chatGreeting}
         accentColor="#2563EB"
         fontFamily="'Inter', sans-serif"
       />

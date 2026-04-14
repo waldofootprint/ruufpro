@@ -25,6 +25,7 @@ import {
 // ---------------------------------------------------------------------------
 
 interface ChatbotConfigState {
+  greeting_message: string;
   price_range_low: string;
   price_range_high: string;
   offers_free_inspection: boolean;
@@ -47,6 +48,7 @@ interface ChatbotConfigState {
 }
 
 const EMPTY_CONFIG: ChatbotConfigState = {
+  greeting_message: "",
   price_range_low: "",
   price_range_high: "",
   offers_free_inspection: false,
@@ -100,6 +102,7 @@ function countFilledFields(c: ChatbotConfigState): number {
 
 function normalizeFromDb(data: Record<string, unknown>): ChatbotConfigState {
   return {
+    greeting_message: (data.greeting_message as string) ?? "",
     price_range_low: data.price_range_low != null ? String(data.price_range_low) : "",
     price_range_high: data.price_range_high != null ? String(data.price_range_high) : "",
     offers_free_inspection: (data.offers_free_inspection as boolean) ?? false,
@@ -126,6 +129,7 @@ function prepareForDb(c: ChatbotConfigState) {
   const priceLow = c.price_range_low ? Math.max(0, Math.min(parseInt(c.price_range_low, 10) || 0, 999999)) : null;
   const priceHigh = c.price_range_high ? Math.max(0, Math.min(parseInt(c.price_range_high, 10) || 0, 999999)) : null;
   return {
+    greeting_message: c.greeting_message.trim() || null,
     price_range_low: priceLow || null,
     price_range_high: priceHigh || null,
     offers_free_inspection: c.offers_free_inspection,
@@ -313,6 +317,22 @@ export default function ChatbotPage() {
           />
         </div>
         <p className="text-[11px] text-slate-400 mt-2">{progressMessage}</p>
+      </div>
+
+      {/* Custom Greeting */}
+      <div className="rounded-xl bg-white border border-slate-200 p-5">
+        <label className={labelClass}>Riley&apos;s Greeting Message</label>
+        <textarea
+          rows={2}
+          maxLength={200}
+          placeholder={`Hi! I'm Riley, an AI assistant for ${"{your business}"}. I can answer questions about our roofing services, pricing, and availability. What can I help you with?`}
+          value={config.greeting_message}
+          onChange={(e) => updateField("greeting_message", e.target.value)}
+          className={textareaClass}
+        />
+        <p className={hintClass}>
+          {config.greeting_message.length}/200 · Leave blank for default greeting
+        </p>
       </div>
 
       {/* Section 1: Pricing & Services */}
@@ -620,15 +640,16 @@ export default function ChatbotPage() {
         <h3 className="text-[14px] font-bold text-slate-800 mb-1">Embed Riley on Your Website</h3>
         <p className="text-[12px] text-slate-500 mb-3">
           Paste this one line before &lt;/body&gt; on any page. Works on WordPress, Wix, Squarespace, or any HTML site.
+          Add <code className="text-violet-600">data-accent-color</code> to match your brand.
         </p>
         <div className="relative">
           <code className="block bg-white border border-slate-200 rounded-lg p-3 text-[11px] text-slate-700 break-all font-mono">
-            {`<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}"></script>`}
+            {`<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}" data-accent-color="#6366f1"></script>`}
           </code>
           <button
             onClick={() => {
               navigator.clipboard.writeText(
-                `<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}"></script>`
+                `<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}" data-accent-color="#6366f1"></script>`
               );
             }}
             className="absolute top-2 right-2 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-semibold text-slate-600 transition"
