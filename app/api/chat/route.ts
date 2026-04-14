@@ -1,11 +1,14 @@
 // Streaming chat endpoint for Riley — the AI chatbot on contractor websites.
 // Uses Vercel AI SDK + Claude Haiku. Rate limited per IP and per contractor.
+// Supports tool calls: getEstimate (satellite roof measurement + pricing).
 
 import { NextRequest, NextResponse } from "next/server";
-import { streamText } from "ai";
+import { streamText, tool, stepCountIs, convertToModelMessages } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
+import { runChatEstimate } from "@/lib/chat-estimate";
 import { getTierFromContractor } from "@/lib/types";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
@@ -161,16 +164,40 @@ export async function POST(request: NextRequest) {
       businessHours: contractor.business_hours ?? null,
     };
 
-    // Build system prompt
-    const systemPrompt = buildChatSystemPrompt(templateData, messageCount, leadCaptured, chatbotConfig ?? null);
+    // Check if contractor has estimate widget enabled (for tool availability)
+    const hasEstimateWidget = contractor.has_estimate_widget;
 
-    // Stream response using Claude Haiku
+    // Build system prompt
+    const systemPrompt = buildChatSystemPrompt(templateData, messageCount, leadCaptured, chatbotConfig ?? null, hasEstimateWidget);
+
+    // Stream response using Claude Haiku — with estimate tool when available
     const result = streamText({
       model: anthropic("claude-haiku-4-5-20251001"),
       system: systemPrompt,
-      messages,
+      messages: await convertToModelMessages(messages),
       maxOutputTokens: 1024,
       temperature: 0.7,
+      ...(hasEstimateWidget
+        ? {
+            tools: {
+              getEstimate: tool({
+                description:
+                  "Get a satellite-measured roofing estimate for a homeowner's address. " +
+                  "Call this ONLY when the homeowner has provided a street address and wants a ballpark estimate. " +
+                  "Do NOT call this if they only mentioned a city or asked about pricing in general.",
+                inputSchema: z.object({
+                  address: z
+                    .string()
+                    .describe("The homeowner's full street address including city and state"),
+                }),
+                execute: async ({ address }: { address: string }) => {
+                  return runChatEstimate(contractorId, address);
+                },
+              }),
+            },
+            stopWhen: stepCountIs(2), // Allow model to respond after tool execution
+          }
+        : {}),
     });
 
     // Save conversation (fire-and-forget — don't block the stream)

@@ -439,9 +439,167 @@ export default function ChatWidget({
           }}
         >
           {messages.map((msg) => {
+            const isUser = (msg.role as string) === "user";
+            // Render each part of the message (text, tool results, etc.)
+            const parts = (msg as { parts?: Array<{ type: string; text?: string; result?: unknown }> }).parts;
+            if (parts && parts.length > 0) {
+              return parts.map((part, idx) => {
+                if (part.type === "text" && part.text) {
+                  return (
+                    <div
+                      key={`${msg.id}-${idx}`}
+                      style={{
+                        display: "flex",
+                        justifyContent: isUser ? "flex-end" : "flex-start",
+                      }}
+                    >
+                      <div
+                        style={{
+                          maxWidth: "82%",
+                          padding: "10px 14px",
+                          borderRadius: isUser ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                          background: isUser ? userBubbleBg : botBubbleBg,
+                          color: isUser ? userBubbleText : panelText,
+                          fontSize: 14,
+                          lineHeight: 1.5,
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {part.text}
+                      </div>
+                    </div>
+                  );
+                }
+                if (part.type === "tool-getEstimate" && part.result) {
+                  const est = part.result as { success: boolean; estimates?: Array<{ label: string; rangeDisplay: string; material: string }>; roofAreaSqft?: number; isSatellite?: boolean; weatherSurgeActive?: boolean; fallbackMessage?: string };
+                  if (!est.success) return null; // Riley handles the error in text
+                  return (
+                    <div
+                      key={`${msg.id}-est-${idx}`}
+                      style={{
+                        display: "flex",
+                        justifyContent: "flex-start",
+                      }}
+                    >
+                      <div
+                        style={{
+                          maxWidth: "90%",
+                          width: "100%",
+                          borderRadius: 12,
+                          overflow: "hidden",
+                          border: `1px solid ${isDarkTheme ? "#333" : "#E5E7EB"}`,
+                        }}
+                      >
+                        {/* Header */}
+                        <div
+                          style={{
+                            background: accentColor,
+                            padding: "10px 14px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                          </svg>
+                          <span style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>
+                            Your Roof Estimate
+                          </span>
+                          {est.isSatellite && (
+                            <span
+                              style={{
+                                marginLeft: "auto",
+                                fontSize: 10,
+                                color: "rgba(255,255,255,0.8)",
+                                background: "rgba(255,255,255,0.15)",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                              }}
+                            >
+                              Satellite-measured
+                            </span>
+                          )}
+                        </div>
+                        {/* Roof info */}
+                        {est.roofAreaSqft && (
+                          <div
+                            style={{
+                              padding: "8px 14px",
+                              background: isDarkTheme ? "#222" : "#F9FAFB",
+                              fontSize: 12,
+                              color: mutedText,
+                              borderBottom: `1px solid ${isDarkTheme ? "#333" : "#E5E7EB"}`,
+                            }}
+                          >
+                            {est.roofAreaSqft.toLocaleString()} sqft roof
+                          </div>
+                        )}
+                        {/* Weather surge notice */}
+                        {est.weatherSurgeActive && (
+                          <div
+                            style={{
+                              padding: "6px 14px",
+                              background: isDarkTheme ? "#3A2A10" : "#FEF3C7",
+                              fontSize: 11,
+                              color: isDarkTheme ? "#FCD34D" : "#92400E",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              borderBottom: `1px solid ${isDarkTheme ? "#333" : "#E5E7EB"}`,
+                            }}
+                          >
+                            <span>⚠</span>
+                            <span>Includes temporary storm-demand pricing</span>
+                          </div>
+                        )}
+                        {/* Material options */}
+                        <div style={{ background: isDarkTheme ? "#1A1A1A" : "#fff" }}>
+                          {est.estimates?.map((mat, i) => (
+                            <div
+                              key={mat.material}
+                              style={{
+                                padding: "10px 14px",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                borderTop: i > 0 ? `1px solid ${isDarkTheme ? "#2A2A2A" : "#F3F4F6"}` : "none",
+                              }}
+                            >
+                              <span style={{ fontSize: 13, color: panelText, fontWeight: 500 }}>
+                                {mat.label}
+                              </span>
+                              <span style={{ fontSize: 13, color: accentColor, fontWeight: 700 }}>
+                                {mat.rangeDisplay}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Disclaimer */}
+                        <div
+                          style={{
+                            padding: "8px 14px",
+                            background: isDarkTheme ? "#222" : "#F9FAFB",
+                            fontSize: 10,
+                            color: mutedText,
+                            borderTop: `1px solid ${isDarkTheme ? "#333" : "#E5E7EB"}`,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          Ballpark estimate — not a binding quote. A free inspection will give you exact numbers.
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              });
+            }
+            // Fallback for messages without parts array
             const text = getMessageText(msg);
             if (!text) return null;
-            const isUser = (msg.role as string) === "user";
             return (
               <div
                 key={msg.id}
