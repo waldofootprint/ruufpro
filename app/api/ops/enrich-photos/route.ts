@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireOpsAuth } from "@/lib/ops-auth";
+import { checkSpending, recordSpending, API_COSTS } from "@/lib/spending-guard";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -112,6 +113,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Spending guard — $0.017 per Places Details call
+    const estimatedCost = prospects.length * API_COSTS.google_place_details;
+    const spending = await checkSpending(estimatedCost);
+    if (!spending.allowed) {
+      return NextResponse.json({
+        error: "Daily spending cap reached",
+        detail: spending.reason,
+        prospects_queued: prospects.length,
+        estimated_cost: `$${estimatedCost.toFixed(2)}`,
+        spent_today: `$${spending.spent_today.toFixed(2)}`,
+        cap: `$${spending.cap}`,
+      }, { status: 429 });
+    }
+
     let enriched = 0;
     let apiCalls = 0;
     const errors: string[] = [];
@@ -191,14 +206,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const estimatedCost = (apiCalls * 0.017).toFixed(2);
+    // Record actual spending
+    if (apiCalls > 0) {
+      await recordSpending("google_place_details", apiCalls, API_COSTS.google_place_details, `enrich-photos: ${batch_id || "manual"}`);
+    }
+
+    const actualCost = (apiCalls * API_COSTS.google_place_details).toFixed(2);
 
     return NextResponse.json({
       success: true,
       enriched,
       total: prospects.length,
       api_calls: apiCalls,
-      estimated_cost: `$${estimatedCost}`,
+      actual_cost: `$${actualCost}`,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (err: any) {
