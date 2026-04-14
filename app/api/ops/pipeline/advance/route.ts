@@ -3,16 +3,21 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { PIPELINE_STAGES } from "@/lib/ops-pipeline";
 import { requireOpsAuth } from "@/lib/ops-auth";
 
 // Stage progression map — which stage comes next
 const NEXT_STAGE: Record<string, string> = {
-  scraped: "site_built",
-  enriched: "site_built",
+  // v2 flow (new batches)
+  scraped: "google_enriched",
+  google_enriched: "awaiting_triage",
+  awaiting_triage: "site_built",
   site_built: "site_approved",
-  site_approved: "outreach_approved",
+  site_approved: "contact_lookup",
+  contact_lookup: "contact_ready",
+  contact_ready: "outreach_approved",
   outreach_approved: "sent",
+  // Legacy (existing batches that used old enrichment flow)
+  enriched: "site_built",
 };
 
 export async function POST(req: NextRequest) {
@@ -48,16 +53,17 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    // Build timestamp field name for the new stage
-    const timestampField = `${nextStage.replace("site_", "site_")}_at`;
     const updateData: Record<string, unknown> = {
       stage: nextStage,
       stage_entered_at: now,
     };
 
     // Set the appropriate timestamp
-    if (nextStage === "site_built") updateData.site_built_at = now;
+    if (nextStage === "google_enriched") updateData.google_enriched_at = now;
+    else if (nextStage === "site_built") updateData.site_built_at = now;
     else if (nextStage === "site_approved") updateData.site_approved_at = now;
+    else if (nextStage === "contact_lookup") updateData.contact_lookup_at = now;
+    else if (nextStage === "contact_ready") updateData.contact_ready_at = now;
     else if (nextStage === "outreach_approved") updateData.outreach_approved_at = now;
     else if (nextStage === "sent") updateData.sent_at = now;
 

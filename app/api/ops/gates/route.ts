@@ -29,8 +29,9 @@ export async function POST(req: NextRequest) {
 
   // Determine which stage leads are currently in (the gate trigger stage)
   const currentStageMap: Record<GateType, string> = {
+    triage_review: "awaiting_triage",
     site_review: "site_built",
-    outreach_approval: "site_approved",
+    outreach_approval: "contact_ready",
     draft_approval: "replied",
   };
   const currentStage = currentStageMap[gate_type as GateType];
