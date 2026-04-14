@@ -1114,76 +1114,65 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
             {/* Expanded: lead rows with checkboxes */}
             {isOpen && (
               <div className="bg-[#FAFAFA]">
-                {/* Select all for this stage */}
-                <div className="px-5 py-1.5 border-b border-[#F2F2F7] flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={() => toggleSelectAllInStage(stage)}
-                    className="w-3.5 h-3.5 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer"
-                  />
-                  <span className="text-[10px] text-[#8E8E93] uppercase tracking-[0.06em] font-semibold">Select all {stageLeads.length}</span>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-[#E5E5EA]">
+                        <th className="px-3 py-2 w-8">
+                          <input type="checkbox" checked={allSelected} onChange={() => toggleSelectAllInStage(stage)} className="w-3.5 h-3.5 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer" />
+                        </th>
+                        {["Business", "City", "Rating", "Reviews", "Website", "Form", "Preview"].map(h => (
+                          <th key={h} className="text-[10px] uppercase tracking-[0.06em] text-[#AEAEB2] font-semibold text-left px-3 py-2">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sorted.map((lead) => {
+                        const isChecked = selected.has(lead.id);
+                        const icp = getIcpScore(lead);
+                        const icpStyle = ICP_STYLES[icp.tier];
+                        const domain = lead.their_website_url?.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+                        const td = "text-xs px-3 py-2.5 border-b border-[#F0F0F2]";
+
+                        return (
+                          <tr key={lead.id} className={`transition-colors ${isChecked ? "bg-[#EFF6FF]" : "hover:bg-white"}`}>
+                            <td className={`${td} w-8`}>
+                              <input type="checkbox" checked={isChecked} onChange={() => toggleSelect(lead.id)} className="w-4 h-4 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer" />
+                            </td>
+                            <td className={`${td} font-semibold text-[#1D1D1F]`}>
+                              <div className="flex items-center gap-2">
+                                {lead.business_name || "Unknown"}
+                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>{icpStyle.label}</span>
+                              </div>
+                            </td>
+                            <td className={td}>{lead.city ? `${lead.city}, ${lead.state || "FL"}` : "—"}</td>
+                            <td className={td}>{lead.rating > 0 ? `${lead.rating}★` : "—"}</td>
+                            <td className={td}>{lead.reviews_count > 0 ? lead.reviews_count : "—"}</td>
+                            <td className={td}>
+                              {domain ? (
+                                <a href={lead.their_website_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">{domain}</a>
+                              ) : <span className="text-[#FF9F0A] font-medium">No website</span>}
+                            </td>
+                            <td className={td}>
+                              {lead.contact_form_url ? (
+                                lead.has_captcha ? (
+                                  <span className="text-[10px] font-semibold text-[#F57F17] bg-[#FFF8E1] px-2 py-0.5 rounded-lg">CAPTCHA</span>
+                                ) : (
+                                  <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2 py-0.5 rounded-lg">Found</span>
+                                )
+                              ) : <span className="text-[#D1D1D6]">—</span>}
+                            </td>
+                            <td className={td}>
+                              {lead.preview_site_url ? (
+                                <a href={lead.preview_site_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
+                              ) : <span className="text-[#D1D1D6]">—</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-
-                {sorted.map((lead) => {
-                  const isChecked = selected.has(lead.id);
-                  const icp = getIcpScore(lead);
-                  const icpStyle = ICP_STYLES[icp.tier];
-                  const isLeadOpen = expandedLead === lead.id;
-                  const domain = lead.their_website_url?.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-
-                  return (
-                    <div key={lead.id}>
-                      <div
-                        className={`flex items-center gap-3 px-5 py-2.5 border-b border-[#F0F0F2] cursor-pointer transition-colors ${isChecked ? "bg-[#EFF6FF]" : "hover:bg-white"}`}
-                        onClick={() => setExpandedLead(isLeadOpen ? null : lead.id)}
-                      >
-                        <div onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleSelect(lead.id)}
-                            className="w-4 h-4 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-semibold text-[#1D1D1F] truncate">{lead.business_name || "Unknown"}</span>
-                            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>{icpStyle.label}</span>
-                            {lead.has_captcha && <span className="text-[8px] font-semibold text-[#F57F17] bg-[#FFF8E1] px-1.5 py-0.5 rounded">CAPTCHA</span>}
-                          </div>
-                          <div className="text-[11px] text-[#8E8E93] mt-0.5 flex items-center gap-2">
-                            <span>{lead.city ? `${lead.city}, ${lead.state || "FL"}` : ""}</span>
-                            {lead.rating > 0 && <span>{lead.rating}★</span>}
-                            {lead.reviews_count > 0 && <span>{lead.reviews_count} reviews</span>}
-                            {domain && <span>·</span>}
-                            {domain && (
-                              <a href={lead.their_website_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] hover:underline">{domain}</a>
-                            )}
-                            {!lead.their_website_url && <span className="text-[#FF9F0A]">No website</span>}
-                            {lead.contact_form_url && !lead.has_captcha && <span className="text-[#34C759]">Form ✓</span>}
-                          </div>
-                        </div>
-                        <span className="text-[10px] text-[#C7C7CC]">{isLeadOpen ? "▼" : "▶"}</span>
-                      </div>
-
-                      {/* Expanded detail */}
-                      {isLeadOpen && (
-                        <div className="px-5 py-3 bg-white border-b border-[#E5E5EA]">
-                          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[11px]">
-                            {lead.phone && <div><span className="text-[#8E8E93]">Phone:</span> <span className="font-medium">{lead.phone}</span></div>}
-                            {lead.owner_name && <div><span className="text-[#8E8E93]">Owner:</span> <span className="font-medium">{lead.owner_name}</span></div>}
-                            {lead.owner_email && <div><span className="text-[#8E8E93]">Email:</span> <span className="font-medium">{lead.owner_email}</span></div>}
-                            {lead.contact_form_url && <div><span className="text-[#8E8E93]">Form URL:</span> <a href={lead.contact_form_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">{lead.contact_form_url.replace(/^https?:\/\//, "").slice(0, 40)}</a></div>}
-                            {lead.preview_site_url && <div><span className="text-[#8E8E93]">Preview:</span> <a href={lead.preview_site_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">View site ↗</a></div>}
-                            {lead.form_submission_status && lead.form_submission_status !== "pending" && <div><span className="text-[#8E8E93]">Form status:</span> <span className="font-medium">{lead.form_submission_status}</span></div>}
-                            <div><span className="text-[#8E8E93]">Scraped:</span> <span className="font-medium">{lead.scraped_at ? new Date(lead.scraped_at).toLocaleDateString() : "—"}</span></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
               </div>
             )}
           </div>
