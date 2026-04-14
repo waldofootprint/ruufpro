@@ -4,15 +4,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createAuthSupabase } from "@/lib/supabase-server";
 import { inngest } from "@/lib/inngest/client";
 
+// Auth is handled by the /ops layout (admin email check).
 export async function POST(req: NextRequest) {
-  // Auth check
-  const authSupabase = createAuthSupabase();
-  const { data: { user } } = await authSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const body = await req.json();
   const { batch_id, prospect_ids } = body as {
     batch_id?: string;

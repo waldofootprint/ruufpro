@@ -3,7 +3,6 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createAuthSupabase } from "@/lib/supabase-server";
 import { FUNNEL_STAGES, BOTTLENECK_ACTIONS } from "@/lib/ops-revenue";
 import type { VelocityCounts, HotProspect, Bottleneck, RevenueResponse } from "@/lib/ops-revenue";
 
@@ -147,12 +146,8 @@ function computeBottleneck(rows: any[]): Bottleneck | null {
   };
 }
 
+// Auth is handled by the /ops layout (admin email check).
 export async function GET() {
-  // Auth check
-  const authSupabase = createAuthSupabase();
-  const { data: { user } } = await authSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

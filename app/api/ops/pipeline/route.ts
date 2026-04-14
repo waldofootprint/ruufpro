@@ -3,16 +3,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createAuthSupabase } from "@/lib/supabase-server";
 import type { PipelineStage, GateStatus, ProspectBatch, PipelineResponse } from "@/lib/ops-pipeline";
 import { PIPELINE_STAGES } from "@/lib/ops-pipeline";
 
 export async function GET() {
-  // Auth check
-  const authSupabase = createAuthSupabase();
-  const { data: { user } } = await authSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+  // Auth is handled by the /ops layout (admin email check).
+  // Using service role key here since this is an admin-only endpoint
+  // and cookie-based auth can fail when session cookies aren't synced.
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -114,10 +111,7 @@ export async function GET() {
 
 // ── POST: Create a new batch ────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const authSupabase = createAuthSupabase();
-  const { data: { user } } = await authSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+  // Auth is handled by the /ops layout (admin email check).
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

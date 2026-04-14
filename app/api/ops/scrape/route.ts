@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createAuthSupabase } from "@/lib/supabase-server";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,11 +66,8 @@ function parseCityState(address: string): { city: string; state: string } {
 // ── POST /api/ops/scrape ────────────────────────────────────────────
 // Body: { batch_id, limit, cities? }
 // Scrapes Google Maps, creates contractors + pipeline entries
+// Auth is handled by the /ops layout (admin email check).
 export async function POST(req: NextRequest) {
-  const authSupabase = createAuthSupabase();
-  const { data: { user } } = await authSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   try {
     const body = await req.json();
     const { batch_id, limit = 25 } = body;

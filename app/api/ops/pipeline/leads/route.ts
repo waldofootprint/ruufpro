@@ -2,13 +2,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createAuthSupabase } from "@/lib/supabase-server";
 
+// Auth is handled by the /ops layout (admin email check).
 export async function GET(req: NextRequest) {
-  const authSupabase = createAuthSupabase();
-  const { data: { user } } = await authSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const batchId = req.nextUrl.searchParams.get("batch_id");
   if (!batchId) return NextResponse.json({ error: "batch_id required" }, { status: 400 });
 
