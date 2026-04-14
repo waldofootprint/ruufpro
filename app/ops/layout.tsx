@@ -28,7 +28,24 @@ export default function OpsLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function checkAdmin() {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
+        // Timeout after 5s so we never hang on "Loading Ops Center..."
+        const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+        const authCheck = supabase.auth.getUser();
+        const result = await Promise.race([authCheck, timeout]);
+
+        if (!result) {
+          // Timed out — try getSession as fallback
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            router.replace("/login?redirect=/ops");
+            return;
+          }
+          // Session exists, allow through
+          setAuthorized(true);
+          return;
+        }
+
+        const { data: { user }, error } = result;
         if (error || !user) {
           router.replace("/login?redirect=/ops");
           return;
