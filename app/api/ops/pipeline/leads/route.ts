@@ -13,66 +13,29 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Join pipeline with contractors to get business info
+  // Fetch pipeline rows — business info is stored directly on prospect_pipeline
+  // (prospects don't have a contractors record until they sign up)
   const { data, error } = await supabase
     .from("prospect_pipeline")
-    .select(`
-      id,
-      contractor_id,
-      batch_id,
-      stage,
-      stage_entered_at,
-      owner_name,
-      owner_email,
-      preview_site_url,
-      their_website_url,
-      emails_sent_count,
-      reply_category,
-      reply_text,
-      draft_response,
-      draft_status,
-      scraped_at,
-      enriched_at,
-      site_built_at,
-      site_approved_at,
-      sent_at,
-      replied_at,
-      contact_form_url,
-      form_field_mapping,
-      has_captcha,
-      form_detected_at,
-      outreach_method,
-      form_submitted_at,
-      form_submission_status,
-      form_submission_error,
-      form_submission_attempts,
-      contractors (
-        business_name,
-        city,
-        state,
-        phone,
-        google_rating,
-        google_reviews_count
-      )
-    `)
+    .select("*")
     .eq("batch_id", batchId)
     .order("stage_entered_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Flatten contractor data into each row
+  // Map rows — use direct columns, fall back to contractor join for legacy rows
   const leads = (data || []).map((row: any) => ({
     id: row.id,
     contractor_id: row.contractor_id,
     batch_id: row.batch_id,
     stage: row.stage,
     stage_entered_at: row.stage_entered_at,
-    business_name: row.contractors?.business_name || "Unknown",
-    city: row.contractors?.city || "",
-    state: row.contractors?.state || "",
-    phone: row.contractors?.phone || null,
-    rating: row.contractors?.google_rating || null,
-    reviews_count: row.contractors?.google_reviews_count || null,
+    business_name: row.business_name || "Unknown",
+    city: row.city || "",
+    state: row.state || "",
+    phone: row.phone || null,
+    rating: row.rating || null,
+    reviews_count: row.reviews_count || null,
     owner_name: row.owner_name,
     owner_email: row.owner_email,
     preview_site_url: row.preview_site_url,
