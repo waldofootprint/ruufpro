@@ -81,6 +81,7 @@ export async function GET() {
 
   // Auto-create gates when leads reach gate stages but no pending gate exists
   const GATE_TRIGGERS: { stage: string; gate_type: string }[] = [
+    { stage: "awaiting_triage", gate_type: "triage_review" },
     { stage: "site_built", gate_type: "site_review" },
     { stage: "site_approved", gate_type: "outreach_approval" },
     { stage: "replied", gate_type: "draft_approval" },
