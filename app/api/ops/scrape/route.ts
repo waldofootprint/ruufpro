@@ -153,11 +153,11 @@ export async function POST(req: NextRequest) {
     // Shows ALL results from the searches we paid for — nothing gets thrown away.
     if (dryRun) {
       let searchCalls = 0;
+      let detailCalls = 0;
       let newFound = 0;
-      const preview: { name: string; city: string; is_duplicate: boolean; filtered_out: boolean; filter_reason?: string; place_id: string; rating?: number; reviews?: number }[] = [];
+      const preview: { name: string; city: string; is_duplicate: boolean; filtered_out: boolean; filter_reason?: string; place_id: string; rating?: number; reviews?: number; has_website?: boolean }[] = [];
 
       for (const cityName of cities) {
-        // Stop searching if we already have enough new prospects
         if (newFound >= limit) break;
 
         const query = `roofing contractor in ${cityName}`;
@@ -168,7 +168,6 @@ export async function POST(req: NextRequest) {
           const isDuplicate = existingPlaceIds.has(place.place_id) ||
             existingNames.has(`${(place.name || "").toLowerCase()}|${cityName.toLowerCase()}`);
 
-          // Apply the SAME filters the real scrape uses — rating + reviews are in text search results
           const placeRating = place.rating || 0;
           const placeReviews = place.user_ratings_total || 0;
           let filteredOut = false;
@@ -182,8 +181,19 @@ export async function POST(req: NextRequest) {
               filteredOut = true;
               filterReason = `${placeReviews} reviews exceeds max ${filters.max_reviews}`;
             }
-            // Note: no_website_only can't be checked in text search (no website field)
-            // — flag it so the user knows some may still be filtered
+          }
+
+          // When "no website only" is checked, we MUST call details API to check website.
+          // Pay for it now in dry run so the preview is accurate — confirm step reuses this data.
+          let hasWebsite: boolean | undefined;
+          if (!isDuplicate && !filteredOut && filters.no_website_only) {
+            const details = await getPlaceDetails(place.place_id);
+            detailCalls++;
+            hasWebsite = !!details.website;
+            if (hasWebsite) {
+              filteredOut = true;
+              filterReason = "Has website (filtered by 'No website only')";
+            }
           }
 
           preview.push({
@@ -195,6 +205,7 @@ export async function POST(req: NextRequest) {
             place_id: place.place_id,
             rating: placeRating || undefined,
             reviews: placeReviews || undefined,
+            has_website: hasWebsite,
           });
 
           if (!isDuplicate && !filteredOut) newFound++;
@@ -204,11 +215,17 @@ export async function POST(req: NextRequest) {
       const newCount = preview.filter(p => !p.is_duplicate && !p.filtered_out).length;
       const dupCount = preview.filter(p => p.is_duplicate).length;
       const filteredCount = preview.filter(p => p.filtered_out).length;
-      const detailCost = newCount * 0.017;
+      // When no_website_only is on, details were already paid in dry run — confirm is free
+      // When off, details will be paid at confirm time
+      const dryRunDetailCost = detailCalls * 0.017;
+      const confirmDetailCost = filters.no_website_only ? 0 : newCount * 0.017;
       const searchCost = searchCalls * 0.032;
 
-      // Record the text search cost (we did spend money on text searches)
+      // Record spending for this dry run
       await recordSpending("google_text_search", searchCalls, 0.032, `Dry run: ${cities.join(", ")}`);
+      if (detailCalls > 0) {
+        await recordSpending("google_place_details", detailCalls, 0.017, `Dry run website check: ${cities.join(", ")}`);
+      }
 
       return NextResponse.json({
         dry_run: true,
@@ -216,12 +233,11 @@ export async function POST(req: NextRequest) {
         new_prospects: newCount,
         duplicates: dupCount,
         filtered_out: filteredCount,
-        has_website_filter: filters.no_website_only,
-        website_filter_warning: filters.no_website_only ? "Website filter applied during scrape — some 'new' leads may still be filtered" : undefined,
         search_api_calls: searchCalls,
-        search_cost: `$${searchCost.toFixed(2)}`,
-        estimated_detail_cost: `$${detailCost.toFixed(2)}`,
-        estimated_total_cost: `$${(searchCost + detailCost).toFixed(2)}`,
+        detail_api_calls: detailCalls,
+        dry_run_cost: `$${(searchCost + dryRunDetailCost).toFixed(2)}`,
+        confirm_cost: `$${confirmDetailCost.toFixed(2)}`,
+        total_cost: `$${(searchCost + dryRunDetailCost + confirmDetailCost).toFixed(2)}`,
         preview,
       });
     }

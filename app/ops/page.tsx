@@ -726,11 +726,11 @@ export default function OpsPage() {
                     <div className="flex justify-between items-center">
                       <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#34C759]">Preview Results</div>
                       <div className="text-[10px] text-[#8E8E93]">
-                        Search cost: {dryRunResult.search_cost} (spent) · Detail cost: {dryRunResult.estimated_detail_cost} (if confirmed)
+                        Dry run: {dryRunResult.dry_run_cost || dryRunResult.search_cost} (spent) · Confirm: {dryRunResult.confirm_cost || dryRunResult.estimated_detail_cost}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className={`grid ${dryRunResult.filtered_out > 0 ? "grid-cols-4" : "grid-cols-3"} gap-2 text-center`}>
                       <div>
                         <div className="text-sm font-bold text-[#1D1D1F]">{dryRunResult.new_prospects}</div>
                         <div className="text-[9px] text-[#8E8E93] uppercase">New</div>
@@ -739,8 +739,14 @@ export default function OpsPage() {
                         <div className="text-sm font-bold text-[#8E8E93]">{dryRunResult.duplicates}</div>
                         <div className="text-[9px] text-[#8E8E93] uppercase">Duplicates</div>
                       </div>
+                      {dryRunResult.filtered_out > 0 && (
+                        <div>
+                          <div className="text-sm font-bold text-[#F57F17]">{dryRunResult.filtered_out}</div>
+                          <div className="text-[9px] text-[#8E8E93] uppercase">Filtered</div>
+                        </div>
+                      )}
                       <div>
-                        <div className="text-sm font-bold text-[#92400E]">{dryRunResult.estimated_total_cost}</div>
+                        <div className="text-sm font-bold text-[#92400E]">{dryRunResult.total_cost || dryRunResult.estimated_total_cost}</div>
                         <div className="text-[9px] text-[#8E8E93] uppercase">Total Cost</div>
                       </div>
                     </div>
@@ -816,7 +822,7 @@ export default function OpsPage() {
                         disabled={scraping === scrapeOpen || dryRunResult.new_prospects === 0}
                         className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-5 py-2 rounded-lg transition-colors"
                       >
-                        {scraping === scrapeOpen ? "Scraping..." : `Confirm & Scrape (${dryRunResult.estimated_total_cost})`}
+                        {scraping === scrapeOpen ? "Scraping..." : `Confirm & Scrape (${dryRunResult.total_cost || dryRunResult.estimated_total_cost})`}
                       </button>
                     </>
                   )}
@@ -932,11 +938,11 @@ export default function OpsPage() {
                     <div className="flex justify-between items-center">
                       <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#34C759]">Preview Results</div>
                       <div className="text-[10px] text-[#8E8E93]">
-                        Search cost: {dryRunResult.search_cost} (spent) · Detail cost: {dryRunResult.estimated_detail_cost} (if confirmed)
+                        Dry run: {dryRunResult.dry_run_cost || dryRunResult.search_cost} (spent) · Confirm: {dryRunResult.confirm_cost || dryRunResult.estimated_detail_cost}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className={`grid ${dryRunResult.filtered_out > 0 ? "grid-cols-4" : "grid-cols-3"} gap-2 text-center`}>
                       <div>
                         <div className="text-sm font-bold text-[#1D1D1F]">{dryRunResult.new_prospects}</div>
                         <div className="text-[9px] text-[#8E8E93] uppercase">New</div>
@@ -945,8 +951,14 @@ export default function OpsPage() {
                         <div className="text-sm font-bold text-[#8E8E93]">{dryRunResult.duplicates}</div>
                         <div className="text-[9px] text-[#8E8E93] uppercase">Duplicates</div>
                       </div>
+                      {dryRunResult.filtered_out > 0 && (
+                        <div>
+                          <div className="text-sm font-bold text-[#F57F17]">{dryRunResult.filtered_out}</div>
+                          <div className="text-[9px] text-[#8E8E93] uppercase">Filtered</div>
+                        </div>
+                      )}
                       <div>
-                        <div className="text-sm font-bold text-[#92400E]">{dryRunResult.estimated_total_cost}</div>
+                        <div className="text-sm font-bold text-[#92400E]">{dryRunResult.total_cost || dryRunResult.estimated_total_cost}</div>
                         <div className="text-[9px] text-[#8E8E93] uppercase">Total Cost</div>
                       </div>
                     </div>
@@ -1015,7 +1027,7 @@ export default function OpsPage() {
                         disabled={creatingBatch || dryRunResult.new_prospects === 0}
                         className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-5 py-2 rounded-lg transition-colors"
                       >
-                        {creatingBatch ? "Scraping..." : `Confirm & Scrape (${dryRunResult.estimated_total_cost})`}
+                        {creatingBatch ? "Scraping..." : `Confirm & Scrape (${dryRunResult.total_cost || dryRunResult.estimated_total_cost})`}
                       </button>
                     </>
                   )}
