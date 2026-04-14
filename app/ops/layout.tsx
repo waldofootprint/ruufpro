@@ -27,18 +27,23 @@ export default function OpsLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function checkAdmin() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) {
+          router.replace("/login?redirect=/ops");
+          return;
+        }
+        if (ADMIN_EMAILS.length === 0 || ADMIN_EMAILS.includes(user.email || "")) {
+          setAuthorized(true);
+        } else {
+          router.replace("/dashboard");
+          return;
+        }
+      } catch {
         router.replace("/login?redirect=/ops");
-        return;
+      } finally {
+        setLoading(false);
       }
-      if (ADMIN_EMAILS.length === 0 || ADMIN_EMAILS.includes(user.email || "")) {
-        setAuthorized(true);
-      } else {
-        router.replace("/dashboard");
-        return;
-      }
-      setLoading(false);
     }
     checkAdmin();
   }, [router]);

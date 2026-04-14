@@ -824,9 +824,19 @@ async function main() {
       }
     }
 
-    // Write enriched CSV
+    // Write enriched CSV — explicitly list all columns so rows without form data
+    // (no_website, failed) don't truncate the column set via Object.keys(records[0])
+    const inputCols = Object.keys(rows[0] || {});
+    const enrichedCols = [
+      ...inputCols,
+      "scraped_tagline", "scraped_hero_headline", "scraped_about_text",
+      "scraped_services", "scraped_reviews", "scraped_phone", "scraped_service_areas",
+      "scrape_status", "contact_form_url", "form_field_mapping", "has_captcha",
+      "form_type", "form_honeypot_fields", "form_required_selects", "form_required_radios",
+      "has_estimate_widget", "estimate_widget_providers",
+    ].filter((c, i, arr) => arr.indexOf(c) === i); // dedupe
     const outputPath = opts.output || opts.csv.replace(".csv", "_scraped.csv");
-    writeCsv(outputPath, results);
+    writeCsv(outputPath, results, enrichedCols);
 
     console.log(`\n✅ Done: ${scraped} scraped, ${failed} failed, ${rows.length - scraped - failed} skipped`);
     console.log(`📄 Output: ${outputPath}`);

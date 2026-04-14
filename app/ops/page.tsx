@@ -124,6 +124,7 @@ export default function OpsPage() {
   const [detectingForms, setDetectingForms] = useState<string | null>(null);
   const [submittingForms, setSubmittingForms] = useState<string | null>(null);
   const [formActionResult, setFormActionResult] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   function openScrapePanel(batchId: string, cities: string[]) {
     setScrapeOpen(batchId);
@@ -237,14 +238,22 @@ export default function OpsPage() {
 
   const fetchPipeline = useCallback(async () => {
     try {
+      setFetchError(null);
       const res = await fetch("/api/ops/pipeline");
       if (res.ok) {
         const data = await res.json();
         setPipeline(data);
         setLastUpdated(new Date());
+      } else if (res.status === 401) {
+        setFetchError("Session expired. Please log in again.");
+        window.location.href = "/login?redirect=/ops";
+        return;
+      } else {
+        setFetchError(`Pipeline API returned ${res.status}`);
       }
     } catch (err) {
       console.error("Pipeline fetch failed:", err);
+      setFetchError("Network error — could not reach the server.");
     } finally {
       setLoading(false);
     }
@@ -323,6 +332,30 @@ export default function OpsPage() {
   }[status];
 
   const attentionItems = getAttentionItems();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-gray-400 text-sm">Loading pipeline data...</div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="text-red-500 text-sm font-medium">{fetchError}</div>
+          <button
+            onClick={() => { setLoading(true); fetchPipeline(); }}
+            className="px-4 py-2 bg-[#007AFF] text-white text-sm rounded-lg hover:bg-[#0066D6] transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
