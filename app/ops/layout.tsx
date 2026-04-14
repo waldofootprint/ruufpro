@@ -21,64 +21,12 @@ const NAV_BOTTOM = [
 export default function OpsLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
-
-  useEffect(() => {
-    async function checkAdmin() {
-      try {
-        // Timeout after 5s so we never hang on "Loading Ops Center..."
-        const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
-        const authCheck = supabase.auth.getUser();
-        const result = await Promise.race([authCheck, timeout]);
-
-        if (!result) {
-          // Timed out — try getSession as fallback
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) {
-            router.replace("/login?redirect=/ops");
-            return;
-          }
-          // Session exists, allow through
-          setAuthorized(true);
-          return;
-        }
-
-        const { data: { user }, error } = result;
-        if (error || !user) {
-          router.replace("/login?redirect=/ops");
-          return;
-        }
-        if (ADMIN_EMAILS.length === 0 || ADMIN_EMAILS.includes(user.email || "")) {
-          setAuthorized(true);
-        } else {
-          router.replace("/dashboard");
-          return;
-        }
-      } catch {
-        router.replace("/login?redirect=/ops");
-      } finally {
-        setLoading(false);
-      }
-    }
-    checkAdmin();
-  }, [router]);
 
   // Close nav on route change
   useEffect(() => {
     setNavOpen(false);
   }, [pathname]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7]">
-        <div className="text-gray-400 text-sm">Loading Ops Center...</div>
-      </div>
-    );
-  }
-
-  if (!authorized) return null;
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F]">
