@@ -2,10 +2,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { requireOpsAuth } from "@/lib/ops-auth";
+import { softOpsAuth } from "@/lib/ops-auth";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireOpsAuth();
+  const auth = await softOpsAuth();
   if (!auth.authorized) return auth.response;
   const batchId = req.nextUrl.searchParams.get("batch_id");
   if (!batchId) return NextResponse.json({ error: "batch_id required" }, { status: 400 });

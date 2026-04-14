@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { PipelineStage, GateStatus, ProspectBatch, PipelineResponse } from "@/lib/ops-pipeline";
 import { PIPELINE_STAGES } from "@/lib/ops-pipeline";
-import { requireOpsAuth } from "@/lib/ops-auth";
+import { requireOpsAuth, softOpsAuth } from "@/lib/ops-auth";
 
 export async function GET() {
-  const auth = await requireOpsAuth();
+  const auth = await softOpsAuth();
   if (!auth.authorized) return auth.response;
 
   const supabase = createClient(

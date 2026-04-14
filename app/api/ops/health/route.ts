@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireOpsAuth } from "@/lib/ops-auth";
+import { softOpsAuth } from "@/lib/ops-auth";
 
 export async function GET() {
-  const auth = await requireOpsAuth();
+  const auth = await softOpsAuth();
   if (!auth.authorized) return auth.response;
   const result: {
     twilio_balance: string | null;
