@@ -17,7 +17,7 @@ import type { ContractorSiteData } from "@/components/contractor-sections/types"
 // ---------------------------------------------------------------------------
 const RATE_LIMIT_WINDOW_MS = 3_600_000; // 1 hour
 const MAX_PER_IP = 20;                  // 20 messages per IP per hour
-const MAX_PER_CONTRACTOR_DAY = 50;      // 50 messages per contractor per day
+const MAX_PER_CONTRACTOR_DAY = 200;     // 200 messages per contractor per day
 const DAY_MS = 86_400_000;
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -79,6 +79,11 @@ export async function POST(request: NextRequest) {
     }
     if (!sessionId || typeof sessionId !== "string") {
       return NextResponse.json({ error: "sessionId required" }, { status: 400, headers: CORS_HEADERS });
+    }
+    // Validate session ID format — must be UUID-UUID (contractorId-randomUUID)
+    const SESSION_ID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!SESSION_ID_REGEX.test(sessionId)) {
+      return NextResponse.json({ error: "Invalid sessionId format" }, { status: 400, headers: CORS_HEADERS });
     }
 
     // Guard against oversized payloads (cost protection)
@@ -212,7 +217,9 @@ export async function POST(request: NextRequest) {
         },
         { onConflict: "session_id" }
       )
-      .then(() => {});
+      .then(({ error: saveErr }) => {
+        if (saveErr) console.error("Failed to save chat conversation:", saveErr);
+      });
 
     const response = result.toUIMessageStreamResponse();
     // Add CORS headers to streaming response for external embeds

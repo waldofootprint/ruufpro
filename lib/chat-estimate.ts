@@ -7,6 +7,7 @@ import { getRoofData } from "@/lib/solar-api";
 import { inferRoofGeometry } from "@/lib/roof-geometry";
 import {
   calculateEstimate,
+  ESTIMATE_DISCLAIMER,
   type RoofMaterial,
   type ContractorRates,
 } from "@/lib/estimate";
@@ -79,6 +80,18 @@ export async function runChatEstimate(
     flat_low: settings.flat_low || 0,
     flat_high: settings.flat_high || 0,
   };
+
+  // Sanity check: per-sqft rates should be $1-$50. Outside this range,
+  // something is misconfigured and we'd show absurd estimates.
+  const allRateValues = Object.values(rates).filter((v) => v > 0);
+  if (allRateValues.some((v) => v < 1 || v > 50)) {
+    return {
+      success: false,
+      error: "rate_out_of_range",
+      fallbackMessage:
+        "I can't generate an estimate right now — the pricing setup needs a quick update. Want me to have the team give you a personalized quote instead?",
+    };
+  }
 
   // Get roof data from Solar API (or cache)
   let roofData = null;
@@ -182,7 +195,7 @@ export async function runChatEstimate(
     isSurged
       ? "NOTE: These prices include a temporary storm-demand adjustment. Prices may be lower once storm activity subsides."
       : "",
-    "These are ballpark ranges — not a binding quote. A free on-site inspection will give exact numbers.",
+    ESTIMATE_DISCLAIMER,
   ]
     .filter(Boolean)
     .join(" ");

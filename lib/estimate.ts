@@ -13,6 +13,10 @@
 // problem that made the old range 85% wide. The ±band is tight enough to be
 // useful to homeowners while honest about inspection-level unknowns.
 
+// Shared disclaimer — used across estimate widget, chat estimate card, PDFs, and system prompt.
+// Keep this in ONE place so all surfaces stay consistent for legal protection.
+export const ESTIMATE_DISCLAIMER = "Ballpark estimate based on satellite measurements — not a binding quote. A free on-site inspection will give you exact numbers.";
+
 import type { RoofData } from "./solar-api";
 import type { RoofGeometry } from "./roof-geometry";
 

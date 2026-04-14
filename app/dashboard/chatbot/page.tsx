@@ -126,8 +126,12 @@ function normalizeFromDb(data: Record<string, unknown>): ChatbotConfigState {
 }
 
 function prepareForDb(c: ChatbotConfigState) {
-  const priceLow = c.price_range_low ? Math.max(0, Math.min(parseInt(c.price_range_low, 10) || 0, 999999)) : null;
-  const priceHigh = c.price_range_high ? Math.max(0, Math.min(parseInt(c.price_range_high, 10) || 0, 999999)) : null;
+  let priceLow = c.price_range_low ? Math.max(0, Math.min(parseInt(c.price_range_low, 10) || 0, 999999)) : null;
+  let priceHigh = c.price_range_high ? Math.max(0, Math.min(parseInt(c.price_range_high, 10) || 0, 999999)) : null;
+  // Swap if inverted so Riley never says "$50K to $5K"
+  if (priceLow && priceHigh && priceLow > priceHigh) {
+    [priceLow, priceHigh] = [priceHigh, priceLow];
+  }
   return {
     greeting_message: c.greeting_message.trim() || null,
     price_range_low: priceLow || null,
@@ -658,6 +662,11 @@ export default function ChatbotPage() {
           </button>
         </div>
       </div>
+
+      {/* Config change note */}
+      <p className="text-[11px] text-slate-400 text-center mt-2">
+        Changes take effect on new conversations. Active chats may show updated info.
+      </p>
 
       {/* Save bar */}
       <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-5 px-5 py-3 lg:-mx-8 lg:px-8 flex items-center justify-between z-10">

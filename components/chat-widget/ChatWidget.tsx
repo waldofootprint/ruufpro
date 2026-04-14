@@ -10,6 +10,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { supabase } from "@/lib/supabase";
 import { scoreLeadFromChat } from "@/lib/lead-scoring";
+import { ESTIMATE_DISCLAIMER } from "@/lib/estimate";
 
 interface ChatWidgetProps {
   contractorId: string;
@@ -165,6 +166,11 @@ export default function ChatWidget({
     return digits.length >= 10 && digits.length <= 15;
   }
 
+  // Basic email validation
+  function isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
   // Lead capture submission
   async function handleLeadSubmit() {
     if (!leadForm.name || !leadForm.phone) return;
@@ -174,12 +180,15 @@ export default function ChatWidget({
     // Score lead temperature from conversation
     const temperature = scoreLeadFromChat(messages);
 
+    // Only include email if it passes basic validation
+    const validEmail = leadForm.email && isValidEmail(leadForm.email) ? leadForm.email : null;
+
     // Insert to leads table (same pattern as contact-form.tsx)
     await supabase.from("leads").insert({
       contractor_id: contractorId,
       name: leadForm.name,
       phone: leadForm.phone || null,
-      email: leadForm.email || null,
+      email: validEmail,
       address: leadForm.address || null,
       source: "ai_chatbot",
       status: "new",
@@ -195,7 +204,7 @@ export default function ChatWidget({
         contractor_id: contractorId,
         lead_name: leadForm.name,
         lead_phone: leadForm.phone,
-        lead_email: leadForm.email,
+        lead_email: validEmail,
         lead_address: leadForm.address,
         source: "ai_chatbot",
         sms_consent: leadForm.smsConsent,
@@ -588,7 +597,7 @@ export default function ChatWidget({
                             lineHeight: 1.4,
                           }}
                         >
-                          Ballpark estimate — not a binding quote. A free inspection will give you exact numbers.
+                          {ESTIMATE_DISCLAIMER}
                         </div>
                       </div>
                     </div>
