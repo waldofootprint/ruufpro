@@ -1149,6 +1149,7 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
                           { key: "city", label: "City" },
                           { key: "rating", label: "Rating" },
                           { key: "reviews_count", label: "Reviews" },
+                          { key: "years_in_business", label: "Yrs" },
                           { key: "their_website_url", label: "Website" },
                           { key: "contact_form_url", label: "Form" },
                           { key: "preview_site_url", label: "Preview" },
@@ -1185,6 +1186,7 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
                             <td className={td}>{lead.city ? `${lead.city}, ${lead.state || "FL"}` : "—"}</td>
                             <td className={td}>{lead.rating > 0 ? `${lead.rating}★` : "—"}</td>
                             <td className={td}>{lead.reviews_count > 0 ? lead.reviews_count : "—"}</td>
+                            <td className={td}>{lead.years_in_business ? `${lead.years_in_business}y` : "—"}</td>
                             <td className={td}>
                               {domain ? (
                                 <a href={lead.their_website_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">{domain}</a>

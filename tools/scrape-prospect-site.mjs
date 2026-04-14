@@ -201,6 +201,46 @@ async function extractSiteData(page) {
       result.about_text = result.tagline;
     }
 
+    // ---- Years in Business ----
+    // Scan page text for founding year or experience claims
+    result.years_in_business = null;
+    result.founded_year = null;
+    const currentYear = new Date().getFullYear();
+
+    // Pattern 1: "since YYYY" or "established YYYY" or "founded YYYY" or "est. YYYY"
+    const sinceMatch = allText.match(/(?:since|established|founded|est\.?)\s*(?:in\s+)?(\d{4})/i);
+    if (sinceMatch) {
+      const year = parseInt(sinceMatch[1]);
+      if (year >= 1950 && year <= currentYear) {
+        result.founded_year = year;
+        result.years_in_business = currentYear - year;
+      }
+    }
+
+    // Pattern 2: "XX years" or "XX+ years" of experience/service
+    if (!result.years_in_business) {
+      const yearsMatch = allText.match(/(\d{1,2})\+?\s*years?\s*(?:of\s+)?(?:experience|serving|service|in business|in the industry|in roofing)/i);
+      if (yearsMatch) {
+        const years = parseInt(yearsMatch[1]);
+        if (years >= 1 && years <= 75) {
+          result.years_in_business = years;
+          result.founded_year = currentYear - years;
+        }
+      }
+    }
+
+    // Pattern 3: "over XX years"
+    if (!result.years_in_business) {
+      const overMatch = allText.match(/over\s+(\d{1,2})\s*years/i);
+      if (overMatch) {
+        const years = parseInt(overMatch[1]);
+        if (years >= 1 && years <= 75) {
+          result.years_in_business = years;
+          result.founded_year = currentYear - years;
+        }
+      }
+    }
+
     // ---- Reviews ----
     // Look for review/testimonial sections
     const reviewPatterns = /reviews|testimonials|what (our |people |customers )?say|feedback|ratings/i;
@@ -811,6 +851,8 @@ async function main() {
           form_required_radios: form.required_radios?.length ? JSON.stringify(form.required_radios) : "",
           has_estimate_widget: data.has_estimate_widget ? "true" : "false",
           estimate_widget_providers: (data.estimate_widget_providers || []).join("; "),
+          years_in_business: data.years_in_business || "",
+          founded_year: data.founded_year || "",
         });
       } else {
         failed++;
@@ -834,6 +876,7 @@ async function main() {
       "scrape_status", "contact_form_url", "form_field_mapping", "has_captcha",
       "form_type", "form_honeypot_fields", "form_required_selects", "form_required_radios",
       "has_estimate_widget", "estimate_widget_providers",
+      "years_in_business", "founded_year",
     ].filter((c, i, arr) => arr.indexOf(c) === i); // dedupe
     const outputPath = opts.output || opts.csv.replace(".csv", "_scraped.csv");
     writeCsv(outputPath, results, enrichedCols);

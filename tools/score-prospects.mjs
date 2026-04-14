@@ -190,6 +190,9 @@ async function insertIntoPipeline(rows) {
       form_field_mapping: row.form_field_mapping ? JSON.parse(row.form_field_mapping) : null,
       has_captcha: row.has_captcha === "true",
       form_detected_at: row.contact_form_url ? now.toISOString() : null,
+      // Business age
+      years_in_business: row.years_in_business ? parseInt(row.years_in_business, 10) : null,
+      founded_year: row.founded_year ? parseInt(row.founded_year, 10) : null,
     };
 
     const { error: insertErr } = await supabase
