@@ -30,12 +30,12 @@ import { supabase } from "@/lib/supabase";
 const SIDEBAR_ITEMS: { href: string; label: string; icon: any; showBadge?: boolean; showSmsBadge?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/leads", label: "Leads", icon: Users, showBadge: true },
+  { href: "/dashboard/my-site", label: "My Website", icon: Globe },
+  { href: "/dashboard/chatbot", label: "AI Chatbot", icon: Bot },
+  { href: "/dashboard/chatbot-analytics", label: "Riley Analytics", icon: BarChart3 },
   { href: "/dashboard/estimate-settings", label: "Widget Settings", icon: Calculator },
   { href: "/dashboard/addons", label: "Estimate Add-Ons", icon: Puzzle },
-  { href: "/dashboard/my-site", label: "My Website", icon: Globe },
   { href: "/dashboard/reviews", label: "Reviews", icon: Star },
-  { href: "/dashboard/chatbot", label: "Train Riley", icon: Bot },
-  { href: "/dashboard/chatbot-analytics", label: "Riley Analytics", icon: BarChart3 },
   { href: "/dashboard/domains", label: "Your Domain", icon: Globe },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
@@ -276,8 +276,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                         className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
                         onClick={() => setMoreOpen(false)}
                       >
-                        <Bot className="w-4 h-4 text-slate-400" />
-                        Train Riley
+                        <Bot className="w-4 h-4 text-violet-400" />
+                        AI Chatbot
+                      </a>
+                      <a
+                        href="/dashboard/chatbot-analytics"
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        <BarChart3 className="w-4 h-4 text-slate-400" />
+                        Riley Analytics
                       </a>
                       <a
                         href="/dashboard/settings"

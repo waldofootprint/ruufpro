@@ -11,6 +11,7 @@ export interface OnboardingSteps {
   hasAddons: boolean;
   hasZips: boolean;
   hasWebhook: boolean;
+  hasChatbot: boolean;
 }
 
 export interface OnboardingState {
@@ -100,15 +101,23 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .eq("contractor_id", contractorId);
     const hasAddons = (addonCount || 0) > 0;
 
-    // Check webhook from contractor record
+    // Check webhook from contractor record + chatbot status
     const { data: contractor } = await supabase
       .from("contractors")
-      .select("webhook_enabled, webhook_url")
+      .select("webhook_enabled, webhook_url, has_ai_chatbot")
       .eq("id", contractorId)
       .single();
     const hasWebhook = !!(contractor?.webhook_enabled && contractor?.webhook_url);
 
-    const steps: OnboardingSteps = { hasRates, hasAddons, hasZips, hasWebhook };
+    // Check if chatbot has been trained (has at least 1 config field)
+    const { data: chatConfig } = await supabase
+      .from("chatbot_config")
+      .select("price_range_low")
+      .eq("contractor_id", contractorId)
+      .maybeSingle();
+    const hasChatbot = !!(contractor?.has_ai_chatbot && chatConfig);
+
+    const steps: OnboardingSteps = { hasRates, hasAddons, hasZips, hasWebhook, hasChatbot };
     const complete = hasRates && hasAddons && hasZips && hasWebhook;
     setOnboarding({ steps, complete });
   };

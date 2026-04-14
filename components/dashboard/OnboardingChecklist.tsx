@@ -12,7 +12,7 @@ interface Step {
   description: string;
   href: string;
   cta: string;
-  isDone: (steps: { hasRates: boolean; hasAddons: boolean; hasZips: boolean; hasWebhook: boolean }) => boolean;
+  isDone: (steps: { hasRates: boolean; hasAddons: boolean; hasZips: boolean; hasWebhook: boolean; hasChatbot: boolean }) => boolean;
 }
 
 const STEPS: Step[] = [
@@ -26,6 +26,14 @@ const STEPS: Step[] = [
   },
   {
     number: 2,
+    title: "Set up Riley (your AI chatbot)",
+    description: "Train Riley with your pricing and services — she'll answer questions and capture leads 24/7",
+    href: "/dashboard/chatbot",
+    cta: "Train Riley",
+    isDone: (s) => s.hasChatbot,
+  },
+  {
+    number: 3,
     title: "Connect your CRM",
     description: "Auto-send every lead to Jobber, Housecall Pro, or your existing system",
     href: "/dashboard/settings#integrations",

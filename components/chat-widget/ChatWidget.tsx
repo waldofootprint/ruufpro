@@ -20,6 +20,7 @@ interface ChatWidgetProps {
   fontFamily: string;
   isDarkTheme?: boolean;
   customGreeting?: string | null;
+  isStandalone?: boolean;
 }
 
 interface LeadFormData {
@@ -38,8 +39,9 @@ export default function ChatWidget({
   fontFamily,
   isDarkTheme = false,
   customGreeting,
+  isStandalone = false,
 }: ChatWidgetProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(isStandalone);
   const [sessionId, setSessionId] = useState("");
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadDismissedAt, setLeadDismissedAt] = useState(0);
@@ -69,7 +71,9 @@ export default function ChatWidget({
     }
   }, [contractorId]);
 
-  const greeting = customGreeting || `Hi! I'm Riley, an AI assistant for ${businessName}. I can answer questions about our roofing services, pricing, and availability. What can I help you with?`;
+  // Strip trailing period from business name to avoid double period ("Roofing Co..")
+  const cleanName = businessName.replace(/\.\s*$/, "");
+  const greeting = customGreeting || `Hi! I'm Riley, an AI assistant for ${cleanName}. I can answer questions about our roofing services, pricing, and availability. What can I help you with?`;
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
@@ -219,7 +223,7 @@ export default function ChatWidget({
     localStorage.setItem(`riley-captured-${contractorId}`, "true");
 
     // Add confirmation message
-    const confirmMsg = `Great! ${businessName} will be in touch with you soon. Is there anything else I can help you with in the meantime?`;
+    const confirmMsg = `Great! ${cleanName} will be in touch with you soon. Is there anything else I can help you with in the meantime?`;
     setMessages([
       ...messages,
       {
@@ -255,8 +259,8 @@ export default function ChatWidget({
     return msg.content || "";
   }
 
-  // --- Bubble (closed state) ---
-  if (!isOpen) {
+  // --- Bubble (closed state) — skip for standalone mode ---
+  if (!isOpen && !isStandalone) {
     return (
       <>
         <button
@@ -351,8 +355,17 @@ export default function ChatWidget({
         }
       `}</style>
       <div
-        className="riley-panel"
-        style={{
+        className={isStandalone ? "" : "riley-panel"}
+        style={isStandalone ? {
+          position: "absolute" as const,
+          inset: 0,
+          zIndex: 1,
+          background: panelBg,
+          display: "flex",
+          flexDirection: "column" as const,
+          overflow: "hidden",
+          fontFamily,
+        } : {
           position: "fixed",
           bottom: 24,
           right: 24,
@@ -364,7 +377,7 @@ export default function ChatWidget({
           borderRadius: 16,
           boxShadow: "0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)",
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "column" as const,
           overflow: "hidden",
           fontFamily,
         }}
@@ -415,7 +428,7 @@ export default function ChatWidget({
               </div>
             </div>
           </div>
-          <button
+          {!isStandalone && <button
             onClick={() => setIsOpen(false)}
             style={{
               background: "rgba(255,255,255,0.15)",
@@ -433,7 +446,7 @@ export default function ChatWidget({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
-          </button>
+          </button>}
         </div>
 
         {/* Messages */}
@@ -699,7 +712,7 @@ export default function ChatWidget({
             }}
           >
             <p style={{ fontSize: 12, fontWeight: 600, color: accentColor, marginBottom: 8 }}>
-              Want {businessName} to follow up? Leave your info:
+              Want {cleanName} to follow up? Leave your info:
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <input
@@ -828,30 +841,38 @@ export default function ChatWidget({
               onClick={() => { if (!leadCaptured) setShowLeadForm(true); }}
             >
               {leadCaptured
-                ? `Thanks for chatting! ${businessName} will be in touch soon.`
-                : `I'd love to keep helping — tap here to have ${businessName} reach out!`}
+                ? `Thanks for chatting! ${cleanName} will be in touch soon.`
+                : `I'd love to keep helping — tap here to have ${cleanName} reach out!`}
             </p>
           ) : (
             <>
-              <input
-                ref={inputRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type a message..."
-                maxLength={2000}
-                disabled={isLoading}
-                style={{
-                  flex: 1,
-                  padding: "10px 12px",
-                  fontSize: 14,
-                  border: `1px solid ${inputBorder}`,
-                  borderRadius: 20,
-                  background: inputBg,
-                  color: panelText,
-                  outline: "none",
-                  fontFamily,
-                }}
-              />
+              <div style={{ flex: 1, position: "relative" }}>
+                <input
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Type a message..."
+                  maxLength={2000}
+                  disabled={isLoading}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    fontSize: 14,
+                    border: `1px solid ${inputBorder}`,
+                    borderRadius: 20,
+                    background: inputBg,
+                    color: panelText,
+                    outline: "none",
+                    fontFamily,
+                    boxSizing: "border-box" as const,
+                  }}
+                />
+                {userMsgCountRef.current >= 8 && userMsgCountRef.current < 10 && !capped && (
+                  <span style={{ position: "absolute", right: 12, top: -16, fontSize: 10, color: mutedText }}>
+                    {10 - userMsgCountRef.current} message{10 - userMsgCountRef.current > 1 ? "s" : ""} left
+                  </span>
+                )}
+              </div>
               <button
                 type="submit"
                 disabled={!inputValue.trim() || isLoading}

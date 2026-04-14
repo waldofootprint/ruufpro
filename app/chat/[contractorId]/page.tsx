@@ -1,9 +1,9 @@
 // Standalone Riley chat page — embeddable via iframe on external sites.
-// No layout chrome, no nav. Just the chat interface.
+// No layout chrome, no nav. Just the full ChatWidget always open.
 // URL: /chat/{contractorId}
 
 import { createClient } from "@supabase/supabase-js";
-import RileyStandalone from "./RileyStandalone";
+import StandaloneChatWrapper from "./StandaloneChatWrapper";
 
 interface Props {
   params: Promise<{ contractorId: string }>;
@@ -23,21 +23,30 @@ export default async function ChatPage({ params }: Props) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const { data: contractor } = await supabase
-    .from("contractors")
-    .select("id, business_name, has_ai_chatbot")
-    .eq("id", contractorId)
-    .eq("has_ai_chatbot", true)
-    .single();
+  // Fetch contractor + chatbot config for accent color and greeting
+  const [contractorRes, configRes] = await Promise.all([
+    supabase
+      .from("contractors")
+      .select("id, business_name, has_ai_chatbot")
+      .eq("id", contractorId)
+      .eq("has_ai_chatbot", true)
+      .single(),
+    supabase
+      .from("chatbot_config")
+      .select("greeting_message")
+      .eq("contractor_id", contractorId)
+      .maybeSingle(),
+  ]);
 
-  if (!contractor) {
+  if (!contractorRes.data) {
     return <div style={{ padding: 40, textAlign: "center", color: "#666" }}>Chat not available</div>;
   }
 
   return (
-    <RileyStandalone
-      contractorId={contractor.id}
-      businessName={contractor.business_name}
+    <StandaloneChatWrapper
+      contractorId={contractorRes.data.id}
+      businessName={contractorRes.data.business_name}
+      customGreeting={configRes.data?.greeting_message || null}
     />
   );
 }

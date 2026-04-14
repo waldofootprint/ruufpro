@@ -378,44 +378,43 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* AI Chatbot — Riley */}
+      {/* AI Chatbot — Riley (read-only status, managed from AI Chatbot page) */}
       <div className="rounded-xl bg-white border border-[#e2e8f0] overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-50 flex items-center justify-between">
-          <div>
-            <h2 className="text-[13px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-              <MessageSquare className="w-3.5 h-3.5" />
-              AI Chatbot — Riley
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-100 text-violet-600 uppercase tracking-wide">Pro+</span>
-            </h2>
-            <p className="text-[11px] text-slate-400 mt-0.5">24/7 AI assistant on your website that answers homeowner questions and captures leads.</p>
-          </div>
-          <button
-            onClick={() => updateField("has_ai_chatbot", !profile.has_ai_chatbot)}
-            disabled={tier === "free"}
-            className={`relative w-10 h-6 rounded-full transition-colors ${profile.has_ai_chatbot ? "bg-violet-600" : "bg-slate-200"} ${tier === "free" ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-          >
-            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${profile.has_ai_chatbot ? "translate-x-5" : "translate-x-1"}`} />
-          </button>
-        </div>
-        {profile.has_ai_chatbot && (
-          <div className="p-5 space-y-3">
-            <div className="bg-slate-50 rounded-lg p-4">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Greeting Preview</p>
-              <p className="text-[13px] text-slate-700 italic">
-                &ldquo;Hi! I&apos;m Riley from {profile.business_name || "[Business Name]"}! I can answer questions about our roofing services and help connect you with our team. What can I help you with today?&rdquo;
+        <div className="px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="w-4 h-4 text-violet-500" />
+            <div>
+              <h2 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+                Riley AI Chatbot
+                {profile.has_ai_chatbot ? (
+                  <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase tracking-wide flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Live
+                  </span>
+                ) : tier !== "free" ? (
+                  <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wide">Off</span>
+                ) : (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-100 text-violet-600 uppercase tracking-wide">Pro</span>
+                )}
+              </h2>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {profile.has_ai_chatbot
+                  ? "Answering homeowner questions and capturing leads 24/7"
+                  : tier === "free"
+                    ? "Upgrade to Pro to unlock Riley"
+                    : "Train Riley and turn her on from the AI Chatbot page"}
               </p>
             </div>
-            <div className="flex items-start gap-2 text-[11px] text-slate-500">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-              Riley uses your services, credentials, and service area to answer homeowner questions accurately.
-            </div>
           </div>
-        )}
-        {tier === "free" && (
-          <div className="px-5 py-3 border-t border-slate-50">
-            <p className="text-[12px] text-amber-600 font-semibold">Requires the $149/mo Pro plan.</p>
-          </div>
-        )}
+          {tier !== "free" && (
+            <a
+              href="/dashboard/chatbot"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-[12px] font-semibold text-slate-600 hover:bg-slate-50 transition"
+            >
+              Manage →
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Integrations — CRM Connect */}

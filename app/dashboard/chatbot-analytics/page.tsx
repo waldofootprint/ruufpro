@@ -273,7 +273,7 @@ export default function ChatbotAnalyticsPage() {
           color="emerald"
         />
         <StatCard
-          label="Conversion Rate"
+          label="Lead Capture Rate"
           value={`${metrics.conversionRate}%`}
           icon={<TrendingUp className="w-4 h-4" />}
           color="amber"
@@ -441,17 +441,20 @@ export default function ChatbotAnalyticsPage() {
               <h4 className="text-[13px] font-bold text-violet-900">Riley&apos;s Impact</h4>
               <p className="text-[12px] text-violet-700 mt-0.5 leading-relaxed">
                 {metrics.conversionRate >= 15
-                  ? `Riley is converting ${metrics.conversionRate}% of conversations into leads — above the 15% industry average. Keep your FAQs updated to maintain this.`
+                  ? `Riley is capturing leads from ${metrics.conversionRate}% of conversations — above the 15% industry average. Keep your FAQs updated to maintain this.`
                   : metrics.conversionRate >= 5
-                  ? `Riley is converting ${metrics.conversionRate}% of conversations. Add more custom FAQs and fill in your pricing to improve.`
+                  ? `Riley is capturing leads from ${metrics.conversionRate}% of conversations. Add more custom FAQs and fill in your pricing to improve.`
                   : metrics.totalLeads > 0
-                  ? `Riley has captured ${metrics.totalLeads} leads. Fill in more training data (pricing, FAQs) to increase conversion.`
+                  ? `Riley has captured ${metrics.totalLeads} leads. Fill in more training data (pricing, FAQs) to increase the rate.`
                   : `Riley is having conversations but hasn't captured leads yet. Make sure your pricing range is filled in — that's the #1 question homeowners ask.`}
               </p>
             </div>
           </div>
         </div>
       )}
+
+      {/* Recent Conversations — transcripts */}
+      <RecentConversations conversations={filtered.conversations} />
     </div>
   );
 }
@@ -491,6 +494,100 @@ function StatCard({
       </div>
       <div className="text-[24px] font-extrabold text-slate-800 leading-none">{value}</div>
       {subtitle && <p className="text-[11px] text-slate-400 mt-1">{subtitle}</p>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Recent Conversations — expandable transcripts
+// ---------------------------------------------------------------------------
+
+function RecentConversations({ conversations }: { conversations: ConversationRow[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  if (conversations.length === 0) return null;
+
+  // Show most recent 20
+  const recent = conversations.slice(0, 20);
+
+  return (
+    <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">
+      <div className="px-5 py-4 border-b border-slate-100">
+        <h3 className="text-[14px] font-bold text-slate-800">Recent Conversations</h3>
+        <p className="text-[11px] text-slate-400 mt-0.5">See what Riley told your homeowners. Click to expand.</p>
+      </div>
+      <div className="divide-y divide-slate-100">
+        {recent.map((convo) => {
+          const isExpanded = expandedId === convo.id;
+          const msgs = convo.messages || [];
+          const userMsgs = msgs.filter((m) => m.role === "user");
+          const firstUserMsg = userMsgs[0];
+          const firstText = firstUserMsg ? getMessageText(firstUserMsg) : "No messages";
+          const msgCount = msgs.length;
+          const date = new Date(convo.created_at);
+          const timeStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+            " · " + date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+          return (
+            <div key={convo.id}>
+              <button
+                onClick={() => setExpandedId(isExpanded ? null : convo.id)}
+                className="w-full px-5 py-3.5 flex items-center gap-3 text-left hover:bg-slate-50 transition"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-slate-700 truncate">
+                    {firstText.slice(0, 80)}{firstText.length > 80 ? "..." : ""}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[11px] text-slate-400">{timeStr}</span>
+                    <span className="text-[11px] text-slate-300">·</span>
+                    <span className="text-[11px] text-slate-400">{msgCount} messages</span>
+                    {convo.lead_captured && (
+                      <>
+                        <span className="text-[11px] text-slate-300">·</span>
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Lead captured</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <svg
+                  className={`w-4 h-4 text-slate-300 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {/* Expanded transcript */}
+              {isExpanded && (
+                <div className="px-5 pb-4 bg-slate-50/50">
+                  <div className="space-y-2.5 max-h-[400px] overflow-y-auto">
+                    {msgs.map((msg, i) => {
+                      const text = getMessageText(msg);
+                      if (!text) return null;
+                      const isUser = msg.role === "user";
+                      return (
+                        <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                          <div className={`max-w-[80%] px-3 py-2 rounded-lg text-[12px] leading-relaxed ${
+                            isUser
+                              ? "bg-violet-100 text-violet-900"
+                              : "bg-white border border-slate-200 text-slate-700"
+                          }`}>
+                            <span className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                              {isUser ? "Homeowner" : "Riley"}
+                            </span>
+                            {text}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
