@@ -161,54 +161,68 @@ export async function POST(req: NextRequest) {
         if (newFound >= limit) break;
 
         const query = `roofing contractor in ${cityName}`;
-        const results = await searchPlaces(query);
-        searchCalls++;
+        let pageToken: string | undefined;
+        // When "no website only" is on, dig deeper — small roofers without sites
+        // are buried on pages 2-3. Cap at 3 pages to limit cost.
+        const maxPages = filters.no_website_only ? 3 : 1;
+        let page = 0;
 
-        for (const place of (results.results || [])) {
-          const isDuplicate = existingPlaceIds.has(place.place_id) ||
-            existingNames.has(`${(place.name || "").toLowerCase()}|${cityName.toLowerCase()}`);
+        while (page < maxPages && newFound < limit) {
+          const results = await searchPlaces(query, pageToken);
+          searchCalls++;
+          page++;
 
-          const placeRating = place.rating || 0;
-          const placeReviews = place.user_ratings_total || 0;
-          let filteredOut = false;
-          let filterReason: string | undefined;
+          for (const place of (results.results || [])) {
+            const isDuplicate = existingPlaceIds.has(place.place_id) ||
+              existingNames.has(`${(place.name || "").toLowerCase()}|${cityName.toLowerCase()}`);
 
-          if (!isDuplicate) {
-            if (filters.min_rating > 0 && placeRating > 0 && placeRating < filters.min_rating) {
-              filteredOut = true;
-              filterReason = `Rating ${placeRating}★ below min ${filters.min_rating}★`;
-            } else if (placeReviews > filters.max_reviews) {
-              filteredOut = true;
-              filterReason = `${placeReviews} reviews exceeds max ${filters.max_reviews}`;
+            const placeRating = place.rating || 0;
+            const placeReviews = place.user_ratings_total || 0;
+            let filteredOut = false;
+            let filterReason: string | undefined;
+
+            if (!isDuplicate) {
+              if (filters.min_rating > 0 && placeRating > 0 && placeRating < filters.min_rating) {
+                filteredOut = true;
+                filterReason = `Rating ${placeRating}★ below min ${filters.min_rating}★`;
+              } else if (placeReviews > filters.max_reviews) {
+                filteredOut = true;
+                filterReason = `${placeReviews} reviews exceeds max ${filters.max_reviews}`;
+              }
             }
+
+            // When "no website only" is checked, call details API to check website.
+            // Pay for it in dry run so the preview is accurate.
+            let hasWebsite: boolean | undefined;
+            if (!isDuplicate && !filteredOut && filters.no_website_only) {
+              const details = await getPlaceDetails(place.place_id);
+              detailCalls++;
+              hasWebsite = !!details.website;
+              if (hasWebsite) {
+                filteredOut = true;
+                filterReason = "Has website (filtered by 'No website only')";
+              }
+            }
+
+            preview.push({
+              name: place.name || "Unknown",
+              city: cityName,
+              is_duplicate: isDuplicate,
+              filtered_out: filteredOut,
+              filter_reason: filterReason,
+              place_id: place.place_id,
+              rating: placeRating || undefined,
+              reviews: placeReviews || undefined,
+              has_website: hasWebsite,
+            });
+
+            if (!isDuplicate && !filteredOut) newFound++;
           }
 
-          // When "no website only" is checked, we MUST call details API to check website.
-          // Pay for it now in dry run so the preview is accurate — confirm step reuses this data.
-          let hasWebsite: boolean | undefined;
-          if (!isDuplicate && !filteredOut && filters.no_website_only) {
-            const details = await getPlaceDetails(place.place_id);
-            detailCalls++;
-            hasWebsite = !!details.website;
-            if (hasWebsite) {
-              filteredOut = true;
-              filterReason = "Has website (filtered by 'No website only')";
-            }
-          }
-
-          preview.push({
-            name: place.name || "Unknown",
-            city: cityName,
-            is_duplicate: isDuplicate,
-            filtered_out: filteredOut,
-            filter_reason: filterReason,
-            place_id: place.place_id,
-            rating: placeRating || undefined,
-            reviews: placeReviews || undefined,
-            has_website: hasWebsite,
-          });
-
-          if (!isDuplicate && !filteredOut) newFound++;
+          pageToken = results.next_page_token;
+          if (!pageToken) break;
+          // Google requires a delay before using next_page_token
+          await new Promise((r) => setTimeout(r, 2000));
         }
       }
 
