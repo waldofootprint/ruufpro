@@ -1629,3 +1629,110 @@ export const prospectFormSubmit = inngest.createFunction(
     };
   }
 );
+
+// ---------------------------------------------------------------------------
+// Batch Auto-Enrich (Phase 2)
+// Trigger: "ops/batch.auto-enrich" — fired after scrape inserts new prospects
+// Runs Google Places enrichment → Facebook enrichment → advances to awaiting_triage
+// ---------------------------------------------------------------------------
+export const batchAutoEnrich = inngest.createFunction(
+  {
+    id: "batch-auto-enrich",
+    retries: 2,
+    concurrency: [{ limit: 1 }], // One enrichment batch at a time
+    triggers: [{ event: "ops/batch.auto-enrich" }],
+  },
+  async ({ event, step }) => {
+    const batchId = event.data.batchId as string;
+    const prospectIds = event.data.prospectIds as string[];
+
+    if (!batchId || !prospectIds?.length) {
+      throw new Error("Missing batchId or prospectIds");
+    }
+
+    // Step 1: Google Places enrichment (photos + reviews + services)
+    const googleResult = await step.run("google-enrich", async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        ? "https://ruufpro.com"
+        : "http://localhost:3000";
+
+      const res = await fetch(`${baseUrl}/api/ops/enrich-photos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch_id: batchId,
+          prospect_ids: prospectIds,
+          auto_advance: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Google enrich failed: ${res.status} — ${text}`);
+      }
+
+      return await res.json();
+    });
+
+    // Step 2: Facebook enrichment — doesn't block pipeline, but status is tracked per-prospect
+    // (facebook_enrichment_status = success | no_match | error on each row)
+    const facebookResult = await step.run("facebook-enrich", async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        ? "https://ruufpro.com"
+        : "http://localhost:3000";
+
+      const res = await fetch(`${baseUrl}/api/ops/enrich-facebook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch_id: batchId,
+          prospect_ids: prospectIds,
+        }),
+      });
+
+      if (!res.ok) {
+        // Endpoint failed entirely — individual prospect statuses may not be set
+        // Still advance to triage, but log the failure
+        return { success: false, error: `HTTP ${res.status}` };
+      }
+
+      return await res.json();
+    });
+
+    // Step 3: Advance all enriched prospects to awaiting_triage
+    const advanceResult = await step.run("advance-to-triage", async () => {
+      const { createServerSupabase } = await import("@/lib/supabase-server");
+      const supabase = createServerSupabase();
+
+      // Only advance prospects that made it to google_enriched
+      const { data: enriched, error: fetchErr } = await supabase
+        .from("prospect_pipeline")
+        .select("id")
+        .in("id", prospectIds)
+        .eq("stage", "google_enriched");
+
+      if (fetchErr || !enriched?.length) {
+        return { advanced: 0, error: fetchErr?.message };
+      }
+
+      const ids = enriched.map((p: { id: string }) => p.id);
+      const { error: updateErr } = await supabase
+        .from("prospect_pipeline")
+        .update({
+          stage: "awaiting_triage",
+          stage_entered_at: new Date().toISOString(),
+        })
+        .in("id", ids);
+
+      return { advanced: ids.length, error: updateErr?.message };
+    });
+
+    return {
+      batchId,
+      totalProspects: prospectIds.length,
+      google: googleResult,
+      facebook: facebookResult,
+      advanced: advanceResult,
+    };
+  }
+);

@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   if (!auth.authorized) return auth.response;
 
   try {
-    const { batch_id, prospect_ids } = await req.json();
+    const { batch_id, prospect_ids, auto_advance } = await req.json();
 
     if (!batch_id && !prospect_ids?.length) {
       return NextResponse.json({ error: "batch_id or prospect_ids required" }, { status: 400 });
@@ -158,14 +158,22 @@ export async function POST(req: NextRequest) {
         const extractedServices = extractServicesFromReviews(result.reviews || []);
 
         // Update prospect
+        const updateData: Record<string, unknown> = {
+          photos,
+          google_reviews: reviews,
+          extracted_services: extractedServices,
+          photos_enriched_at: new Date().toISOString(),
+        };
+
+        // Auto-advance: scraped → google_enriched → awaiting_triage
+        if (auto_advance) {
+          updateData.stage = "google_enriched";
+          updateData.google_enriched_at = new Date().toISOString();
+        }
+
         const { error: updateErr } = await supabase
           .from("prospect_pipeline")
-          .update({
-            photos,
-            google_reviews: reviews,
-            extracted_services: extractedServices,
-            photos_enriched_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq("id", prospect.id);
 
         if (updateErr) {

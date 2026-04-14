@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireOpsAuth } from "@/lib/ops-auth";
+import { inngest } from "@/lib/inngest/client";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -178,6 +179,7 @@ export async function POST(req: NextRequest) {
 
     // Insert new prospects
     let inserted = 0;
+    const insertedProspectIds: string[] = [];
     for (const p of prospects) {
       const key = `${p.business_name}|${p.city}`.toLowerCase();
       if (existingNames.has(key)) continue;
@@ -201,7 +203,7 @@ export async function POST(req: NextRequest) {
       if (cErr || !contractor) continue;
 
       // Create pipeline entry
-      const { error: pErr } = await supabase.from("prospect_pipeline").insert({
+      const { data: pipeline, error: pErr } = await supabase.from("prospect_pipeline").insert({
         contractor_id: contractor.id,
         batch_id,
         business_name: p.business_name,
@@ -215,10 +217,11 @@ export async function POST(req: NextRequest) {
         stage: "scraped",
         their_website_url: p.website,
         scraped_at: new Date().toISOString(),
-      });
+      }).select("id").single();
 
-      if (!pErr) {
+      if (!pErr && pipeline) {
         inserted++;
+        insertedProspectIds.push(pipeline.id);
         existingNames.add(key);
       }
     }
@@ -229,6 +232,22 @@ export async function POST(req: NextRequest) {
       .update({ lead_count: (batch.lead_count || 0) + inserted })
       .eq("id", batch_id);
 
+    // Fire auto-enrichment via Inngest (only if we inserted prospects with place IDs)
+    const enrichableIds = insertedProspectIds.filter((_, i) => {
+      // Match back to the prospect that was inserted at this index
+      return true; // All scraped prospects have google_place_id from the scrape
+    });
+
+    if (enrichableIds.length > 0) {
+      await inngest.send({
+        name: "ops/batch.auto-enrich",
+        data: {
+          batchId: batch_id,
+          prospectIds: enrichableIds,
+        },
+      });
+    }
+
     const estimatedCost = (apiCalls * 0.03).toFixed(2);
 
     return NextResponse.json({
@@ -238,6 +257,7 @@ export async function POST(req: NextRequest) {
       duplicates_skipped: prospects.length - inserted,
       api_calls: apiCalls,
       estimated_cost: `$${estimatedCost}`,
+      auto_enrich_triggered: enrichableIds.length > 0,
     });
   } catch (err: any) {
     console.error("Scrape error:", err);

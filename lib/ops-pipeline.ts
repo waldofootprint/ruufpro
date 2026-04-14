@@ -172,6 +172,8 @@ export interface PipelineProspect {
   facebook_page_url: string | null;
   facebook_about: string | null;
   facebook_photos: Record<string, unknown>[] | null;
+  // Facebook enrichment tracking
+  facebook_enrichment_status: "success" | "no_match" | "error" | null;
   // LinkedIn
   linkedin_url: string | null;
   // Timestamps

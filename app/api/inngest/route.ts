@@ -16,6 +16,7 @@ import {
   weatherStormCheck,
   prospectFormDetect,
   prospectFormSubmit,
+  batchAutoEnrich,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -36,5 +37,6 @@ export const { GET, POST, PUT } = serve({
     weatherStormCheck,
     prospectFormDetect,
     prospectFormSubmit,
+    batchAutoEnrich,
   ],
 });
