@@ -861,9 +861,12 @@ export default function OpsPage() {
               return (
                 <div key={batch.id} className="bg-white rounded-xl border border-[#E5E5EA] overflow-hidden">
                   {/* Batch header */}
-                  <button
-                    className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-[#FAFAFA] transition-colors"
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-[#FAFAFA] transition-colors cursor-pointer"
                     onClick={() => setExpandedBatch(isExpanded ? null : batch.id)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpandedBatch(isExpanded ? null : batch.id); }}
                   >
                     <div className="flex items-center gap-2.5">
                       <span className="text-[10px] text-[#C7C7CC] transition-transform">{isExpanded ? "▼" : "▶"}</span>
@@ -921,7 +924,7 @@ export default function OpsPage() {
                         )}
                       </div>
                     </div>
-                  </button>
+                  </div>
 
                   {/* Progress bar */}
                   <div className="px-5 pb-1">
