@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -76,6 +77,9 @@ function formatReviews(
 // no enrichment needed), creates a contractor record + site record
 // using the Modern Clean template, then advances to "site_built".
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
+
   try {
     const { batch_id } = await req.json();
 
@@ -105,21 +109,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Get admin user_id for contractor records (same pattern as scrape)
-    const { data: existingContractor } = await supabase
-      .from("contractors")
-      .select("user_id")
-      .limit(1)
-      .single();
-
-    if (!existingContractor) {
-      return NextResponse.json(
-        { error: "No existing user found for contractor records" },
-        { status: 500 }
-      );
-    }
-
-    const userId = existingContractor.user_id;
     let built = 0;
     const errors: string[] = [];
 
@@ -154,57 +143,28 @@ export async function POST(req: NextRequest) {
         // Generate random slug (never use business name in URL)
         const slug = generateProspectSlug();
 
-        // If the prospect already has a contractor_id (from scrape), use it.
-        // Otherwise create a new contractor record.
-        let contractorId = prospect.contractor_id;
+        // Scrape always creates contractor_id. If missing, skip this prospect.
+        const contractorId = prospect.contractor_id;
 
-        if (contractorId) {
-          // Update the existing contractor with richer data
-          await supabase
-            .from("contractors")
-            .update({
-              business_name: businessName,
-              phone: phone || "unknown",
-              city,
-              state,
-              service_area_cities: [city],
-              years_in_business: prospect.founded_year
-                ? new Date().getFullYear() - prospect.founded_year
-                : null,
-            })
-            .eq("id", contractorId);
-        } else {
-          // Create new contractor record
-          const { data: newContractor, error: cErr } = await supabase
-            .from("contractors")
-            .insert({
-              user_id: userId,
-              email: `prospect-${crypto.randomBytes(4).toString("hex")}@placeholder.com`,
-              business_name: businessName,
-              phone: phone || "unknown",
-              city,
-              state,
-              business_type: "residential",
-              service_area_cities: [city],
-              years_in_business: prospect.founded_year
-                ? new Date().getFullYear() - prospect.founded_year
-                : null,
-            })
-            .select("id")
-            .single();
-
-          if (cErr || !newContractor) {
-            errors.push(`${businessName}: Failed to create contractor`);
-            continue;
-          }
-          contractorId = newContractor.id;
-
-          // Link contractor to pipeline
-          await supabase
-            .from("prospect_pipeline")
-            .update({ contractor_id: contractorId })
-            .eq("id", prospect.id);
+        if (!contractorId) {
+          errors.push(`${businessName}: No contractor_id — was this prospect scraped?`);
+          continue;
         }
+
+        // Update the existing contractor with richer data from enrichment
+        await supabase
+          .from("contractors")
+          .update({
+            business_name: businessName,
+            phone: phone || "unknown",
+            city,
+            state,
+            service_area_cities: [city],
+            years_in_business: prospect.founded_year
+              ? new Date().getFullYear() - prospect.founded_year
+              : null,
+          })
+          .eq("id", contractorId);
 
         // Create site record with Modern Clean template
         const { error: siteErr } = await supabase.from("sites").insert({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -69,9 +70,15 @@ function parseCityState(address: string): { city: string; state: string } {
 // Scrapes Google Maps, creates contractors + pipeline entries
 // Auth is handled by the /ops layout (admin email check).
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
+
   try {
     const body = await req.json();
-    const { batch_id, limit = 25 } = body;
+    // Cap at 25 per request to stay within Vercel function timeout (60s hobby / 300s pro).
+    // Dashboard can send multiple requests for larger batches.
+    const { batch_id, limit: rawLimit = 25 } = body;
+    const limit = Math.min(rawLimit, 25);
 
     if (!batch_id) {
       return NextResponse.json({ error: "batch_id required" }, { status: 400 });
@@ -91,18 +98,6 @@ export async function POST(req: NextRequest) {
     const cities: string[] = body.cities || batch.city_targets || ["Tampa"];
     const perCity = Math.ceil(limit / cities.length);
 
-    // Get existing user_id for contractor records (admin user)
-    const { data: existingContractor } = await supabase
-      .from("contractors")
-      .select("user_id")
-      .limit(1)
-      .single();
-
-    if (!existingContractor) {
-      return NextResponse.json({ error: "No existing user found for contractor records" }, { status: 500 });
-    }
-
-    const userId = existingContractor.user_id;
     const prospects: Prospect[] = [];
     let apiCalls = 0;
 
@@ -156,14 +151,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check for duplicates (by business name + city)
+    // Check for duplicates across ALL batches (not just this one).
+    // Prevents the same roofer from getting multiple outreach emails.
     const { data: existingPipeline } = await supabase
       .from("prospect_pipeline")
-      .select("contractor_id, contractors!inner(business_name, city)")
-      .eq("batch_id", batch_id);
+      .select("business_name, city");
 
     const existingNames = new Set(
-      (existingPipeline || []).map((p: any) => `${p.contractors?.business_name}|${p.contractors?.city}`.toLowerCase())
+      (existingPipeline || []).map((p: any) => `${p.business_name}|${p.city}`.toLowerCase())
     );
 
     // Insert new prospects
@@ -172,11 +167,12 @@ export async function POST(req: NextRequest) {
       const key = `${p.business_name}|${p.city}`.toLowerCase();
       if (existingNames.has(key)) continue;
 
-      // Create contractor
+      // Create contractor — user_id is NULL for prospects.
+      // Claim flow sets user_id when a roofer signs up.
       const { data: contractor, error: cErr } = await supabase
         .from("contractors")
         .insert({
-          user_id: userId,
+          user_id: null,
           email: `prospect-${Date.now()}-${inserted}@placeholder.com`,
           business_name: p.business_name,
           phone: p.phone || "unknown",

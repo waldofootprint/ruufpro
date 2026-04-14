@@ -12,6 +12,16 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  // Verify webhook authenticity via shared secret header.
+  // Set WEBHOOK_SECRET in Vercel env vars and configure in Instantly webhook settings.
+  const secret = process.env.WEBHOOK_SECRET;
+  if (secret) {
+    const provided = req.headers.get("x-webhook-secret") || req.headers.get("authorization")?.replace("Bearer ", "");
+    if (provided !== secret) {
+      return NextResponse.json({ error: "Invalid webhook secret" }, { status: 401 });
+    }
+  }
+
   try {
     const body = await req.json();
 

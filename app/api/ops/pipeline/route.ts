@@ -5,27 +5,36 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { PipelineStage, GateStatus, ProspectBatch, PipelineResponse } from "@/lib/ops-pipeline";
 import { PIPELINE_STAGES } from "@/lib/ops-pipeline";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 export async function GET() {
-  // Auth is handled by the /ops layout (admin email check).
-  // Using service role key here since this is an admin-only endpoint
-  // and cookie-based auth can fail when session cookies aren't synced.
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
   // Fetch batches, pipeline entries, and gates in parallel
-  const [batchesResult, pipelineResult, gatesResult] = await Promise.all([
-    supabase
-      .from("prospect_batches")
-      .select("*")
-      .in("status", ["active", "completed"])
-      .order("week_start", { ascending: false })
-      .limit(12),
-    supabase
-      .from("prospect_pipeline")
-      .select("batch_id, stage"),
+  // Step 1: Get active batches first (need IDs to filter pipeline query)
+  const batchesResult = await supabase
+    .from("prospect_batches")
+    .select("*")
+    .in("status", ["active", "completed"])
+    .order("week_start", { ascending: false })
+    .limit(12);
+
+  const batchIds = (batchesResult.data || []).map((b) => b.id);
+
+  // Step 2: Fetch pipeline + gates only for active batches
+  const [pipelineResult, gatesResult] = await Promise.all([
+    batchIds.length > 0
+      ? supabase
+          .from("prospect_pipeline")
+          .select("batch_id, stage")
+          .in("batch_id", batchIds)
+      : Promise.resolve({ data: [], error: null }),
     supabase
       .from("pipeline_gates")
       .select("*")
@@ -160,7 +169,9 @@ export async function GET() {
 
 // ── POST: Create a new batch ────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  // Auth is handled by the /ops layout (admin email check).
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

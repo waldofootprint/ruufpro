@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { PIPELINE_STAGES } from "@/lib/ops-pipeline";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 // Stage progression map — which stage comes next
 const NEXT_STAGE: Record<string, string> = {
@@ -15,6 +16,9 @@ const NEXT_STAGE: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

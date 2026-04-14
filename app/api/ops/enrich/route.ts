@@ -6,10 +6,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 const APOLLO_API_URL = "https://api.apollo.io/api/v1/people/match";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
+
   const { batch_id } = await req.json();
 
   if (!batch_id) {
@@ -26,12 +30,14 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Find un-enriched leads (no owner_email)
+  // Find un-enriched leads (no owner_email AND not yet enriched).
+  // The enriched_at check prevents double-credit burn on rapid clicks.
   const { data: leads, error } = await supabase
     .from("prospect_pipeline")
     .select("id, business_name, their_website_url, city, state")
     .eq("batch_id", batch_id)
     .is("owner_email", null)
+    .is("enriched_at", null)
     .limit(50); // Cap at 50 to stay within free tier
 
   if (error) {
@@ -91,11 +97,14 @@ export async function POST(req: NextRequest) {
           .eq("id", lead.id);
         enriched++;
       } else {
-        // Mark as enriched but no match
+        // No email found — still advance to "enriched" so it's clear
+        // this lead was processed and can proceed to site building.
         await supabase
           .from("prospect_pipeline")
           .update({
             enriched_at: new Date().toISOString(),
+            stage: "enriched",
+            stage_entered_at: new Date().toISOString(),
           })
           .eq("id", lead.id);
         noMatch++;

@@ -11,8 +11,11 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
   const body = await req.json();
   const { prospect_id, action, edited_text } = body as {
     prospect_id: string;
@@ -46,6 +49,16 @@ export async function POST(req: NextRequest) {
   }
 
   // action === "send"
+  // Block sending if reply contains placeholder links
+  const replyPreview = edited_text || "";
+  const placeholderPattern = /\[(CALENDAR_LINK|PREVIEW_LINK|LOOM_LINK|ANSWER_PLACEHOLDER|HANNAH)/;
+  if (placeholderPattern.test(replyPreview)) {
+    return NextResponse.json(
+      { error: "Reply contains placeholder text (e.g. [CALENDAR_LINK]). Edit the draft before sending." },
+      { status: 400 }
+    );
+  }
+
   // Find the prospect
   const { data: prospect } = await supabase
     .from("prospect_pipeline")
@@ -58,6 +71,14 @@ export async function POST(req: NextRequest) {
   }
 
   const replyText = edited_text || prospect.draft_response || "";
+
+  // Final placeholder check (catches DB-sourced draft too)
+  if (placeholderPattern.test(replyText)) {
+    return NextResponse.json(
+      { error: "Reply contains placeholder text (e.g. [CALENDAR_LINK]). Edit the draft before sending." },
+      { status: 400 }
+    );
+  }
 
   // Try to find and send via outreach_replies (goes through Instantly)
   if (prospect.owner_email) {

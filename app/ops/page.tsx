@@ -1240,8 +1240,8 @@ function OutreachApprovalPanel({ batchId, onApproveAndSend }: { batchId: string;
             first_name: (lead.owner_name || "").split(" ")[0] || "there",
             business_name: lead.business_name || "your business",
             city: lead.city || "",
-            preview_url: lead.preview_site_url || "[preview link]",
-            claim_url: lead.preview_site_url ? lead.preview_site_url.replace("/site/", "/claim/") : "[claim link]",
+            preview_url: lead.preview_site_url ? `https://ruufpro.com${lead.preview_site_url}` : "[preview link]",
+            claim_url: lead.preview_site_url ? `https://ruufpro.com${lead.preview_site_url.replace("/site/", "/claim/")}` : "[claim link]",
           };
 
           const email1 = method === "cold_email" ? generateEmailPreview(0, campaignType, vars) : null;

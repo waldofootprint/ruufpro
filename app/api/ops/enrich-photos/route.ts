@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,6 +75,9 @@ function extractServicesFromReviews(reviews: any[]): string[] {
 // Pulls photos + reviews from Google Places for prospects with a google_place_id.
 // Extracts services from review text. Stores on prospect_pipeline.
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
+
   try {
     const { batch_id } = await req.json();
 

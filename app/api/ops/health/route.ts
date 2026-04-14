@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-
-// Lightweight health check for ops settings page.
-// Returns Twilio balance + Inngest failure count (24h).
-// Auth is handled by the /ops layout (admin email check).
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 export async function GET() {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
   const result: {
     twilio_balance: string | null;
     inngest_failures_24h: number | null;

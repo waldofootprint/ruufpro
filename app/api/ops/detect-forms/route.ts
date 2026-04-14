@@ -4,9 +4,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { inngest } from "@/lib/inngest/client";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
-// Auth is handled by the /ops layout (admin email check).
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
   const body = await req.json();
   const { batch_id, prospect_ids } = body as {
     batch_id?: string;

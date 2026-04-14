@@ -6,8 +6,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { addLeadsToCampaign } from "@/lib/instantly";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
   const body = await req.json();
   const { batch_id, prospect_ids } = body as {
     batch_id?: string;
@@ -75,9 +78,11 @@ export async function POST(req: NextRequest) {
       custom_variables: {
         city: p.city || "",
         state: p.state || "FL",
-        preview_url: p.preview_site_url || "",
+        preview_url: p.preview_site_url
+          ? `https://ruufpro.com${p.preview_site_url}`
+          : "",
         claim_url: p.preview_site_url
-          ? p.preview_site_url.replace("/site/", "/claim/")
+          ? `https://ruufpro.com${p.preview_site_url.replace("/site/", "/claim/")}`
           : "",
       },
     };

@@ -5,9 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { GATE_APPROVED_STAGE } from "@/lib/ops-pipeline";
 import type { GateActionRequest, GateType } from "@/lib/ops-pipeline";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
-// Auth is handled by the /ops layout (admin email check).
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
   const body: GateActionRequest = await req.json();
   const { gate_type, batch_id, action, prospect_ids } = body;
 
