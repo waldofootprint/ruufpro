@@ -988,9 +988,7 @@ function EmailPreviewPanel({ batchId }: { batchId: string }) {
 function BatchLeadTable({ batchId }: { batchId: string }) {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortCol, setSortCol] = useState<string>("business_name");
-  const [sortAsc, setSortAsc] = useState(true);
-  const [stageFilter, setStageFilter] = useState<string>("all");
+  const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [expandedLead, setExpandedLead] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [advancing, setAdvancing] = useState(false);
@@ -1013,12 +1011,12 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
     });
   }
 
-  function toggleSelectAll() {
-    const visible = (stageFilter === "all" ? leads : leads.filter(l => l.stage === stageFilter)).map(l => l.id);
-    const allSelected = visible.every(id => selected.has(id));
+  function toggleSelectAllInStage(stage: string) {
+    const stageLeads = leads.filter(l => l.stage === stage).map(l => l.id);
+    const allSelected = stageLeads.every(id => selected.has(id));
     setSelected(prev => {
       const next = new Set(prev);
-      visible.forEach(id => allSelected ? next.delete(id) : next.add(id));
+      stageLeads.forEach(id => allSelected ? next.delete(id) : next.add(id));
       return next;
     });
   }
@@ -1036,7 +1034,6 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
         const data = await res.json();
         setSelected(new Set());
         await fetchLeads();
-        alert(`${data.advanced} prospect(s) advanced to next stage`);
       } else {
         const err = await res.json();
         alert(`Failed: ${err.error}`);
@@ -1048,46 +1045,26 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
   if (loading) return <div className="p-6 text-center text-[#8E8E93] text-sm">Loading leads...</div>;
   if (leads.length === 0) return <div className="p-6 text-center text-[#8E8E93] text-sm">No leads in this batch</div>;
 
-  const handleSort = (col: string) => {
-    if (sortCol === col) setSortAsc(!sortAsc);
-    else { setSortCol(col); setSortAsc(true); }
+  // Group leads by stage, ordered by pipeline progression
+  const STAGE_ORDER: string[] = ["scraped", "enriched", "site_built", "site_approved", "outreach_approved", "sent", "awaiting_reply", "replied", "draft_ready", "responded", "interested", "free_signup", "paid", "not_now", "objection", "unsubscribed"];
+  const stageGroups = STAGE_ORDER
+    .map(stage => ({ stage, leads: leads.filter(l => l.stage === stage) }))
+    .filter(g => g.leads.length > 0);
+
+  const STAGE_ICONS: Record<string, string> = {
+    scraped: "🔍", enriched: "📋", site_built: "🏗", site_approved: "✅",
+    outreach_approved: "📤", sent: "📬", awaiting_reply: "⏳", replied: "💬",
+    draft_ready: "📝", responded: "↩", interested: "🟢", free_signup: "🎉",
+    paid: "💰", not_now: "⏸", objection: "🔴", unsubscribed: "❌",
   };
 
-  const filtered = stageFilter === "all" ? leads : leads.filter((l) => l.stage === stageFilter);
-  const sorted = [...filtered].sort((a, b) => {
-    const av = (a[sortCol] || "").toString().toLowerCase();
-    const bv = (b[sortCol] || "").toString().toLowerCase();
-    return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
-  });
-
-  const stages = Array.from(new Set(leads.map((l: any) => l.stage as string)));
-  const thCls = "text-[10px] uppercase tracking-[0.06em] text-[#AEAEB2] font-semibold text-left px-3 py-2 cursor-pointer hover:text-[#1D1D1F] select-none";
+  const selectedStage = selected.size > 0 ? leads.find(l => selected.has(l.id))?.stage : null;
 
   return (
     <div>
-      {/* Filter bar */}
-      <div className="px-4 py-2 bg-[#FAFAFA] border-b border-[#F2F2F7] flex items-center gap-1.5 flex-wrap">
-        <span className="text-[9px] text-[#AEAEB2] uppercase tracking-[0.1em] font-semibold mr-1">Filter:</span>
-        <button
-          onClick={() => setStageFilter("all")}
-          className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-colors ${stageFilter === "all" ? "bg-[#1D1D1F] text-white" : "bg-white text-[#8E8E93] border border-[#E5E5EA] hover:bg-gray-100"}`}
-        >
-          All ({leads.length})
-        </button>
-        {stages.map((s) => (
-          <button
-            key={s}
-            onClick={() => setStageFilter(s)}
-            className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-colors ${stageFilter === s ? "bg-[#1D1D1F] text-white" : `${STAGE_PILL[s] || "bg-gray-100 text-gray-500"} hover:opacity-80`}`}
-          >
-            {STAGE_LABELS[s as PipelineStage] || s} ({leads.filter((l) => l.stage === s).length})
-          </button>
-        ))}
-      </div>
-
       {/* Action bar when items selected */}
       {selected.size > 0 && (
-        <div className="px-4 py-2.5 bg-[#EFF6FF] border-b border-[#007AFF33] flex items-center justify-between">
+        <div className="px-5 py-2.5 bg-[#EFF6FF] border-b border-[#007AFF33] flex items-center justify-between sticky top-[52px] z-10">
           <span className="text-xs font-semibold text-[#007AFF]">{selected.size} selected</span>
           <div className="flex gap-2">
             <button
@@ -1101,58 +1078,117 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
               disabled={advancing}
               className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-4 py-1.5 rounded-lg transition-colors"
             >
-              {advancing ? "Advancing..." : `Approve ${selected.size} to Next Stage`}
+              {advancing ? "Advancing..." : `Approve ${selected.size} →`}
             </button>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b border-[#E5E5EA]">
-              <th className="px-3 py-2 w-8">
-                <input
-                  type="checkbox"
-                  checked={sorted.length > 0 && sorted.every(l => selected.has(l.id))}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer"
-                />
-              </th>
-              {[
-                { key: "business_name", label: "Business" },
-                { key: "city", label: "City" },
-                { key: "their_website_url", label: "Their Site" },
-                { key: "_form", label: "Form" },
-                { key: "_preview", label: "Preview" },
-                { key: "stage", label: "Stage" },
-                { key: "reply_category", label: "Reply" },
-                { key: "_draft", label: "Draft" },
-              ].map(({ key, label }) => (
-                <th key={key} className={thCls} onClick={() => !key.startsWith("_") && handleSort(key)}>
-                  {label} {sortCol === key ? (sortAsc ? "▲" : "▼") : ""}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((lead) => {
-              const isOpen = expandedLead === lead.id;
-              return (
-                <LeadRow
-                  key={lead.id}
-                  lead={lead}
-                  isExpanded={isOpen}
-                  isSelected={selected.has(lead.id)}
-                  onSelect={() => toggleSelect(lead.id)}
-                  onToggle={() => setExpandedLead(isOpen ? null : lead.id)}
-                />
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Stage-grouped dropdowns */}
+      {stageGroups.map(({ stage, leads: stageLeads }) => {
+        const isOpen = expandedStage === stage;
+        const stageSelected = stageLeads.filter(l => selected.has(l.id)).length;
+        const allSelected = stageLeads.every(l => selected.has(l.id));
+        const sorted = [...stageLeads].sort((a, b) => (a.business_name || "").localeCompare(b.business_name || ""));
+
+        return (
+          <div key={stage} className="border-b border-[#F2F2F7] last:border-b-0">
+            {/* Stage header */}
+            <button
+              className="w-full px-5 py-3 flex items-center justify-between hover:bg-[#FAFAFA] transition-colors"
+              onClick={() => setExpandedStage(isOpen ? null : stage)}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="text-[10px] text-[#C7C7CC]">{isOpen ? "▼" : "▶"}</span>
+                <span className="text-sm">{STAGE_ICONS[stage] || "○"}</span>
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg ${STAGE_PILL[stage] || "bg-gray-100 text-gray-500"}`}>
+                  {STAGE_LABELS[stage as PipelineStage] || stage}
+                </span>
+                <span className="text-[13px] font-bold text-[#1D1D1F]">{stageLeads.length}</span>
+                {stageSelected > 0 && (
+                  <span className="text-[10px] font-medium text-[#007AFF]">({stageSelected} selected)</span>
+                )}
+              </div>
+            </button>
+
+            {/* Expanded: lead rows with checkboxes */}
+            {isOpen && (
+              <div className="bg-[#FAFAFA]">
+                {/* Select all for this stage */}
+                <div className="px-5 py-1.5 border-b border-[#F2F2F7] flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={() => toggleSelectAllInStage(stage)}
+                    className="w-3.5 h-3.5 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer"
+                  />
+                  <span className="text-[10px] text-[#8E8E93] uppercase tracking-[0.06em] font-semibold">Select all {stageLeads.length}</span>
+                </div>
+
+                {sorted.map((lead) => {
+                  const isChecked = selected.has(lead.id);
+                  const icp = getIcpScore(lead);
+                  const icpStyle = ICP_STYLES[icp.tier];
+                  const isLeadOpen = expandedLead === lead.id;
+                  const domain = lead.their_website_url?.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+
+                  return (
+                    <div key={lead.id}>
+                      <div
+                        className={`flex items-center gap-3 px-5 py-2.5 border-b border-[#F0F0F2] cursor-pointer transition-colors ${isChecked ? "bg-[#EFF6FF]" : "hover:bg-white"}`}
+                        onClick={() => setExpandedLead(isLeadOpen ? null : lead.id)}
+                      >
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleSelect(lead.id)}
+                            className="w-4 h-4 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-semibold text-[#1D1D1F] truncate">{lead.business_name || "Unknown"}</span>
+                            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>{icpStyle.label}</span>
+                            {lead.has_captcha && <span className="text-[8px] font-semibold text-[#F57F17] bg-[#FFF8E1] px-1.5 py-0.5 rounded">CAPTCHA</span>}
+                          </div>
+                          <div className="text-[11px] text-[#8E8E93] mt-0.5 flex items-center gap-2">
+                            <span>{lead.city ? `${lead.city}, ${lead.state || "FL"}` : ""}</span>
+                            {lead.rating > 0 && <span>{lead.rating}★</span>}
+                            {lead.reviews_count > 0 && <span>{lead.reviews_count} reviews</span>}
+                            {domain && <span>·</span>}
+                            {domain && (
+                              <a href={lead.their_website_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] hover:underline">{domain}</a>
+                            )}
+                            {!lead.their_website_url && <span className="text-[#FF9F0A]">No website</span>}
+                            {lead.contact_form_url && !lead.has_captcha && <span className="text-[#34C759]">Form ✓</span>}
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-[#C7C7CC]">{isLeadOpen ? "▼" : "▶"}</span>
+                      </div>
+
+                      {/* Expanded detail */}
+                      {isLeadOpen && (
+                        <div className="px-5 py-3 bg-white border-b border-[#E5E5EA]">
+                          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[11px]">
+                            {lead.phone && <div><span className="text-[#8E8E93]">Phone:</span> <span className="font-medium">{lead.phone}</span></div>}
+                            {lead.owner_name && <div><span className="text-[#8E8E93]">Owner:</span> <span className="font-medium">{lead.owner_name}</span></div>}
+                            {lead.owner_email && <div><span className="text-[#8E8E93]">Email:</span> <span className="font-medium">{lead.owner_email}</span></div>}
+                            {lead.contact_form_url && <div><span className="text-[#8E8E93]">Form URL:</span> <a href={lead.contact_form_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">{lead.contact_form_url.replace(/^https?:\/\//, "").slice(0, 40)}</a></div>}
+                            {lead.preview_site_url && <div><span className="text-[#8E8E93]">Preview:</span> <a href={lead.preview_site_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">View site ↗</a></div>}
+                            {lead.form_submission_status && lead.form_submission_status !== "pending" && <div><span className="text-[#8E8E93]">Form status:</span> <span className="font-medium">{lead.form_submission_status}</span></div>}
+                            <div><span className="text-[#8E8E93]">Scraped:</span> <span className="font-medium">{lead.scraped_at ? new Date(lead.scraped_at).toLocaleDateString() : "—"}</span></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

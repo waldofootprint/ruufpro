@@ -4,10 +4,10 @@
 // and inserts into prospect_pipeline table for ops dashboard review.
 //
 // Tiers:
-//   Gold   — has form, no CAPTCHA, <100 reviews, 4.0+ rating, no estimate widget
-//   Silver — has form, no CAPTCHA, 100-300 reviews OR <4.0 rating
-//   Bronze — has form + CAPTCHA (email fallback), or 300+ reviews
-//   Skip   — no form + no email, already has estimate widget, 500+ reviews
+//   Gold   — has form, <30 reviews, 3.5+ rating, no estimate widget
+//   Silver — has form, 30-100 reviews OR no website (high need)
+//   Bronze — no form (email fallback), or 100-300 reviews
+//   Skip   — already has estimate widget, 300+ reviews, <3.5 rating
 //
 // Usage:
 //   node tools/score-prospects.mjs --csv .tmp/prospects/tampa_fl_scraped.csv
@@ -57,7 +57,6 @@ function scoreProspect(row) {
   const reviewCount = parseInt(row.google_review_count || row.user_ratings_total || "0", 10);
   const rating = parseFloat(row.google_rating || row.rating || "0");
   const hasForm = row.scrape_status === "success" && row.contact_form_url && row.contact_form_url !== "";
-  const hasCaptcha = row.has_captcha === "true";
   const hasEstimateWidget = row.has_estimate_widget === "true";
   const hasWebsite = row.website && row.website !== "none" && row.website !== "";
   const websiteStatus = row.website_status || "";
@@ -73,62 +72,53 @@ function scoreProspect(row) {
     return { tier: "skip", reasons, reviewCount, rating };
   }
 
-  // 500+ reviews = enterprise/large company
-  if (reviewCount >= 500) {
-    reasons.push(`${reviewCount} reviews — enterprise, not our ICP`);
-    return { tier: "skip", reasons, reviewCount, rating };
-  }
-
-  // No form AND no website = can't reach them via form outreach
-  if (!hasForm && !hasWebsite) {
-    reasons.push("No website, no form — can't reach via form outreach");
-    return { tier: "skip", reasons, reviewCount, rating };
-  }
-
-  // No form AND no contact page found
-  if (!hasForm && hasWebsite) {
-    reasons.push("Has website but no contact form detected — email fallback only");
-    return { tier: "bronze", reasons, reviewCount, rating };
-  }
-
-  // ---- CAPTCHA is solvable via CapSolver (~$0.0015/solve) ----
-  // No longer a blocker — score based on other criteria instead
-
-  // 300-499 reviews = mid-size, less likely to need us
+  // 300+ reviews = too established
   if (reviewCount >= 300) {
-    reasons.push(`${reviewCount} reviews — mid-size company`);
-    return { tier: "bronze", reasons, reviewCount, rating };
+    reasons.push(`${reviewCount} reviews — too established, not our ICP`);
+    return { tier: "skip", reasons, reviewCount, rating };
   }
 
-  // ---- Silver: good but not perfect ----
+  // Below 3.5 rating = quality issues our site won't fix
+  if (rating > 0 && rating < 3.5) {
+    reasons.push(`${rating}★ — too low, quality issues`);
+    return { tier: "skip", reasons, reviewCount, rating };
+  }
 
-  // 100-299 reviews = established, may already have marketing
-  if (reviewCount >= 100) {
-    reasons.push(`${reviewCount} reviews — established, may have marketing`);
+  // ---- Gold: ideal prospect (0-30 reviews, 3.5+ rating) ----
+
+  if (reviewCount <= 30 && (rating === 0 || rating >= 3.5)) {
+    // Has form = top priority
+    if (hasForm) {
+      reasons.push("Has form, ≤30 reviews, 3.5+ rating, no widget — ideal ICP");
+    } else if (!hasWebsite) {
+      reasons.push("No website at all — highest need for free site gift");
+    } else {
+      reasons.push("≤30 reviews, 3.5+ rating — good ICP, no form detected");
+    }
+
+    if (reviewCount === 0) reasons.push("Zero reviews — brand new crew");
+    else if (reviewCount <= 10) reasons.push(`Only ${reviewCount} reviews — very new`);
+    else reasons.push(`${reviewCount} reviews — small crew`);
+
+    return { tier: "gold", reasons, reviewCount, rating };
+  }
+
+  // ---- Silver: good but bigger (31-100 reviews) ----
+
+  if (reviewCount <= 100) {
+    if (hasForm) {
+      reasons.push(`${reviewCount} reviews — growing business, has form`);
+    } else if (!hasWebsite) {
+      reasons.push(`${reviewCount} reviews but no website — still needs us`);
+    } else {
+      reasons.push(`${reviewCount} reviews — established but reachable`);
+    }
     return { tier: "silver", reasons, reviewCount, rating };
   }
 
-  // Low rating = might have quality issues (our site won't fix that)
-  if (rating > 0 && rating < 4.0) {
-    reasons.push(`${rating} rating — low rating could indicate quality issues`);
-    return { tier: "silver", reasons, reviewCount, rating };
-  }
-
-  // ---- Gold: ideal prospect ----
-  reasons.push("Has form, no CAPTCHA, <100 reviews, 4.0+ rating, no widget");
-
-  // Bonus signals
-  if (!hasWebsite || websiteStatus === "none" || websiteStatus === "directory_only") {
-    reasons.push("No real website — highest need");
-  } else if (websiteStatus === "free_builder") {
-    reasons.push("Using free website builder — needs upgrade");
-  }
-
-  if (reviewCount < 20) {
-    reasons.push(`Only ${reviewCount} reviews — likely new/small crew`);
-  }
-
-  return { tier: "gold", reasons, reviewCount, rating };
+  // ---- Bronze: 100-299 reviews, probably has marketing ----
+  reasons.push(`${reviewCount} reviews — mid-size, may already have marketing`);
+  return { tier: "bronze", reasons, reviewCount, rating };
 }
 
 // --------------- Pipeline Insert ---------------
