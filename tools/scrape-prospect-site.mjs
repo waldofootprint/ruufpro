@@ -292,6 +292,30 @@ async function extractSiteData(page) {
 
     result.service_areas = result.service_areas.slice(0, 20);
 
+    // ---- Estimate Widget Detection ----
+    // Check if they already have Roofle, Roofr, EagleView, or similar estimate tools
+    const htmlLower = document.documentElement.innerHTML.toLowerCase();
+    const estimateWidgets = [];
+
+    if (htmlLower.includes("roofle") || htmlLower.includes("roofle.com")) estimateWidgets.push("roofle");
+    if (htmlLower.includes("roofr") || htmlLower.includes("roofr.com")) estimateWidgets.push("roofr");
+    if (htmlLower.includes("eagleview") || htmlLower.includes("eagle view")) estimateWidgets.push("eagleview");
+    if (htmlLower.includes("roofquote") || htmlLower.includes("roof-quote")) estimateWidgets.push("roofquote");
+    if (htmlLower.includes("instant estimate") || htmlLower.includes("instant quote") || htmlLower.includes("online estimate")) {
+      // Check for iframes (common embed pattern)
+      const iframes = document.querySelectorAll("iframe");
+      for (const iframe of iframes) {
+        const src = (iframe.getAttribute("src") || "").toLowerCase();
+        if (src.includes("roofle") || src.includes("roofr") || src.includes("eagleview") || src.includes("estimate")) {
+          estimateWidgets.push("iframe_widget");
+          break;
+        }
+      }
+    }
+
+    result.has_estimate_widget = estimateWidgets.length > 0;
+    result.estimate_widget_providers = estimateWidgets;
+
     return result;
   });
 }
@@ -762,12 +786,11 @@ async function main() {
 
       if (data.success) {
         scraped++;
+        const form = data.form || {};
         const serviceCount = data.services?.length || 0;
         const reviewCount = data.reviews?.length || 0;
         const formStatus = form.found ? (form.has_captcha ? "CAPTCHA" : `${form.form_type}`) : "none";
         console.log(`  ✓ Found: ${serviceCount} services, ${reviewCount} reviews, phone: ${data.phone || "none"}, form: ${formStatus}`);
-
-        const form = data.form || {};
         results.push({
           ...row,
           scraped_tagline: data.tagline || "",
@@ -786,6 +809,8 @@ async function main() {
           form_honeypot_fields: form.honeypot_fields?.length ? JSON.stringify(form.honeypot_fields) : "",
           form_required_selects: form.required_selects?.length ? JSON.stringify(form.required_selects) : "",
           form_required_radios: form.required_radios?.length ? JSON.stringify(form.required_radios) : "",
+          has_estimate_widget: data.has_estimate_widget ? "true" : "false",
+          estimate_widget_providers: (data.estimate_widget_providers || []).join("; "),
         });
       } else {
         failed++;

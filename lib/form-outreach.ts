@@ -226,6 +226,19 @@ export async function submitContactForm(
       }
     }
 
+    // ---- Solve CAPTCHA if present ----
+    const captchaSolved = await solveCaptchaIfPresent(page, input.formUrl);
+    if (captchaSolved === "failed") {
+      return {
+        success: false,
+        status: "captcha_blocked",
+        error: "CAPTCHA detected but solver failed",
+      };
+    }
+    if (captchaSolved === "solved") {
+      console.log(`Form submit [${input.prospectId.slice(0, 8)}]: CAPTCHA solved via CapSolver`);
+    }
+
     // ---- Dry run: screenshot filled form without submitting ----
     if (input.dryRun) {
       const screenshotPath = path.join(
@@ -375,4 +388,206 @@ export async function submitContactForm(
 async function randomDelay(page: { waitForTimeout: (ms: number) => Promise<void> }): Promise<void> {
   const ms = 800 + Math.random() * 1400;
   await page.waitForTimeout(ms);
+}
+
+// ---------------------------------------------------------------------------
+// CAPTCHA Solving via CapSolver
+// ---------------------------------------------------------------------------
+
+/**
+ * Detect and solve reCAPTCHA/hCaptcha on the current page.
+ * Returns "solved", "none" (no CAPTCHA found), or "failed".
+ *
+ * Flow:
+ * 1. Check page for reCAPTCHA v2/v3 or hCaptcha sitekey
+ * 2. Send solve request to CapSolver API
+ * 3. Poll for solution (up to 60s)
+ * 4. Inject the token into the page's hidden response field
+ */
+async function solveCaptchaIfPresent(
+  page: { evaluate: (fn: (...args: unknown[]) => unknown, ...args: unknown[]) => Promise<unknown>; waitForTimeout: (ms: number) => Promise<void> },
+  formUrl: string
+): Promise<"solved" | "none" | "failed"> {
+  const apiKey = process.env.CAPSOLVER_API_KEY;
+  if (!apiKey) return "none"; // No key = skip CAPTCHA solving silently
+
+  // Detect CAPTCHA type and sitekey from the page
+  const captchaInfo = await page.evaluate(() => {
+    const html = document.documentElement.innerHTML;
+
+    // reCAPTCHA v2 (checkbox)
+    const recaptchaV2 = document.querySelector(".g-recaptcha");
+    if (recaptchaV2) {
+      const sitekey = recaptchaV2.getAttribute("data-sitekey");
+      if (sitekey) return { type: "recaptcha_v2", sitekey };
+    }
+
+    // reCAPTCHA v2 invisible
+    const recaptchaInvisible = document.querySelector('[data-sitekey][data-size="invisible"]');
+    if (recaptchaInvisible) {
+      const sitekey = recaptchaInvisible.getAttribute("data-sitekey");
+      if (sitekey) return { type: "recaptcha_v2_invisible", sitekey };
+    }
+
+    // reCAPTCHA v3 (script-based, no visible widget)
+    const v3Match = html.match(/grecaptcha\.execute\(['"]([^'"]+)['"]/);
+    if (v3Match) return { type: "recaptcha_v3", sitekey: v3Match[1] };
+
+    // Fallback: any data-sitekey attribute
+    const anySitekey = document.querySelector("[data-sitekey]");
+    if (anySitekey) {
+      const sitekey = anySitekey.getAttribute("data-sitekey");
+      if (sitekey) return { type: "recaptcha_v2", sitekey };
+    }
+
+    // hCaptcha
+    const hcaptcha = document.querySelector(".h-captcha");
+    if (hcaptcha) {
+      const sitekey = hcaptcha.getAttribute("data-sitekey");
+      if (sitekey) return { type: "hcaptcha", sitekey };
+    }
+
+    // Check for reCAPTCHA script loaded but no visible element
+    if (html.includes("recaptcha/api.js") || html.includes("recaptcha/enterprise.js")) {
+      const scriptMatch = html.match(/render[=:][\s'"]*([a-zA-Z0-9_-]{20,})/);
+      if (scriptMatch) return { type: "recaptcha_v3", sitekey: scriptMatch[1] };
+    }
+
+    return null;
+  }) as { type: string; sitekey: string } | null;
+
+  if (!captchaInfo) return "none";
+
+  console.log(`CAPTCHA detected: ${captchaInfo.type} (sitekey: ${captchaInfo.sitekey.slice(0, 20)}...)`);
+
+  try {
+    // Create task with CapSolver
+    const taskType =
+      captchaInfo.type === "hcaptcha"
+        ? "HCaptchaTaskProxyLess"
+        : captchaInfo.type === "recaptcha_v3"
+          ? "ReCaptchaV3TaskProxyLess"
+          : "ReCaptchaV2TaskProxyLess";
+
+    const createBody: Record<string, unknown> = {
+      clientKey: apiKey,
+      task: {
+        type: taskType,
+        websiteURL: formUrl,
+        websiteKey: captchaInfo.sitekey,
+      },
+    };
+
+    // v3 needs page action and minimum score
+    if (captchaInfo.type === "recaptcha_v3") {
+      (createBody.task as Record<string, unknown>).pageAction = "submit";
+      (createBody.task as Record<string, unknown>).minScore = 0.5;
+    }
+
+    const createRes = await fetch("https://api.capsolver.com/createTask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(createBody),
+    });
+    const createData = (await createRes.json()) as { errorId: number; taskId?: string; errorDescription?: string };
+
+    if (createData.errorId !== 0 || !createData.taskId) {
+      console.warn(`CapSolver createTask failed: ${createData.errorDescription || "unknown error"}`);
+      return "failed";
+    }
+
+    // Poll for result (up to 60 seconds)
+    const taskId = createData.taskId;
+    const deadline = Date.now() + 60000;
+
+    while (Date.now() < deadline) {
+      await page.waitForTimeout(3000);
+
+      const pollRes = await fetch("https://api.capsolver.com/getTaskResult", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientKey: apiKey, taskId }),
+      });
+      const pollData = (await pollRes.json()) as {
+        status: string;
+        solution?: { gRecaptchaResponse?: string; token?: string };
+        errorDescription?: string;
+      };
+
+      if (pollData.status === "ready" && pollData.solution) {
+        const token =
+          pollData.solution.gRecaptchaResponse || pollData.solution.token || "";
+
+        if (!token) {
+          console.warn("CapSolver returned empty token");
+          return "failed";
+        }
+
+        // Inject the token into the page
+        await page.evaluate((solveToken: unknown) => {
+          const t = solveToken as string;
+          // reCAPTCHA response textarea
+          const textarea = document.querySelector(
+            "#g-recaptcha-response, [name='g-recaptcha-response']"
+          ) as HTMLTextAreaElement | null;
+          if (textarea) {
+            textarea.style.display = "block";
+            textarea.value = t;
+          }
+
+          // Also try all textareas with recaptcha in the name (some forms have multiple)
+          document
+            .querySelectorAll("textarea[name*='recaptcha']")
+            .forEach((el) => {
+              (el as HTMLTextAreaElement).value = t;
+            });
+
+          // hCaptcha response
+          const hResponse = document.querySelector(
+            "[name='h-captcha-response']"
+          ) as HTMLTextAreaElement | null;
+          if (hResponse) hResponse.value = t;
+
+          // Call grecaptcha callback if it exists
+          const w = window as unknown as Record<string, unknown>;
+          if (w.___grecaptcha_cfg) {
+            const cfg = w.___grecaptcha_cfg as Record<string, Record<string, unknown>>;
+            const clients = cfg.clients;
+            if (clients) {
+              for (const key of Object.keys(clients)) {
+                const client = clients[key] as Record<string, unknown>;
+                // Walk the client object to find callback
+                const findCallback = (obj: Record<string, unknown>): ((token: string) => void) | null => {
+                  for (const k of Object.keys(obj)) {
+                    const v = obj[k];
+                    if (typeof v === "function" && k.length < 3) return v as (token: string) => void;
+                    if (v && typeof v === "object") {
+                      const found = findCallback(v as Record<string, unknown>);
+                      if (found) return found;
+                    }
+                  }
+                  return null;
+                };
+                const cb = findCallback(client);
+                if (cb) cb(t);
+              }
+            }
+          }
+        }, token);
+
+        return "solved";
+      }
+
+      if (pollData.status === "failed") {
+        console.warn(`CapSolver task failed: ${pollData.errorDescription || "unknown"}`);
+        return "failed";
+      }
+    }
+
+    console.warn("CapSolver: timed out waiting for solution");
+    return "failed";
+  } catch (err) {
+    console.warn(`CapSolver error: ${err instanceof Error ? err.message : "unknown"}`);
+    return "failed";
+  }
 }

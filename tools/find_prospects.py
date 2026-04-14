@@ -152,6 +152,8 @@ def main():
         default="all",
         help="Filter by website presence. 'weak_website' = directory listings or free builders. Default: all",
     )
+    parser.add_argument("--min-reviews", type=int, default=0, help="Minimum Google review count (default: 0)")
+    parser.add_argument("--max-reviews", type=int, default=999999, help="Maximum Google review count (default: no limit)")
     parser.add_argument("--dry-run", action="store_true", help="Show cost estimate without making API calls")
     args = parser.parse_args()
 
@@ -200,7 +202,13 @@ def main():
         "all": lambda r: True,
     }
     filtered = [r for r in enriched if filter_map[args.filter](r)]
-    print(f"\nAfter filter '{args.filter}': {len(filtered)} prospects")
+    print(f"\nAfter website filter '{args.filter}': {len(filtered)} prospects")
+
+    # Step 3b: Apply review count filter
+    if args.min_reviews > 0 or args.max_reviews < 999999:
+        before = len(filtered)
+        filtered = [r for r in filtered if args.min_reviews <= int(r.get("google_review_count", 0)) <= args.max_reviews]
+        print(f"After review filter ({args.min_reviews}-{args.max_reviews}): {len(filtered)} prospects (removed {before - len(filtered)})")
 
     # Step 4: Save to CSV
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
