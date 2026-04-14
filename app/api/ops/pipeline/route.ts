@@ -215,10 +215,6 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      // Unique constraint on week_number + week_year — append a suffix
-      if (error.code === "23505") {
-        return NextResponse.json({ error: "A batch already exists for this week. Use the existing one or wait until next week." }, { status: 409 });
-      }
       throw error;
     }
 

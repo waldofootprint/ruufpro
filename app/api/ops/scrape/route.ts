@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireOpsAuth } from "@/lib/ops-auth";
 import { inngest } from "@/lib/inngest/client";
+import { checkSpending, recordSpending } from "@/lib/spending-guard";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -87,6 +88,8 @@ export async function POST(req: NextRequest) {
       no_website_only: body.no_website_only ?? false,
     };
 
+    const dryRun = body.dry_run === true;
+
     if (!batch_id) {
       return NextResponse.json({ error: "batch_id required" }, { status: 400 });
     }
@@ -103,10 +106,103 @@ export async function POST(req: NextRequest) {
     }
 
     const cities: string[] = body.cities || batch.city_targets || ["Tampa"];
+
+    // ── SPENDING GUARD — check daily cap before any API calls ──
+    // Worst case: limit text searches + limit detail calls
+    const maxSearchCalls = cities.length * 2; // ~2 pages per city
+    const maxDetailCalls = limit;
+    const estimatedMaxCost = (maxSearchCalls * 0.032) + (maxDetailCalls * 0.017);
+
+    const spendingCheck = await checkSpending(estimatedMaxCost);
+    if (!spendingCheck.allowed) {
+      return NextResponse.json({
+        error: "Daily spending cap reached",
+        details: spendingCheck.reason,
+        spent_today: `$${spendingCheck.spent_today.toFixed(2)}`,
+        cap: `$${spendingCheck.cap}`,
+      }, { status: 429 });
+    }
     const perCity = Math.ceil(limit / cities.length);
+
+    // ── DEDUP CHECK FIRST — load existing names BEFORE any expensive API calls ──
+    // Only check active/completed batches — orphaned rows from deleted batches don't count
+    const { data: activeBatches } = await supabase
+      .from("prospect_batches")
+      .select("id")
+      .in("status", ["active", "completed"]);
+    const activeBatchIds = (activeBatches || []).map((b: any) => b.id);
+
+    let existingPipeline: any[] = [];
+    if (activeBatchIds.length > 0) {
+      const { data } = await supabase
+        .from("prospect_pipeline")
+        .select("business_name, city, google_place_id")
+        .in("batch_id", activeBatchIds);
+      existingPipeline = data || [];
+    }
+
+    const existingNames = new Set(
+      existingPipeline.map((p: any) => `${p.business_name}|${p.city}`.toLowerCase())
+    );
+    const existingPlaceIds = new Set(
+      existingPipeline.filter((p: any) => p.google_place_id).map((p: any) => p.google_place_id)
+    );
+
+    // ── DRY RUN MODE — text search only, no details API, no inserts ──
+    // Respects the limit: only searches enough pages to fill the requested count.
+    // Shows ALL results from the searches we paid for — nothing gets thrown away.
+    if (dryRun) {
+      let searchCalls = 0;
+      let newFound = 0;
+      const preview: { name: string; city: string; is_duplicate: boolean; place_id: string }[] = [];
+
+      for (const cityName of cities) {
+        // Stop searching if we already have enough new prospects
+        if (newFound >= limit) break;
+
+        const query = `roofing contractor in ${cityName}`;
+        const results = await searchPlaces(query);
+        searchCalls++;
+
+        for (const place of (results.results || [])) {
+          const isDuplicate = existingPlaceIds.has(place.place_id) ||
+            existingNames.has(`${(place.name || "").toLowerCase()}|${cityName.toLowerCase()}`);
+
+          preview.push({
+            name: place.name || "Unknown",
+            city: cityName,
+            is_duplicate: isDuplicate,
+            place_id: place.place_id,
+          });
+
+          if (!isDuplicate) newFound++;
+        }
+      }
+
+      const newCount = preview.filter(p => !p.is_duplicate).length;
+      const dupCount = preview.filter(p => p.is_duplicate).length;
+      const detailCost = newCount * 0.017;
+      const searchCost = searchCalls * 0.032;
+
+      // Record the text search cost (we did spend money on text searches)
+      await recordSpending("google_text_search", searchCalls, 0.032, `Dry run: ${cities.join(", ")}`);
+
+      return NextResponse.json({
+        dry_run: true,
+        found: preview.length,
+        new_prospects: newCount,
+        duplicates: dupCount,
+        search_api_calls: searchCalls,
+        search_cost: `$${searchCost.toFixed(2)}`,
+        estimated_detail_cost: `$${detailCost.toFixed(2)}`,
+        estimated_total_cost: `$${(searchCost + detailCost).toFixed(2)}`,
+        preview,
+      });
+    }
 
     const prospects: Prospect[] = [];
     let apiCalls = 0;
+    let duplicatesSkippedBeforeApi = 0;
 
     // Scrape each city
     for (const city of cities) {
@@ -125,7 +221,21 @@ export async function POST(req: NextRequest) {
         for (const place of results.results) {
           if (prospects.length >= limit) break;
 
-          // Get details
+          // ── DEDUP BEFORE DETAILS CALL — skip the $0.017 API call entirely ──
+          if (existingPlaceIds.has(place.place_id)) {
+            duplicatesSkippedBeforeApi++;
+            continue;
+          }
+          // Also check by name from the text search result (place.name is available)
+          const searchName = (place.name || "").toLowerCase();
+          const roughCity = city.toLowerCase();
+          const nameKey = `${searchName}|${roughCity}`;
+          if (existingNames.has(nameKey)) {
+            duplicatesSkippedBeforeApi++;
+            continue;
+          }
+
+          // Only NOW call the expensive details API
           const details = await getPlaceDetails(place.place_id);
           apiCalls++;
 
@@ -144,6 +254,10 @@ export async function POST(req: NextRequest) {
 
           const { city: parsedCity, state } = parseCityState(details.formatted_address || "");
 
+          // Final dedup check with the exact name from details
+          const exactKey = `${details.name}|${parsedCity || city}`.toLowerCase();
+          if (existingNames.has(exactKey)) continue;
+
           prospects.push({
             business_name: details.name,
             phone: details.formatted_phone_number || null,
@@ -156,6 +270,9 @@ export async function POST(req: NextRequest) {
             google_place_id: place.place_id || null,
           });
 
+          // Add to dedup sets so we don't double-count within this scrape
+          existingNames.add(exactKey);
+          existingPlaceIds.add(place.place_id);
           cityCount++;
         }
 
@@ -166,16 +283,6 @@ export async function POST(req: NextRequest) {
         await new Promise((r) => setTimeout(r, 2000));
       }
     }
-
-    // Check for duplicates across ALL batches (not just this one).
-    // Prevents the same roofer from getting multiple outreach emails.
-    const { data: existingPipeline } = await supabase
-      .from("prospect_pipeline")
-      .select("business_name, city");
-
-    const existingNames = new Set(
-      (existingPipeline || []).map((p: any) => `${p.business_name}|${p.city}`.toLowerCase())
-    );
 
     // Insert new prospects
     let inserted = 0;
@@ -248,15 +355,26 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const estimatedCost = (apiCalls * 0.03).toFixed(2);
+    // Record actual spending
+    // Count text search calls separately from detail calls
+    const textSearchCalls = cities.length; // At minimum 1 per city
+    const detailCalls = apiCalls - textSearchCalls;
+    await recordSpending("google_text_search", textSearchCalls, 0.032, `Scrape: ${cities.join(", ")}`);
+    if (detailCalls > 0) {
+      await recordSpending("google_place_details", detailCalls, 0.017, `Scrape: ${inserted} inserted`);
+    }
+
+    const estimatedCost = (textSearchCalls * 0.032 + detailCalls * 0.017).toFixed(2);
 
     return NextResponse.json({
       success: true,
       scraped: prospects.length,
       inserted,
-      duplicates_skipped: prospects.length - inserted,
+      duplicates_skipped_before_api: duplicatesSkippedBeforeApi,
+      duplicates_skipped_at_insert: prospects.length - inserted,
       api_calls: apiCalls,
       estimated_cost: `$${estimatedCost}`,
+      estimated_saved: `$${(duplicatesSkippedBeforeApi * 0.017).toFixed(2)}`,
       auto_enrich_triggered: enrichableIds.length > 0,
     });
   } catch (err: any) {

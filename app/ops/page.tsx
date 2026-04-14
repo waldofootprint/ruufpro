@@ -123,6 +123,10 @@ export default function OpsPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [batchAction, setBatchAction] = useState<string | null>(null); // "batchId" of open dropdown
   const [confirmAction, setConfirmAction] = useState<{ type: string; batchId: string; label: string } | null>(null);
+  // Dry run preview
+  const [dryRunResult, setDryRunResult] = useState<any>(null);
+  const [dryRunLoading, setDryRunLoading] = useState(false);
+  const [showAllPreview, setShowAllPreview] = useState(false);
   // Scrape filters
   const [scrapeMinRating, setScrapeMinRating] = useState(0);
   const [scrapeMaxReviews, setScrapeMaxReviews] = useState(100);
@@ -283,7 +287,40 @@ export default function OpsPage() {
     }
   }
 
-  async function handleScrapeMore(batchId: string) {
+  // Step 1: Dry run — preview what we'd scrape, show cost
+  async function handleDryRun(batchId: string) {
+    setDryRunLoading(true);
+    setDryRunResult(null);
+    const cities = scrapeCities.split(",").map(c => c.trim()).filter(Boolean);
+    try {
+      const res = await fetch("/api/ops/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch_id: batchId,
+          limit: scrapeCount,
+          cities,
+          min_rating: scrapeMinRating,
+          max_reviews: scrapeMaxReviews,
+          no_website_only: scrapeNoWebsiteOnly,
+          dry_run: true,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDryRunResult({ ...data, batchId });
+      } else {
+        alert(`Dry run failed: ${data.error}${data.details ? `\n${data.details}` : ""}`);
+      }
+    } catch (err) {
+      alert("Dry run request failed — check console");
+    } finally {
+      setDryRunLoading(false);
+    }
+  }
+
+  // Step 2: Confirm and execute the real scrape
+  async function handleConfirmScrape(batchId: string) {
     setScraping(batchId);
     const cities = scrapeCities.split(",").map(c => c.trim()).filter(Boolean);
     try {
@@ -301,11 +338,12 @@ export default function OpsPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(`Scraped ${data.inserted} new leads (${data.duplicates_skipped} duplicates skipped)\nAPI cost: ${data.estimated_cost}`);
+        alert(`Scraped ${data.inserted} new leads (${data.duplicates_skipped_before_api} duplicates skipped before API)\nAPI cost: ${data.estimated_cost}\nSaved: ${data.estimated_saved}`);
         setScrapeOpen(null);
+        setDryRunResult(null);
         await fetchPipeline();
       } else {
-        alert(`Scrape failed: ${data.error}`);
+        alert(`Scrape failed: ${data.error}${data.details ? `\n${data.details}` : ""}`);
       }
     } catch (err) {
       console.error("Scrape failed:", err);
@@ -315,12 +353,14 @@ export default function OpsPage() {
     }
   }
 
-  async function handleCreateBatch() {
+  // New batch: Step 1 — create batch + dry run
+  async function handleNewBatchDryRun() {
     const cities = newBatchCities.split(",").map(c => c.trim()).filter(Boolean);
     if (cities.length === 0) { alert("Enter at least one city"); return; }
     setCreatingBatch(true);
+    setDryRunResult(null);
     try {
-      // Step 1: Create batch
+      // Create the batch first
       const res = await fetch("/api/ops/pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -333,8 +373,8 @@ export default function OpsPage() {
       }
       const { batch } = await res.json();
 
-      // Step 2: Scrape leads into it
-      const scrapeRes = await fetch("/api/ops/scrape", {
+      // Dry run the scrape
+      const dryRes = await fetch("/api/ops/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -344,20 +384,49 @@ export default function OpsPage() {
           min_rating: newBatchMinRating,
           max_reviews: newBatchMaxReviews,
           no_website_only: newBatchNoWebsiteOnly,
+          dry_run: true,
+        }),
+      });
+      const dryData = await dryRes.json();
+      if (dryRes.ok) {
+        setDryRunResult({ ...dryData, batchId: batch.id, isNewBatch: true });
+      } else {
+        alert(`Dry run failed: ${dryData.error}${dryData.details ? `\n${dryData.details}` : ""}`);
+      }
+    } catch (err) { alert("Failed to create batch"); }
+    finally { setCreatingBatch(false); }
+  }
+
+  // New batch: Step 2 — confirm scrape
+  async function handleNewBatchConfirmScrape(batchId: string) {
+    setCreatingBatch(true);
+    const cities = newBatchCities.split(",").map(c => c.trim()).filter(Boolean);
+    try {
+      const scrapeRes = await fetch("/api/ops/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch_id: batchId,
+          limit: newBatchCount,
+          cities,
+          min_rating: newBatchMinRating,
+          max_reviews: newBatchMaxReviews,
+          no_website_only: newBatchNoWebsiteOnly,
         }),
       });
       const scrapeData = await scrapeRes.json();
       if (scrapeRes.ok) {
-        alert(`Batch created! Scraped ${scrapeData.inserted} leads.\nAPI cost: ${scrapeData.estimated_cost}`);
+        alert(`Scraped ${scrapeData.inserted} new leads.\nAPI cost: ${scrapeData.estimated_cost}\nSaved: ${scrapeData.estimated_saved}`);
       } else {
-        alert(`Batch created but scrape failed: ${scrapeData.error}`);
+        alert(`Scrape failed: ${scrapeData.error}${scrapeData.details ? `\n${scrapeData.details}` : ""}`);
       }
 
       setNewBatchOpen(false);
       setNewBatchCities("");
       setNewBatchCount(25);
+      setDryRunResult(null);
       await fetchPipeline();
-    } catch (err) { alert("Failed to create batch"); }
+    } catch (err) { alert("Failed to scrape"); }
     finally { setCreatingBatch(false); }
   }
 
@@ -706,6 +775,76 @@ export default function OpsPage() {
                 </div>
               </div>
 
+              {/* Dry run results */}
+              {dryRunResult && dryRunResult.batchId === scrapeOpen && (() => {
+                const allPreview = dryRunResult.preview || [];
+                const newOnes = allPreview.filter((p: any) => !p.is_duplicate);
+                const displayList = showAllPreview ? allPreview : newOnes.slice(0, scrapeCount);
+                const hiddenNew = Math.max(0, newOnes.length - scrapeCount);
+
+                return (
+                  <div className="bg-white border border-[#34C759] rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#34C759]">Preview Results</div>
+                      <div className="text-[10px] text-[#8E8E93]">
+                        Search cost: {dryRunResult.search_cost} (spent) · Detail cost: {dryRunResult.estimated_detail_cost} (if confirmed)
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <div className="text-sm font-bold text-[#1D1D1F]">{dryRunResult.new_prospects}</div>
+                        <div className="text-[9px] text-[#8E8E93] uppercase">New</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-[#8E8E93]">{dryRunResult.duplicates}</div>
+                        <div className="text-[9px] text-[#8E8E93] uppercase">Duplicates</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-[#92400E]">{dryRunResult.estimated_total_cost}</div>
+                        <div className="text-[9px] text-[#8E8E93] uppercase">Total Cost</div>
+                      </div>
+                    </div>
+
+                    {dryRunResult.new_prospects === 0 && (
+                      <div className="text-[11px] text-[#C62828] font-medium bg-[#FFEBEE] rounded px-2 py-1">
+                        All prospects are duplicates — scraping would cost money for zero new leads.
+                      </div>
+                    )}
+
+                    {/* Prospect list */}
+                    <div className="max-h-[300px] overflow-y-auto border border-[#E5E5EA] rounded-lg">
+                      {displayList.map((p: any, i: number) => (
+                        <div key={`${p.place_id}-${i}`} className={`flex items-center justify-between px-3 py-1.5 border-b border-[#F5F5F5] last:border-b-0 ${p.is_duplicate ? "bg-[#FFEBEE]" : ""}`}>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-[11px] text-[#8E8E93] w-5 text-right flex-shrink-0">{i + 1}</span>
+                            <span className={`text-[12px] truncate ${p.is_duplicate ? "text-[#C62828] line-through" : "text-[#1D1D1F] font-medium"}`}>{p.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-[10px] text-[#8E8E93]">{p.city}</span>
+                            {p.is_duplicate && (
+                              <span className="text-[9px] font-bold uppercase bg-[#FF3B30] text-white px-1.5 py-0.5 rounded">DUPLICATE</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Show all toggle */}
+                    {(hiddenNew > 0 || dryRunResult.duplicates > 0) && (
+                      <button
+                        onClick={() => setShowAllPreview(!showAllPreview)}
+                        className="text-[11px] text-[#007AFF] font-medium hover:underline"
+                      >
+                        {showAllPreview
+                          ? `Show top ${scrapeCount} only`
+                          : `Show all ${allPreview.length} (${hiddenNew} more new + ${dryRunResult.duplicates} duplicates)`}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Actions */}
               <div className="flex justify-between items-center pt-1">
                 <a
@@ -716,13 +855,33 @@ export default function OpsPage() {
                 >
                   Google Maps API usage dashboard →
                 </a>
-                <button
-                  onClick={() => handleScrapeMore(scrapeOpen)}
-                  disabled={scraping === scrapeOpen || !scrapeCities.trim()}
-                  className="text-[11px] font-semibold text-white bg-[#007AFF] hover:bg-[#0056D6] disabled:bg-[#B0D4FF] px-5 py-2 rounded-lg transition-colors"
-                >
-                  {scraping === scrapeOpen ? "Scraping..." : `Scrape ${scrapeCount} Leads`}
-                </button>
+                <div className="flex gap-2">
+                  {!dryRunResult || dryRunResult.batchId !== scrapeOpen ? (
+                    <button
+                      onClick={() => handleDryRun(scrapeOpen)}
+                      disabled={dryRunLoading || !scrapeCities.trim()}
+                      className="text-[11px] font-semibold text-white bg-[#007AFF] hover:bg-[#0056D6] disabled:bg-[#B0D4FF] px-5 py-2 rounded-lg transition-colors"
+                    >
+                      {dryRunLoading ? "Previewing..." : "Preview Cost"}
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setDryRunResult(null)}
+                        className="text-[11px] font-semibold text-[#8E8E93] bg-[#F5F5F7] hover:bg-[#E5E5EA] px-4 py-2 rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleConfirmScrape(scrapeOpen)}
+                        disabled={scraping === scrapeOpen || dryRunResult.new_prospects === 0}
+                        className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-5 py-2 rounded-lg transition-colors"
+                      >
+                        {scraping === scrapeOpen ? "Scraping..." : `Confirm & Scrape (${dryRunResult.estimated_total_cost})`}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -822,16 +981,106 @@ export default function OpsPage() {
                 </div>
               </div>
 
+              {/* Dry run results */}
+              {dryRunResult && dryRunResult.isNewBatch && (() => {
+                const allPreview = dryRunResult.preview || [];
+                const newOnes = allPreview.filter((p: any) => !p.is_duplicate);
+                const displayList = showAllPreview ? allPreview : newOnes.slice(0, newBatchCount);
+                const hiddenNew = Math.max(0, newOnes.length - newBatchCount);
+
+                return (
+                  <div className="bg-white border border-[#34C759] rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#34C759]">Preview Results</div>
+                      <div className="text-[10px] text-[#8E8E93]">
+                        Search cost: {dryRunResult.search_cost} (spent) · Detail cost: {dryRunResult.estimated_detail_cost} (if confirmed)
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <div className="text-sm font-bold text-[#1D1D1F]">{dryRunResult.new_prospects}</div>
+                        <div className="text-[9px] text-[#8E8E93] uppercase">New</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-[#8E8E93]">{dryRunResult.duplicates}</div>
+                        <div className="text-[9px] text-[#8E8E93] uppercase">Duplicates</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-[#92400E]">{dryRunResult.estimated_total_cost}</div>
+                        <div className="text-[9px] text-[#8E8E93] uppercase">Total Cost</div>
+                      </div>
+                    </div>
+
+                    {dryRunResult.new_prospects === 0 && (
+                      <div className="text-[11px] text-[#C62828] font-medium bg-[#FFEBEE] rounded px-2 py-1">
+                        All prospects are duplicates — scraping would cost money for zero new leads.
+                      </div>
+                    )}
+
+                    {/* Prospect list */}
+                    <div className="max-h-[300px] overflow-y-auto border border-[#E5E5EA] rounded-lg">
+                      {displayList.map((p: any, i: number) => (
+                        <div key={`${p.place_id}-${i}`} className={`flex items-center justify-between px-3 py-1.5 border-b border-[#F5F5F5] last:border-b-0 ${p.is_duplicate ? "bg-[#FFEBEE]" : ""}`}>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-[11px] text-[#8E8E93] w-5 text-right flex-shrink-0">{i + 1}</span>
+                            <span className={`text-[12px] truncate ${p.is_duplicate ? "text-[#C62828] line-through" : "text-[#1D1D1F] font-medium"}`}>{p.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-[10px] text-[#8E8E93]">{p.city}</span>
+                            {p.is_duplicate && (
+                              <span className="text-[9px] font-bold uppercase bg-[#FF3B30] text-white px-1.5 py-0.5 rounded">DUPLICATE</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Show all toggle */}
+                    {(hiddenNew > 0 || dryRunResult.duplicates > 0) && (
+                      <button
+                        onClick={() => setShowAllPreview(!showAllPreview)}
+                        className="text-[11px] text-[#007AFF] font-medium hover:underline"
+                      >
+                        {showAllPreview
+                          ? `Show top ${newBatchCount} only`
+                          : `Show all ${allPreview.length} (${hiddenNew} more new + ${dryRunResult.duplicates} duplicates)`}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Actions */}
               <div className="flex justify-between items-center pt-1">
                 <a href="https://console.cloud.google.com/google/maps-apis/metrics" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#007AFF] font-medium hover:underline">Google Maps API usage →</a>
-                <button
-                  onClick={handleCreateBatch}
-                  disabled={creatingBatch || !newBatchCities.trim()}
-                  className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-5 py-2 rounded-lg transition-colors"
-                >
-                  {creatingBatch ? "Creating & Scraping..." : `Create Batch & Scrape ${newBatchCount} Leads`}
-                </button>
+                <div className="flex gap-2">
+                  {!dryRunResult || !dryRunResult.isNewBatch ? (
+                    <button
+                      onClick={handleNewBatchDryRun}
+                      disabled={creatingBatch || !newBatchCities.trim()}
+                      className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-5 py-2 rounded-lg transition-colors"
+                    >
+                      {creatingBatch ? "Creating..." : "Create Batch & Preview Cost"}
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setDryRunResult(null)}
+                        className="text-[11px] font-semibold text-[#8E8E93] bg-[#F5F5F7] hover:bg-[#E5E5EA] px-4 py-2 rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleNewBatchConfirmScrape(dryRunResult.batchId)}
+                        disabled={creatingBatch || dryRunResult.new_prospects === 0}
+                        className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-5 py-2 rounded-lg transition-colors"
+                      >
+                        {creatingBatch ? "Scraping..." : `Confirm & Scrape (${dryRunResult.estimated_total_cost})`}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
