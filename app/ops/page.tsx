@@ -992,17 +992,58 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
   const [sortAsc, setSortAsc] = useState(true);
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [expandedLead, setExpandedLead] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [advancing, setAdvancing] = useState(false);
 
-  useEffect(() => {
-    async function fetchLeads() {
-      try {
-        const res = await fetch(`/api/ops/pipeline/leads?batch_id=${batchId}`);
-        if (res.ok) setLeads(await res.json());
-      } catch (err) { console.error("Failed to fetch leads:", err); }
-      finally { setLoading(false); }
-    }
-    fetchLeads();
-  }, [batchId]);
+  async function fetchLeads() {
+    try {
+      const res = await fetch(`/api/ops/pipeline/leads?batch_id=${batchId}`);
+      if (res.ok) setLeads(await res.json());
+    } catch (err) { console.error("Failed to fetch leads:", err); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { fetchLeads(); }, [batchId]);
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const visible = (stageFilter === "all" ? leads : leads.filter(l => l.stage === stageFilter)).map(l => l.id);
+    const allSelected = visible.every(id => selected.has(id));
+    setSelected(prev => {
+      const next = new Set(prev);
+      visible.forEach(id => allSelected ? next.delete(id) : next.add(id));
+      return next;
+    });
+  }
+
+  async function advanceSelected() {
+    if (selected.size === 0) return;
+    setAdvancing(true);
+    try {
+      const res = await fetch("/api/ops/pipeline/advance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prospect_ids: Array.from(selected) }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSelected(new Set());
+        await fetchLeads();
+        alert(`${data.advanced} prospect(s) advanced to next stage`);
+      } else {
+        const err = await res.json();
+        alert(`Failed: ${err.error}`);
+      }
+    } catch { alert("Network error"); }
+    finally { setAdvancing(false); }
+  }
 
   if (loading) return <div className="p-6 text-center text-[#8E8E93] text-sm">Loading leads...</div>;
   if (leads.length === 0) return <div className="p-6 text-center text-[#8E8E93] text-sm">No leads in this batch</div>;
@@ -1044,11 +1085,41 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
         ))}
       </div>
 
+      {/* Action bar when items selected */}
+      {selected.size > 0 && (
+        <div className="px-4 py-2.5 bg-[#EFF6FF] border-b border-[#007AFF33] flex items-center justify-between">
+          <span className="text-xs font-semibold text-[#007AFF]">{selected.size} selected</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSelected(new Set())}
+              className="text-[11px] font-medium text-[#8E8E93] hover:text-[#1D1D1F] px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Clear
+            </button>
+            <button
+              onClick={advanceSelected}
+              disabled={advancing}
+              className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-4 py-1.5 rounded-lg transition-colors"
+            >
+              {advancing ? "Advancing..." : `Approve ${selected.size} to Next Stage`}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-[#E5E5EA]">
+              <th className="px-3 py-2 w-8">
+                <input
+                  type="checkbox"
+                  checked={sorted.length > 0 && sorted.every(l => selected.has(l.id))}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer"
+                />
+              </th>
               {[
                 { key: "business_name", label: "Business" },
                 { key: "city", label: "City" },
@@ -1073,6 +1144,8 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
                   key={lead.id}
                   lead={lead}
                   isExpanded={isOpen}
+                  isSelected={selected.has(lead.id)}
+                  onSelect={() => toggleSelect(lead.id)}
                   onToggle={() => setExpandedLead(isOpen ? null : lead.id)}
                 />
               );
@@ -1087,7 +1160,7 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
 // ═══════════════════════════════════════════════════════════════════
 // LEAD ROW + EXPANDABLE DETAIL
 // ═══════════════════════════════════════════════════════════════════
-function LeadRow({ lead, isExpanded, onToggle }: { lead: any; isExpanded: boolean; onToggle: () => void }) {
+function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { lead: any; isExpanded: boolean; isSelected: boolean; onSelect: () => void; onToggle: () => void }) {
   const td = "text-xs px-3 py-2.5 border-b border-[#F5F5F5]";
   const icp = getIcpScore(lead);
   const icpStyle = ICP_STYLES[icp.tier];
@@ -1109,7 +1182,15 @@ function LeadRow({ lead, isExpanded, onToggle }: { lead: any; isExpanded: boolea
 
   return (
     <>
-      <tr className={`cursor-pointer transition-colors ${isExpanded ? "bg-[#F0F7FF]" : "hover:bg-[#F8FAFC]"}`} onClick={onToggle}>
+      <tr className={`cursor-pointer transition-colors ${isSelected ? "bg-[#EFF6FF]" : isExpanded ? "bg-[#F0F7FF]" : "hover:bg-[#F8FAFC]"}`} onClick={onToggle}>
+        <td className={`${td} w-8`} onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onSelect}
+            className="w-4 h-4 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer"
+          />
+        </td>
         <td className={`${td} font-semibold text-[#1D1D1F]`}>
           <div className="flex items-center gap-2">
             {lead.business_name || "—"}
