@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   );
   try {
     const body = await request.json();
-    const { contractor_id, lead_name, lead_phone, lead_email, lead_address, lead_message, source, estimate_low, estimate_high, estimate_material, estimate_roof_sqft, timeline: leadTimeline, financing_interest, sms_consent } = body;
+    const { contractor_id, lead_name, lead_phone, lead_email, lead_address, lead_message, source, estimate_low, estimate_high, estimate_material, estimate_roof_sqft, timeline: leadTimeline, financing_interest, sms_consent, chat_session_id } = body;
 
     if (!contractor_id || !lead_name) {
       return NextResponse.json({ error: "contractor_id and lead_name required" }, { status: 400 });
@@ -166,6 +166,19 @@ export async function POST(request: NextRequest) {
       phone: lead_phone || "no phone",
       city: lead_address || "unknown",
     }).catch(() => {});
+
+    // Mark chat conversation as lead captured (server-side, bypasses RLS)
+    if (chat_session_id && source === "ai_chatbot") {
+      const serviceSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      serviceSupabase
+        .from("chat_conversations")
+        .update({ lead_captured: true })
+        .eq("session_id", chat_session_id)
+        .then(() => {});
+    }
 
     return NextResponse.json({ emailSent, to: contractor.email });
   } catch (err) {

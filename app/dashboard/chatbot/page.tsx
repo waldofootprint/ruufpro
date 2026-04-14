@@ -69,6 +69,8 @@ const EMPTY_CONFIG: ChatbotConfigState = {
 };
 
 const TOTAL_FIELDS = 17;
+const MAX_TEXT_LENGTH = 500;
+const MAX_FAQ_COUNT = 25;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -121,9 +123,11 @@ function normalizeFromDb(data: Record<string, unknown>): ChatbotConfigState {
 }
 
 function prepareForDb(c: ChatbotConfigState) {
+  const priceLow = c.price_range_low ? Math.max(0, Math.min(parseInt(c.price_range_low, 10) || 0, 999999)) : null;
+  const priceHigh = c.price_range_high ? Math.max(0, Math.min(parseInt(c.price_range_high, 10) || 0, 999999)) : null;
   return {
-    price_range_low: c.price_range_low ? parseInt(c.price_range_low, 10) || null : null,
-    price_range_high: c.price_range_high ? parseInt(c.price_range_high, 10) || null : null,
+    price_range_low: priceLow || null,
+    price_range_high: priceHigh || null,
     offers_free_inspection: c.offers_free_inspection,
     typical_timeline_days: c.typical_timeline_days.trim() || null,
     materials_brands: c.materials_brands.trim()
@@ -385,11 +389,13 @@ export default function ChatbotPage() {
             <label className={labelClass}>Your roofing process (step by step)</label>
             <textarea
               rows={3}
+              maxLength={MAX_TEXT_LENGTH}
               placeholder="1. Free inspection  2. Written estimate  3. Schedule install  4. Roof day  5. Final walkthrough & cleanup"
               value={config.process_steps}
               onChange={(e) => updateField("process_steps", e.target.value)}
               className={textareaClass}
             />
+            <p className={hintClass}>{config.process_steps.length}/{MAX_TEXT_LENGTH}</p>
           </div>
         </div>
       </CollapsibleSection>
@@ -415,11 +421,13 @@ export default function ChatbotPage() {
               <label className={labelClass}>Describe your insurance process</label>
               <textarea
                 rows={2}
+                maxLength={MAX_TEXT_LENGTH}
                 placeholder="We handle the entire claim — meet the adjuster, document damage, submit supplements, and fight for full coverage."
                 value={config.insurance_description}
                 onChange={(e) => updateField("insurance_description", e.target.value)}
                 className={textareaClass}
               />
+              <p className={hintClass}>{config.insurance_description.length}/{MAX_TEXT_LENGTH}</p>
             </div>
           )}
 
@@ -448,11 +456,13 @@ export default function ChatbotPage() {
             <label className={labelClass}>Warranty details</label>
             <textarea
               rows={2}
+              maxLength={MAX_TEXT_LENGTH}
               placeholder="10-year workmanship warranty + 50-year GAF manufacturer warranty backed by Golden Pledge"
               value={config.warranty_description}
               onChange={(e) => updateField("warranty_description", e.target.value)}
               className={textareaClass}
             />
+            <p className={hintClass}>{config.warranty_description.length}/{MAX_TEXT_LENGTH}</p>
           </div>
 
           {/* Emergency */}
@@ -494,6 +504,7 @@ export default function ChatbotPage() {
                 <div key={i} className="border border-slate-100 rounded-lg p-3 space-y-2 bg-slate-50/50">
                   <input
                     placeholder="Question (e.g. Do you offer free estimates?)"
+                    maxLength={200}
                     value={faq.q}
                     onChange={(e) => {
                       const updated = [...config.custom_faqs];
@@ -504,6 +515,7 @@ export default function ChatbotPage() {
                   />
                   <textarea
                     rows={2}
+                    maxLength={MAX_TEXT_LENGTH}
                     placeholder="Your answer..."
                     value={faq.a}
                     onChange={(e) => {
@@ -526,13 +538,17 @@ export default function ChatbotPage() {
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => updateField("custom_faqs", [...config.custom_faqs, { q: "", a: "" }])}
-              className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 text-[12px] font-semibold text-slate-500 hover:border-violet-300 hover:text-violet-600 transition"
-            >
-              <Plus className="w-3 h-3" />
-              Add FAQ
-            </button>
+            {config.custom_faqs.length < MAX_FAQ_COUNT ? (
+              <button
+                onClick={() => updateField("custom_faqs", [...config.custom_faqs, { q: "", a: "" }])}
+                className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 text-[12px] font-semibold text-slate-500 hover:border-violet-300 hover:text-violet-600 transition"
+              >
+                <Plus className="w-3 h-3" />
+                Add FAQ ({config.custom_faqs.length}/{MAX_FAQ_COUNT})
+              </button>
+            ) : (
+              <p className="mt-2 text-[11px] text-slate-400">Maximum {MAX_FAQ_COUNT} FAQs reached</p>
+            )}
           </div>
 
           {/* Differentiators */}
@@ -540,11 +556,13 @@ export default function ChatbotPage() {
             <label className={labelClass}>What sets you apart?</label>
             <textarea
               rows={2}
+              maxLength={MAX_TEXT_LENGTH}
               placeholder="Family-owned for 15 years, same crew on every job, we pull all permits, only roofer in Tampa with in-house sheet metal"
               value={config.differentiators}
               onChange={(e) => updateField("differentiators", e.target.value)}
               className={textareaClass}
             />
+            <p className={hintClass}>{config.differentiators.length}/{MAX_TEXT_LENGTH}</p>
           </div>
 
           {/* Team */}
@@ -552,11 +570,13 @@ export default function ChatbotPage() {
             <label className={labelClass}>About your team</label>
             <textarea
               rows={2}
+              maxLength={MAX_TEXT_LENGTH}
               placeholder="Owner-operated by Mike (25 years experience), 5 W-2 crews, OSHA-10 certified"
               value={config.team_description}
               onChange={(e) => updateField("team_description", e.target.value)}
               className={textareaClass}
             />
+            <p className={hintClass}>{config.team_description.length}/{MAX_TEXT_LENGTH}</p>
           </div>
 
           {/* Payment methods */}

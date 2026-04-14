@@ -15,6 +15,7 @@ interface Props {
 export default function RileyStandalone({ contractorId, businessName }: Props) {
   const [sessionId, setSessionId] = useState("");
   const [inputValue, setInputValue] = useState("");
+  const [chatError, setChatError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,6 +33,15 @@ export default function RileyStandalone({ contractorId, businessName }: Props) {
       api: "/api/chat",
       body: { contractorId, sessionId },
     }),
+    onFinish: () => setChatError(""),
+    onError: (error) => {
+      const msg = error?.message || "";
+      if (msg.includes("429") || msg.toLowerCase().includes("too many")) {
+        setChatError("Riley is getting a lot of questions right now. Try again in a moment!");
+      } else {
+        setChatError("Having trouble connecting — please try again.");
+      }
+    },
   });
 
   useEffect(() => {
@@ -45,6 +55,12 @@ export default function RileyStandalone({ contractorId, businessName }: Props) {
       display: "flex", flexDirection: "column", height: "100vh",
       fontFamily: "'Inter', -apple-system, sans-serif", background: "#fff",
     }}>
+      <style>{`
+        @keyframes rileyBounce {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-4px); }
+        }
+      `}</style>
       {/* Header */}
       <div style={{
         padding: "12px 16px", borderBottom: "1px solid #e5e7eb",
@@ -91,13 +107,32 @@ export default function RileyStandalone({ contractorId, businessName }: Props) {
             </div>
           </div>
         ))}
+        {chatError && (
+          <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 12 }}>
+            <div style={{
+              padding: "10px 14px", borderRadius: 12, background: "#FEF2F2",
+              color: "#991B1B", fontSize: 13, lineHeight: 1.5,
+            }}>
+              {chatError}
+            </div>
+          </div>
+        )}
         {isLoading && messages[messages.length - 1]?.role === "user" && (
           <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 12 }}>
             <div style={{
-              padding: "10px 14px", borderRadius: 12, background: "#f1f5f9",
-              color: "#94a3b8", fontSize: 13,
+              padding: "10px 16px", borderRadius: 12, background: "#f1f5f9",
+              display: "flex", gap: 4, alignItems: "center",
             }}>
-              Typing...
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: 7, height: 7, borderRadius: "50%",
+                    background: "#94a3b8", display: "inline-block",
+                    animation: `rileyBounce 1.2s ease-in-out ${i * 0.15}s infinite`,
+                  }}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -121,6 +156,7 @@ export default function RileyStandalone({ contractorId, businessName }: Props) {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="Ask Riley a question..."
+          maxLength={2000}
           style={{
             flex: 1, padding: "10px 14px", borderRadius: 8,
             border: "1px solid #e5e7eb", fontSize: 13, outline: "none",

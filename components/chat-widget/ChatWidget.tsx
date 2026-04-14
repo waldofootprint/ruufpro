@@ -37,11 +37,13 @@ export default function ChatWidget({
   const [isOpen, setIsOpen] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [showLeadForm, setShowLeadForm] = useState(false);
+  const [leadDismissedAt, setLeadDismissedAt] = useState(0);
   const [leadCaptured, setLeadCaptured] = useState(false);
   const [leadForm, setLeadForm] = useState<LeadFormData>({ name: "", phone: "", email: "", address: "" });
   const [submittingLead, setSubmittingLead] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [capped, setCapped] = useState(false);
+  const [chatError, setChatError] = useState("");
   const userMsgCountRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -79,12 +81,26 @@ export default function ChatWidget({
       },
     ],
     onFinish: () => {
+      setChatError("");
       const count = userMsgCountRef.current;
-      if (count >= 3 && !leadCaptured && !showLeadForm) {
-        setShowLeadForm(true);
+      // Show lead form at message 3, and re-show at 7 if previously dismissed
+      if (!leadCaptured && !showLeadForm) {
+        if (count >= 3 && leadDismissedAt === 0) {
+          setShowLeadForm(true);
+        } else if (count >= 7 && leadDismissedAt > 0 && leadDismissedAt < 7) {
+          setShowLeadForm(true);
+        }
       }
       if (count >= 10) {
         setCapped(true);
+      }
+    },
+    onError: (error) => {
+      const msg = error?.message || "";
+      if (msg.includes("429") || msg.toLowerCase().includes("too many")) {
+        setChatError("Riley is getting a lot of questions right now. Try again in a moment!");
+      } else {
+        setChatError("Having trouble connecting — please try again.");
       }
     },
   });
@@ -139,9 +155,16 @@ export default function ChatWidget({
     [handleSend]
   );
 
+  // Basic US phone validation — 10+ digits after stripping non-numeric
+  function isValidPhone(phone: string): boolean {
+    const digits = phone.replace(/\D/g, "");
+    return digits.length >= 10 && digits.length <= 15;
+  }
+
   // Lead capture submission
   async function handleLeadSubmit() {
     if (!leadForm.name || !leadForm.phone) return;
+    if (!isValidPhone(leadForm.phone)) return;
     setSubmittingLead(true);
 
     // Insert to leads table (same pattern as contact-form.tsx)
@@ -156,7 +179,7 @@ export default function ChatWidget({
       sms_consent: false,
     });
 
-    // Notify contractor (fire-and-forget)
+    // Notify contractor (fire-and-forget) — also marks conversation as lead_captured server-side
     fetch("/api/notify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -167,17 +190,9 @@ export default function ChatWidget({
         lead_email: leadForm.email,
         lead_address: leadForm.address,
         source: "ai_chatbot",
+        chat_session_id: sessionId || undefined,
       }),
     }).catch(() => {});
-
-    // Update conversation record
-    if (sessionId) {
-      supabase
-        .from("chat_conversations")
-        .update({ lead_captured: true })
-        .eq("session_id", sessionId)
-        .then(() => {});
-    }
 
     setLeadCaptured(true);
     setShowLeadForm(false);
@@ -444,6 +459,25 @@ export default function ChatWidget({
             );
           })}
 
+          {/* Error message */}
+          {chatError && (
+            <div style={{ display: "flex", justifyContent: "flex-start" }}>
+              <div
+                style={{
+                  maxWidth: "82%",
+                  padding: "10px 14px",
+                  borderRadius: "14px 14px 14px 4px",
+                  background: isDarkTheme ? "#3A2020" : "#FEF2F2",
+                  color: isDarkTheme ? "#FCA5A5" : "#991B1B",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                }}
+              >
+                {chatError}
+              </div>
+            </div>
+          )}
+
           {/* Typing indicator */}
           {isLoading && (
             <div style={{ display: "flex", justifyContent: "flex-start" }}>
@@ -517,7 +551,7 @@ export default function ChatWidget({
                   width: "100%",
                   padding: "8px 10px",
                   fontSize: 13,
-                  border: `1px solid ${inputBorder}`,
+                  border: `1px solid ${leadForm.phone && !isValidPhone(leadForm.phone) ? "#EF4444" : inputBorder}`,
                   borderRadius: 6,
                   background: inputBg,
                   color: panelText,
@@ -526,6 +560,9 @@ export default function ChatWidget({
                   boxSizing: "border-box" as const,
                 }}
               />
+              {leadForm.phone && !isValidPhone(leadForm.phone) && (
+                <p style={{ fontSize: 11, color: "#EF4444", margin: "2px 0 0" }}>Enter a valid 10-digit phone number</p>
+              )}
               <input
                 placeholder="Email (optional)"
                 type="email"
@@ -547,7 +584,7 @@ export default function ChatWidget({
               <div style={{ display: "flex", gap: 6 }}>
                 <button
                   onClick={handleLeadSubmit}
-                  disabled={!leadForm.name || !leadForm.phone || submittingLead}
+                  disabled={!leadForm.name || !leadForm.phone || !isValidPhone(leadForm.phone) || submittingLead}
                   style={{
                     flex: 1,
                     padding: "8px 12px",
@@ -559,13 +596,13 @@ export default function ChatWidget({
                     fontWeight: 600,
                     cursor: "pointer",
                     fontFamily,
-                    opacity: !leadForm.name || !leadForm.phone || submittingLead ? 0.5 : 1,
+                    opacity: !leadForm.name || !leadForm.phone || !isValidPhone(leadForm.phone) || submittingLead ? 0.5 : 1,
                   }}
                 >
                   {submittingLead ? "Sending..." : "Connect me!"}
                 </button>
                 <button
-                  onClick={() => setShowLeadForm(false)}
+                  onClick={() => { setShowLeadForm(false); setLeadDismissedAt(userMsgCountRef.current); }}
                   style={{
                     padding: "8px 12px",
                     background: "transparent",
@@ -598,10 +635,13 @@ export default function ChatWidget({
           }}
         >
           {capped ? (
-            <p style={{ fontSize: 13, color: mutedText, textAlign: "center", width: "100%", margin: 0 }}>
+            <p
+              style={{ fontSize: 13, color: mutedText, textAlign: "center", width: "100%", margin: 0, cursor: !leadCaptured ? "pointer" : "default" }}
+              onClick={() => { if (!leadCaptured) setShowLeadForm(true); }}
+            >
               {leadCaptured
                 ? `Thanks for chatting! ${businessName} will be in touch soon.`
-                : `I'd love to keep helping — want me to have ${businessName} call you?`}
+                : `I'd love to keep helping — tap here to have ${businessName} reach out!`}
             </p>
           ) : (
             <>
@@ -610,6 +650,7 @@ export default function ChatWidget({
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Type a message..."
+                maxLength={2000}
                 disabled={isLoading}
                 style={{
                   flex: 1,

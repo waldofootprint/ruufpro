@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   // Rate limit by IP
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (isRateLimited(`chat-ip:${ip}`, MAX_PER_IP)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: CORS_HEADERS });
   }
 
   // Service role key — bypasses RLS so we can read chatbot_config (no public policy).
@@ -69,18 +69,28 @@ export async function POST(request: NextRequest) {
 
     // Validate inputs
     if (!contractorId || !UUID_REGEX.test(contractorId)) {
-      return NextResponse.json({ error: "Invalid contractorId" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid contractorId" }, { status: 400, headers: CORS_HEADERS });
     }
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return NextResponse.json({ error: "Messages required" }, { status: 400 });
+      return NextResponse.json({ error: "Messages required" }, { status: 400, headers: CORS_HEADERS });
     }
     if (!sessionId || typeof sessionId !== "string") {
-      return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+      return NextResponse.json({ error: "sessionId required" }, { status: 400, headers: CORS_HEADERS });
+    }
+
+    // Guard against oversized payloads (cost protection)
+    if (messages.length > 25) {
+      return NextResponse.json({ error: "Conversation too long" }, { status: 400, headers: CORS_HEADERS });
+    }
+    const lastMsg = messages[messages.length - 1];
+    const lastContent = typeof lastMsg?.content === "string" ? lastMsg.content : "";
+    if (lastContent.length > 2000) {
+      return NextResponse.json({ error: "Message too long" }, { status: 400, headers: CORS_HEADERS });
     }
 
     // Rate limit by contractor (daily)
     if (isRateLimited(`chat-contractor:${contractorId}`, MAX_PER_CONTRACTOR_DAY, DAY_MS)) {
-      return NextResponse.json({ error: "Daily chat limit reached" }, { status: 429 });
+      return NextResponse.json({ error: "Daily chat limit reached" }, { status: 429, headers: CORS_HEADERS });
     }
 
     // Fetch contractor — must exist and have chatbot enabled
@@ -92,7 +102,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!contractor) {
-      return NextResponse.json({ error: "Not found" }, { status: 403 });
+      return NextResponse.json({ error: "Not found" }, { status: 403, headers: CORS_HEADERS });
     }
 
     // Fetch chatbot config if the contractor has trained Riley
