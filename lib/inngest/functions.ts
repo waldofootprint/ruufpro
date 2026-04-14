@@ -1445,35 +1445,39 @@ export const prospectFormSubmit = inngest.createFunction(
     const prospectId = event.data.prospectId as string;
     if (!prospectId) throw new Error("Missing prospectId");
 
-    // Step 1: Load prospect + idempotency check
-    const prospect = await step.run("load-prospect", async () => {
+    // Step 1: Atomic claim — increment attempt count WHERE still 0.
+    // Prevents race condition if two Inngest events fire for same prospect.
+    const prospect = await step.run("claim-prospect", async () => {
       const { createServerSupabase } = await import("@/lib/supabase-server");
       const supabase = createServerSupabase();
 
-      const { data, error } = await supabase
+      // Atomic claim: only succeeds if no other handler got here first
+      const { data: claimed, error: claimErr } = await supabase
         .from("prospect_pipeline")
+        .update({ form_submission_attempts: 1 })
+        .eq("id", prospectId)
+        .eq("form_submission_attempts", 0)
         .select(
           "id, contractor_id, business_name, owner_name, phone, their_website_url, " +
           "contact_form_url, form_field_mapping, has_captcha, " +
           "form_submission_attempts, form_submission_status, preview_site_url"
         )
-        .eq("id", prospectId)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) throw new Error(`Prospect not found: ${prospectId}`);
+      if (claimErr) throw new Error(`Claim failed: ${claimErr.message}`);
 
-      // Idempotency: don't submit twice
-      if ((data as any).form_submission_attempts >= 1) {
+      // If no row returned, another handler already claimed it
+      if (!claimed) {
         return { skip: true as const, reason: "already attempted", data: null as any };
       }
-      if (!(data as any).contact_form_url) {
+      if (!(claimed as any).contact_form_url) {
         return { skip: true as const, reason: "no form URL", data: null as any };
       }
-      if ((data as any).has_captcha) {
+      if ((claimed as any).has_captcha) {
         return { skip: true as const, reason: "captcha detected", data: null as any };
       }
 
-      return { skip: false as const, reason: "", data: data as any };
+      return { skip: false as const, reason: "", data: claimed as any };
     });
 
     if (prospect.skip) return { skipped: true, reason: prospect.reason };
@@ -1523,17 +1527,8 @@ export const prospectFormSubmit = inngest.createFunction(
       return { skipped: true, reason: "duplicate" };
     }
 
-    // Step 3: Increment attempt count BEFORE submitting (idempotency guard)
-    await step.run("increment-attempt", async () => {
-      const { createServerSupabase } = await import("@/lib/supabase-server");
-      const supabase = createServerSupabase();
-      await supabase
-        .from("prospect_pipeline")
-        .update({ form_submission_attempts: 1 })
-        .eq("id", prospectId);
-    });
-
-    // Step 4: Build claim URL and submit the form
+    // Step 3: Build claim URL and submit the form
+    // (attempt count already incremented atomically in step 1)
     type SubmitResult = { success: boolean; status: string; submittedAt?: string; error?: string; screenshotPath?: string };
 
     const result: SubmitResult = await step.run("submit-form", async () => {

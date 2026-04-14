@@ -79,7 +79,9 @@ export async function GET() {
     }
   }
 
-  // Auto-create gates when leads reach gate stages but no pending gate exists
+  // Auto-create/update gates when leads reach gate stages.
+  // Uses upsert with partial unique index (batch_id, gate_type WHERE status='pending')
+  // to prevent duplicate gates from concurrent polling requests.
   const GATE_TRIGGERS: { stage: string; gate_type: string }[] = [
     { stage: "awaiting_triage", gate_type: "triage_review" },
     { stage: "site_built", gate_type: "site_review" },
@@ -97,34 +99,43 @@ export async function GET() {
       const count = stageCounts[stage as PipelineStage] || 0;
       if (count === 0) continue;
 
-      // Check if a pending gate already exists for this type
-      const hasGate = existingGates.some(g => g.gate_type === gate_type && g.status === "pending");
-      if (hasGate) continue;
+      // Check if a pending gate already exists with correct count
+      const existing = existingGates.find(g => g.gate_type === gate_type && g.status === "pending");
+      if (existing && existing.items_pending === count) continue;
 
-      // Create the gate
-      const { data: newGate } = await supabase
-        .from("pipeline_gates")
-        .insert({
-          batch_id: b.id,
-          gate_type,
-          items_pending: count,
-          items_approved: 0,
-          items_rejected: 0,
-          status: "pending",
-        })
-        .select("*")
-        .single();
+      if (existing) {
+        // Update count on existing gate
+        await supabase
+          .from("pipeline_gates")
+          .update({ items_pending: count })
+          .eq("id", existing.id);
+        existing.items_pending = count;
+      } else {
+        // Insert new gate — partial unique index prevents duplicates
+        const { data: newGate } = await supabase
+          .from("pipeline_gates")
+          .insert({
+            batch_id: b.id,
+            gate_type,
+            items_pending: count,
+            items_approved: 0,
+            items_rejected: 0,
+            status: "pending",
+          })
+          .select("*")
+          .single();
 
-      if (newGate) {
-        if (!batchGates.has(b.id)) batchGates.set(b.id, []);
-        batchGates.get(b.id)!.push({
-          id: newGate.id,
-          gate_type: newGate.gate_type,
-          items_pending: newGate.items_pending,
-          items_approved: 0,
-          items_rejected: 0,
-          status: "pending",
-        });
+        if (newGate) {
+          if (!batchGates.has(b.id)) batchGates.set(b.id, []);
+          batchGates.get(b.id)!.push({
+            id: newGate.id,
+            gate_type: newGate.gate_type,
+            items_pending: newGate.items_pending,
+            items_approved: 0,
+            items_rejected: 0,
+            status: "pending",
+          });
+        }
       }
     }
   }

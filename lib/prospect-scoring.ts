@@ -109,8 +109,8 @@ function getOutreachMethods(p: ProspectInput, tier: Tier): OutreachMethod[] {
     methods.push("cold_email");
   }
 
-  // No website or no form — cold email is primary
-  if (!hasWebsite || !hasForm) {
+  // No website or no form — cold email is primary (but only if we have an email)
+  if ((!hasWebsite || !hasForm) && p.owner_email) {
     if (!methods.includes("cold_email")) {
       methods.push("cold_email");
     }

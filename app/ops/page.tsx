@@ -88,6 +88,8 @@ const ICP_STYLES = TIER_STYLES;
 // ── Types for attention items ───────────────────────────────────────
 interface AttentionItem {
   id: string;
+  batch_id: string;
+  gate_key: string | null; // e.g. "triage_review-{batchId}" — used to expand gate panel
   business_name: string;
   location: string;
   context: string;
@@ -460,7 +462,12 @@ export default function OpsPage() {
   }, [fetchPipeline]);
 
   // ── Gate actions ──────────────────────────────────────────────────
-  async function handleGateApproval(gateType: GateType, batchId: string) {
+  async function handleGateApproval(gateType: GateType, batchId: string, itemCount?: number) {
+    const label = GATE_LABELS[gateType] || gateType;
+    const count = itemCount ?? "all";
+    if (!window.confirm(`Approve ${count} leads at "${label}" gate? This will advance them to the next stage.`)) {
+      return;
+    }
     setApproving(`${gateType}-${batchId}`);
     try {
       const res = await fetch("/api/ops/gates", {
@@ -506,6 +513,8 @@ export default function OpsPage() {
         if (gate.status === "pending" && gate.items_pending > 0) {
           items.push({
             id: `${batch.id}-${gate.gate_type}`,
+            batch_id: batch.id,
+            gate_key: `${gate.gate_type}-${batch.id}`,
             business_name: GATE_LABELS[gate.gate_type as GateType],
             location: `${gate.items_pending} items waiting`,
             context: `${fmtBatch(batchNum, batch)}`,
@@ -522,6 +531,8 @@ export default function OpsPage() {
       if (interested > 0) {
         items.push({
           id: `${batch.id}-interested-stale`,
+          batch_id: batch.id,
+          gate_key: null,
           business_name: "Interested leads need follow-up",
           location: `${interested} interested prospect${interested !== 1 ? "s" : ""}`,
           context: `${fmtBatch(batchNum, batch)}`,
@@ -537,6 +548,8 @@ export default function OpsPage() {
       if (draftReady > 0) {
         items.push({
           id: `${batch.id}-drafts-pending`,
+          batch_id: batch.id,
+          gate_key: `draft_approval-${batch.id}`,
           business_name: "Draft replies need review",
           location: `${draftReady} draft${draftReady !== 1 ? "s" : ""} waiting`,
           context: `${fmtBatch(batchNum, batch)}`,
@@ -552,6 +565,8 @@ export default function OpsPage() {
       if (awaitingTriage > 0) {
         items.push({
           id: `${batch.id}-triage-pending`,
+          batch_id: batch.id,
+          gate_key: `triage_review-${batch.id}`,
           business_name: "Prospects ready to triage",
           location: `${awaitingTriage} prospect${awaitingTriage !== 1 ? "s" : ""} enriched`,
           context: `${fmtBatch(batchNum, batch)}`,
@@ -567,6 +582,8 @@ export default function OpsPage() {
       if (parkedCount > 0) {
         items.push({
           id: `${batch.id}-parked-revival`,
+          batch_id: batch.id,
+          gate_key: null,
           business_name: "Parked leads may be ready",
           location: `${parkedCount} parked prospect${parkedCount !== 1 ? "s" : ""}`,
           context: `${fmtBatch(batchNum, batch)}`,
@@ -648,6 +665,10 @@ export default function OpsPage() {
                   <div
                     key={item.id}
                     className="flex justify-between items-center px-5 py-2.5 border-b border-[#F5F5F5] last:border-b-0 hover:bg-[#FAFBFC] cursor-pointer transition-colors"
+                    onClick={() => {
+                      setExpandedBatch(item.batch_id);
+                      if (item.gate_key) setExpandedGate(item.gate_key);
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <div>
@@ -1123,7 +1144,7 @@ export default function OpsPage() {
                 </div>
               </div>
               <div className="flex">
-                {PIPELINE_STAGES.map((stage) => {
+                {DISPLAY_STAGES.map((stage) => {
                   const count = pipeline.totals[stage] || 0;
                   return (
                     <div key={stage} className="flex-1 text-center">
@@ -1297,7 +1318,7 @@ export default function OpsPage() {
                                     {gate.gate_type === "site_review" ? "Review 1-by-1" : "Preview"}
                                   </button>
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); handleGateApproval(gate.gate_type as GateType, batch.id); }}
+                                    onClick={(e) => { e.stopPropagation(); handleGateApproval(gate.gate_type as GateType, batch.id, gate.items_pending); }}
                                     disabled={approving === gateKey}
                                     className="text-[11px] font-semibold text-white bg-[#F59E0B] hover:bg-[#D97706] disabled:bg-[#FCD34D] px-3.5 py-1.5 rounded-lg transition-colors"
                                   >
@@ -1402,6 +1423,7 @@ function TriagePanel({ batchId, onDone }: { batchId: string; onDone: () => void 
   const [states, setStates] = useState<Record<string, TriageState>>({});
   const [submitting, setSubmitting] = useState(false);
   const [parkReason, setParkReason] = useState<Record<string, string>>({});
+  const [tierFilter, setTierFilter] = useState<"all" | "gold" | "silver">("all");
 
   useEffect(() => {
     async function load() {
@@ -1533,12 +1555,35 @@ function TriagePanel({ batchId, onDone }: { batchId: string; onDone: () => void 
         </div>
       </div>
 
+      {/* Tier filter tabs */}
+      <div className="flex gap-1.5 mb-3">
+        {(["all", "gold", "silver"] as const).map((t) => {
+          const count = t === "all" ? leads.length : leads.filter(l => getIcpScore(l).tier === t).length;
+          const active = tierFilter === t;
+          return (
+            <button
+              key={t}
+              onClick={() => setTierFilter(t)}
+              className={`text-[11px] font-semibold px-3 py-1 rounded-lg border transition-colors ${
+                active
+                  ? t === "gold" ? "bg-[#FFF8E1] text-[#92400E] border-[#FDE68A]"
+                  : t === "silver" ? "bg-[#F5F5F7] text-[#3C3C43] border-[#D1D1D6]"
+                  : "bg-[#007AFF] text-white border-[#007AFF]"
+                  : "bg-white text-[#8E8E93] border-[#E5E5EA] hover:bg-[#F5F5F7]"
+              }`}
+            >
+              {t === "all" ? "All" : t === "gold" ? "Gold" : "Silver"} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       <div className="text-[11px] text-[#8E8E93] mb-3 px-3 py-2 bg-[#F0F7FF] rounded-lg border border-[#007AFF22]">
         <strong className="text-[#007AFF]">How it works:</strong> All prospects start selected (green). Click to park (amber), click again to skip (gray). Parked leads can be revived later.
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5">
-        {leads.map((lead) => {
+        {leads.filter(l => tierFilter === "all" || getIcpScore(l).tier === tierFilter).map((lead) => {
           const state = states[lead.id] || "selected";
           const s = triageStyles[state];
           const score = getIcpScore(lead);
@@ -2225,6 +2270,25 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
     finally { setBuildingSelected(false); }
   }
 
+  // "Why is this stuck?" — shows what's blocking each lead from progressing
+  function getStuckReason(lead: any): { text: string; color: string } | null {
+    const s = lead.stage;
+    if (s === "scraped" && !lead.photos_enriched_at) return { text: "Needs enrichment", color: "text-[#8E8E93] bg-[#F5F5F7]" };
+    if (s === "google_enriched" || s === "awaiting_triage") return { text: "Needs triage", color: "text-[#F57F17] bg-[#FFF8E1]" };
+    if (s === "site_built" && !lead.site_approved_at) return { text: "Needs site review", color: "text-[#F57F17] bg-[#FFF8E1]" };
+    if (s === "site_approved" || s === "contact_lookup") return { text: "Looking up contact", color: "text-[#8E8E93] bg-[#F5F5F7]" };
+    if (s === "contact_ready") return { text: "Needs outreach approval", color: "text-[#F57F17] bg-[#FFF8E1]" };
+    if (s === "outreach_approved") {
+      const method = lead.outreach_method;
+      if (method === "cold_email" && !lead.owner_email) return { text: "NO EMAIL", color: "text-white bg-[#FF3B30]" };
+      if (method === "form" && !lead.contact_form_url) return { text: "NO FORM", color: "text-white bg-[#FF3B30]" };
+      return { text: "Ready to send", color: "text-[#34C759] bg-[#F0FFF4]" };
+    }
+    if (s === "sent" || s === "awaiting_reply") return { text: "Awaiting reply", color: "text-[#007AFF] bg-[#EFF6FF]" };
+    if (s === "replied" || s === "draft_ready") return { text: "Draft needs review", color: "text-[#F57F17] bg-[#FFF8E1]" };
+    return null;
+  }
+
   if (loading) return <div className="p-6 text-center text-[#8E8E93] text-sm">Loading leads...</div>;
   if (leads.length === 0) return <div className="p-6 text-center text-[#8E8E93] text-sm">No leads in this batch</div>;
 
@@ -2390,6 +2454,10 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
                               <div className="flex items-center gap-2">
                                 {lead.business_name || "Unknown"}
                                 <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>{icpStyle.label}</span>
+                                {(() => {
+                                  const stuck = getStuckReason(lead);
+                                  return stuck ? <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${stuck.color}`}>{stuck.text}</span> : null;
+                                })()}
                               </div>
                             </td>
                             <td className={td}>{lead.city ? `${lead.city}, ${lead.state || "FL"}` : "—"}</td>
