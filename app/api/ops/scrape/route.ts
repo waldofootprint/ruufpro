@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
     if (dryRun) {
       let searchCalls = 0;
       let newFound = 0;
-      const preview: { name: string; city: string; is_duplicate: boolean; place_id: string }[] = [];
+      const preview: { name: string; city: string; is_duplicate: boolean; filtered_out: boolean; filter_reason?: string; place_id: string; rating?: number; reviews?: number }[] = [];
 
       for (const cityName of cities) {
         // Stop searching if we already have enough new prospects
@@ -168,19 +168,42 @@ export async function POST(req: NextRequest) {
           const isDuplicate = existingPlaceIds.has(place.place_id) ||
             existingNames.has(`${(place.name || "").toLowerCase()}|${cityName.toLowerCase()}`);
 
+          // Apply the SAME filters the real scrape uses — rating + reviews are in text search results
+          const placeRating = place.rating || 0;
+          const placeReviews = place.user_ratings_total || 0;
+          let filteredOut = false;
+          let filterReason: string | undefined;
+
+          if (!isDuplicate) {
+            if (filters.min_rating > 0 && placeRating > 0 && placeRating < filters.min_rating) {
+              filteredOut = true;
+              filterReason = `Rating ${placeRating}★ below min ${filters.min_rating}★`;
+            } else if (placeReviews > filters.max_reviews) {
+              filteredOut = true;
+              filterReason = `${placeReviews} reviews exceeds max ${filters.max_reviews}`;
+            }
+            // Note: no_website_only can't be checked in text search (no website field)
+            // — flag it so the user knows some may still be filtered
+          }
+
           preview.push({
             name: place.name || "Unknown",
             city: cityName,
             is_duplicate: isDuplicate,
+            filtered_out: filteredOut,
+            filter_reason: filterReason,
             place_id: place.place_id,
+            rating: placeRating || undefined,
+            reviews: placeReviews || undefined,
           });
 
-          if (!isDuplicate) newFound++;
+          if (!isDuplicate && !filteredOut) newFound++;
         }
       }
 
-      const newCount = preview.filter(p => !p.is_duplicate).length;
+      const newCount = preview.filter(p => !p.is_duplicate && !p.filtered_out).length;
       const dupCount = preview.filter(p => p.is_duplicate).length;
+      const filteredCount = preview.filter(p => p.filtered_out).length;
       const detailCost = newCount * 0.017;
       const searchCost = searchCalls * 0.032;
 
@@ -192,6 +215,9 @@ export async function POST(req: NextRequest) {
         found: preview.length,
         new_prospects: newCount,
         duplicates: dupCount,
+        filtered_out: filteredCount,
+        has_website_filter: filters.no_website_only,
+        website_filter_warning: filters.no_website_only ? "Website filter applied during scrape — some 'new' leads may still be filtered" : undefined,
         search_api_calls: searchCalls,
         search_cost: `$${searchCost.toFixed(2)}`,
         estimated_detail_cost: `$${detailCost.toFixed(2)}`,
@@ -235,6 +261,13 @@ export async function POST(req: NextRequest) {
             continue;
           }
 
+          // ── PRE-FILTER from text search data (FREE — no API call) ──
+          // Rating + review count are available in text search results
+          const preRating = place.rating || 0;
+          const preReviews = place.user_ratings_total || 0;
+          if (filters.min_rating > 0 && preRating > 0 && preRating < filters.min_rating) continue;
+          if (preReviews > filters.max_reviews) continue;
+
           // Only NOW call the expensive details API
           const details = await getPlaceDetails(place.place_id);
           apiCalls++;
@@ -243,13 +276,8 @@ export async function POST(req: NextRequest) {
           if (!details.name) continue;
           if (details.business_status && details.business_status !== "OPERATIONAL") continue;
 
-          // Apply scrape filters
-          const rating = details.rating || 0;
-          const reviewCount = details.user_ratings_total || 0;
+          // Website filter can only be checked after details call
           const hasWebsite = !!details.website;
-
-          if (filters.min_rating > 0 && rating > 0 && rating < filters.min_rating) continue;
-          if (reviewCount > filters.max_reviews) continue;
           if (filters.no_website_only && hasWebsite) continue;
 
           const { city: parsedCity, state } = parseCityState(details.formatted_address || "");
@@ -265,8 +293,8 @@ export async function POST(req: NextRequest) {
             address: details.formatted_address || "",
             city: parsedCity || city,
             state: state || "FL",
-            rating: rating || null,
-            reviews_count: reviewCount || null,
+            rating: details.rating || null,
+            reviews_count: details.user_ratings_total || null,
             google_place_id: place.place_id || null,
           });
 
