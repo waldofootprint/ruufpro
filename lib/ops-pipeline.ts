@@ -135,7 +135,7 @@ export interface PipelineProspect {
   form_field_mapping: Record<string, unknown> | null;
   has_captcha: boolean;
   form_detected_at: string | null;
-  outreach_method: "form" | "email" | null;
+  outreach_method: "form" | "cold_email" | "linkedin_draft" | null;
   form_submitted_at: string | null;
   form_submission_status: "pending" | "success" | "failed" | "captcha_blocked" | "duplicate_skipped" | null;
   form_submission_error: string | null;

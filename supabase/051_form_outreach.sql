@@ -15,7 +15,7 @@ ALTER TABLE prospect_pipeline
   ADD COLUMN IF NOT EXISTS form_field_mapping jsonb,
   ADD COLUMN IF NOT EXISTS has_captcha boolean DEFAULT false,
   ADD COLUMN IF NOT EXISTS form_detected_at timestamptz,
-  ADD COLUMN IF NOT EXISTS outreach_method text CHECK (outreach_method IN ('form', 'email')),
+  ADD COLUMN IF NOT EXISTS outreach_method text CHECK (outreach_method IN ('form', 'cold_email', 'linkedin_draft')),
   ADD COLUMN IF NOT EXISTS form_submitted_at timestamptz,
   ADD COLUMN IF NOT EXISTS form_submission_status text DEFAULT 'pending'
     CHECK (form_submission_status IN ('pending', 'success', 'failed', 'captcha_blocked', 'duplicate_skipped')),

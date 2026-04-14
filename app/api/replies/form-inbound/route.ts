@@ -112,16 +112,26 @@ export async function POST(req: NextRequest) {
 
     // Step 3: Update prospect pipeline if matched
     if (prospect) {
+      const now = new Date().toISOString();
+      const stageMap: Record<string, string> = {
+        interested: "interested",
+        question: "replied",
+        objection: "replied",
+        not_now: "not_now",
+        unsubscribe: "unsubscribed",
+      };
+      const newStage = stageMap[result.category] || "replied";
+
       await supabase
         .from("prospect_pipeline")
         .update({
-          stage: "replied",
-          stage_entered_at: new Date().toISOString(),
-          replied_at: new Date().toISOString(),
-          reply_text: replyText,
+          stage: newStage,
+          stage_entered_at: now,
+          replied_at: now,
+          reply_text: replyText.slice(0, 2000),
           reply_category: result.category,
           draft_response: result.draftReply,
-          draft_status: "pending",
+          draft_status: result.category === "unsubscribe" ? "skipped" : "pending",
         })
         .eq("id", prospect.id);
     }

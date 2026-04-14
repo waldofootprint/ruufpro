@@ -10,13 +10,17 @@ import type {
   PipelineProspect,
 } from "@/lib/ops-pipeline";
 import { DISPLAY_STAGES, STAGE_LABELS, GATE_LABELS } from "@/lib/ops-pipeline";
+import { scoreProspect, TIER_STYLES, OUTREACH_METHOD_LABELS } from "@/lib/prospect-scoring";
+import type { ProspectInput } from "@/lib/prospect-scoring";
+import { getCampaignType, generateEmailPreview, generateFormMessage, EMAIL_SCHEDULE } from "@/lib/outreach-templates";
+import type { OutreachVars } from "@/lib/outreach-templates";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
-function fmtWeek(b: ProspectBatch) {
-  return `Week ${b.week_number} (${fmtDate(b.week_start)}–${fmtDate(b.week_end)})`;
+function fmtBatch(batchNumber: number, b: ProspectBatch) {
+  return `Batch ${batchNumber} · ${fmtDate(b.week_start)}–${fmtDate(b.week_end)}`;
 }
 function fmtTimestamp(d: string | null) {
   if (!d) return null;
@@ -55,43 +59,26 @@ const STAGE_PILL: Record<string, string> = {
   unsubscribed: "bg-red-100 text-red-600",
 };
 
-// ── ICP quality scoring ─────────────────────────────────────────────
-function getIcpScore(lead: any): { tier: "gold" | "silver" | "bronze"; score: number; signals: string[] } {
-  let score = 0;
-  const signals: string[] = [];
-
-  // Has a website (we can scrape content for preview)
-  if (lead.their_website_url) { score += 2; signals.push("Has website"); }
-  else { signals.push("No website — needs one"); score += 1; }
-
-  // Google rating
-  if (lead.rating >= 4.5) { score += 3; signals.push(`${lead.rating}★ rating (excellent)`); }
-  else if (lead.rating >= 4.0) { score += 2; signals.push(`${lead.rating}★ rating (good)`); }
-  else if (lead.rating) { score += 1; signals.push(`${lead.rating}★ rating (low)`); }
-  else { signals.push("No Google rating"); }
-
-  // Review count (social proof = established business)
-  if (lead.reviews_count >= 50) { score += 3; signals.push(`${lead.reviews_count} reviews (established)`); }
-  else if (lead.reviews_count >= 20) { score += 2; signals.push(`${lead.reviews_count} reviews (growing)`); }
-  else if (lead.reviews_count > 0) { score += 1; signals.push(`${lead.reviews_count} reviews (new)`); }
-  else { signals.push("No reviews"); }
-
-  // Has phone (reachable)
-  if (lead.phone) { score += 1; signals.push("Phone listed"); }
-  else { signals.push("No phone listed"); }
-
-  // Has owner email (enriched)
-  if (lead.owner_email) { score += 1; signals.push("Email found"); }
-
-  const tier = score >= 8 ? "gold" : score >= 5 ? "silver" : "bronze";
-  return { tier, score, signals };
+// ── ICP scoring — uses unified lib/prospect-scoring.ts ─────────────
+function getIcpScore(lead: any) {
+  const input: ProspectInput = {
+    reviews_count: lead.reviews_count ?? null,
+    rating: lead.rating ?? null,
+    has_estimate_widget: false,
+    their_website_url: lead.their_website_url ?? null,
+    website_status: lead.their_website_url ? "has_website" : "none",
+    contact_form_url: lead.contact_form_url ?? null,
+    has_captcha: lead.has_captcha ?? false,
+    linkedin_url: lead.linkedin_url ?? null,
+    owner_email: lead.owner_email ?? null,
+    phone: lead.phone ?? null,
+    years_in_business: lead.years_in_business ?? null,
+  };
+  const result = scoreProspect(input);
+  return { tier: result.tier, signals: result.signals, outreach_methods: result.outreach_methods, reasons: result.reasons };
 }
 
-const ICP_STYLES = {
-  gold: { bg: "bg-[#FFF8E1]", text: "text-[#92400E]", border: "border-[#FDE68A]", label: "Gold" },
-  silver: { bg: "bg-[#F5F5F7]", text: "text-[#3C3C43]", border: "border-[#D1D1D6]", label: "Silver" },
-  bronze: { bg: "bg-[#FFF3E0]", text: "text-[#BF360C]", border: "border-[#FFCC80]", label: "Bronze" },
-};
+const ICP_STYLES = TIER_STYLES;
 
 // ── Types for attention items ───────────────────────────────────────
 interface AttentionItem {
@@ -123,8 +110,11 @@ export default function OpsPage() {
   const [creatingBatch, setCreatingBatch] = useState(false);
   const [detectingForms, setDetectingForms] = useState<string | null>(null);
   const [submittingForms, setSubmittingForms] = useState<string | null>(null);
+  const [sendingEmails, setSendingEmails] = useState<string | null>(null);
+  const [enriching, setEnriching] = useState<string | null>(null);
   const [formActionResult, setFormActionResult] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [channelFilter, setChannelFilter] = useState<"all" | "cold_email" | "form">("all");
 
   function openScrapePanel(batchId: string, cities: string[]) {
     setScrapeOpen(batchId);
@@ -169,6 +159,58 @@ export default function OpsPage() {
       setFormActionResult("Form submission failed");
     } finally {
       setSubmittingForms(null);
+    }
+  }
+
+  async function handleSendEmails(batchId: string) {
+    setSendingEmails(batchId);
+    setFormActionResult(null);
+    try {
+      const res = await fetch("/api/ops/send-emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: batchId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const parts = [`Added ${data.queued} lead(s) to Instantly`];
+        if (data.skipped_no_email > 0) parts.push(`${data.skipped_no_email} skipped (no email)`);
+        setFormActionResult(parts.join(" · "));
+        await fetchPipeline();
+      } else {
+        setFormActionResult(`Email send failed: ${data.error}`);
+      }
+    } catch (err) {
+      setFormActionResult("Email send request failed");
+    } finally {
+      setSendingEmails(null);
+    }
+  }
+
+  async function handleEnrich(batchId: string) {
+    setEnriching(batchId);
+    setFormActionResult(null);
+    try {
+      const res = await fetch("/api/ops/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: batchId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const parts = [`Enriched ${data.enriched} lead(s)`];
+        if (data.no_match > 0) parts.push(`${data.no_match} no match`);
+        if (data.errors > 0) parts.push(`${data.errors} errors`);
+        parts.push(`${data.credits_used} Apollo credits used`);
+        setFormActionResult(parts.join(" · "));
+        await fetchPipeline();
+      } else {
+        setFormActionResult(`Enrich failed: ${data.error}`);
+      }
+    } catch {
+      setFormActionResult("Enrich request failed");
+    } finally {
+      setEnriching(null);
     }
   }
 
@@ -303,16 +345,18 @@ export default function OpsPage() {
   function getAttentionItems(): AttentionItem[] {
     if (!pipeline) return [];
     const items: AttentionItem[] = [];
-    // This would come from an API in production. For now, show gate-based items.
-    pipeline.batches.forEach((batch) => {
-      const label = `Week ${batch.week_number}`;
+    pipeline.batches.forEach((batch, idx) => {
+      const batchNum = pipeline.batches.length - idx;
+      const label = `Batch ${batchNum}`;
+
+      // Gate-based attention items
       batch.gates.forEach((gate) => {
         if (gate.status === "pending" && gate.items_pending > 0) {
           items.push({
             id: `${batch.id}-${gate.gate_type}`,
             business_name: GATE_LABELS[gate.gate_type as GateType],
             location: `${gate.items_pending} items waiting`,
-            context: `Batch: ${fmtWeek(batch)}`,
+            context: `${fmtBatch(batchNum, batch)}`,
             days: 0,
             urgency: "warn",
             batch_label: label,
@@ -320,6 +364,36 @@ export default function OpsPage() {
           });
         }
       });
+
+      // Interested leads with no movement > 3 days — these are close to converting
+      const interested = batch.stage_counts?.interested || 0;
+      if (interested > 0) {
+        items.push({
+          id: `${batch.id}-interested-stale`,
+          business_name: "Interested leads need follow-up",
+          location: `${interested} interested prospect${interested !== 1 ? "s" : ""}`,
+          context: `${fmtBatch(batchNum, batch)}`,
+          days: 0,
+          urgency: "urgent",
+          batch_label: label,
+          type: "reply_wait",
+        });
+      }
+
+      // Draft replies pending — response getting cold
+      const draftReady = batch.stage_counts?.draft_ready || 0;
+      if (draftReady > 0) {
+        items.push({
+          id: `${batch.id}-drafts-pending`,
+          business_name: "Draft replies need review",
+          location: `${draftReady} draft${draftReady !== 1 ? "s" : ""} waiting`,
+          context: `${fmtBatch(batchNum, batch)}`,
+          days: 0,
+          urgency: "warn",
+          batch_label: label,
+          type: "draft_pending",
+        });
+      }
     });
     return items;
   }
@@ -613,7 +687,31 @@ export default function OpsPage() {
             {/* ── Totals Bar ── */}
             <div className="bg-white rounded-xl border border-[#E5E5EA] px-5 py-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8E8E93]">Pipeline Totals</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8E8E93]">
+                    Pipeline Totals{channelFilter !== "all" && <span className="text-[#C7C7CC] font-normal"> · showing all channels</span>}
+                  </h2>
+                  {/* Channel filter pills */}
+                  <div className="flex gap-1">
+                    {([
+                      { value: "all", label: "All" },
+                      { value: "cold_email", label: "Email" },
+                      { value: "form", label: "Form" },
+                    ] as const).map(({ value, label }) => (
+                      <button
+                        key={value}
+                        onClick={() => setChannelFilter(value)}
+                        className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${
+                          channelFilter === value
+                            ? "bg-[#007AFF] text-white"
+                            : "bg-[#F5F5F7] text-[#8E8E93] hover:bg-[#E5E5EA]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex items-center gap-3">
                   <span className="text-[11px] text-[#C7C7CC]">{pipeline.batches.length} batch{pipeline.batches.length !== 1 ? "es" : ""} active</span>
                   <button
@@ -638,7 +736,8 @@ export default function OpsPage() {
             </div>
 
             {/* ── Batch Cards ── */}
-            {pipeline.batches.map((batch) => {
+            {pipeline.batches.map((batch, batchIndex) => {
+              const batchNumber = pipeline.batches.length - batchIndex;
               const isExpanded = expandedBatch === batch.id;
               const pendingGates = getPendingGatesForBatch(batch);
               const isCompleted = batch.status === "completed";
@@ -652,7 +751,7 @@ export default function OpsPage() {
                   >
                     <div className="flex items-center gap-2.5">
                       <span className="text-[10px] text-[#C7C7CC] transition-transform">{isExpanded ? "▼" : "▶"}</span>
-                      <span className="text-sm font-semibold">{fmtWeek(batch)}</span>
+                      <span className="text-sm font-semibold">{fmtBatch(batchNumber, batch)}</span>
                       <span className="text-[11px] text-[#8E8E93]">{batch.lead_count} leads</span>
                       {batch.city_targets.length > 0 && (
                         <span className="text-[11px] text-[#8E8E93]">
@@ -670,6 +769,14 @@ export default function OpsPage() {
                       >
                         {scraping === batch.id ? "Scraping..." : "+ Scrape More"}
                       </button>
+                      {/* Enrich button — adds owner emails via Apollo */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleEnrich(batch.id); }}
+                        disabled={enriching === batch.id}
+                        className="text-[10px] font-semibold text-[#E65100] bg-[#FFF3E0] hover:bg-[#FFE0B2] border border-[#E6510033] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {enriching === batch.id ? "Enriching..." : "Enrich Emails"}
+                      </button>
                       {/* Detect forms button */}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDetectForms(batch.id); }}
@@ -677,14 +784,6 @@ export default function OpsPage() {
                         className="text-[10px] font-semibold text-[#5E35B1] bg-[#EDE7F6] hover:bg-[#D1C4E9] border border-[#5E35B133] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
                       >
                         {detectingForms === batch.id ? "Detecting..." : "Detect Forms"}
-                      </button>
-                      {/* Submit forms button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleSubmitForms(batch.id); }}
-                        disabled={submittingForms === batch.id}
-                        className="text-[10px] font-semibold text-[#00838F] bg-[#E0F7FA] hover:bg-[#B2EBF2] border border-[#00838F33] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {submittingForms === batch.id ? "Submitting..." : "Submit Forms"}
                       </button>
                       {isCompleted && (
                         <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-1 rounded-[10px]">✓ Complete</span>
@@ -703,6 +802,10 @@ export default function OpsPage() {
                     <div className="h-[5px] bg-[#F2F2F7] rounded-[3px] overflow-hidden">
                       <div className="h-full rounded-[3px] bg-gradient-to-r from-[#60A5FA] to-[#34D399] transition-all duration-500" style={{ width: `${batch.progress}%` }} />
                     </div>
+                    <div className="flex justify-between mt-0.5">
+                      <span className="text-[8px] text-[#C7C7CC] uppercase tracking-[0.08em]">Scraped</span>
+                      <span className="text-[8px] text-[#C7C7CC] uppercase tracking-[0.08em]">Replied+</span>
+                    </div>
                   </div>
 
                   {/* Stage counts */}
@@ -718,6 +821,42 @@ export default function OpsPage() {
                       );
                     })}
                   </div>
+
+                  {/* ── Outreach Stats Strip ── */}
+                  {(batch.stage_counts?.sent || 0) > 0 && (
+                    <div className="flex px-5 py-2 border-t border-[#F2F2F7] gap-4">
+                      {(() => {
+                        const sent = batch.stage_counts?.sent || 0;
+                        const awaiting = batch.stage_counts?.awaiting_reply || 0;
+                        const replied = batch.stage_counts?.replied || 0;
+                        const interested = batch.stage_counts?.interested || 0;
+                        const draftReady = batch.stage_counts?.draft_ready || 0;
+                        const totalReplied = replied + interested + draftReady + (batch.stage_counts?.responded || 0);
+                        const replyRate = sent > 0 ? Math.round((totalReplied / (sent + awaiting + totalReplied)) * 100) : 0;
+
+                        return (
+                          <>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-[#8E8E93]">Reply rate</span>
+                              <span className={`text-[12px] font-bold ${replyRate >= 10 ? "text-[#34C759]" : replyRate > 0 ? "text-[#FF9F0A]" : "text-[#D1D1D6]"}`}>{replyRate}%</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-[#8E8E93]">Interested</span>
+                              <span className={`text-[12px] font-bold ${interested > 0 ? "text-[#34C759]" : "text-[#D1D1D6]"}`}>{interested}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-[#8E8E93]">Drafts pending</span>
+                              <span className={`text-[12px] font-bold ${draftReady > 0 ? "text-[#FF9F0A]" : "text-[#D1D1D6]"}`}>{draftReady}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-[#8E8E93]">Awaiting reply</span>
+                              <span className="text-[12px] font-bold text-[#8E8E93]">{awaiting}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                   {/* ── Gate Panel ── */}
                   {pendingGates.length > 0 && (
@@ -765,9 +904,14 @@ export default function OpsPage() {
                     <SiteReviewPanel batchId={batch.id} onApprove={() => { setExpandedGate(null); fetchPipeline(); }} />
                   )}
 
-                  {/* ── Email Preview Panel (Gate 2 expanded) ── */}
+                  {/* ── Outreach Approval Panel (Gate 2 expanded) ── */}
                   {expandedGate && pendingGates.some(g => `${g.gate_type}-${batch.id}` === expandedGate && g.gate_type === "outreach_approval") && (
-                    <EmailPreviewPanel batchId={batch.id} />
+                    <OutreachApprovalPanel batchId={batch.id} onApproveAndSend={() => { setExpandedGate(null); fetchPipeline(); }} />
+                  )}
+
+                  {/* ── Draft Reply Panel (Gate 3 expanded) ── */}
+                  {expandedGate && pendingGates.some(g => `${g.gate_type}-${batch.id}` === expandedGate && g.gate_type === "draft_approval") && (
+                    <DraftApprovalPanel batchId={batch.id} onDone={() => { setExpandedGate(null); fetchPipeline(); }} />
                   )}
 
                   {/* ── Form action result banner ── */}
@@ -783,7 +927,7 @@ export default function OpsPage() {
                   {/* ── Lead Table ── */}
                   {isExpanded && (
                     <div className="border-t border-[#F2F2F7]">
-                      <BatchLeadTable batchId={batch.id} />
+                      <BatchLeadTable batchId={batch.id} channelFilter={channelFilter} />
                     </div>
                   )}
                 </div>
@@ -920,64 +1064,331 @@ function SiteReviewPanel({ batchId, onApprove }: { batchId: string; onApprove: (
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// EMAIL PREVIEW PANEL — Tabs for Email 1-5 with samples
+// OUTREACH APPROVAL PANEL — Real email/form preview before sending
 // ═══════════════════════════════════════════════════════════════════
-function EmailPreviewPanel({ batchId }: { batchId: string }) {
-  const [activeTab, setActiveTab] = useState(0);
-  const tabs = ["Email 1 (Day 0)", "Email 2 (Day 3)", "Email 3 (Day 7)", "Email 4 (Day 14)", "Email 5 (Day 21)"];
+type OutreachState = "approved" | "neutral" | "rejected";
 
-  // Demo samples — in production these come from the email generation pipeline
-  const samples = [
-    {
-      to: "john@exampleroofing.com",
-      subject: "I built you a website — take a look",
-      body: `Hi John,\n\nI was looking at roofing contractors in Tampa and noticed Example Roofing doesn't have a website yet. So I built you one — takes 30 seconds to check out:\n\n[Preview Link]\n\nIt's free to keep. If you want, I can also add an instant estimate tool that lets homeowners get a price right on your site.\n\nNo pressure either way.\n\n— Hannah, RuufPro`,
-    },
-    {
-      to: "mike@suncoastroofing.com",
-      subject: "Quick preview for SunCoast Roofing",
-      body: `Hi Mike,\n\nI put together a professional website for SunCoast Roofing — your services, service areas, and contact info are already on it:\n\n[Preview Link]\n\nRoofers using our estimate widget are closing 23% more leads because homeowners get a price before they even call.\n\nWorth a look?\n\n— Hannah, RuufPro`,
-    },
-  ];
+function OutreachApprovalPanel({ batchId, onApproveAndSend }: { batchId: string; onApproveAndSend: () => void }) {
+  const [leads, setLeads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [states, setStates] = useState<Record<string, OutreachState>>({});
+  const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`/api/ops/pipeline/leads?batch_id=${batchId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const outreachLeads = data.filter((l: any) => l.stage === "site_approved" || l.stage === "outreach_approved");
+          setLeads(outreachLeads);
+          const initial: Record<string, OutreachState> = {};
+          outreachLeads.forEach((l: any) => { initial[l.id] = "approved"; });
+          setStates(initial);
+        }
+      } catch (err) { console.error(err); }
+      finally { setLoading(false); }
+    }
+    load();
+  }, [batchId]);
+
+  function cycleState(id: string) {
+    setStates((prev) => {
+      const current = prev[id] || "approved";
+      const next: OutreachState = current === "approved" ? "neutral" : current === "neutral" ? "rejected" : "approved";
+      return { ...prev, [id]: next };
+    });
+  }
+
+  async function handleApproveAndSend() {
+    setSending(true);
+    try {
+      const approvedIds = Object.entries(states).filter(([, s]) => s === "approved").map(([id]) => id);
+      const rejectedIds = Object.entries(states).filter(([, s]) => s === "rejected").map(([id]) => id);
+
+      const res = await fetch("/api/ops/pipeline/approve-and-send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: batchId, approved_ids: approvedIds, rejected_ids: rejectedIds }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        alert(`Sent ${data.emailed} emails · ${data.forms_queued} forms queued · ${data.rejected} rejected`);
+        onApproveAndSend();
+      } else {
+        const err = await res.json();
+        alert(`Failed: ${err.error}`);
+      }
+    } catch { alert("Network error"); }
+    finally { setSending(false); }
+  }
+
+  const approvedCount = Object.values(states).filter(s => s === "approved").length;
+  const rejectedCount = Object.values(states).filter(s => s === "rejected").length;
+
+  if (loading) return <div className="border-t border-[#E5E5EA] p-6 bg-[#FAFAFA] text-center text-sm text-[#8E8E93]">Loading outreach preview...</div>;
+  if (leads.length === 0) return <div className="border-t border-[#E5E5EA] p-6 bg-[#FAFAFA] text-center text-sm text-[#8E8E93]">No leads ready for outreach</div>;
+
+  const stateStyles: Record<OutreachState, { card: string; check: string; label: string; icon: string }> = {
+    approved: { card: "border-[#34C759] bg-[#F0FFF4]", check: "bg-[#34C759] border-[#34C759] text-white", label: "text-[#34C759]", icon: "✓" },
+    neutral: { card: "border-[#E5E5EA] bg-white", check: "bg-white border-[#D1D1D6] text-transparent", label: "text-[#AEAEB2]", icon: "—" },
+    rejected: { card: "border-[#EF4444] bg-[#FEF2F2] opacity-50", check: "bg-[#EF4444] border-[#EF4444] text-white", label: "text-[#EF4444]", icon: "✗" },
+  };
 
   return (
     <div className="border-t border-[#E5E5EA] p-5 bg-[#FAFAFA]">
       <div className="flex justify-between items-center mb-3">
-        <div className="text-xs font-bold uppercase tracking-[0.05em]">Preview Email Sequences</div>
-        <button className="text-[11px] font-semibold text-white bg-[#F59E0B] hover:bg-[#D97706] px-3.5 py-1.5 rounded-lg transition-colors">
-          Send All
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.05em]">Review Outreach Before Sending</div>
+          <div className="text-xs text-[#007AFF] font-semibold mt-0.5">{approvedCount} approved · {rejectedCount} rejected · {leads.length - approvedCount - rejectedCount} skipped</div>
+        </div>
+        <button
+          onClick={handleApproveAndSend}
+          disabled={sending || approvedCount === 0}
+          className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-4 py-1.5 rounded-lg transition-colors"
+        >
+          {sending ? "Sending..." : `Approve & Send ${approvedCount}`}
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-[#E5E5EA] mb-4">
-        {tabs.map((tab, i) => (
-          <button
-            key={i}
-            onClick={() => setActiveTab(i)}
-            className={`text-[11px] font-semibold px-4 py-2 border-b-2 transition-all ${
-              activeTab === i
-                ? "text-[#007AFF] border-[#007AFF]"
-                : "text-[#8E8E93] border-transparent hover:text-[#1D1D1F]"
-            }`}
-          >
-            {tab}
-          </button>
+      <div className="text-[11px] text-[#8E8E93] mb-3 px-3 py-2 bg-[#F0F7FF] rounded-lg border border-[#007AFF22]">
+        <strong className="text-[#007AFF]">How it works:</strong> All leads start approved (green ✓). Click to skip, click again to reject. Click &ldquo;Approve &amp; Send&rdquo; to queue emails + form submissions in one action.
+      </div>
+
+      <div className="space-y-2">
+        {leads.map((lead) => {
+          const state = states[lead.id] || "approved";
+          const s = stateStyles[state];
+          const method = lead.outreach_method || (lead.contact_form_url ? "form" : "cold_email");
+          const methodStyle = OUTREACH_METHOD_LABELS[method as keyof typeof OUTREACH_METHOD_LABELS];
+          const isEmailExpanded = expandedEmail === lead.id;
+
+          // Generate preview content
+          const campaignType = getCampaignType(lead);
+          const vars = {
+            first_name: (lead.owner_name || "").split(" ")[0] || "there",
+            business_name: lead.business_name || "your business",
+            city: lead.city || "",
+            preview_url: lead.preview_site_url || "[preview link]",
+            claim_url: lead.preview_site_url ? lead.preview_site_url.replace("/site/", "/claim/") : "[claim link]",
+          };
+
+          const email1 = method === "cold_email" ? generateEmailPreview(0, campaignType, vars) : null;
+          const formMsg = method === "form" ? generateFormMessage(vars) : null;
+
+          return (
+            <div key={lead.id} className={`border rounded-[10px] p-3 transition-all ${s.card}`}>
+              <div className="flex items-start gap-3">
+                {/* Toggle */}
+                <div className="flex flex-col items-center cursor-pointer flex-shrink-0 pt-0.5" onClick={() => cycleState(lead.id)}>
+                  <div className={`w-[22px] h-[22px] rounded-md border-2 flex items-center justify-center text-xs font-bold ${s.check}`}>
+                    {s.icon}
+                  </div>
+                  <div className={`text-[8px] font-bold uppercase tracking-[0.06em] mt-0.5 ${s.label}`}>
+                    {state === "approved" ? "Send" : state === "neutral" ? "Skip" : "Cut"}
+                  </div>
+                </div>
+
+                {/* Lead info + preview */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[13px] font-semibold truncate">{lead.business_name || "Unknown"}</span>
+                    <span className="text-[11px] text-[#8E8E93]">{lead.city || ""}</span>
+                    {methodStyle && (
+                      <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-lg ${methodStyle.color}`}>
+                        {methodStyle.label}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Email preview */}
+                  {email1 && (
+                    <div className="bg-white/80 rounded-lg border border-[#E5E5EA]/50 p-2.5 mt-1">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-[10px] text-[#8E8E93]">To: <strong className="text-[#1D1D1F]">{lead.owner_email || "needs enrichment"}</strong></div>
+                          <div className="text-[12px] font-semibold mt-0.5">{email1.subject}</div>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setExpandedEmail(isEmailExpanded ? null : lead.id); }}
+                          className="text-[10px] text-[#007AFF] font-medium"
+                        >
+                          {isEmailExpanded ? "Collapse" : "Preview →"}
+                        </button>
+                      </div>
+                      {isEmailExpanded && (
+                        <div className="text-[12px] text-[#3C3C43] leading-relaxed whitespace-pre-line mt-2 pt-2 border-t border-[#F2F2F7]">
+                          {email1.body}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Form message preview */}
+                  {formMsg && (
+                    <div className="bg-white/80 rounded-lg border border-[#E5E5EA]/50 p-2.5 mt-1">
+                      <div className="text-[10px] text-[#8E8E93] mb-1">Form submission to: <strong className="text-[#1D1D1F]">{lead.contact_form_url?.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "") || "form"}</strong></div>
+                      <div className="text-[12px] text-[#3C3C43] leading-relaxed whitespace-pre-line">{formMsg}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DRAFT APPROVAL PANEL — review + send AI-drafted replies
+// ═══════════════════════════════════════════════════════════════════
+function DraftApprovalPanel({ batchId, onDone }: { batchId: string; onDone: () => void }) {
+  const [leads, setLeads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [sendingId, setSendingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`/api/ops/pipeline/leads?batch_id=${batchId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const draftLeads = data.filter((l: any) => l.draft_status === "pending" && l.reply_text);
+          setLeads(draftLeads);
+          const initial: Record<string, string> = {};
+          draftLeads.forEach((l: any) => { initial[l.id] = l.draft_response || ""; });
+          setDrafts(initial);
+        }
+      } catch (err) { console.error(err); }
+      finally { setLoading(false); }
+    }
+    load();
+  }, [batchId]);
+
+  async function handleSend(lead: any) {
+    setSendingId(lead.id);
+    try {
+      const editedDraft = drafts[lead.id] || lead.draft_response;
+
+      // If there's an outreach_replies record, send via the replies API (goes through Instantly)
+      // Otherwise, just update the pipeline record directly
+      const res = await fetch("/api/ops/draft-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prospect_id: lead.id,
+          action: "send",
+          edited_text: editedDraft,
+        }),
+      });
+
+      if (res.ok) {
+        setLeads(prev => prev.filter(l => l.id !== lead.id));
+      } else {
+        const err = await res.json();
+        alert(`Send failed: ${err.error}`);
+      }
+    } catch { alert("Send failed"); }
+    finally { setSendingId(null); }
+  }
+
+  async function handleSkip(leadId: string) {
+    try {
+      const res = await fetch("/api/ops/draft-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prospect_id: leadId,
+          action: "skip",
+        }),
+      });
+      if (res.ok) {
+        setLeads(prev => prev.filter(l => l.id !== leadId));
+      }
+    } catch { alert("Skip failed"); }
+  }
+
+  if (loading) return <div className="border-t border-[#E5E5EA] p-6 bg-[#FAFAFA] text-center text-sm text-[#8E8E93]">Loading replies...</div>;
+  if (leads.length === 0) return <div className="border-t border-[#E5E5EA] p-6 bg-[#FAFAFA] text-center text-sm text-[#8E8E93]">No draft replies to review</div>;
+
+  return (
+    <div className="border-t border-[#E5E5EA] p-5 bg-[#FAFAFA]">
+      <div className="flex justify-between items-center mb-3">
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.05em]">Review Draft Replies</div>
+          <div className="text-xs text-[#007AFF] font-semibold mt-0.5">{leads.length} reply draft{leads.length !== 1 ? "s" : ""} waiting</div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {leads.map((lead) => (
+          <div key={lead.id} className="bg-white border border-[#E5E5EA] rounded-[10px] p-4">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[13px] font-semibold">{lead.business_name || "Unknown"}</span>
+              <span className="text-[11px] text-[#8E8E93]">{lead.city || ""}</span>
+              {lead.reply_category && (
+                <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-lg ${
+                  lead.reply_category === "interested" ? "bg-[#C8E6C9] text-[#1B5E20]" :
+                  lead.reply_category === "question" ? "bg-[#E3F2FD] text-[#1565C0]" :
+                  lead.reply_category === "objection" ? "bg-[#FFEBEE] text-[#C62828]" :
+                  "bg-gray-100 text-gray-600"
+                }`}>
+                  {lead.reply_category}
+                </span>
+              )}
+              {lead.replied_at && (
+                <span className="text-[10px] text-[#FF9F0A] font-medium">{daysSince(lead.replied_at)}d ago</span>
+              )}
+            </div>
+
+            {/* Their reply */}
+            <div className="bg-[#E8F5E9] rounded-xl rounded-bl-sm p-3 mb-3">
+              <div className="text-[10px] font-semibold text-[#2E7D32] mb-1">Their Reply</div>
+              <div className="text-[13px] text-[#1B5E20] leading-relaxed">{lead.reply_text}</div>
+            </div>
+
+            {/* Editable draft */}
+            <div className="bg-[#F3E5F5] rounded-xl rounded-br-sm p-3 mb-3">
+              <div className="text-[10px] font-semibold text-[#7B1FA2] mb-1">Your Draft Response</div>
+              <textarea
+                value={drafts[lead.id] || ""}
+                onChange={(e) => setDrafts(prev => ({ ...prev, [lead.id]: e.target.value }))}
+                rows={4}
+                className="w-full text-[13px] text-[#4A148C] leading-relaxed bg-transparent border-none outline-none resize-y"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => handleSkip(lead.id)}
+                className="text-[11px] font-medium text-[#8E8E93] hover:text-[#1D1D1F] px-3 py-1.5 rounded-lg transition-colors"
+              >
+                Skip
+              </button>
+              <button
+                onClick={() => handleSend(lead)}
+                disabled={sendingId === lead.id}
+                className="text-[11px] font-semibold text-white bg-[#7B1FA2] hover:bg-[#6A1B9A] disabled:bg-[#CE93D8] px-4 py-1.5 rounded-lg transition-colors"
+              >
+                {sendingId === lead.id ? "Sending..." : "Send Reply"}
+              </button>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Sample emails */}
-      {samples.map((sample, i) => (
-        <div key={i} className="bg-white border border-[#E5E5EA] rounded-[10px] p-4 mb-2.5">
-          <div className="text-[9px] uppercase tracking-[0.08em] text-[#AEAEB2] font-semibold mb-1.5">Sample {i + 1} of {samples.length}</div>
-          <div className="text-xs text-[#8E8E93] mb-2">
-            To: <strong className="text-[#1D1D1F]">{sample.to}</strong>
-          </div>
-          <div className="text-[13px] font-semibold mb-2.5 pb-2 border-b border-[#F2F2F7]">{sample.subject}</div>
-          <div className="text-[13px] text-[#3C3C43] leading-relaxed whitespace-pre-line">{sample.body}</div>
+      {leads.length === 0 && (
+        <div className="text-center mt-4">
+          <button onClick={onDone} className="text-[11px] font-semibold text-[#007AFF] hover:underline">Done reviewing</button>
         </div>
-      ))}
-      <div className="text-xs text-[#AEAEB2] text-center mt-2">+ more personalized emails in this batch</div>
+      )}
     </div>
   );
 }
@@ -985,8 +1396,8 @@ function EmailPreviewPanel({ batchId }: { batchId: string }) {
 // ═══════════════════════════════════════════════════════════════════
 // BATCH LEAD TABLE — with expandable detail rows
 // ═══════════════════════════════════════════════════════════════════
-function BatchLeadTable({ batchId }: { batchId: string }) {
-  const [leads, setLeads] = useState<any[]>([]);
+function BatchLeadTable({ batchId, channelFilter }: { batchId: string; channelFilter: "all" | "cold_email" | "form" }) {
+  const [allLeads, setAllLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [expandedLead, setExpandedLead] = useState<string | null>(null);
@@ -994,6 +1405,15 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
   const [advancing, setAdvancing] = useState(false);
   const [sortCol, setSortCol] = useState<string>("business_name");
   const [sortAsc, setSortAsc] = useState(true);
+
+  // Apply channel filter
+  const leads = channelFilter === "all"
+    ? allLeads
+    : allLeads.filter(l => {
+        // Use stored outreach_method if available, otherwise infer
+        const method = l.outreach_method || (l.contact_form_url ? "form" : "cold_email");
+        return method === channelFilter;
+      });
 
   function handleSort(col: string) {
     if (sortCol === col) setSortAsc(!sortAsc);
@@ -1019,7 +1439,7 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
   async function fetchLeads() {
     try {
       const res = await fetch(`/api/ops/pipeline/leads?batch_id=${batchId}`);
-      if (res.ok) setLeads(await res.json());
+      if (res.ok) setAllLeads(await res.json());
     } catch (err) { console.error("Failed to fetch leads:", err); }
     finally { setLoading(false); }
   }
@@ -1151,6 +1571,7 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
                           { key: "reviews_count", label: "Reviews" },
                           { key: "years_in_business", label: "Yrs" },
                           { key: "their_website_url", label: "Website" },
+                          { key: "outreach_method", label: "Channel" },
                           { key: "contact_form_url", label: "Form" },
                           { key: "preview_site_url", label: "Preview" },
                         ].map(({ key, label }) => (
@@ -1191,6 +1612,17 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
                               {domain ? (
                                 <a href={lead.their_website_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">{domain}</a>
                               ) : <span className="text-[#FF9F0A] font-medium">No website</span>}
+                            </td>
+                            <td className={td}>
+                              {(() => {
+                                const method = lead.outreach_method || (lead.contact_form_url ? "form" : "cold_email");
+                                const methodStyle = OUTREACH_METHOD_LABELS[method as keyof typeof OUTREACH_METHOD_LABELS];
+                                return methodStyle ? (
+                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg ${methodStyle.color}`}>
+                                    {methodStyle.label}
+                                  </span>
+                                ) : <span className="text-[#D1D1D6]">—</span>;
+                              })()}
                             </td>
                             <td className={td}>
                               {lead.contact_form_url ? (
@@ -1384,11 +1816,11 @@ function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { lead: a
                     <div className="flex items-center gap-2 mb-2">
                       <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93]">ICP Quality</div>
                       <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>
-                        {icpStyle.label} ({icp.score}pt)
+                        {icpStyle.label}
                       </span>
                     </div>
                     <div className="space-y-0.5">
-                      {icp.signals.map((signal, i) => (
+                      {icp.signals.map((signal: string, i: number) => (
                         <div key={i} className="flex items-center gap-1.5 text-[11px]">
                           <span className={signal.includes("No ") || signal.includes("low") ? "text-[#C7C7CC]" : "text-[#34C759]"}>
                             {signal.includes("No ") || signal.includes("low") ? "○" : "✓"}
@@ -1397,6 +1829,22 @@ function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { lead: a
                         </div>
                       ))}
                     </div>
+                    {/* Outreach Methods */}
+                    {icp.outreach_methods.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-[#E5E5EA]">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-1.5">Outreach Channels</div>
+                        <div className="flex flex-wrap gap-1">
+                          {icp.outreach_methods.map((method: string) => {
+                            const style = OUTREACH_METHOD_LABELS[method as keyof typeof OUTREACH_METHOD_LABELS];
+                            return style ? (
+                              <span key={method} className={`text-[9px] font-semibold px-2 py-0.5 rounded-lg ${style.color}`}>
+                                {style.label}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

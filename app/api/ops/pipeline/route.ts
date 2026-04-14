@@ -70,6 +70,55 @@ export async function GET() {
     }
   }
 
+  // Auto-create gates when leads reach gate stages but no pending gate exists
+  const GATE_TRIGGERS: { stage: string; gate_type: string }[] = [
+    { stage: "site_built", gate_type: "site_review" },
+    { stage: "site_approved", gate_type: "outreach_approval" },
+    { stage: "replied", gate_type: "draft_approval" },
+  ];
+
+  for (const b of batchesResult.data || []) {
+    const stageCounts = batchStageCounts.get(b.id);
+    if (!stageCounts) continue;
+
+    const existingGates = batchGates.get(b.id) || [];
+
+    for (const { stage, gate_type } of GATE_TRIGGERS) {
+      const count = stageCounts[stage as PipelineStage] || 0;
+      if (count === 0) continue;
+
+      // Check if a pending gate already exists for this type
+      const hasGate = existingGates.some(g => g.gate_type === gate_type && g.status === "pending");
+      if (hasGate) continue;
+
+      // Create the gate
+      const { data: newGate } = await supabase
+        .from("pipeline_gates")
+        .insert({
+          batch_id: b.id,
+          gate_type,
+          items_pending: count,
+          items_approved: 0,
+          items_rejected: 0,
+          status: "pending",
+        })
+        .select("*")
+        .single();
+
+      if (newGate) {
+        if (!batchGates.has(b.id)) batchGates.set(b.id, []);
+        batchGates.get(b.id)!.push({
+          id: newGate.id,
+          gate_type: newGate.gate_type,
+          items_pending: newGate.items_pending,
+          items_approved: 0,
+          items_rejected: 0,
+          status: "pending",
+        });
+      }
+    }
+  }
+
   // Assemble batch objects
   const batches: ProspectBatch[] = (batchesResult.data || []).map((b) => {
     const stageCounts = batchStageCounts.get(b.id) ||

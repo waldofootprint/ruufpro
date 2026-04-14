@@ -3,11 +3,18 @@
 // Prospect Scorer — takes scraped CSV, scores each prospect into tiers,
 // and inserts into prospect_pipeline table for ops dashboard review.
 //
+// Scoring mirrors lib/prospect-scoring.ts (single source of truth).
+//
 // Tiers:
-//   Gold   — has form, <30 reviews, 3.5+ rating, no estimate widget
-//   Silver — has form, 30-100 reviews OR no website (high need)
-//   Bronze — no form (email fallback), or 100-300 reviews
-//   Skip   — already has estimate widget, 300+ reviews, <3.5 rating
+//   Gold   — 0-30 reviews, 3.5+ rating, no estimate widget
+//   Silver — 31-100 reviews, 3.5+ rating, no estimate widget
+//   Skip   — 100+ reviews OR <3.5 rating OR has estimate widget
+//
+// Outreach routing (per prospect):
+//   No website           → cold_email
+//   Has website + form   → form
+//   Has website, no form → cold_email
+//   Gold + LinkedIn      → linkedin_draft (secondary)
 //
 // Usage:
 //   node tools/score-prospects.mjs --csv .tmp/prospects/tampa_fl_scraped.csv
@@ -25,7 +32,6 @@ import { existsSync } from "fs";
 const TIERS = {
   gold: "Gold",
   silver: "Silver",
-  bronze: "Bronze",
   skip: "Skip",
 };
 
@@ -59,66 +65,70 @@ function scoreProspect(row) {
   const hasForm = row.scrape_status === "success" && row.contact_form_url && row.contact_form_url !== "";
   const hasEstimateWidget = row.has_estimate_widget === "true";
   const hasWebsite = row.website && row.website !== "none" && row.website !== "";
-  const websiteStatus = row.website_status || "";
+  const hasLinkedIn = row.linkedin_url && row.linkedin_url !== "";
+  const hasEmail = row.email || row.owner_email;
 
   const reasons = [];
 
-  // ---- Skip conditions (checked first) ----
+  // ── Skip conditions (checked first) ──────────────────────────
 
-  // Already has estimate widget — they're using Roofle/Roofr, not our ICP
   if (hasEstimateWidget) {
     const providers = row.estimate_widget_providers || "unknown";
     reasons.push(`Has estimate widget (${providers})`);
-    return { tier: "skip", reasons, reviewCount, rating };
+    return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  // 300+ reviews = too established
-  if (reviewCount >= 300) {
-    reasons.push(`${reviewCount} reviews — too established, not our ICP`);
-    return { tier: "skip", reasons, reviewCount, rating };
+  if (reviewCount >= 100) {
+    reasons.push(`${reviewCount} reviews — too established`);
+    return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  // Below 3.5 rating = quality issues our site won't fix
   if (rating > 0 && rating < 3.5) {
     reasons.push(`${rating}★ — too low, quality issues`);
-    return { tier: "skip", reasons, reviewCount, rating };
+    return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  // ---- Gold: ideal prospect (0-30 reviews, 3.5+ rating) ----
+  // ── Outreach method routing ──────────────────────────────────
+
+  let outreachMethod = "cold_email"; // default
+  if (hasWebsite && hasForm) {
+    outreachMethod = "form";
+  }
+
+  // ── Gold: 0-30 reviews, 3.5+ rating ─────────────────────────
 
   if (reviewCount <= 30 && (rating === 0 || rating >= 3.5)) {
-    // Has form = top priority
-    if (hasForm) {
-      reasons.push("Has form, ≤30 reviews, 3.5+ rating, no widget — ideal ICP");
-    } else if (!hasWebsite) {
-      reasons.push("No website at all — highest need for free site gift");
-    } else {
-      reasons.push("≤30 reviews, 3.5+ rating — good ICP, no form detected");
-    }
-
     if (reviewCount === 0) reasons.push("Zero reviews — brand new crew");
-    else if (reviewCount <= 10) reasons.push(`Only ${reviewCount} reviews — very new`);
+    else if (reviewCount <= 10) reasons.push(`${reviewCount} reviews — very new`);
     else reasons.push(`${reviewCount} reviews — small crew`);
 
-    return { tier: "gold", reasons, reviewCount, rating };
+    if (rating > 0) reasons.push(`${rating}★ rating`);
+
+    if (!hasWebsite) reasons.push("No website — highest need");
+    else if (hasForm) reasons.push("Has contact form");
+
+    if (outreachMethod === "cold_email" && !hasEmail) reasons.push("⚠ No email — needs enrichment");
+
+    return { tier: "gold", reasons, reviewCount, rating, outreachMethod };
   }
 
-  // ---- Silver: good but bigger (31-100 reviews) ----
+  // ── Silver: 31-100 reviews, 3.5+ rating ─────────────────────
 
-  if (reviewCount <= 100) {
-    if (hasForm) {
-      reasons.push(`${reviewCount} reviews — growing business, has form`);
-    } else if (!hasWebsite) {
-      reasons.push(`${reviewCount} reviews but no website — still needs us`);
-    } else {
-      reasons.push(`${reviewCount} reviews — established but reachable`);
-    }
-    return { tier: "silver", reasons, reviewCount, rating };
+  if (reviewCount <= 100 && (rating === 0 || rating >= 3.5)) {
+    reasons.push(`${reviewCount} reviews — growing business`);
+    if (rating > 0) reasons.push(`${rating}★ rating`);
+
+    if (!hasWebsite) reasons.push("No website — still needs us");
+    else if (hasForm) reasons.push("Has contact form");
+
+    if (outreachMethod === "cold_email" && !hasEmail) reasons.push("⚠ No email — needs enrichment");
+
+    return { tier: "silver", reasons, reviewCount, rating, outreachMethod };
   }
 
-  // ---- Bronze: 100-299 reviews, probably has marketing ----
-  reasons.push(`${reviewCount} reviews — mid-size, may already have marketing`);
-  return { tier: "bronze", reasons, reviewCount, rating };
+  // Fallback (shouldn't reach given checks above)
+  reasons.push("Does not match any tier");
+  return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
 }
 
 // --------------- Pipeline Insert ---------------
@@ -171,6 +181,22 @@ async function insertIntoPipeline(rows) {
       }
     }
 
+    // Check for duplicate by phone number
+    const phone = row.phone || row.scraped_phone || null;
+    if (phone) {
+      const { data: existing } = await supabase
+        .from("prospect_pipeline")
+        .select("id")
+        .eq("phone", phone)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        console.log(`  Skipped duplicate: ${row.business_name} (phone: ${phone})`);
+        skipped++;
+        continue;
+      }
+    }
+
     const prospect = {
       batch_id: batch.id,
       stage: "scraped",
@@ -178,13 +204,15 @@ async function insertIntoPipeline(rows) {
       business_name: row.business_name || row.name || "Unknown",
       city: row.city || "",
       state: row.state || "FL",
-      phone: row.phone || row.scraped_phone || null,
+      phone: phone,
       rating: row.google_rating ? parseFloat(row.google_rating) : null,
       reviews_count: row.google_review_count ? parseInt(row.google_review_count, 10) : null,
       owner_name: row.owner_name || null,
       owner_email: row.email || null,
       their_website_url: row.website !== "none" ? row.website : null,
       scraped_at: now.toISOString(),
+      // Outreach routing
+      outreach_method: row.outreach_method || null,
       // Form detection data
       contact_form_url: row.contact_form_url || null,
       form_field_mapping: row.form_field_mapping ? JSON.parse(row.form_field_mapping) : null,
@@ -255,20 +283,23 @@ async function main() {
 
   // Score each prospect
   const scored = rows.map((row) => {
-    const { tier, reasons, reviewCount, rating } = scoreProspect(row);
+    const { tier, reasons, reviewCount, rating, outreachMethod } = scoreProspect(row);
     return {
       ...row,
       tier,
       tier_reasons: reasons.join("; "),
       review_count_parsed: reviewCount,
       rating_parsed: rating,
+      outreach_method: outreachMethod,
     };
   });
 
   // Summary
-  const tierCounts = { gold: 0, silver: 0, bronze: 0, skip: 0 };
+  const tierCounts = { gold: 0, silver: 0, skip: 0 };
+  const methodCounts = { form: 0, cold_email: 0, linkedin_draft: 0 };
   for (const row of scored) {
     tierCounts[row.tier]++;
+    if (row.outreach_method) methodCounts[row.outreach_method]++;
   }
 
   console.log("┌─────────────────────────────────┐");
@@ -276,14 +307,20 @@ async function main() {
   console.log("├─────────┬───────┬───────────────┤");
   console.log(`│  Gold   │  ${String(tierCounts.gold).padStart(3)}  │ Best fit      │`);
   console.log(`│  Silver │  ${String(tierCounts.silver).padStart(3)}  │ Good fit      │`);
-  console.log(`│  Bronze │  ${String(tierCounts.bronze).padStart(3)}  │ Maybe         │`);
   console.log(`│  Skip   │  ${String(tierCounts.skip).padStart(3)}  │ Not a fit     │`);
   console.log("├─────────┼───────┼───────────────┤");
   console.log(`│  Total  │  ${String(scored.length).padStart(3)}  │               │`);
   console.log("└─────────┴───────┴───────────────┘");
+  console.log("");
+  console.log("┌─────────────────────────────────┐");
+  console.log("│     OUTREACH ROUTING            │");
+  console.log("├──────────────┬───────┬──────────┤");
+  console.log(`│  Cold Email  │  ${String(methodCounts.cold_email).padStart(3)}  │ Primary  │`);
+  console.log(`│  Form Submit │  ${String(methodCounts.form).padStart(3)}  │ Auto     │`);
+  console.log("└──────────────┴───────┴──────────┘");
 
   // Show details per tier
-  for (const tier of ["gold", "silver", "bronze", "skip"]) {
+  for (const tier of ["gold", "silver", "skip"]) {
     const tierRows = scored.filter((r) => r.tier === tier);
     if (tierRows.length === 0) continue;
 
