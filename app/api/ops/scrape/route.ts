@@ -20,6 +20,7 @@ interface Prospect {
   state: string;
   rating: number | null;
   reviews_count: number | null;
+  google_place_id: string | null;
 }
 
 // ── Google Maps: text search for roofers ────────────────────────────
@@ -141,6 +142,7 @@ export async function POST(req: NextRequest) {
             state: state || "FL",
             rating: details.rating || null,
             reviews_count: details.user_ratings_total || null,
+            google_place_id: place.place_id || null,
           });
 
           cityCount++;
@@ -191,6 +193,14 @@ export async function POST(req: NextRequest) {
       const { error: pErr } = await supabase.from("prospect_pipeline").insert({
         contractor_id: contractor.id,
         batch_id,
+        business_name: p.business_name,
+        city: p.city,
+        state: p.state,
+        phone: p.phone,
+        rating: p.rating,
+        reviews_count: p.reviews_count,
+        address: p.address,
+        google_place_id: p.google_place_id,
         stage: "scraped",
         their_website_url: p.website,
         scraped_at: new Date().toISOString(),

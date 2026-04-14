@@ -112,6 +112,8 @@ export default function OpsPage() {
   const [submittingForms, setSubmittingForms] = useState<string | null>(null);
   const [sendingEmails, setSendingEmails] = useState<string | null>(null);
   const [enriching, setEnriching] = useState<string | null>(null);
+  const [enrichingPhotos, setEnrichingPhotos] = useState<string | null>(null);
+  const [buildingSites, setBuildingSites] = useState<string | null>(null);
   const [formActionResult, setFormActionResult] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [channelFilter, setChannelFilter] = useState<"all" | "cold_email" | "form">("all");
@@ -211,6 +213,57 @@ export default function OpsPage() {
       setFormActionResult("Enrich request failed");
     } finally {
       setEnriching(null);
+    }
+  }
+
+  async function handleEnrichPhotos(batchId: string) {
+    setEnrichingPhotos(batchId);
+    setFormActionResult(null);
+    try {
+      const res = await fetch("/api/ops/enrich-photos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: batchId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const parts = [`Enriched ${data.enriched}/${data.total} with photos + reviews`];
+        if (data.estimated_cost) parts.push(`Cost: ${data.estimated_cost}`);
+        if (data.errors?.length) parts.push(`${data.errors.length} errors`);
+        setFormActionResult(parts.join(" · "));
+        await fetchPipeline();
+      } else {
+        setFormActionResult(`Photo enrichment failed: ${data.error}`);
+      }
+    } catch {
+      setFormActionResult("Photo enrichment request failed");
+    } finally {
+      setEnrichingPhotos(null);
+    }
+  }
+
+  async function handleBuildSites(batchId: string) {
+    setBuildingSites(batchId);
+    setFormActionResult(null);
+    try {
+      const res = await fetch("/api/ops/build-sites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: batchId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const parts = [`Built ${data.built}/${data.total} preview sites`];
+        if (data.errors?.length) parts.push(`${data.errors.length} errors`);
+        setFormActionResult(parts.join(" · "));
+        await fetchPipeline();
+      } else {
+        setFormActionResult(`Build sites failed: ${data.error}`);
+      }
+    } catch {
+      setFormActionResult("Build sites request failed");
+    } finally {
+      setBuildingSites(null);
     }
   }
 
@@ -784,6 +837,22 @@ export default function OpsPage() {
                         className="text-[10px] font-semibold text-[#5E35B1] bg-[#EDE7F6] hover:bg-[#D1C4E9] border border-[#5E35B133] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
                       >
                         {detectingForms === batch.id ? "Detecting..." : "Detect Forms"}
+                      </button>
+                      {/* Enrich photos button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleEnrichPhotos(batch.id); }}
+                        disabled={enrichingPhotos === batch.id}
+                        className="text-[10px] font-semibold text-[#00796B] bg-[#E0F2F1] hover:bg-[#B2DFDB] border border-[#00796B33] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {enrichingPhotos === batch.id ? "Enriching..." : "📷 Photos"}
+                      </button>
+                      {/* Build sites button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleBuildSites(batch.id); }}
+                        disabled={buildingSites === batch.id}
+                        className="text-[10px] font-semibold text-[#1565C0] bg-[#E3F2FD] hover:bg-[#BBDEFB] border border-[#1565C033] px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {buildingSites === batch.id ? "Building..." : "🏠 Build Sites"}
                       </button>
                       {isCompleted && (
                         <span className="text-[10px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-1 rounded-[10px]">✓ Complete</span>
