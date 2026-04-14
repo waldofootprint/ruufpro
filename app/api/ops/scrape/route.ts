@@ -76,9 +76,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     // Cap at 25 per request to stay within Vercel function timeout (60s hobby / 300s pro).
-    // Dashboard can send multiple requests for larger batches.
     const { batch_id, limit: rawLimit = 25 } = body;
     const limit = Math.min(rawLimit, 25);
+
+    // Scrape filters — applied post-fetch before inserting
+    const filters = {
+      min_rating: body.min_rating ?? 0,        // 0 = no minimum
+      max_reviews: body.max_reviews ?? 999999,  // high default = no cap
+      no_website_only: body.no_website_only ?? false,
+    };
 
     if (!batch_id) {
       return NextResponse.json({ error: "batch_id required" }, { status: 400 });
@@ -126,6 +132,15 @@ export async function POST(req: NextRequest) {
           if (!details.name) continue;
           if (details.business_status && details.business_status !== "OPERATIONAL") continue;
 
+          // Apply scrape filters
+          const rating = details.rating || 0;
+          const reviewCount = details.user_ratings_total || 0;
+          const hasWebsite = !!details.website;
+
+          if (filters.min_rating > 0 && rating > 0 && rating < filters.min_rating) continue;
+          if (reviewCount > filters.max_reviews) continue;
+          if (filters.no_website_only && hasWebsite) continue;
+
           const { city: parsedCity, state } = parseCityState(details.formatted_address || "");
 
           prospects.push({
@@ -135,8 +150,8 @@ export async function POST(req: NextRequest) {
             address: details.formatted_address || "",
             city: parsedCity || city,
             state: state || "FL",
-            rating: details.rating || null,
-            reviews_count: details.user_ratings_total || null,
+            rating: rating || null,
+            reviews_count: reviewCount || null,
             google_place_id: place.place_id || null,
           });
 

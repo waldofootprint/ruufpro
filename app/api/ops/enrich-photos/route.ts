@@ -79,19 +79,26 @@ export async function POST(req: NextRequest) {
   if (!auth.authorized) return auth.response;
 
   try {
-    const { batch_id } = await req.json();
+    const { batch_id, prospect_ids } = await req.json();
 
-    if (!batch_id) {
-      return NextResponse.json({ error: "batch_id required" }, { status: 400 });
+    if (!batch_id && !prospect_ids?.length) {
+      return NextResponse.json({ error: "batch_id or prospect_ids required" }, { status: 400 });
     }
 
     // Get prospects that have a place_id but no photos yet
-    const { data: prospects, error: fetchErr } = await supabase
+    let query = supabase
       .from("prospect_pipeline")
       .select("id, google_place_id, business_name")
-      .eq("batch_id", batch_id)
       .not("google_place_id", "is", null)
       .is("photos_enriched_at", null);
+
+    if (prospect_ids?.length) {
+      query = query.in("id", prospect_ids);
+    } else {
+      query = query.eq("batch_id", batch_id);
+    }
+
+    const { data: prospects, error: fetchErr } = await query;
 
     if (fetchErr) {
       return NextResponse.json({ error: fetchErr.message }, { status: 500 });

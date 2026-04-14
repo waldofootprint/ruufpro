@@ -117,11 +117,21 @@ export default function OpsPage() {
   const [formActionResult, setFormActionResult] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [channelFilter, setChannelFilter] = useState<"all" | "cold_email" | "form">("all");
+  // Scrape filters
+  const [scrapeMinRating, setScrapeMinRating] = useState(0);
+  const [scrapeMaxReviews, setScrapeMaxReviews] = useState(100);
+  const [scrapeNoWebsiteOnly, setScrapeNoWebsiteOnly] = useState(false);
+  const [newBatchMinRating, setNewBatchMinRating] = useState(0);
+  const [newBatchMaxReviews, setNewBatchMaxReviews] = useState(100);
+  const [newBatchNoWebsiteOnly, setNewBatchNoWebsiteOnly] = useState(false);
 
   function openScrapePanel(batchId: string, cities: string[]) {
     setScrapeOpen(batchId);
     setScrapeCities(cities.join(", "));
     setScrapeCount(25);
+    setScrapeMinRating(0);
+    setScrapeMaxReviews(100);
+    setScrapeNoWebsiteOnly(false);
   }
 
   async function handleDetectForms(batchId: string) {
@@ -274,7 +284,14 @@ export default function OpsPage() {
       const res = await fetch("/api/ops/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batch_id: batchId, limit: scrapeCount, cities }),
+        body: JSON.stringify({
+          batch_id: batchId,
+          limit: scrapeCount,
+          cities,
+          min_rating: scrapeMinRating,
+          max_reviews: scrapeMaxReviews,
+          no_website_only: scrapeNoWebsiteOnly,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -314,7 +331,14 @@ export default function OpsPage() {
       const scrapeRes = await fetch("/api/ops/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batch_id: batch.id, limit: newBatchCount, cities }),
+        body: JSON.stringify({
+          batch_id: batch.id,
+          limit: newBatchCount,
+          cities,
+          min_rating: newBatchMinRating,
+          max_reviews: newBatchMaxReviews,
+          no_website_only: newBatchNoWebsiteOnly,
+        }),
       });
       const scrapeData = await scrapeRes.json();
       if (scrapeRes.ok) {
@@ -585,14 +609,44 @@ export default function OpsPage() {
               </div>
 
               {/* Filters */}
-              <div className="bg-[#F5F5F7] rounded-lg p-3">
-                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">Scrape Filters</div>
+              <div className="bg-[#F5F5F7] rounded-lg p-3 space-y-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93]">Scrape Filters</div>
                 <div className="space-y-1 text-[11px] text-[#3C3C43]">
                   <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Google Maps type: roofing_contractor</div>
                   <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Business status: OPERATIONAL only</div>
-                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Deduplication: skip existing leads in batch</div>
-                  <div className="flex items-center gap-2"><span className="text-[#8E8E93]">○</span> No rating/review minimum (all captured)</div>
+                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Deduplication: skip existing leads across all batches</div>
                 </div>
+
+                {/* Min Rating */}
+                <div>
+                  <label className="text-[10px] font-semibold text-[#8E8E93] block mb-1">Min Rating</label>
+                  <div className="flex gap-1">
+                    {[0, 3, 3.5, 4, 4.5].map((r) => (
+                      <button key={r} onClick={() => setScrapeMinRating(r)} className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${scrapeMinRating === r ? "bg-[#007AFF] text-white" : "bg-white text-[#3C3C43] border border-[#E5E5EA] hover:bg-[#E5E5EA]"}`}>
+                        {r === 0 ? "Any" : `${r}★+`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Max Reviews */}
+                <div>
+                  <label className="text-[10px] font-semibold text-[#8E8E93] block mb-1">Max Reviews</label>
+                  <div className="flex gap-1">
+                    {[10, 30, 50, 100, 999999].map((r) => (
+                      <button key={r} onClick={() => setScrapeMaxReviews(r)} className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${scrapeMaxReviews === r ? "bg-[#007AFF] text-white" : "bg-white text-[#3C3C43] border border-[#E5E5EA] hover:bg-[#E5E5EA]"}`}>
+                        {r === 999999 ? "Any" : `≤${r}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* No Website Only */}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={scrapeNoWebsiteOnly} onChange={(e) => setScrapeNoWebsiteOnly(e.target.checked)} className="w-3.5 h-3.5 rounded border-[#D1D1D6] text-[#007AFF]" />
+                  <span className="text-[11px] text-[#3C3C43] font-medium">No website only</span>
+                  <span className="text-[10px] text-[#8E8E93]">(best conversion)</span>
+                </label>
               </div>
 
               {/* Cost estimate */}
@@ -680,14 +734,44 @@ export default function OpsPage() {
               </div>
 
               {/* Filters */}
-              <div className="bg-[#F5F5F7] rounded-lg p-3">
-                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">Scrape Filters</div>
+              <div className="bg-[#F5F5F7] rounded-lg p-3 space-y-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93]">Scrape Filters</div>
                 <div className="space-y-1 text-[11px] text-[#3C3C43]">
                   <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Google Maps type: roofing_contractor</div>
                   <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Business status: OPERATIONAL only</div>
-                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Deduplication: skip existing leads</div>
-                  <div className="flex items-center gap-2"><span className="text-[#8E8E93]">○</span> No rating/review minimum (all captured)</div>
+                  <div className="flex items-center gap-2"><span className="text-[#34C759]">✓</span> Deduplication: skip existing leads across all batches</div>
                 </div>
+
+                {/* Min Rating */}
+                <div>
+                  <label className="text-[10px] font-semibold text-[#8E8E93] block mb-1">Min Rating</label>
+                  <div className="flex gap-1">
+                    {[0, 3, 3.5, 4, 4.5].map((r) => (
+                      <button key={r} onClick={() => setNewBatchMinRating(r)} className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${newBatchMinRating === r ? "bg-[#34C759] text-white" : "bg-white text-[#3C3C43] border border-[#E5E5EA] hover:bg-[#E5E5EA]"}`}>
+                        {r === 0 ? "Any" : `${r}★+`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Max Reviews */}
+                <div>
+                  <label className="text-[10px] font-semibold text-[#8E8E93] block mb-1">Max Reviews</label>
+                  <div className="flex gap-1">
+                    {[10, 30, 50, 100, 999999].map((r) => (
+                      <button key={r} onClick={() => setNewBatchMaxReviews(r)} className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${newBatchMaxReviews === r ? "bg-[#34C759] text-white" : "bg-white text-[#3C3C43] border border-[#E5E5EA] hover:bg-[#E5E5EA]"}`}>
+                        {r === 999999 ? "Any" : `≤${r}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* No Website Only */}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={newBatchNoWebsiteOnly} onChange={(e) => setNewBatchNoWebsiteOnly(e.target.checked)} className="w-3.5 h-3.5 rounded border-[#D1D1D6] text-[#34C759]" />
+                  <span className="text-[11px] text-[#3C3C43] font-medium">No website only</span>
+                  <span className="text-[10px] text-[#8E8E93]">(best conversion)</span>
+                </label>
               </div>
 
               {/* Cost estimate */}
@@ -1554,8 +1638,76 @@ function BatchLeadTable({ batchId, channelFilter }: { batchId: string; channelFi
     finally { setAdvancing(false); }
   }
 
+  const [enrichingSelected, setEnrichingSelected] = useState(false);
+  const [buildingSelected, setBuildingSelected] = useState(false);
+  const [enrichingPhotosSelected, setEnrichingPhotosSelected] = useState(false);
+
+  async function enrichSelected() {
+    if (selected.size === 0) return;
+    setEnrichingSelected(true);
+    try {
+      const res = await fetch("/api/ops/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prospect_ids: Array.from(selected) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Enriched ${data.enriched} · ${data.no_match} no match · ${data.credits_used} credits used`);
+        setSelected(new Set());
+        await fetchLeads();
+      } else { alert(`Failed: ${data.error}`); }
+    } catch { alert("Network error"); }
+    finally { setEnrichingSelected(false); }
+  }
+
+  async function enrichPhotosSelected() {
+    if (selected.size === 0) return;
+    setEnrichingPhotosSelected(true);
+    try {
+      const res = await fetch("/api/ops/enrich-photos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prospect_ids: Array.from(selected) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Photos enriched: ${data.enriched}/${data.total} · Cost: ${data.estimated_cost}`);
+        setSelected(new Set());
+        await fetchLeads();
+      } else { alert(`Failed: ${data.error}`); }
+    } catch { alert("Network error"); }
+    finally { setEnrichingPhotosSelected(false); }
+  }
+
+  async function buildSitesSelected() {
+    if (selected.size === 0) return;
+    setBuildingSelected(true);
+    try {
+      const res = await fetch("/api/ops/build-sites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prospect_ids: Array.from(selected) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Built ${data.built}/${data.total} sites`);
+        setSelected(new Set());
+        await fetchLeads();
+      } else { alert(`Failed: ${data.error}`); }
+    } catch { alert("Network error"); }
+    finally { setBuildingSelected(false); }
+  }
+
   if (loading) return <div className="p-6 text-center text-[#8E8E93] text-sm">Loading leads...</div>;
   if (leads.length === 0) return <div className="p-6 text-center text-[#8E8E93] text-sm">No leads in this batch</div>;
+
+  // Determine which actions are relevant for the selected leads
+  const selectedLeads = leads.filter(l => selected.has(l.id));
+  const selectedScrapedOrEnriched = selectedLeads.filter(l => l.stage === "scraped" || l.stage === "enriched");
+  const selectedNeedEnrich = selectedLeads.filter(l => !l.enriched_at);
+  const selectedNeedPhotos = selectedLeads.filter(l => l.google_place_id && !l.photos_enriched_at);
+  const selectedNeedSites = selectedLeads.filter(l => (l.stage === "scraped" || l.stage === "enriched") && !l.preview_site_url);
 
   // Group leads by stage, ordered by pipeline progression
   const STAGE_ORDER: string[] = ["scraped", "enriched", "site_built", "site_approved", "outreach_approved", "sent", "awaiting_reply", "replied", "draft_ready", "responded", "interested", "free_signup", "paid", "not_now", "objection", "unsubscribed"];
@@ -1585,12 +1737,43 @@ function BatchLeadTable({ batchId, channelFilter }: { batchId: string; channelFi
             >
               Clear
             </button>
+            {/* Enrich Selected — show when any selected leads haven't been enriched */}
+            {selectedNeedEnrich.length > 0 && (
+              <button
+                onClick={enrichSelected}
+                disabled={enrichingSelected}
+                className="text-[11px] font-semibold text-white bg-[#E65100] hover:bg-[#BF360C] disabled:bg-[#FFAB91] px-4 py-1.5 rounded-lg transition-colors"
+              >
+                {enrichingSelected ? "Enriching..." : `Enrich ${selectedNeedEnrich.length} Emails`}
+              </button>
+            )}
+            {/* Photos Selected — show when any selected leads need photos */}
+            {selectedNeedPhotos.length > 0 && (
+              <button
+                onClick={enrichPhotosSelected}
+                disabled={enrichingPhotosSelected}
+                className="text-[11px] font-semibold text-white bg-[#00796B] hover:bg-[#004D40] disabled:bg-[#80CBC4] px-4 py-1.5 rounded-lg transition-colors"
+              >
+                {enrichingPhotosSelected ? "Enriching..." : `📷 Photos ${selectedNeedPhotos.length}`}
+              </button>
+            )}
+            {/* Build Sites Selected — show when any selected leads are ready for sites */}
+            {selectedNeedSites.length > 0 && (
+              <button
+                onClick={buildSitesSelected}
+                disabled={buildingSelected}
+                className="text-[11px] font-semibold text-white bg-[#1565C0] hover:bg-[#0D47A1] disabled:bg-[#90CAF9] px-4 py-1.5 rounded-lg transition-colors"
+              >
+                {buildingSelected ? "Building..." : `🏠 Build ${selectedNeedSites.length} Sites`}
+              </button>
+            )}
+            {/* Advance — always available */}
             <button
               onClick={advanceSelected}
               disabled={advancing}
               className="text-[11px] font-semibold text-white bg-[#34C759] hover:bg-[#2DA44E] disabled:bg-[#A5D6A7] px-4 py-1.5 rounded-lg transition-colors"
             >
-              {advancing ? "Advancing..." : `Approve ${selected.size} →`}
+              {advancing ? "Advancing..." : `Advance ${selected.size} →`}
             </button>
           </div>
         </div>

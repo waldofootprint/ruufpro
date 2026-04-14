@@ -14,10 +14,10 @@ export async function POST(req: NextRequest) {
   const auth = await requireOpsAuth();
   if (!auth.authorized) return auth.response;
 
-  const { batch_id } = await req.json();
+  const { batch_id, prospect_ids } = await req.json();
 
-  if (!batch_id) {
-    return NextResponse.json({ error: "batch_id required" }, { status: 400 });
+  if (!batch_id && !prospect_ids?.length) {
+    return NextResponse.json({ error: "batch_id or prospect_ids required" }, { status: 400 });
   }
 
   const apiKey = process.env.APOLLO_API_KEY;
@@ -32,13 +32,19 @@ export async function POST(req: NextRequest) {
 
   // Find un-enriched leads (no owner_email AND not yet enriched).
   // The enriched_at check prevents double-credit burn on rapid clicks.
-  const { data: leads, error } = await supabase
+  let query = supabase
     .from("prospect_pipeline")
     .select("id, business_name, their_website_url, city, state")
-    .eq("batch_id", batch_id)
     .is("owner_email", null)
-    .is("enriched_at", null)
-    .limit(50); // Cap at 50 to stay within free tier
+    .is("enriched_at", null);
+
+  if (prospect_ids?.length) {
+    query = query.in("id", prospect_ids);
+  } else {
+    query = query.eq("batch_id", batch_id);
+  }
+
+  const { data: leads, error } = await query.limit(50);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
