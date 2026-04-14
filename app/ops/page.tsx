@@ -992,6 +992,29 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
   const [expandedLead, setExpandedLead] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [advancing, setAdvancing] = useState(false);
+  const [sortCol, setSortCol] = useState<string>("business_name");
+  const [sortAsc, setSortAsc] = useState(true);
+
+  function handleSort(col: string) {
+    if (sortCol === col) setSortAsc(!sortAsc);
+    else { setSortCol(col); setSortAsc(true); }
+  }
+
+  function sortLeads(list: any[]) {
+    return [...list].sort((a, b) => {
+      let av = a[sortCol], bv = b[sortCol];
+      // Numeric columns
+      if (sortCol === "rating" || sortCol === "reviews_count") {
+        av = parseFloat(av) || 0;
+        bv = parseFloat(bv) || 0;
+        return sortAsc ? av - bv : bv - av;
+      }
+      // String columns
+      av = (av || "").toString().toLowerCase();
+      bv = (bv || "").toString().toLowerCase();
+      return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+  }
 
   async function fetchLeads() {
     try {
@@ -1089,7 +1112,7 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
         const isOpen = expandedStage === stage;
         const stageSelected = stageLeads.filter(l => selected.has(l.id)).length;
         const allSelected = stageLeads.every(l => selected.has(l.id));
-        const sorted = [...stageLeads].sort((a, b) => (a.business_name || "").localeCompare(b.business_name || ""));
+        const sorted = sortLeads(stageLeads);
 
         return (
           <div key={stage} className="border-b border-[#F2F2F7] last:border-b-0">
@@ -1121,8 +1144,22 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
                         <th className="px-3 py-2 w-8">
                           <input type="checkbox" checked={allSelected} onChange={() => toggleSelectAllInStage(stage)} className="w-3.5 h-3.5 rounded border-[#D1D1D6] text-[#007AFF] cursor-pointer" />
                         </th>
-                        {["Business", "City", "Rating", "Reviews", "Website", "Form", "Preview"].map(h => (
-                          <th key={h} className="text-[10px] uppercase tracking-[0.06em] text-[#AEAEB2] font-semibold text-left px-3 py-2">{h}</th>
+                        {[
+                          { key: "business_name", label: "Business" },
+                          { key: "city", label: "City" },
+                          { key: "rating", label: "Rating" },
+                          { key: "reviews_count", label: "Reviews" },
+                          { key: "their_website_url", label: "Website" },
+                          { key: "contact_form_url", label: "Form" },
+                          { key: "preview_site_url", label: "Preview" },
+                        ].map(({ key, label }) => (
+                          <th
+                            key={key}
+                            onClick={() => handleSort(key)}
+                            className="text-[10px] uppercase tracking-[0.06em] text-[#AEAEB2] font-semibold text-left px-3 py-2 cursor-pointer hover:text-[#1D1D1F] select-none"
+                          >
+                            {label} {sortCol === key ? (sortAsc ? "▲" : "▼") : ""}
+                          </th>
                         ))}
                       </tr>
                     </thead>
