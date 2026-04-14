@@ -160,9 +160,10 @@ export interface Lead {
   living_estimate_id: string | null;
   property_data_id: string | null;
 
-  // Lead qualification (from widget)
+  // Lead qualification (from widget or AI scoring)
   timeline: LeadTimeline | null;
   financing_interest: FinancingInterest | null;
+  temperature: LeadTemperature | null;
 
   // Speed-to-lead tracking
   contacted_at: string | null;

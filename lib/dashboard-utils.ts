@@ -26,8 +26,11 @@ export function getColumnConfig(status: LeadStatus) {
   return KANBAN_COLUMNS.find((c) => c.status === status) || KANBAN_COLUMNS[0];
 }
 
-// Map timeline to temperature tag
+// Map lead to temperature — uses DB column first, then falls back to timeline
 export function getLeadTemperature(lead: Lead): LeadTemperature | null {
+  // Direct temperature from AI scoring (chat leads)
+  if (lead.temperature) return lead.temperature;
+  // Fallback: derive from timeline (estimate widget leads)
   if (!lead.timeline) return null;
   if (lead.timeline === "now") return "hot";
   if (lead.timeline === "1_3_months") return "warm";

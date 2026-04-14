@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   );
   try {
     const body = await request.json();
-    const { contractor_id, lead_name, lead_phone, lead_email, lead_address, lead_message, source, estimate_low, estimate_high, estimate_material, estimate_roof_sqft, timeline: leadTimeline, financing_interest, sms_consent, chat_session_id } = body;
+    const { contractor_id, lead_name, lead_phone, lead_email, lead_address, lead_message, source, estimate_low, estimate_high, estimate_material, estimate_roof_sqft, timeline: leadTimeline, financing_interest, sms_consent, temperature, chat_session_id } = body;
 
     if (!contractor_id || !lead_name) {
       return NextResponse.json({ error: "contractor_id and lead_name required" }, { status: 400 });
@@ -123,8 +123,11 @@ export async function POST(request: NextRequest) {
     // Include timeline if available for urgency context
     const timeline = body.timeline;
     const timelineLabel = timeline === "now" ? " · ASAP" : timeline === "1_3_months" ? " · 1-3mo" : "";
+    const tempLabel = temperature === "hot" ? " 🔥 HOT" : temperature === "warm" ? " · Warm" : "";
     const pushTitle = source === "estimate_widget"
       ? `New Estimate Lead${timelineLabel}`
+      : source === "ai_chatbot"
+      ? `New Riley Lead${tempLabel}`
       : "New Contact Form Lead";
 
     // Build idempotency key to prevent double-sends on form resubmit or network retry.

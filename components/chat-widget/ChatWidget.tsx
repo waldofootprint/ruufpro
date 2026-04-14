@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { supabase } from "@/lib/supabase";
+import { scoreLeadFromChat } from "@/lib/lead-scoring";
 
 interface ChatWidgetProps {
   contractorId: string;
@@ -170,6 +171,9 @@ export default function ChatWidget({
     if (!isValidPhone(leadForm.phone)) return;
     setSubmittingLead(true);
 
+    // Score lead temperature from conversation
+    const temperature = scoreLeadFromChat(messages);
+
     // Insert to leads table (same pattern as contact-form.tsx)
     await supabase.from("leads").insert({
       contractor_id: contractorId,
@@ -180,6 +184,7 @@ export default function ChatWidget({
       source: "ai_chatbot",
       status: "new",
       sms_consent: leadForm.smsConsent,
+      temperature,
     });
 
     // Notify contractor (fire-and-forget) — also marks conversation as lead_captured server-side
@@ -194,6 +199,7 @@ export default function ChatWidget({
         lead_address: leadForm.address,
         source: "ai_chatbot",
         sms_consent: leadForm.smsConsent,
+        temperature,
         chat_session_id: sessionId || undefined,
       }),
     }).catch(() => {});
