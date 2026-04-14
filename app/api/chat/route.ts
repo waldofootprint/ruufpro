@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
     // Fetch contractor — must exist and have chatbot enabled
     const { data: contractor } = await supabase
       .from("contractors")
-      .select("*, sites(services, reviews, hero_headline, hero_subheadline, about_text)")
+      .select("*, sites(services, reviews, hero_headline, about_text)")
       .eq("id", contractorId)
       .eq("has_ai_chatbot", true)
       .single();
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       state: contractor.state,
       tagline: contractor.tagline,
       heroHeadline: site?.hero_headline ?? null,
-      heroSubheadline: site?.hero_subheadline ?? null,
+      heroSubheadline: null,
       heroCta: null,
       heroImage: null,
       aboutText: site?.about_text ?? null,
