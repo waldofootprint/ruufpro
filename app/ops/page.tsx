@@ -1004,7 +1004,7 @@ function BatchLeadTable({ batchId }: { batchId: string }) {
     return [...list].sort((a, b) => {
       let av = a[sortCol], bv = b[sortCol];
       // Numeric columns
-      if (sortCol === "rating" || sortCol === "reviews_count") {
+      if (sortCol === "rating" || sortCol === "reviews_count" || sortCol === "years_in_business") {
         av = parseFloat(av) || 0;
         bv = parseFloat(bv) || 0;
         return sortAsc ? av - bv : bv - av;
