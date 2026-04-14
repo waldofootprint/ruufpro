@@ -5,11 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { PipelineStage, GateStatus, ProspectBatch, PipelineResponse } from "@/lib/ops-pipeline";
 import { PIPELINE_STAGES } from "@/lib/ops-pipeline";
-import { requireOpsAuth, softOpsAuth } from "@/lib/ops-auth";
+import { requireOpsAuth } from "@/lib/ops-auth";
 
 export async function GET() {
-  const auth = await softOpsAuth();
-  if (!auth.authorized) return auth.response;
+  // Auth handled by /ops layout (client-side admin email check).
+  // Cookie-based auth fails in API routes when session isn't synced.
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

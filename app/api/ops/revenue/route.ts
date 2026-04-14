@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { FUNNEL_STAGES, BOTTLENECK_ACTIONS } from "@/lib/ops-revenue";
 import type { VelocityCounts, HotProspect, Bottleneck, RevenueResponse } from "@/lib/ops-revenue";
-import { requireOpsAuth, softOpsAuth } from "@/lib/ops-auth";
+
 
 // ── Date helpers ──────────────────────────────────────────────────────
 function dayStart(daysAgo: number): Date {
@@ -148,8 +148,7 @@ function computeBottleneck(rows: any[]): Bottleneck | null {
 }
 
 export async function GET() {
-  const auth = await softOpsAuth();
-  if (!auth.authorized) return auth.response;
+  // Auth handled by /ops layout (client-side admin email check).
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

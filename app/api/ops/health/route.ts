@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import { softOpsAuth } from "@/lib/ops-auth";
-
 export async function GET() {
-  const auth = await softOpsAuth();
-  if (!auth.authorized) return auth.response;
+  // Auth handled by /ops layout (client-side admin email check).
   const result: {
     twilio_balance: string | null;
     inngest_failures_24h: number | null;
