@@ -116,6 +116,36 @@ export async function runChatEstimate(
     };
   }
 
+  // Commercial property guard — residential roofs rarely exceed 10,000 sqft (ZL-025)
+  if (roofData.roofAreaSqft > 10000) {
+    return {
+      success: false,
+      error: "commercial_property",
+      fallbackMessage:
+        "That looks like it might be a larger or commercial property — our online estimates are designed for residential homes. The team can give you a custom quote for that. Want me to connect you?",
+    };
+  }
+
+  // Out-of-state detection (ZL-026) — check if address state matches contractor state
+  const { data: contractorData } = await supabase
+    .from("contractors")
+    .select("state")
+    .eq("id", contractorId)
+    .single();
+
+  if (contractorData?.state) {
+    // Simple state extraction from address — look for 2-letter state code
+    const stateMatch = address.match(/\b([A-Z]{2})\b/);
+    if (stateMatch && stateMatch[1] !== contractorData.state.toUpperCase()) {
+      return {
+        success: false,
+        error: "out_of_state",
+        fallbackMessage:
+          `It looks like that address might be outside our service area. We're based in ${contractorData.state}. Want me to check with the team, or would you like an estimate for a local address?`,
+      };
+    }
+  }
+
   // Check weather surge
   let weatherSurgeMultiplier: number | undefined;
   try {

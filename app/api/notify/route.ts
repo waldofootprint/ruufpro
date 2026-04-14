@@ -57,9 +57,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
+  // Use service role key — lead inserts from chatbot go through here now (ZL-004)
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
   try {
     const body = await request.json();
@@ -94,6 +95,22 @@ export async function POST(request: NextRequest) {
 
     if (!contractor) {
       return NextResponse.json({ error: "Contractor not found" }, { status: 404 });
+    }
+
+    // Insert lead server-side (moved from client-side ChatWidget — ZL-004)
+    // Only for ai_chatbot source; other sources (estimate_widget, contact_form) insert their own
+    if (source === "ai_chatbot") {
+      await supabase.from("leads").insert({
+        contractor_id,
+        name: lead_name,
+        phone: lead_phone || null,
+        email: lead_email || null,
+        address: lead_address || null,
+        source: "ai_chatbot",
+        status: "new",
+        sms_consent: sms_consent || false,
+        temperature: temperature || "browsing",
+      });
     }
 
     // Send email notification

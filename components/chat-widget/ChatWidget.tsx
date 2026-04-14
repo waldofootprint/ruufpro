@@ -8,7 +8,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { supabase } from "@/lib/supabase";
 import { scoreLeadFromChat } from "@/lib/lead-scoring";
 import { ESTIMATE_DISCLAIMER } from "@/lib/estimate";
 
@@ -31,16 +30,24 @@ interface LeadFormData {
   smsConsent: boolean;
 }
 
+// Validate CSS color — only hex, rgb(), or known names. Reject injection attempts.
+function sanitizeColor(color: string): string {
+  if (/^#[0-9a-fA-F]{3,8}$/.test(color)) return color;
+  if (/^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/.test(color)) return color;
+  return "#6366f1"; // default fallback
+}
+
 export default function ChatWidget({
   contractorId,
   businessName,
   hasAiChatbot,
-  accentColor,
+  accentColor: rawAccentColor,
   fontFamily,
   isDarkTheme = false,
   customGreeting,
   isStandalone = false,
 }: ChatWidgetProps) {
+  const accentColor = sanitizeColor(rawAccentColor);
   const [isOpen, setIsOpen] = useState(isStandalone);
   const [sessionId, setSessionId] = useState("");
   const [showLeadForm, setShowLeadForm] = useState(false);
@@ -121,23 +128,35 @@ export default function ChatWidget({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Persist messages to localStorage
+  // Persist messages to localStorage (with timestamp for TTL)
   useEffect(() => {
     if (messages.length > 1 && sessionId) {
-      localStorage.setItem(`riley-messages-${contractorId}`, JSON.stringify(messages));
+      localStorage.setItem(`riley-messages-${contractorId}`, JSON.stringify({
+        ts: Date.now(),
+        msgs: messages,
+      }));
     }
   }, [messages, contractorId, sessionId]);
 
-  // Restore messages from localStorage on mount
+  // Restore messages from localStorage on mount (24-hour TTL)
   useEffect(() => {
     if (!sessionId) return;
     const saved = localStorage.getItem(`riley-messages-${contractorId}`);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 1) {
-          setMessages(parsed);
-          const userMsgCount = parsed.filter((m: { role: string }) => m.role === "user").length;
+        // Support both old format (array) and new format ({ts, msgs})
+        const msgs = Array.isArray(parsed) ? parsed : parsed?.msgs;
+        const ts = Array.isArray(parsed) ? 0 : parsed?.ts ?? 0;
+        // Clear if older than 24 hours
+        if (ts > 0 && Date.now() - ts > 24 * 60 * 60 * 1000) {
+          localStorage.removeItem(`riley-messages-${contractorId}`);
+          localStorage.removeItem(`riley-captured-${contractorId}`);
+          return;
+        }
+        if (Array.isArray(msgs) && msgs.length > 1) {
+          setMessages(msgs);
+          const userMsgCount = msgs.filter((m: { role: string }) => m.role === "user").length;
           userMsgCountRef.current = userMsgCount;
           if (userMsgCount >= 10) setCapped(true);
           if (userMsgCount >= 3 && !leadCaptured) setShowLeadForm(true);
@@ -175,7 +194,7 @@ export default function ChatWidget({
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  // Lead capture submission
+  // Lead capture submission — server-side insert + notify via /api/leads
   async function handleLeadSubmit() {
     if (!leadForm.name || !leadForm.phone) return;
     if (!isValidPhone(leadForm.phone)) return;
@@ -187,35 +206,29 @@ export default function ChatWidget({
     // Only include email if it passes basic validation
     const validEmail = leadForm.email && isValidEmail(leadForm.email) ? leadForm.email : null;
 
-    // Insert to leads table (same pattern as contact-form.tsx)
-    await supabase.from("leads").insert({
+    const leadPayload = {
       contractor_id: contractorId,
-      name: leadForm.name,
-      phone: leadForm.phone || null,
-      email: validEmail,
-      address: leadForm.address || null,
+      lead_name: leadForm.name,
+      lead_phone: leadForm.phone,
+      lead_email: validEmail,
+      lead_address: leadForm.address || null,
       source: "ai_chatbot",
-      status: "new",
       sms_consent: leadForm.smsConsent,
       temperature,
-    });
+      chat_session_id: sessionId || undefined,
+    };
 
-    // Notify contractor (fire-and-forget) — also marks conversation as lead_captured server-side
-    fetch("/api/notify", {
+    // Server-side insert + notify (with one retry on failure)
+    const sendNotify = () => fetch("/api/notify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contractor_id: contractorId,
-        lead_name: leadForm.name,
-        lead_phone: leadForm.phone,
-        lead_email: validEmail,
-        lead_address: leadForm.address,
-        source: "ai_chatbot",
-        sms_consent: leadForm.smsConsent,
-        temperature,
-        chat_session_id: sessionId || undefined,
-      }),
-    }).catch(() => {});
+      body: JSON.stringify(leadPayload),
+    });
+
+    sendNotify().catch(() => {
+      // Retry once after 2 seconds
+      setTimeout(() => sendNotify().catch(() => {}), 2000);
+    });
 
     setLeadCaptured(true);
     setShowLeadForm(false);
@@ -451,6 +464,9 @@ export default function ChatWidget({
 
         {/* Messages */}
         <div
+          role="log"
+          aria-live="polite"
+          aria-label="Chat messages"
           style={{
             flex: 1,
             overflowY: "auto",
@@ -574,7 +590,7 @@ export default function ChatWidget({
                             }}
                           >
                             <span>⚠</span>
-                            <span>Includes temporary storm-demand pricing</span>
+                            <span>Includes temporary storm-demand pricing — prices may be lower once activity subsides</span>
                           </div>
                         )}
                         {/* Material options */}
@@ -599,12 +615,12 @@ export default function ChatWidget({
                             </div>
                           ))}
                         </div>
-                        {/* Disclaimer */}
+                        {/* Disclaimer — 12px minimum for legal conspicuousness */}
                         <div
                           style={{
                             padding: "8px 14px",
                             background: isDarkTheme ? "#222" : "#F9FAFB",
-                            fontSize: 10,
+                            fontSize: 12,
                             color: mutedText,
                             borderTop: `1px solid ${isDarkTheme ? "#333" : "#E5E7EB"}`,
                             lineHeight: 1.4,
@@ -717,6 +733,8 @@ export default function ChatWidget({
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <input
                 placeholder="Your name *"
+                aria-label="Your name"
+                aria-required="true"
                 value={leadForm.name}
                 onChange={(e) => setLeadForm((f) => ({ ...f, name: e.target.value }))}
                 style={{
@@ -734,6 +752,8 @@ export default function ChatWidget({
               />
               <input
                 placeholder="Phone number *"
+                aria-label="Phone number"
+                aria-required="true"
                 type="tel"
                 value={leadForm.phone}
                 onChange={(e) => setLeadForm((f) => ({ ...f, phone: e.target.value }))}
@@ -755,6 +775,7 @@ export default function ChatWidget({
               )}
               <input
                 placeholder="Email (optional)"
+                aria-label="Email address"
                 type="email"
                 value={leadForm.email}
                 onChange={(e) => setLeadForm((f) => ({ ...f, email: e.target.value }))}
@@ -782,6 +803,9 @@ export default function ChatWidget({
                   OK to text me at this number
                 </span>
               </label>
+              <p style={{ fontSize: 10, color: mutedText, margin: "2px 0 0", lineHeight: 1.3, opacity: 0.7 }}>
+                By submitting, you confirm you are 18 or older.
+              </p>
               <div style={{ display: "flex", gap: 6 }}>
                 <button
                   onClick={handleLeadSubmit}
@@ -852,6 +876,7 @@ export default function ChatWidget({
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Type a message..."
+                  aria-label="Type a message to Riley"
                   maxLength={2000}
                   disabled={isLoading}
                   style={{

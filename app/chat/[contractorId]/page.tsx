@@ -39,7 +39,12 @@ export default async function ChatPage({ params }: Props) {
   ]);
 
   if (!contractorRes.data) {
-    return <div style={{ padding: 40, textAlign: "center", color: "#666" }}>Chat not available</div>;
+    return (
+      <div style={{ padding: 40, textAlign: "center", color: "#666", fontFamily: "'Inter', sans-serif" }}>
+        <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Chat is currently unavailable</p>
+        <p style={{ fontSize: 13 }}>Please contact the business directly for assistance.</p>
+      </div>
+    );
   }
 
   return (

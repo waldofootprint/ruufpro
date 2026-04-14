@@ -11,7 +11,8 @@
     return;
   }
 
-  var accentColor = script.getAttribute("data-accent-color") || "#6366f1";
+  var rawColor = script.getAttribute("data-accent-color") || "#6366f1";
+  var accentColor = /^#[0-9a-fA-F]{3,8}$/.test(rawColor) ? rawColor : "#6366f1";
   var host = script.src.replace(/\/riley\.js.*$/, "");
   var isOpen = false;
 

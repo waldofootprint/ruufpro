@@ -13,6 +13,21 @@ const nextConfig = {
     ],
   },
 
+  // Security headers — prevent iframe embedding except by ruufpro.com (ZL-007)
+  async headers() {
+    return [
+      {
+        source: "/chat/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https://*.ruufpro.com https://ruufpro.com",
+          },
+        ],
+      },
+    ];
+  },
+
 };
 
 module.exports = nextConfig;

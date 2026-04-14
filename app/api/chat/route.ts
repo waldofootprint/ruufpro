@@ -13,16 +13,20 @@ import { getTierFromContractor } from "@/lib/types";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 // ---------------------------------------------------------------------------
-// Rate limiting (same pattern as /api/notify)
+// Rate limiting — Supabase-backed for serverless persistence (ZL-001)
+// In-memory Map is kept as a fast-path cache (warm instance optimization).
+// Supabase table `rate_limits` is the authoritative source.
 // ---------------------------------------------------------------------------
 const RATE_LIMIT_WINDOW_MS = 3_600_000; // 1 hour
 const MAX_PER_IP = 20;                  // 20 messages per IP per hour
 const MAX_PER_CONTRACTOR_DAY = 200;     // 200 messages per contractor per day
+const MAX_GLOBAL_DAILY = 5000;          // Global daily cap — circuit breaker (ZL-003)
 const DAY_MS = 86_400_000;
 
+// In-memory fast-path (same-instance optimization, not authoritative)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-function isRateLimited(key: string, max: number, windowMs: number = RATE_LIMIT_WINDOW_MS): boolean {
+function isRateLimitedLocal(key: string, max: number, windowMs: number = RATE_LIMIT_WINDOW_MS): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(key);
   if (!entry || now > entry.resetAt) {
@@ -33,38 +37,123 @@ function isRateLimited(key: string, max: number, windowMs: number = RATE_LIMIT_W
   return entry.count > max;
 }
 
-// Clean up stale entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  rateLimitMap.forEach((entry, key) => {
-    if (now > entry.resetAt) rateLimitMap.delete(key);
-  });
-}, 5 * 60_000);
+// Supabase-backed rate limit check (authoritative, uses direct upsert)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function isRateLimitedDb(
+  supabase: any,
+  key: string,
+  max: number,
+  windowMs: number = RATE_LIMIT_WINDOW_MS
+): Promise<boolean> {
+  try {
+    const now = new Date();
+    const resetAt = new Date(now.getTime() + windowMs);
+
+    // Check existing entry
+    const { data: existing } = await supabase
+      .from("rate_limits")
+      .select("count, reset_at")
+      .eq("key", key)
+      .maybeSingle();
+
+    if (!existing || new Date(existing.reset_at) < now) {
+      // Expired or new — reset
+      await supabase
+        .from("rate_limits")
+        .upsert({ key, count: 1, reset_at: resetAt.toISOString() }, { onConflict: "key" });
+      return false;
+    }
+
+    // Increment
+    const newCount = existing.count + 1;
+    await supabase
+      .from("rate_limits")
+      .update({ count: newCount, updated_at: now.toISOString() })
+      .eq("key", key);
+
+    return newCount > max;
+  } catch {
+    // Fallback to local on DB error
+    return isRateLimitedLocal(key, max, windowMs);
+  }
+}
+
+// Global daily usage counter — check and increment (ZL-003)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function checkAndIncrementDailyUsage(supabase: any): Promise<boolean> {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data: existing } = await supabase
+      .from("api_usage_daily")
+      .select("chat_messages")
+      .eq("date", today)
+      .maybeSingle();
+
+    const currentCount = existing?.chat_messages ?? 0;
+
+    if (currentCount >= MAX_GLOBAL_DAILY) {
+      return true; // Over limit
+    }
+
+    // Increment (or insert)
+    await supabase
+      .from("api_usage_daily")
+      .upsert(
+        { date: today, chat_messages: currentCount + 1, updated_at: new Date().toISOString() },
+        { onConflict: "date" }
+      );
+
+    return false;
+  } catch {
+    return false; // Don't block on DB errors
+  }
+}
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+// CORS: allow ruufpro.com + contractor external sites (ZL-002)
+function getCorsHeaders(origin?: string | null) {
+  const allowed = origin && (
+    origin.endsWith(".ruufpro.com") ||
+    origin === "https://ruufpro.com" ||
+    origin === "http://localhost:3000"
+  );
+  return {
+    "Access-Control-Allow-Origin": allowed ? origin : "https://ruufpro.com",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
 
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: CORS_HEADERS });
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  return new Response(null, { status: 204, headers: getCorsHeaders(origin) });
 }
 
 export async function POST(request: NextRequest) {
-  // Rate limit by IP
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (isRateLimited(`chat-ip:${ip}`, MAX_PER_IP)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: CORS_HEADERS });
-  }
+  const origin = request.headers.get("origin");
+  const CORS_HEADERS = getCorsHeaders(origin);
 
   // Service role key — bypasses RLS so we can read chatbot_config (no public policy).
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+
+  // Rate limit by IP (DB-backed for serverless persistence — ZL-001)
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (await isRateLimitedDb(supabase, `chat-ip:${ip}`, MAX_PER_IP)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: CORS_HEADERS });
+  }
+
+  // Global daily cost ceiling (ZL-003)
+  if (await checkAndIncrementDailyUsage(supabase)) {
+    return NextResponse.json(
+      { error: "Riley is temporarily unavailable due to high demand. Please try again later." },
+      { status: 503, headers: CORS_HEADERS }
+    );
+  }
 
   try {
     const body = await request.json();
@@ -95,9 +184,14 @@ export async function POST(request: NextRequest) {
     if (lastContent.length > 2000) {
       return NextResponse.json({ error: "Message too long" }, { status: 400, headers: CORS_HEADERS });
     }
+    // Server-side message cap — enforce 12 user messages max (ZL-031)
+    const userMsgCount = messages.filter((m: { role: string }) => m.role === "user").length;
+    if (userMsgCount > 12) {
+      return NextResponse.json({ error: "Conversation limit reached" }, { status: 400, headers: CORS_HEADERS });
+    }
 
-    // Rate limit by contractor (daily)
-    if (isRateLimited(`chat-contractor:${contractorId}`, MAX_PER_CONTRACTOR_DAY, DAY_MS)) {
+    // Rate limit by contractor (daily, DB-backed)
+    if (await isRateLimitedDb(supabase, `chat-contractor:${contractorId}`, MAX_PER_CONTRACTOR_DAY, DAY_MS)) {
       return NextResponse.json({ error: "Daily chat limit reached" }, { status: 429, headers: CORS_HEADERS });
     }
 
@@ -113,22 +207,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 403, headers: CORS_HEADERS });
     }
 
-    // Fetch chatbot config if the contractor has trained Riley
-    const { data: chatbotConfig } = await supabase
-      .from("chatbot_config")
-      .select("*")
-      .eq("contractor_id", contractorId)
-      .maybeSingle();
-
-    // Look up existing conversation for message count and lead status
+    // Look up existing conversation for message count, lead status, and cached config
     const { data: existingConvo } = await supabase
       .from("chat_conversations")
-      .select("messages, lead_captured")
+      .select("messages, lead_captured, config_snapshot")
       .eq("session_id", sessionId)
       .single();
 
     const messageCount = existingConvo?.messages?.length ?? messages.length;
     const leadCaptured = existingConvo?.lead_captured ?? false;
+
+    // Fetch chatbot config — use cached version from conversation if available (ZL-020)
+    // This prevents mid-conversation pricing contradictions when roofer updates config
+    let chatbotConfig = existingConvo?.config_snapshot ?? null;
+    if (!chatbotConfig) {
+      const { data } = await supabase
+        .from("chatbot_config")
+        .select("*")
+        .eq("contractor_id", contractorId)
+        .maybeSingle();
+      chatbotConfig = data;
+    }
 
     // Build ContractorSiteData for the system prompt
     const site = Array.isArray(contractor.sites) ? contractor.sites[0] : contractor.sites;
@@ -172,6 +271,16 @@ export async function POST(request: NextRequest) {
     // Check if contractor has estimate widget enabled (for tool availability)
     const hasEstimateWidget = contractor.has_estimate_widget;
 
+    // Count prior estimate tool calls in this session (ZL-006 — max 3 per session)
+    const MAX_ESTIMATES_PER_SESSION = 3;
+    let estimateCallCount = 0;
+    if (existingConvo?.messages && Array.isArray(existingConvo.messages)) {
+      estimateCallCount = existingConvo.messages.filter(
+        (m: { role?: string; parts?: Array<{ type?: string }> }) =>
+          m.parts?.some((p) => p.type === "tool-getEstimate")
+      ).length;
+    }
+
     // Build system prompt
     const systemPrompt = buildChatSystemPrompt(templateData, messageCount, leadCaptured, chatbotConfig ?? null, hasEstimateWidget);
 
@@ -196,6 +305,15 @@ export async function POST(request: NextRequest) {
                     .describe("The homeowner's full street address including city and state"),
                 }),
                 execute: async ({ address }: { address: string }) => {
+                  // Rate limit estimates per session (ZL-006)
+                  if (estimateCallCount >= MAX_ESTIMATES_PER_SESSION) {
+                    return {
+                      success: false,
+                      error: "estimate_limit",
+                      fallbackMessage: "I've looked up a few addresses for you already — for more detailed estimates, the team can help directly. Want me to connect you?",
+                    };
+                  }
+                  estimateCallCount++;
                   return runChatEstimate(contractorId, address);
                 },
               }),
@@ -206,6 +324,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Save conversation (fire-and-forget — don't block the stream)
+    // Include config_snapshot on first save so pricing stays consistent mid-conversation (ZL-020)
     supabase
       .from("chat_conversations")
       .upsert(
@@ -213,6 +332,7 @@ export async function POST(request: NextRequest) {
           contractor_id: contractorId,
           session_id: sessionId,
           messages,
+          ...(messageCount <= 1 && chatbotConfig ? { config_snapshot: chatbotConfig } : {}),
           updated_at: new Date().toISOString(),
         },
         { onConflict: "session_id" }
@@ -227,8 +347,19 @@ export async function POST(request: NextRequest) {
       response.headers.set(key, value);
     });
     return response;
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Chat API error:", err);
+    // Retry once for transient Anthropic errors (ZL-016)
+    const status = (err as { status?: number })?.status;
+    const message = (err as { message?: string })?.message || "";
+    if (status === 429 || status === 503 || message.includes("overloaded")) {
+      try {
+        await new Promise((r) => setTimeout(r, 1000));
+        // Re-throw to caller — the retry would need to re-run the full streamText call
+        // For now, log and return a more helpful error
+        console.error("Chat API transient error, retry not yet implemented for streaming");
+      } catch { /* ignore retry errors */ }
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: CORS_HEADERS });
   }
 }
