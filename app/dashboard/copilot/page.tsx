@@ -37,6 +37,9 @@ interface LeadData {
   created_ago: string;
   contacted_at: string | null;
   notes: string | null;
+  copilot_status_pills: string[];
+  copilot_action_log: { action: string; timestamp: string }[];
+  lead_score: number | null;
 }
 
 type FilterType = "all" | "urgent" | "followup" | "review";
@@ -168,6 +171,47 @@ function generateDraft(lead: LeadData, tone: ToneType, businessName: string): st
   return `${first}, thank you for contacting ${businessName}. We would be happy to schedule a complimentary inspection at your earliest convenience. Please let us know what dates work best for your schedule.`;
 }
 
+function scoreLead(lead: LeadData): { score: number; verdict: string; factors: string[] } {
+  let score = 50; // baseline
+  const factors: string[] = [];
+
+  // Estimate value — higher value = higher score
+  const estimateAvg = ((lead.estimate_low || 0) + (lead.estimate_high || 0)) / 2;
+  if (estimateAvg > 15000) { score += 15; factors.push("High value"); }
+  else if (estimateAvg > 8000) { score += 10; factors.push("Good value"); }
+  else if (estimateAvg > 3000) { score += 5; factors.push("Moderate value"); }
+
+  // Temperature
+  if (lead.temperature === "hot") { score += 20; factors.push("Hot lead"); }
+  else if (lead.temperature === "warm") { score += 10; factors.push("Warm lead"); }
+
+  // Recency — newer leads are more likely to convert
+  const hoursOld = (Date.now() - new Date(lead.created_at).getTime()) / 3600000;
+  if (hoursOld < 1) { score += 15; factors.push("Just came in"); }
+  else if (hoursOld < 24) { score += 10; factors.push("Today"); }
+  else if (hoursOld > 72) { score -= 10; factors.push("Going stale"); }
+
+  // Has contact info
+  if (lead.phone && lead.email) { score += 5; factors.push("Full contact info"); }
+  else if (!lead.phone && !lead.email) { score -= 15; factors.push("No contact info"); }
+
+  // Source quality
+  if (lead.source === "estimate_widget") { score += 5; factors.push("Estimate request"); }
+  if (lead.source === "ai_chatbot") { score += 3; factors.push("Chat engagement"); }
+
+  // Clamp to 0-100
+  score = Math.max(0, Math.min(100, score));
+
+  // Verdict
+  let verdict = "Follow up";
+  if (score >= 85) verdict = "Close this one";
+  else if (score >= 70) verdict = "Strong prospect";
+  else if (score >= 50) verdict = "Worth pursuing";
+  else if (score < 30) verdict = "Low priority";
+
+  return { score, verdict, factors };
+}
+
 function matchesFilter(lead: LeadData, filter: FilterType): boolean {
   if (filter === "all") return true;
   if (filter === "urgent") return lead.temperature === "hot" || (lead.status === "new" && !lead.contacted_at);
@@ -189,7 +233,7 @@ export default function CopilotPage() {
   const [noteText, setNoteText] = useState("");
   const [notesOpen, setNotesOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [actionLog, setActionLog] = useState<{ leadId: string; action: string; time: number }[]>([]);
+  const [savingNote, setSavingNote] = useState(false);
 
   // Direct Supabase fetch — same pattern as leads page
   useEffect(() => {
@@ -203,7 +247,7 @@ export default function CopilotPage() {
         .limit(50);
 
       const raw = (data as Lead[]) || [];
-      const mapped: LeadData[] = raw.map((l) => ({
+      const mapped: LeadData[] = raw.map((l: any) => ({
         id: l.id,
         name: l.name || "Unknown",
         phone: l.phone,
@@ -219,6 +263,9 @@ export default function CopilotPage() {
         created_ago: fmtTimeAgo(l.created_at),
         contacted_at: l.contacted_at,
         notes: l.notes,
+        copilot_status_pills: l.copilot_status_pills || [],
+        copilot_action_log: l.copilot_action_log || [],
+        lead_score: l.lead_score ?? null,
       }));
       setLeads(mapped);
       if (mapped.length > 0) setSelectedLead(mapped[0]);
@@ -238,13 +285,32 @@ export default function CopilotPage() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
-  // Get last action for a lead
-  function getLastAction(leadId: string) {
-    const actions = actionLog.filter((a) => a.leadId === leadId);
-    if (actions.length === 0) return null;
-    const last = actions[actions.length - 1];
-    const ago = formatTimeAgo(new Date(last.time).toISOString());
-    return `${last.action} · ${ago}`;
+  // ── API helper ──
+  async function updateLead(leadId: string, action: string, data: Record<string, unknown>) {
+    try {
+      const res = await fetch("/api/dashboard/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId, action, data }),
+      });
+      return res.ok ? await res.json() : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Update a lead in local state (optimistic)
+  function patchLeadLocal(leadId: string, patch: Partial<LeadData>) {
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...patch } : l)));
+    if (selectedLead?.id === leadId) setSelectedLead((prev) => prev ? { ...prev, ...patch } : prev);
+  }
+
+  // Get last action for a lead (from DB-backed action log)
+  function getLastAction(lead: LeadData) {
+    const log = lead.copilot_action_log;
+    if (!log || log.length === 0) return null;
+    const last = log[log.length - 1];
+    return `${last.action} · ${formatTimeAgo(last.timestamp)}`;
   }
 
   // Action handlers — these LOG actions, they do NOT change status
@@ -252,27 +318,54 @@ export default function CopilotPage() {
     const draft = generateDraft(lead, tone, businessName);
     const encoded = encodeURIComponent(draft);
     window.open(`sms:${lead.phone}?body=${encoded}`, "_self");
-    setActionLog((prev) => [...prev, { leadId: lead.id, action: "Texted", time: Date.now() }]);
+
+    // Optimistic update + persist
+    const newEntry = { action: "Texted", timestamp: new Date().toISOString() };
+    const newLog = [...(lead.copilot_action_log || []), newEntry];
+    patchLeadLocal(lead.id, { copilot_action_log: newLog });
+    updateLead(lead.id, "log_action", { actionType: "Texted" });
   }
 
   function handleCall(lead: LeadData) {
     window.open(`tel:${lead.phone}`, "_self");
-    setActionLog((prev) => [...prev, { leadId: lead.id, action: "Called", time: Date.now() }]);
+
+    const newEntry = { action: "Called", timestamp: new Date().toISOString() };
+    const newLog = [...(lead.copilot_action_log || []), newEntry];
+    patchLeadLocal(lead.id, { copilot_action_log: newLog });
+    updateLead(lead.id, "log_action", { actionType: "Called" });
   }
 
   function handleSendEmail(lead: LeadData) {
-    // TODO: Wire Resend API for actual delivery
-    setActionLog((prev) => [...prev, { leadId: lead.id, action: "Emailed", time: Date.now() }]);
+    // TODO: Wire Resend API for actual email delivery
+    const newEntry = { action: "Emailed", timestamp: new Date().toISOString() };
+    const newLog = [...(lead.copilot_action_log || []), newEntry];
+    patchLeadLocal(lead.id, { copilot_action_log: newLog });
+    updateLead(lead.id, "log_action", { actionType: "Emailed" });
   }
 
-  // Toggle status pill — manual milestones only
-  function togglePill(pill: StatusPill) {
-    setActivePills((prev) => {
-      const next = new Set(prev);
-      if (next.has(pill)) next.delete(pill);
-      else next.add(pill);
-      return next;
-    });
+  // Toggle status pill — manual milestones only, persisted to DB
+  async function togglePill(pill: StatusPill) {
+    if (!selectedLead) return;
+    const currentPills = selectedLead.copilot_status_pills || [];
+    const newPills = currentPills.includes(pill)
+      ? currentPills.filter((p) => p !== pill)
+      : [...currentPills, pill];
+
+    // Optimistic update
+    setActivePills(new Set(newPills as StatusPill[]));
+    patchLeadLocal(selectedLead.id, { copilot_status_pills: newPills });
+
+    // Persist
+    updateLead(selectedLead.id, "toggle_pill", { pill });
+  }
+
+  // Save notes — debounced persist
+  async function handleSaveNotes() {
+    if (!selectedLead) return;
+    setSavingNote(true);
+    patchLeadLocal(selectedLead.id, { notes: noteText });
+    await updateLead(selectedLead.id, "save_notes", { notes: noteText });
+    setSavingNote(false);
   }
 
   // Pro tier gate
@@ -355,15 +448,16 @@ export default function CopilotPage() {
               const dot = getUrgencyDot(lead);
               const actions = getStatusActions(lead);
               const isSelected = selectedLead?.id === lead.id;
-              const lastAction = getLastAction(lead.id);
+              const lastAction = getLastAction(lead);
 
               return (
                 <div
                   key={lead.id}
                   onClick={() => {
                     setSelectedLead(lead);
-                    setActivePills(new Set());
+                    setActivePills(new Set((lead.copilot_status_pills || []) as StatusPill[]));
                     setNoteText(lead.notes || "");
+                    setNotesOpen(false);
                   }}
                   className={`px-5 py-4 border-b border-slate-100 cursor-pointer transition-colors ${
                     isSelected ? "bg-slate-50" : "hover:bg-slate-50/50"
@@ -612,15 +706,27 @@ export default function CopilotPage() {
                   </div>
 
                   {/* Score */}
-                  <div className="p-5">
-                    <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">
-                      Score
-                    </h3>
-                    <div className="text-center">
-                      <p className="text-4xl font-bold text-slate-800">—</p>
-                      <p className="text-xs text-slate-400 mt-1">Score coming soon</p>
-                    </div>
-                  </div>
+                  {(() => {
+                    const s = scoreLead(selectedLead);
+                    return (
+                      <div className="p-5">
+                        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">
+                          Score
+                        </h3>
+                        <p className={`text-4xl font-bold ${
+                          s.score >= 80 ? "text-emerald-600" : s.score >= 50 ? "text-slate-800" : "text-slate-400"
+                        }`}>{s.score}</p>
+                        <p className={`text-xs mt-1 ${
+                          s.score >= 80 ? "text-emerald-600" : "text-slate-400"
+                        }`}>{s.verdict}</p>
+                        <div className="mt-3 space-y-1">
+                          {s.factors.map((f, i) => (
+                            <p key={i} className="text-[10px] text-slate-400">{f}</p>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* ── D. Context Row ── */}
@@ -704,13 +810,22 @@ export default function CopilotPage() {
                     </span>
                   </button>
                   {notesOpen && (
-                    <div className="px-4 pb-4">
+                    <div className="px-4 pb-4 space-y-2">
                       <textarea
                         value={noteText}
                         onChange={(e) => setNoteText(e.target.value)}
                         placeholder="What happened on the call? Any next steps?"
                         className="w-full h-24 text-sm text-slate-700 border border-slate-200 rounded-lg p-3 resize-none focus:outline-none focus:ring-1 focus:ring-slate-300"
                       />
+                      <div className="flex justify-end">
+                        <button
+                          onClick={handleSaveNotes}
+                          disabled={savingNote}
+                          className="px-3 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-md hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                        >
+                          {savingNote ? "Saving..." : "Save Note"}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
