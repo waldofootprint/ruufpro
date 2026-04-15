@@ -22,6 +22,7 @@ import {
   CreditCard,
   Star,
   BarChart3,
+  Sparkles,
 } from "lucide-react";
 import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 import { supabase } from "@/lib/supabase";
@@ -30,6 +31,7 @@ import { supabase } from "@/lib/supabase";
 const SIDEBAR_ITEMS: { href: string; label: string; icon: any; showBadge?: boolean; showSmsBadge?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/leads", label: "Leads", icon: Users, showBadge: true },
+  { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles },
   { href: "/dashboard/my-site", label: "My Website", icon: Globe },
   { href: "/dashboard/chatbot", label: "AI Chatbot", icon: Bot },
   { href: "/dashboard/chatbot-analytics", label: "Riley Analytics", icon: BarChart3 },
@@ -60,7 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 }
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
-  const { businessName, newLeadCount, unreadSmsCount, contractorId, loading } = useDashboard();
+  const { businessName, newLeadCount, unreadSmsCount, contractorId, tier, loading } = useDashboard();
   const pathname = usePathname();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -226,8 +228,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Page content */}
-        <main className="flex-1 p-5 lg:px-8 lg:py-7 pb-24 lg:pb-7 bg-white">
-          <OnboardingChecklist />
+        <main className={`flex-1 pb-24 lg:pb-7 bg-white ${
+          pathname.startsWith("/dashboard/copilot") ? "p-0" : "p-5 lg:px-8 lg:py-7"
+        }`}>
+          {!pathname.startsWith("/dashboard/copilot") && <OnboardingChecklist />}
           {children}
         </main>
       </div>
@@ -270,6 +274,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                       >
                         <Star className="w-4 h-4 text-amber-400" />
                         Reviews
+                      </a>
+                      <a
+                        href="/dashboard/copilot"
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-400" />
+                        Copilot
                       </a>
                       <a
                         href="/dashboard/chatbot"
@@ -342,6 +354,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
+
     </div>
   );
 }
