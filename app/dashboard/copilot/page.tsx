@@ -61,7 +61,7 @@ function getUrgencyDot(lead: LeadData): { color: string; pulse: boolean; label: 
 
   // Going cold: new/hot lead over 24h — needs attention NOW
   if ((lead.temperature === "hot" || lead.status === "new") && !lead.contacted_at)
-    return { color: "bg-orange-500", pulse: false, label: "Going cold", priority: 2 };
+    return { color: "bg-red-400", pulse: false, label: "Going cold", priority: 2 };
 
   // Follow-up: quoted leads waiting for response
   if (lead.status === "quoted")
@@ -328,8 +328,8 @@ export default function CopilotPage() {
                 onClick={() => setFilter(f)}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                   filter === f
-                    ? f === "urgent" ? "bg-red-600 text-white" : "bg-slate-800 text-white"
-                    : f === "urgent" ? "bg-red-50 text-red-600 hover:bg-red-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    ? "bg-slate-800 text-white"
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                 }`}
               >
                 {f === "urgent" && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
