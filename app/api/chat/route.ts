@@ -265,6 +265,7 @@ export async function POST(request: NextRequest) {
       zip: contractor.zip,
       logoUrl: contractor.logo_url,
       licenseNumber: contractor.license_number,
+      galleryImages: [],
       businessHours: contractor.business_hours ?? null,
     };
 

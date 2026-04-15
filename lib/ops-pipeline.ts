@@ -1,29 +1,21 @@
 // Ops pipeline types — shared between API routes and UI components.
 
 // ── Pipeline Stages ──────────────────────────────────────────────────
-// New flow (v2): scrape → auto-enrich (Google+FB) → triage → build sites →
-//   review sites (Gate 1) → auto contact lookup (Apollo) → approve outreach (Gate 2) →
-//   send → monitor → reply → draft → approve (Gate 3) → track
+// v3 flow: scrape → auto-enrich (Google+FB+email+license) → AI rewrite →
+//   auto-build site → [Gate 1: approve sites] → auto-send via Instantly →
+//   track replies → [Gate 2: approve reply drafts] → respond
 export const PIPELINE_STAGES = [
-  // Acquisition & enrichment (automated)
+  // Automated acquisition
   "scraped",
-  "google_enriched",
-  "awaiting_triage",
-  "parked",
-  // Legacy stage — kept for existing batches
   "enriched",
-  // Site building & review
+  "ai_rewritten",
   "site_built",
+  // Gate 1: Hannah approves sites
   "site_approved",
-  // Contact lookup & outreach (Apollo runs here now, not early)
-  "contact_lookup",
-  "contact_ready",
-  "outreach_approved",
-  // Sending & monitoring
+  // Automated outreach
   "sent",
-  "awaiting_reply",
+  // Gate 2: Hannah approves reply drafts
   "replied",
-  "draft_ready",
   "responded",
   // Terminal states
   "interested",
@@ -32,6 +24,15 @@ export const PIPELINE_STAGES = [
   "unsubscribed",
   "free_signup",
   "paid",
+  // Legacy stages — kept so existing DB rows don't break queries
+  "google_enriched",
+  "awaiting_triage",
+  "parked",
+  "contact_lookup",
+  "contact_ready",
+  "outreach_approved",
+  "awaiting_reply",
+  "draft_ready",
 ] as const;
 
 export type PipelineStage = (typeof PIPELINE_STAGES)[number];
@@ -39,19 +40,12 @@ export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 // Display labels for each stage
 export const STAGE_LABELS: Record<PipelineStage, string> = {
   scraped: "Scraped",
-  google_enriched: "Enriched",
-  awaiting_triage: "To Triage",
-  parked: "Parked",
-  enriched: "Enriched (legacy)",
+  enriched: "Enriched",
+  ai_rewritten: "AI Polished",
   site_built: "Site Built",
-  site_approved: "Site OK",
-  contact_lookup: "Looking Up",
-  contact_ready: "Contacts Ready",
-  outreach_approved: "Approved",
+  site_approved: "Approved",
   sent: "Sent",
-  awaiting_reply: "Waiting",
   replied: "Replied",
-  draft_ready: "Draft",
   responded: "Responded",
   interested: "Interested",
   not_now: "Not Now",
@@ -59,48 +53,51 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   unsubscribed: "Unsub",
   free_signup: "Signup",
   paid: "Paid",
+  // Legacy
+  google_enriched: "Enriched",
+  awaiting_triage: "To Triage",
+  parked: "Parked",
+  contact_lookup: "Looking Up",
+  contact_ready: "Contacts Ready",
+  outreach_approved: "Approved",
+  awaiting_reply: "Waiting",
+  draft_ready: "Draft",
 };
 
 // Stages shown as columns in the batch pipeline view
 export const DISPLAY_STAGES: PipelineStage[] = [
   "scraped",
-  "awaiting_triage",
+  "enriched",
+  "ai_rewritten",
   "site_built",
   "site_approved",
-  "contact_ready",
-  "outreach_approved",
   "sent",
   "replied",
-  "draft_ready",
+  "responded",
   "interested",
   "free_signup",
   "paid",
 ];
 
 // ── Gates ────────────────────────────────────────────────────────────
-export const GATE_TYPES = ["triage_review", "site_review", "outreach_approval", "draft_approval"] as const;
+// v3: only 2 gates (site review + reply draft approval)
+export const GATE_TYPES = ["site_review", "draft_approval"] as const;
 export type GateType = (typeof GATE_TYPES)[number];
 
 export const GATE_LABELS: Record<GateType, string> = {
-  triage_review: "Triage Prospects",
   site_review: "Review Sites",
-  outreach_approval: "Approve Outreach",
-  draft_approval: "Approve Drafts",
+  draft_approval: "Approve Reply Drafts",
 };
 
 // Which stage triggers each gate
 export const GATE_TRIGGER_STAGE: Record<GateType, PipelineStage> = {
-  triage_review: "awaiting_triage",
   site_review: "site_built",
-  outreach_approval: "contact_ready",
   draft_approval: "replied",
 };
 
 // Which stage leads advance to after gate approval
 export const GATE_APPROVED_STAGE: Record<GateType, PipelineStage> = {
-  triage_review: "site_built",
   site_review: "site_approved",
-  outreach_approval: "outreach_approved",
   draft_approval: "responded",
 };
 
@@ -189,6 +186,17 @@ export interface PipelineProspect {
   facebook_enrichment_status: "success" | "no_match" | "error" | null;
   // LinkedIn
   linkedin_url: string | null;
+  // AI rewrite output
+  ai_about_text: string | null;
+  ai_services: string[] | null;
+  ai_hero_headline: string | null;
+  ai_email_subject: string | null;
+  ai_email_body: string | null;
+  ai_rewritten_at: string | null;
+  // FL license lookup
+  fl_license_type: string | null;
+  fl_license_number: string | null;
+  fl_license_verified_at: string | null;
   // Outreach tracking
   outreach_approved_at: string | null;
   email_sequence_id: string | null;

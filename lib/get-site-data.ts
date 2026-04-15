@@ -65,6 +65,7 @@ export async function getSiteData(slug: string): Promise<SiteDataResult | null> 
     contractorId: contractor.id,
     urgencyBadge: null, // defaults handled in hero components
     slug,
+    galleryImages: siteData.gallery_images || [],
 
     // SEO / schema fields
     address: contractor.address,

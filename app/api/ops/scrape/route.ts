@@ -241,6 +241,7 @@ export async function POST(req: NextRequest) {
 
     const filters = {
       min_rating: body.min_rating ?? 0,
+      min_reviews: body.min_reviews ?? 0,
       max_reviews: body.max_reviews ?? 999999,
       no_website_only: body.no_website_only ?? false,
     };
@@ -322,6 +323,9 @@ export async function POST(req: NextRequest) {
             if (filters.min_rating > 0 && placeRating > 0 && placeRating < filters.min_rating) {
               filteredOut = true;
               filterReason = `Rating ${placeRating}★ below min ${filters.min_rating}★`;
+            } else if (filters.min_reviews > 0 && placeReviews < filters.min_reviews) {
+              filteredOut = true;
+              filterReason = `${placeReviews} reviews below min ${filters.min_reviews}`;
             } else if (placeReviews > filters.max_reviews) {
               filteredOut = true;
               filterReason = `${placeReviews} reviews exceeds max ${filters.max_reviews}`;

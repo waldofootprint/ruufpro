@@ -110,6 +110,7 @@ export default async function ProspectPreview({
     logoUrl: contractor.logo_url,
     licenseNumber: contractor.license_number,
     hasAiChatbot: (contractor as any).has_ai_chatbot ?? false,
+    galleryImages: site.gallery_images || [],
     businessHours: (contractor as any).business_hours ?? null,
   };
 

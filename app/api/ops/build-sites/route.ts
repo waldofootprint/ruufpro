@@ -88,12 +88,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Get prospects ready for site building:
-    // - Must be enriched (or scraped if we're skipping enrichment)
+    // - Must be ai_rewritten (v3 pipeline) or enriched/scraped (fallback)
     // - Must NOT already have a preview site
     let query = supabase
       .from("prospect_pipeline")
       .select("*")
-      .in("stage", ["scraped", "enriched"])
+      .in("stage", ["ai_rewritten", "enriched", "scraped"])
       .is("preview_site_url", null);
 
     if (prospect_ids?.length) {
@@ -126,26 +126,35 @@ export async function POST(req: NextRequest) {
         const state = prospect.state || "FL";
         const phone = prospect.phone || "";
 
-        // Determine services: extracted from reviews > default
+        // Prefer AI-polished copy when available, fall back to auto-generated
+        const hasAICopy = !!prospect.ai_about_text;
+
         const services: string[] =
-          prospect.extracted_services && prospect.extracted_services.length > 0
-            ? prospect.extracted_services
-            : DEFAULT_SERVICES;
+          (hasAICopy && prospect.ai_services?.length > 0)
+            ? prospect.ai_services
+            : prospect.extracted_services?.length > 0
+              ? prospect.extracted_services
+              : DEFAULT_SERVICES;
 
         // Format reviews for the site
         const reviews = formatReviews(prospect.google_reviews || []);
 
-        // Generate about text
-        const aboutText = generateAboutText(
-          businessName,
-          city,
-          state,
-          services,
-          prospect.founded_year
-            ? new Date().getFullYear() - prospect.founded_year
-            : null,
-          prospect.reviews_count
-        );
+        // About text: AI > auto-generated
+        const aboutText = hasAICopy
+          ? prospect.ai_about_text
+          : generateAboutText(
+              businessName, city, state, services,
+              prospect.founded_year ? new Date().getFullYear() - prospect.founded_year : null,
+              prospect.reviews_count
+            );
+
+        // Hero headline: AI > auto-generated
+        const heroHeadline = prospect.ai_hero_headline || generateHeadline(city);
+
+        // Photos: combine Google + Facebook photos for gallery
+        const googlePhotos = (prospect.photos || []).map((p: any) => p.url || p).filter(Boolean);
+        const fbPhotos = (prospect.facebook_photos || []).map((p: any) => p.url || p).filter(Boolean);
+        const galleryImages = [...googlePhotos, ...fbPhotos].slice(0, 10);
 
         // Generate random slug (never use business name in URL)
         const slug = generateProspectSlug();
@@ -179,12 +188,13 @@ export async function POST(req: NextRequest) {
           slug,
           template: "modern_clean",
           published: true,
-          hero_headline: generateHeadline(city),
+          hero_headline: heroHeadline,
           hero_subheadline: `Professional roofing services for ${city} homeowners`,
           hero_cta_text: "Get Your Free Estimate",
           about_text: aboutText,
           services,
           reviews,
+          gallery_images: galleryImages,
         });
 
         if (siteErr) {
@@ -196,12 +206,13 @@ export async function POST(req: NextRequest) {
               slug: retrySlug,
               template: "modern_clean",
               published: true,
-              hero_headline: generateHeadline(city),
+              hero_headline: heroHeadline,
               hero_subheadline: `Professional roofing services for ${city} homeowners`,
               hero_cta_text: "Get Your Free Estimate",
               about_text: aboutText,
               services,
               reviews,
+              gallery_images: galleryImages,
             });
 
             if (retryErr) {

@@ -66,6 +66,7 @@ const mockData: ContractorSiteData = {
   logoUrl: null,
   licenseNumber: "CCC1330456",
   hasAiChatbot: false,
+  galleryImages: [],
   businessHours: null,
 };
 

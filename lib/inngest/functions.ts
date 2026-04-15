@@ -1626,15 +1626,16 @@ export const prospectFormSubmit = inngest.createFunction(
 );
 
 // ---------------------------------------------------------------------------
-// Batch Auto-Enrich (Phase 2)
+// Batch Auto-Enrich (v3 Pipeline)
 // Trigger: "ops/batch.auto-enrich" — fired after scrape inserts new prospects
-// Runs Google Places enrichment → Facebook enrichment → advances to awaiting_triage
+// Full chain: Google → Facebook → Email extract → FL license → AI rewrite → Build sites
+// Each step is independent so failures don't block the pipeline.
 // ---------------------------------------------------------------------------
 export const batchAutoEnrich = inngest.createFunction(
   {
     id: "batch-auto-enrich",
     retries: 2,
-    concurrency: [{ limit: 1 }], // One enrichment batch at a time
+    concurrency: [{ limit: 1 }],
     triggers: [{ event: "ops/batch.auto-enrich" }],
   },
   async ({ event, step }) => {
@@ -1645,19 +1646,17 @@ export const batchAutoEnrich = inngest.createFunction(
       throw new Error("Missing batchId or prospectIds");
     }
 
+    const baseUrl = "https://ruufpro.com";
+
     // Step 1: Google Places enrichment (photos + reviews + services)
     const googleResult = await step.run("google-enrich", async () => {
-      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        ? "https://ruufpro.com"
-        : "http://localhost:3000";
-
       const res = await fetch(`${baseUrl}/api/ops/enrich-photos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           batch_id: batchId,
           prospect_ids: prospectIds,
-          auto_advance: true,
+          auto_advance: false, // We handle stage advancement ourselves
         }),
       });
 
@@ -1669,13 +1668,8 @@ export const batchAutoEnrich = inngest.createFunction(
       return await res.json();
     });
 
-    // Step 2: Facebook enrichment — doesn't block pipeline, but status is tracked per-prospect
-    // (facebook_enrichment_status = success | no_match | error on each row)
+    // Step 2: Facebook enrichment (best-effort — failures don't block)
     const facebookResult = await step.run("facebook-enrich", async () => {
-      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        ? "https://ruufpro.com"
-        : "http://localhost:3000";
-
       const res = await fetch(`${baseUrl}/api/ops/enrich-facebook`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1685,41 +1679,169 @@ export const batchAutoEnrich = inngest.createFunction(
         }),
       });
 
+      if (!res.ok) return { success: false, error: `HTTP ${res.status}` };
+      return await res.json();
+    });
+
+    // Step 3: Extract email from Facebook About text + Apollo fallback
+    const emailResult = await step.run("email-extract", async () => {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      // Get prospects with Facebook data but no email yet
+      const { data: prospects } = await supabase
+        .from("prospect_pipeline")
+        .select("id, facebook_about, owner_email")
+        .in("id", prospectIds)
+        .is("owner_email", null);
+
+      if (!prospects?.length) return { extracted: 0 };
+
+      let extracted = 0;
+      for (const p of prospects) {
+        // Try extracting email from Facebook About text
+        const fbAbout = (p.facebook_about || "") as string;
+        const emailMatch = fbAbout.match(/[\w.+-]+@[\w-]+\.[\w.]+/);
+        if (emailMatch) {
+          await supabase
+            .from("prospect_pipeline")
+            .update({ owner_email: emailMatch[0] })
+            .eq("id", p.id);
+          extracted++;
+        }
+      }
+
+      return { extracted, checked: prospects.length };
+    });
+
+    // Step 4: Apollo email enrichment for those still without email
+    const apolloResult = await step.run("apollo-enrich", async () => {
+      const res = await fetch(`${baseUrl}/api/ops/enrich`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch_id: batchId,
+          prospect_ids: prospectIds,
+        }),
+      });
+
+      if (!res.ok) return { success: false, error: `HTTP ${res.status}` };
+      return await res.json();
+    });
+
+    // Step 5: FL license lookup (free, best-effort)
+    const licenseResult = await step.run("fl-license-lookup", async () => {
+      const { lookupFLLicense } = await import("@/lib/fl-license-lookup");
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: prospects } = await supabase
+        .from("prospect_pipeline")
+        .select("id, business_name")
+        .in("id", prospectIds)
+        .is("fl_license_verified_at", null);
+
+      if (!prospects?.length) return { verified: 0 };
+
+      let verified = 0;
+      for (const p of prospects) {
+        const result = await lookupFLLicense(p.business_name);
+        await supabase
+          .from("prospect_pipeline")
+          .update({
+            fl_license_type: result.license_type,
+            fl_license_number: result.license_number,
+            fl_license_verified_at: new Date().toISOString(),
+          })
+          .eq("id", p.id);
+
+        if (result.found) verified++;
+
+        // Brief pause to be polite to DBPR
+        await new Promise((r) => setTimeout(r, 500));
+      }
+
+      return { verified, checked: prospects.length };
+    });
+
+    // Step 6: Advance all to "enriched" stage
+    const advanceResult = await step.run("advance-to-enriched", async () => {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("prospect_pipeline")
+        .update({
+          stage: "enriched",
+          stage_entered_at: now,
+          enriched_at: now,
+        })
+        .in("id", prospectIds)
+        .eq("stage", "scraped")
+        .select("id");
+
+      // Also catch any that were at google_enriched (from auto_advance on enrich-photos)
+      const { data: data2 } = await supabase
+        .from("prospect_pipeline")
+        .update({
+          stage: "enriched",
+          stage_entered_at: now,
+          enriched_at: now,
+        })
+        .in("id", prospectIds)
+        .eq("stage", "google_enriched")
+        .select("id");
+
+      const total = (data?.length || 0) + (data2?.length || 0);
+      return { advanced: total, error: error?.message };
+    });
+
+    // Step 7: AI rewrite (polish copy + draft email)
+    const aiResult = await step.run("ai-rewrite", async () => {
+      const res = await fetch(`${baseUrl}/api/ops/ai-rewrite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch_id: batchId,
+          prospect_ids: prospectIds,
+        }),
+      });
+
       if (!res.ok) {
-        // Endpoint failed entirely — individual prospect statuses may not be set
-        // Still advance to triage, but log the failure
-        return { success: false, error: `HTTP ${res.status}` };
+        const text = await res.text();
+        return { success: false, error: `HTTP ${res.status}: ${text}` };
       }
 
       return await res.json();
     });
 
-    // Step 3: Advance all enriched prospects to awaiting_triage
-    const advanceResult = await step.run("advance-to-triage", async () => {
-      const { createServerSupabase } = await import("@/lib/supabase-server");
-      const supabase = createServerSupabase();
+    // Step 8: Auto-build sites
+    const buildResult = await step.run("auto-build-sites", async () => {
+      const res = await fetch(`${baseUrl}/api/ops/build-sites`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch_id: batchId,
+          prospect_ids: prospectIds,
+        }),
+      });
 
-      // Only advance prospects that made it to google_enriched
-      const { data: enriched, error: fetchErr } = await supabase
-        .from("prospect_pipeline")
-        .select("id")
-        .in("id", prospectIds)
-        .eq("stage", "google_enriched");
-
-      if (fetchErr || !enriched?.length) {
-        return { advanced: 0, error: fetchErr?.message };
+      if (!res.ok) {
+        const text = await res.text();
+        return { success: false, error: `HTTP ${res.status}: ${text}` };
       }
 
-      const ids = enriched.map((p: { id: string }) => p.id);
-      const { error: updateErr } = await supabase
-        .from("prospect_pipeline")
-        .update({
-          stage: "awaiting_triage",
-          stage_entered_at: new Date().toISOString(),
-        })
-        .in("id", ids);
-
-      return { advanced: ids.length, error: updateErr?.message };
+      return await res.json();
     });
 
     return {
@@ -1727,7 +1849,135 @@ export const batchAutoEnrich = inngest.createFunction(
       totalProspects: prospectIds.length,
       google: googleResult,
       facebook: facebookResult,
+      email: emailResult,
+      apollo: apolloResult,
+      license: licenseResult,
       advanced: advanceResult,
+      ai: aiResult,
+      sites: buildResult,
     };
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Outreach Auto-Send (v3 Pipeline)
+// Trigger: "ops/outreach.auto-send" — fired after Gate 1 (site_review) approval
+// Adds approved prospects to Instantly campaign for cold email delivery.
+// ---------------------------------------------------------------------------
+export const outreachAutoSend = inngest.createFunction(
+  {
+    id: "outreach-auto-send",
+    retries: 2,
+    triggers: [{ event: "ops/outreach.auto-send" }],
+  },
+  async ({ event, step }) => {
+    const batchId = event.data.batchId as string;
+    const prospectIds = event.data.prospectIds as string[];
+
+    if (!prospectIds?.length) {
+      return { success: true, skipped: true, reason: "no prospect IDs" };
+    }
+
+    // Step 1: Send via Instantly
+    const sendResult = await step.run("send-via-instantly", async () => {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const campaignId = process.env.INSTANTLY_DEFAULT_CAMPAIGN_ID;
+      if (!campaignId) {
+        return { success: false, error: "INSTANTLY_DEFAULT_CAMPAIGN_ID not set" };
+      }
+
+      // Get approved prospects with email
+      const { data: prospects } = await supabase
+        .from("prospect_pipeline")
+        .select("id, business_name, owner_name, owner_email, phone, city, state, preview_site_url, ai_email_subject, ai_email_body")
+        .in("id", prospectIds)
+        .eq("stage", "site_approved")
+        .not("owner_email", "is", null);
+
+      if (!prospects?.length) {
+        // Flag prospects without email
+        const { data: noEmail } = await supabase
+          .from("prospect_pipeline")
+          .select("id")
+          .in("id", prospectIds)
+          .eq("stage", "site_approved")
+          .is("owner_email", null);
+
+        return {
+          success: true,
+          sent: 0,
+          no_email: noEmail?.length || 0,
+          message: "No prospects have email addresses",
+        };
+      }
+
+      const { addLeadsToCampaign } = await import("@/lib/instantly");
+
+      const leads = prospects.map((p) => {
+        const nameParts = (p.owner_name || "").split(" ");
+        return {
+          email: p.owner_email!,
+          first_name: nameParts[0] || "",
+          last_name: nameParts.slice(1).join(" ") || "",
+          company_name: p.business_name || "",
+          phone: p.phone || "",
+          custom_variables: {
+            city: p.city || "",
+            state: p.state || "FL",
+            preview_url: p.preview_site_url
+              ? `https://ruufpro.com${p.preview_site_url}`
+              : "",
+            // AI email template variables (Instantly uses these in email templates)
+            ai_subject: p.ai_email_subject || "",
+            ai_body: p.ai_email_body || "",
+          },
+        };
+      });
+
+      const result = await addLeadsToCampaign(campaignId, leads);
+
+      if (!result.success) {
+        throw new Error(`Instantly add failed: ${result.error}`);
+      }
+
+      // Update pipeline stage
+      const now = new Date().toISOString();
+      await supabase
+        .from("prospect_pipeline")
+        .update({
+          stage: "sent",
+          stage_entered_at: now,
+          outreach_method: "cold_email",
+          sent_at: now,
+          email_sequence_id: campaignId,
+        })
+        .in("id", prospects.map((p) => p.id));
+
+      return { success: true, sent: result.added, campaign_id: campaignId };
+    });
+
+    // Step 2: Send Slack notification
+    await step.run("notify-slack", async () => {
+      const { sendAlert } = await import("@/lib/alerts");
+      const sentCount = "sent" in sendResult ? sendResult.sent : 0;
+      const noEmailCount = "no_email" in sendResult ? sendResult.no_email : 0;
+      await sendAlert({
+        title: "Outreach Auto-Sent",
+        message: `${sentCount} prospects added to Instantly campaign after Gate 1 approval.`,
+        severity: "info",
+        details: {
+          "Batch": batchId,
+          "Sent": sentCount,
+          "No Email": noEmailCount,
+        },
+      });
+    });
+
+    return sendResult;
   }
 );

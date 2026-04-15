@@ -11,9 +11,7 @@ import type {
 } from "@/lib/ops-pipeline";
 import { DISPLAY_STAGES, PIPELINE_STAGES, STAGE_LABELS, GATE_LABELS } from "@/lib/ops-pipeline";
 import { fmtBatch, stageColor, type AttentionItem } from "./components/shared";
-import { TriagePanel } from "./components/TriagePanel";
 import { SiteReviewPanel } from "./components/SiteReviewPanel";
-import { OutreachApprovalPanel } from "./components/OutreachApprovalPanel";
 import { DraftApprovalPanel } from "./components/DraftApprovalPanel";
 import { BatchLeadTable } from "./components/BatchLeadTable";
 
@@ -48,20 +46,24 @@ export default function OpsPage() {
   const [dryRunLoading, setDryRunLoading] = useState(false);
   const [showAllPreview, setShowAllPreview] = useState(false);
   // Scrape filters
+  // v3 pipeline defaults: no website, 3-30 reviews
   const [scrapeMinRating, setScrapeMinRating] = useState(0);
-  const [scrapeMaxReviews, setScrapeMaxReviews] = useState(100);
-  const [scrapeNoWebsiteOnly, setScrapeNoWebsiteOnly] = useState(false);
+  const [scrapeMinReviews, setScrapeMinReviews] = useState(3);
+  const [scrapeMaxReviews, setScrapeMaxReviews] = useState(30);
+  const [scrapeNoWebsiteOnly, setScrapeNoWebsiteOnly] = useState(true);
   const [newBatchMinRating, setNewBatchMinRating] = useState(0);
-  const [newBatchMaxReviews, setNewBatchMaxReviews] = useState(100);
-  const [newBatchNoWebsiteOnly, setNewBatchNoWebsiteOnly] = useState(false);
+  const [newBatchMinReviews, setNewBatchMinReviews] = useState(3);
+  const [newBatchMaxReviews, setNewBatchMaxReviews] = useState(30);
+  const [newBatchNoWebsiteOnly, setNewBatchNoWebsiteOnly] = useState(true);
 
   function openScrapePanel(batchId: string, cities: string[]) {
     setScrapeOpen(batchId);
     setScrapeCities(cities.join(", "));
     setScrapeCount(25);
     setScrapeMinRating(0);
-    setScrapeMaxReviews(100);
-    setScrapeNoWebsiteOnly(false);
+    setScrapeMinReviews(3);
+    setScrapeMaxReviews(30);
+    setScrapeNoWebsiteOnly(true);
   }
 
   async function handleDetectForms(batchId: string) {
@@ -221,6 +223,7 @@ export default function OpsPage() {
           limit: scrapeCount,
           cities,
           min_rating: scrapeMinRating,
+          min_reviews: scrapeMinReviews,
           max_reviews: scrapeMaxReviews,
           no_website_only: scrapeNoWebsiteOnly,
           dry_run: true,
@@ -298,6 +301,7 @@ export default function OpsPage() {
           limit: newBatchCount,
           cities,
           min_rating: newBatchMinRating,
+          min_reviews: newBatchMinReviews,
           max_reviews: newBatchMaxReviews,
           no_website_only: newBatchNoWebsiteOnly,
           dry_run: true,
@@ -485,24 +489,7 @@ export default function OpsPage() {
         });
       }
 
-      // Awaiting triage — new leads need sorting
-      const awaitingTriage = batch.stage_counts?.awaiting_triage || 0;
-      if (awaitingTriage > 0) {
-        items.push({
-          id: `${batch.id}-triage-pending`,
-          batch_id: batch.id,
-          gate_key: `triage_review-${batch.id}`,
-          business_name: "Prospects ready to triage",
-          location: `${awaitingTriage} prospect${awaitingTriage !== 1 ? "s" : ""} enriched`,
-          context: `${fmtBatch(batchNum, batch)}`,
-          days: 0,
-          urgency: "warn",
-          batch_label: label,
-          type: "triage_pending",
-        });
-      }
-
-      // Parked leads past their parked_until date — ready for revival
+      // Legacy: parked leads past their parked_until date
       const parkedCount = batch.stage_counts?.parked || 0;
       if (parkedCount > 0) {
         items.push({
@@ -1270,22 +1257,12 @@ export default function OpsPage() {
                     </div>
                   )}
 
-                  {/* ── Triage Panel (triage_review gate expanded) ── */}
-                  {expandedGate && pendingGates.some(g => `${g.gate_type}-${batch.id}` === expandedGate && g.gate_type === "triage_review") && (
-                    <TriagePanel batchId={batch.id} onDone={() => { setExpandedGate(null); fetchPipeline(); }} />
-                  )}
-
-                  {/* ── Site Review Panel (Gate 1 expanded) ── */}
+                  {/* ── Site Review Panel (Gate 1) ── */}
                   {expandedGate && pendingGates.some(g => `${g.gate_type}-${batch.id}` === expandedGate && g.gate_type === "site_review") && (
                     <SiteReviewPanel batchId={batch.id} onApprove={() => { setExpandedGate(null); fetchPipeline(); }} />
                   )}
 
-                  {/* ── Outreach Approval Panel (Gate 2 expanded) ── */}
-                  {expandedGate && pendingGates.some(g => `${g.gate_type}-${batch.id}` === expandedGate && g.gate_type === "outreach_approval") && (
-                    <OutreachApprovalPanel batchId={batch.id} onApproveAndSend={() => { setExpandedGate(null); fetchPipeline(); }} />
-                  )}
-
-                  {/* ── Draft Reply Panel (Gate 3 expanded) ── */}
+                  {/* ── Draft Reply Panel (Gate 2) ── */}
                   {expandedGate && pendingGates.some(g => `${g.gate_type}-${batch.id}` === expandedGate && g.gate_type === "draft_approval") && (
                     <DraftApprovalPanel batchId={batch.id} onDone={() => { setExpandedGate(null); fetchPipeline(); }} />
                   )}

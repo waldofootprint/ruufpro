@@ -389,7 +389,7 @@ export default function ModernCleanTemplate(props: ContractorSiteData & { basePa
       <ProjectGallery
         theme={{ accent: THEME.accent, fontDisplay: THEME.fontDisplay, fontBody: THEME.fontBody, maxWidth: THEME.maxWidth, borderRadius: THEME.borderRadius }}
         businessName={props.businessName}
-        photos={[]}
+        photos={props.galleryImages}
       />
 
       <FAQ

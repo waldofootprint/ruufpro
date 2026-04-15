@@ -66,6 +66,7 @@ const mockData: ContractorSiteData = {
   logoUrl: null,
   licenseNumber: "TN-RC-78234",
   hasAiChatbot: false,
+  galleryImages: [],
   businessHours: null,
 };
 
