@@ -239,29 +239,25 @@ export default function OpsPage() {
     }
   }
 
-  // Step 2: Confirm and execute the real scrape
+  // Step 2: Confirm — reads from cache, zero API calls
   async function handleConfirmScrape(batchId: string) {
     setScraping(batchId);
-    const cities = scrapeCities.split(",").map(c => c.trim()).filter(Boolean);
     try {
       const res = await fetch("/api/ops/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          batch_id: batchId,
-          limit: scrapeCount,
-          cities,
-          min_rating: scrapeMinRating,
-          max_reviews: scrapeMaxReviews,
-          no_website_only: scrapeNoWebsiteOnly,
-        }),
+        body: JSON.stringify({ batch_id: batchId }),
       });
       const data = await res.json();
       if (res.ok) {
-        alert(`Scraped ${data.inserted} new leads (${data.duplicates_skipped_before_api} duplicates skipped before API)\nAPI cost: ${data.estimated_cost}\nSaved: ${data.estimated_saved}`);
+        const errMsg = data.error_count > 0 ? `\n⚠️ ${data.error_count} insert errors` : "";
+        alert(`Inserted ${data.inserted} leads (from cache — $0 API cost)${errMsg}`);
         setScrapeOpen(null);
         setDryRunResult(null);
         await fetchPipeline();
+      } else if (res.status === 409) {
+        alert("Preview expired — click Preview Cost to refresh");
+        setDryRunResult(null);
       } else {
         alert(`Scrape failed: ${data.error}${data.details ? `\n${data.details}` : ""}`);
       }
@@ -317,26 +313,24 @@ export default function OpsPage() {
     finally { setCreatingBatch(false); }
   }
 
-  // New batch: Step 2 — confirm scrape
+  // New batch: Step 2 — confirm (reads from cache, $0 API cost)
   async function handleNewBatchConfirmScrape(batchId: string) {
     setCreatingBatch(true);
-    const cities = newBatchCities.split(",").map(c => c.trim()).filter(Boolean);
     try {
       const scrapeRes = await fetch("/api/ops/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          batch_id: batchId,
-          limit: newBatchCount,
-          cities,
-          min_rating: newBatchMinRating,
-          max_reviews: newBatchMaxReviews,
-          no_website_only: newBatchNoWebsiteOnly,
-        }),
+        body: JSON.stringify({ batch_id: batchId }),
       });
       const scrapeData = await scrapeRes.json();
       if (scrapeRes.ok) {
-        alert(`Scraped ${scrapeData.inserted} new leads.\nAPI cost: ${scrapeData.estimated_cost}\nSaved: ${scrapeData.estimated_saved}`);
+        const errMsg = scrapeData.error_count > 0 ? `\n⚠️ ${scrapeData.error_count} insert errors` : "";
+        alert(`Inserted ${scrapeData.inserted} leads (from cache — $0 API cost)${errMsg}`);
+      } else if (scrapeRes.status === 409) {
+        alert("Preview expired — click Preview Cost to refresh");
+        setDryRunResult(null);
+        setCreatingBatch(false);
+        return;
       } else {
         alert(`Scrape failed: ${scrapeData.error}${scrapeData.details ? `\n${scrapeData.details}` : ""}`);
       }
@@ -348,6 +342,19 @@ export default function OpsPage() {
       await fetchPipeline();
     } catch (err) { alert("Failed to scrape"); }
     finally { setCreatingBatch(false); }
+  }
+
+  // Cancel: clean up empty batch when modal closed without confirming
+  async function handleCancelNewBatch(batchId?: string) {
+    if (batchId) {
+      try {
+        await fetch(`/api/ops/scrape?batch_id=${batchId}`, { method: "DELETE" });
+      } catch {}
+    }
+    setNewBatchOpen(false);
+    setNewBatchCities("");
+    setNewBatchCount(25);
+    setDryRunResult(null);
   }
 
   const fetchPipeline = useCallback(async () => {
@@ -726,7 +733,7 @@ export default function OpsPage() {
                     <div className="flex justify-between items-center">
                       <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#34C759]">Preview Results</div>
                       <div className="text-[10px] text-[#8E8E93]">
-                        Dry run: {dryRunResult.dry_run_cost || dryRunResult.search_cost} (spent) · Confirm: {dryRunResult.confirm_cost || dryRunResult.estimated_detail_cost}
+                        Dry run: {dryRunResult.dry_run_cost} (spent) · Confirm: $0.00 (cached)
                       </div>
                     </div>
 
@@ -837,7 +844,7 @@ export default function OpsPage() {
           <div className="bg-white border border-[#34C75933] rounded-xl shadow-lg overflow-hidden">
             <div className="px-5 py-3 border-b border-[#F2F2F7] flex justify-between items-center">
               <div className="text-xs font-bold uppercase tracking-[0.05em] text-[#34C759]">New Batch — Scrape Leads</div>
-              <button onClick={() => setNewBatchOpen(false)} className="text-[#8E8E93] hover:text-[#1D1D1F] text-sm">✕</button>
+              <button onClick={() => handleCancelNewBatch(dryRunResult?.batchId)} className="text-[#8E8E93] hover:text-[#1D1D1F] text-sm">✕</button>
             </div>
             <div className="p-5 space-y-4">
               {/* Cities */}
@@ -938,7 +945,7 @@ export default function OpsPage() {
                     <div className="flex justify-between items-center">
                       <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#34C759]">Preview Results</div>
                       <div className="text-[10px] text-[#8E8E93]">
-                        Dry run: {dryRunResult.dry_run_cost || dryRunResult.search_cost} (spent) · Confirm: {dryRunResult.confirm_cost || dryRunResult.estimated_detail_cost}
+                        Dry run: {dryRunResult.dry_run_cost} (spent) · Confirm: $0.00 (cached)
                       </div>
                     </div>
 

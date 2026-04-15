@@ -56,7 +56,6 @@ async function getPlaceDetails(placeId: string): Promise<any> {
 
 // ── Parse city/state from address ───────────────────────────────────
 function parseCityState(address: string): { city: string; state: string } {
-  // "123 Main St, Tampa, FL 33601, USA"
   const parts = address.split(",").map((s) => s.trim());
   if (parts.length >= 3) {
     const city = parts[parts.length - 3] || "";
@@ -68,33 +67,22 @@ function parseCityState(address: string): { city: string; state: string } {
 }
 
 // ── POST /api/ops/scrape ────────────────────────────────────────────
-// Body: { batch_id, limit, cities? }
-// Scrapes Google Maps, creates contractors + pipeline entries
-// Auth is handled by the /ops layout (admin email check).
+// Dry run: searches Google, saves results to scrape_preview_cache
+// Confirm: reads from cache, inserts — ZERO Google API calls
 export async function POST(req: NextRequest) {
   const auth = await requireOpsAuth();
   if (!auth.authorized) return auth.response;
 
   try {
     const body = await req.json();
-    // Cap at 25 per request to stay within Vercel function timeout (60s hobby / 300s pro).
-    const { batch_id, limit: rawLimit = 25 } = body;
-    const limit = Math.min(rawLimit, 25);
-
-    // Scrape filters — applied post-fetch before inserting
-    const filters = {
-      min_rating: body.min_rating ?? 0,        // 0 = no minimum
-      max_reviews: body.max_reviews ?? 999999,  // high default = no cap
-      no_website_only: body.no_website_only ?? false,
-    };
-
+    const { batch_id } = body;
     const dryRun = body.dry_run === true;
 
     if (!batch_id) {
       return NextResponse.json({ error: "batch_id required" }, { status: 400 });
     }
 
-    // Get batch to find city targets
+    // Get batch
     const { data: batch, error: batchErr } = await supabase
       .from("prospect_batches")
       .select("*")
@@ -105,11 +93,162 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Batch not found" }, { status: 404 });
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // CONFIRM PATH — read from cache, no Google API calls
+    // ═══════════════════════════════════════════════════════════════
+    if (!dryRun) {
+      // Look up cached preview
+      const { data: cache, error: cacheErr } = await supabase
+        .from("scrape_preview_cache")
+        .select("*")
+        .eq("batch_id", batch_id)
+        .eq("consumed", false)
+        .gt("expires_at", new Date().toISOString())
+        .single();
+
+      if (cacheErr || !cache) {
+        return NextResponse.json(
+          { error: "Preview expired or not found. Run dry run again." },
+          { status: 409 }
+        );
+      }
+
+      // Mark consumed IMMEDIATELY — prevents double-click
+      const { error: consumeErr } = await supabase
+        .from("scrape_preview_cache")
+        .update({ consumed: true })
+        .eq("id", cache.id)
+        .eq("consumed", false); // Extra guard against race
+
+      if (consumeErr) {
+        return NextResponse.json(
+          { error: "Preview already consumed (double-click?)" },
+          { status: 409 }
+        );
+      }
+
+      // Read prospects from cache — these are EXACTLY what the dry run showed
+      const prospects: Prospect[] = cache.prospects || [];
+
+      // Insert prospects
+      let inserted = 0;
+      const insertErrors: { name: string; city: string; reason: string }[] = [];
+      const insertedProspectIds: string[] = [];
+
+      for (const p of prospects) {
+        // Create contractor
+        const { data: contractor, error: cErr } = await supabase
+          .from("contractors")
+          .insert({
+            user_id: null,
+            email: `prospect-${Date.now()}-${inserted}@placeholder.com`,
+            business_name: p.business_name,
+            phone: p.phone || "unknown",
+            city: p.city,
+            state: p.state,
+            business_type: "residential",
+          })
+          .select("id")
+          .single();
+
+        if (cErr || !contractor) {
+          console.error("[scrape/confirm] contractor insert failed", {
+            business_name: p.business_name,
+            error: cErr?.message,
+          });
+          insertErrors.push({
+            name: p.business_name,
+            city: p.city,
+            reason: cErr?.message || "contractor insert failed",
+          });
+          continue;
+        }
+
+        // Create pipeline entry
+        const { data: pipeline, error: pErr } = await supabase
+          .from("prospect_pipeline")
+          .insert({
+            contractor_id: contractor.id,
+            batch_id,
+            business_name: p.business_name,
+            city: p.city,
+            state: p.state,
+            phone: p.phone,
+            rating: p.rating,
+            reviews_count: p.reviews_count,
+            address: p.address,
+            google_place_id: p.google_place_id,
+            stage: "scraped",
+            their_website_url: p.website,
+            scraped_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+
+        if (pErr || !pipeline) {
+          console.error("[scrape/confirm] pipeline insert failed", {
+            business_name: p.business_name,
+            error: pErr?.message,
+          });
+          insertErrors.push({
+            name: p.business_name,
+            city: p.city,
+            reason: pErr?.message || "pipeline insert failed",
+          });
+          continue;
+        }
+
+        inserted++;
+        insertedProspectIds.push(pipeline.id);
+      }
+
+      // Update batch
+      await supabase
+        .from("prospect_batches")
+        .update({
+          lead_count: (batch.lead_count || 0) + inserted,
+          scrape_status: "confirmed",
+        })
+        .eq("id", batch_id);
+
+      // Fire auto-enrichment
+      if (insertedProspectIds.length > 0) {
+        await inngest.send({
+          name: "ops/batch.auto-enrich",
+          data: {
+            batchId: batch_id,
+            prospectIds: insertedProspectIds,
+          },
+        });
+      }
+
+      // NO spending recorded — already paid during dry run
+      return NextResponse.json({
+        success: true,
+        inserted,
+        insert_errors: insertErrors,
+        error_count: insertErrors.length,
+        from_cache: true,
+        auto_enrich_triggered: insertedProspectIds.length > 0,
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DRY RUN PATH — search Google, save results to cache
+    // ═══════════════════════════════════════════════════════════════
+    const { limit: rawLimit = 25 } = body;
+    const limit = Math.min(rawLimit, 25);
+
+    const filters = {
+      min_rating: body.min_rating ?? 0,
+      max_reviews: body.max_reviews ?? 999999,
+      no_website_only: body.no_website_only ?? false,
+    };
+
     const cities: string[] = body.cities || batch.city_targets || ["Tampa"];
 
-    // ── SPENDING GUARD — check daily cap before any API calls ──
-    // Worst case: limit text searches + limit detail calls
-    const maxSearchCalls = cities.length * 2; // ~2 pages per city
+    // Spending guard
+    const maxSearchCalls = cities.length * 2;
     const maxDetailCalls = limit;
     const estimatedMaxCost = (maxSearchCalls * 0.032) + (maxDetailCalls * 0.017);
 
@@ -122,10 +261,8 @@ export async function POST(req: NextRequest) {
         cap: `$${spendingCheck.cap}`,
       }, { status: 429 });
     }
-    const perCity = Math.ceil(limit / cities.length);
 
-    // ── DEDUP CHECK FIRST — load existing names BEFORE any expensive API calls ──
-    // Only check active/completed batches — orphaned rows from deleted batches don't count
+    // Load dedup sets
     const { data: activeBatches } = await supabase
       .from("prospect_batches")
       .select("id")
@@ -148,295 +285,250 @@ export async function POST(req: NextRequest) {
       existingPipeline.filter((p: any) => p.google_place_id).map((p: any) => p.google_place_id)
     );
 
-    // ── DRY RUN MODE — text search only, no details API, no inserts ──
-    // Respects the limit: only searches enough pages to fill the requested count.
-    // Shows ALL results from the searches we paid for — nothing gets thrown away.
-    if (dryRun) {
-      let searchCalls = 0;
-      let detailCalls = 0;
-      let newFound = 0;
-      const preview: { name: string; city: string; is_duplicate: boolean; filtered_out: boolean; filter_reason?: string; place_id: string; rating?: number; reviews?: number; has_website?: boolean }[] = [];
+    // Search Google + apply filters + build toInsert list
+    let searchCalls = 0;
+    let detailCalls = 0;
+    let newFound = 0;
+    const toInsert: Prospect[] = [];
+    const preview: {
+      name: string; city: string; is_duplicate: boolean;
+      filtered_out: boolean; filter_reason?: string; place_id: string;
+      rating?: number; reviews?: number; has_website?: boolean;
+    }[] = [];
 
-      for (const cityName of cities) {
-        if (newFound >= limit) break;
+    for (const cityName of cities) {
+      if (newFound >= limit) break;
 
-        const query = `roofing contractor in ${cityName}`;
-        let pageToken: string | undefined;
-        // When "no website only" is on, dig deeper — small roofers without sites
-        // are buried on pages 2-3. Cap at 3 pages to limit cost.
-        const maxPages = filters.no_website_only ? 3 : 1;
-        let page = 0;
+      const query = `roofing contractor in ${cityName}`;
+      let pageToken: string | undefined;
+      const maxPages = filters.no_website_only ? 3 : 1;
+      let page = 0;
 
-        while (page < maxPages && newFound < limit) {
-          const results = await searchPlaces(query, pageToken);
-          searchCalls++;
-          page++;
+      while (page < maxPages && newFound < limit) {
+        const results = await searchPlaces(query, pageToken);
+        searchCalls++;
+        page++;
 
-          for (const place of (results.results || [])) {
-            const isDuplicate = existingPlaceIds.has(place.place_id) ||
-              existingNames.has(`${(place.name || "").toLowerCase()}|${cityName.toLowerCase()}`);
+        for (const place of (results.results || [])) {
+          const isDuplicate = existingPlaceIds.has(place.place_id) ||
+            existingNames.has(`${(place.name || "").toLowerCase()}|${cityName.toLowerCase()}`);
 
-            const placeRating = place.rating || 0;
-            const placeReviews = place.user_ratings_total || 0;
-            let filteredOut = false;
-            let filterReason: string | undefined;
+          const placeRating = place.rating || 0;
+          const placeReviews = place.user_ratings_total || 0;
+          let filteredOut = false;
+          let filterReason: string | undefined;
 
-            if (!isDuplicate) {
-              if (filters.min_rating > 0 && placeRating > 0 && placeRating < filters.min_rating) {
-                filteredOut = true;
-                filterReason = `Rating ${placeRating}★ below min ${filters.min_rating}★`;
-              } else if (placeReviews > filters.max_reviews) {
-                filteredOut = true;
-                filterReason = `${placeReviews} reviews exceeds max ${filters.max_reviews}`;
-              }
+          if (!isDuplicate) {
+            if (filters.min_rating > 0 && placeRating > 0 && placeRating < filters.min_rating) {
+              filteredOut = true;
+              filterReason = `Rating ${placeRating}★ below min ${filters.min_rating}★`;
+            } else if (placeReviews > filters.max_reviews) {
+              filteredOut = true;
+              filterReason = `${placeReviews} reviews exceeds max ${filters.max_reviews}`;
             }
-
-            // When "no website only" is checked, call details API to check website.
-            // Pay for it in dry run so the preview is accurate.
-            let hasWebsite: boolean | undefined;
-            if (!isDuplicate && !filteredOut && filters.no_website_only) {
-              const details = await getPlaceDetails(place.place_id);
-              detailCalls++;
-              hasWebsite = !!details.website;
-              if (hasWebsite) {
-                filteredOut = true;
-                filterReason = "Has website (filtered by 'No website only')";
-              }
-            }
-
-            preview.push({
-              name: place.name || "Unknown",
-              city: cityName,
-              is_duplicate: isDuplicate,
-              filtered_out: filteredOut,
-              filter_reason: filterReason,
-              place_id: place.place_id,
-              rating: placeRating || undefined,
-              reviews: placeReviews || undefined,
-              has_website: hasWebsite,
-            });
-
-            if (!isDuplicate && !filteredOut) newFound++;
           }
 
-          pageToken = results.next_page_token;
-          if (!pageToken) break;
-          // Google requires a delay before using next_page_token
-          await new Promise((r) => setTimeout(r, 2000));
+          // When "no website only" — call details API to check website
+          let hasWebsite: boolean | undefined;
+          let detailsData: any = null;
+          if (!isDuplicate && !filteredOut && filters.no_website_only) {
+            detailsData = await getPlaceDetails(place.place_id);
+            detailCalls++;
+            hasWebsite = !!detailsData.website;
+            if (hasWebsite) {
+              filteredOut = true;
+              filterReason = "Has website (filtered by 'No website only')";
+            }
+          }
+
+          // For prospects that pass all filters, get full details if we don't have them yet
+          if (!isDuplicate && !filteredOut) {
+            if (!detailsData) {
+              detailsData = await getPlaceDetails(place.place_id);
+              detailCalls++;
+            }
+
+            // Skip non-operational businesses
+            if (detailsData.business_status && detailsData.business_status !== "OPERATIONAL") {
+              filteredOut = true;
+              filterReason = `Business status: ${detailsData.business_status}`;
+            } else {
+              const { city: parsedCity, state } = parseCityState(detailsData.formatted_address || "");
+
+              // Final dedup with exact name from details
+              const exactKey = `${detailsData.name}|${parsedCity || cityName}`.toLowerCase();
+              if (existingNames.has(exactKey)) {
+                // Mark as duplicate in preview but don't add to toInsert
+                preview.push({
+                  name: detailsData.name || place.name || "Unknown",
+                  city: cityName,
+                  is_duplicate: true,
+                  filtered_out: false,
+                  place_id: place.place_id,
+                  rating: placeRating || undefined,
+                  reviews: placeReviews || undefined,
+                  has_website: hasWebsite,
+                });
+                continue;
+              }
+
+              toInsert.push({
+                business_name: detailsData.name || place.name,
+                phone: detailsData.formatted_phone_number || null,
+                website: detailsData.website || null,
+                address: detailsData.formatted_address || "",
+                city: parsedCity || cityName,
+                state: state || "FL",
+                rating: detailsData.rating || null,
+                reviews_count: detailsData.user_ratings_total || null,
+                google_place_id: place.place_id || null,
+              });
+
+              existingNames.add(exactKey);
+              existingPlaceIds.add(place.place_id);
+              newFound++;
+            }
+          }
+
+          preview.push({
+            name: place.name || "Unknown",
+            city: cityName,
+            is_duplicate: isDuplicate,
+            filtered_out: filteredOut,
+            filter_reason: filterReason,
+            place_id: place.place_id,
+            rating: placeRating || undefined,
+            reviews: placeReviews || undefined,
+            has_website: hasWebsite,
+          });
         }
+
+        pageToken = results.next_page_token;
+        if (!pageToken) break;
+        await new Promise((r) => setTimeout(r, 2000));
       }
+    }
 
-      const newCount = preview.filter(p => !p.is_duplicate && !p.filtered_out).length;
-      const dupCount = preview.filter(p => p.is_duplicate).length;
-      const filteredCount = preview.filter(p => p.filtered_out).length;
-      // When no_website_only is on, details were already paid in dry run — confirm is free
-      // When off, details will be paid at confirm time
-      const dryRunDetailCost = detailCalls * 0.017;
-      const confirmDetailCost = filters.no_website_only ? 0 : newCount * 0.017;
-      const searchCost = searchCalls * 0.032;
+    const newCount = toInsert.length;
+    const dupCount = preview.filter(p => p.is_duplicate).length;
+    const filteredCount = preview.filter(p => p.filtered_out).length;
+    const searchCost = searchCalls * 0.032;
+    const detailCost = detailCalls * 0.017;
 
-      // Record spending for this dry run
-      await recordSpending("google_text_search", searchCalls, 0.032, `Dry run: ${cities.join(", ")}`);
-      if (detailCalls > 0) {
-        await recordSpending("google_place_details", detailCalls, 0.017, `Dry run website check: ${cities.join(", ")}`);
-      }
+    // Record spending
+    await recordSpending("google_text_search", searchCalls, 0.032, `Dry run: ${cities.join(", ")}`);
+    if (detailCalls > 0) {
+      await recordSpending("google_place_details", detailCalls, 0.017, `Dry run details: ${cities.join(", ")}`);
+    }
 
+    // ── SAVE TO CACHE — this is the key change ──
+    // Delete any existing unconsumed preview for this batch first
+    await supabase
+      .from("scrape_preview_cache")
+      .delete()
+      .eq("batch_id", batch_id)
+      .eq("consumed", false);
+
+    const { error: cacheInsertErr } = await supabase
+      .from("scrape_preview_cache")
+      .insert({
+        batch_id,
+        filters,
+        prospects: toInsert,
+        preview_meta: {
+          new_count: newCount,
+          dup_count: dupCount,
+          filtered_count: filteredCount,
+          search_calls: searchCalls,
+          detail_calls: detailCalls,
+          costs: {
+            search: searchCost,
+            detail: detailCost,
+            total: searchCost + detailCost,
+          },
+        },
+      });
+
+    if (cacheInsertErr) {
+      console.error("[scrape/dry-run] cache insert failed", cacheInsertErr);
+      // Still return the preview — just warn that confirm won't work
       return NextResponse.json({
         dry_run: true,
+        cache_error: "Failed to save preview — confirm will require a new dry run",
         found: preview.length,
         new_prospects: newCount,
         duplicates: dupCount,
         filtered_out: filteredCount,
         search_api_calls: searchCalls,
         detail_api_calls: detailCalls,
-        dry_run_cost: `$${(searchCost + dryRunDetailCost).toFixed(2)}`,
-        confirm_cost: `$${confirmDetailCost.toFixed(2)}`,
-        total_cost: `$${(searchCost + dryRunDetailCost + confirmDetailCost).toFixed(2)}`,
+        dry_run_cost: `$${(searchCost + detailCost).toFixed(2)}`,
+        confirm_cost: "$0.00",
+        total_cost: `$${(searchCost + detailCost).toFixed(2)}`,
         preview,
       });
     }
 
-    const prospects: Prospect[] = [];
-    let apiCalls = 0;
-    let duplicatesSkippedBeforeApi = 0;
-
-    // Scrape each city
-    for (const city of cities) {
-      if (prospects.length >= limit) break;
-
-      const query = `roofing contractor in ${city}`;
-      let pageToken: string | undefined;
-      let cityCount = 0;
-
-      while (cityCount < perCity && prospects.length < limit) {
-        const results = await searchPlaces(query, pageToken);
-        apiCalls++;
-
-        if (!results.results || results.results.length === 0) break;
-
-        for (const place of results.results) {
-          if (prospects.length >= limit) break;
-
-          // ── DEDUP BEFORE DETAILS CALL — skip the $0.017 API call entirely ──
-          if (existingPlaceIds.has(place.place_id)) {
-            duplicatesSkippedBeforeApi++;
-            continue;
-          }
-          // Also check by name from the text search result (place.name is available)
-          const searchName = (place.name || "").toLowerCase();
-          const roughCity = city.toLowerCase();
-          const nameKey = `${searchName}|${roughCity}`;
-          if (existingNames.has(nameKey)) {
-            duplicatesSkippedBeforeApi++;
-            continue;
-          }
-
-          // ── PRE-FILTER from text search data (FREE — no API call) ──
-          // Rating + review count are available in text search results
-          const preRating = place.rating || 0;
-          const preReviews = place.user_ratings_total || 0;
-          if (filters.min_rating > 0 && preRating > 0 && preRating < filters.min_rating) continue;
-          if (preReviews > filters.max_reviews) continue;
-
-          // Only NOW call the expensive details API
-          const details = await getPlaceDetails(place.place_id);
-          apiCalls++;
-
-          // Skip if no useful data
-          if (!details.name) continue;
-          if (details.business_status && details.business_status !== "OPERATIONAL") continue;
-
-          // Website filter can only be checked after details call
-          const hasWebsite = !!details.website;
-          if (filters.no_website_only && hasWebsite) continue;
-
-          const { city: parsedCity, state } = parseCityState(details.formatted_address || "");
-
-          // Final dedup check with the exact name from details
-          const exactKey = `${details.name}|${parsedCity || city}`.toLowerCase();
-          if (existingNames.has(exactKey)) continue;
-
-          prospects.push({
-            business_name: details.name,
-            phone: details.formatted_phone_number || null,
-            website: details.website || null,
-            address: details.formatted_address || "",
-            city: parsedCity || city,
-            state: state || "FL",
-            rating: details.rating || null,
-            reviews_count: details.user_ratings_total || null,
-            google_place_id: place.place_id || null,
-          });
-
-          // Add to dedup sets so we don't double-count within this scrape
-          existingNames.add(exactKey);
-          existingPlaceIds.add(place.place_id);
-          cityCount++;
-        }
-
-        pageToken = results.next_page_token;
-        if (!pageToken) break;
-
-        // Google requires a short delay before using next_page_token
-        await new Promise((r) => setTimeout(r, 2000));
-      }
-    }
-
-    // Insert new prospects
-    let inserted = 0;
-    const insertedProspectIds: string[] = [];
-    for (const p of prospects) {
-      const key = `${p.business_name}|${p.city}`.toLowerCase();
-      if (existingNames.has(key)) continue;
-
-      // Create contractor — user_id is NULL for prospects.
-      // Claim flow sets user_id when a roofer signs up.
-      const { data: contractor, error: cErr } = await supabase
-        .from("contractors")
-        .insert({
-          user_id: null,
-          email: `prospect-${Date.now()}-${inserted}@placeholder.com`,
-          business_name: p.business_name,
-          phone: p.phone || "unknown",
-          city: p.city,
-          state: p.state,
-          business_type: "residential",
-        })
-        .select("id")
-        .single();
-
-      if (cErr || !contractor) continue;
-
-      // Create pipeline entry
-      const { data: pipeline, error: pErr } = await supabase.from("prospect_pipeline").insert({
-        contractor_id: contractor.id,
-        batch_id,
-        business_name: p.business_name,
-        city: p.city,
-        state: p.state,
-        phone: p.phone,
-        rating: p.rating,
-        reviews_count: p.reviews_count,
-        address: p.address,
-        google_place_id: p.google_place_id,
-        stage: "scraped",
-        their_website_url: p.website,
-        scraped_at: new Date().toISOString(),
-      }).select("id").single();
-
-      if (!pErr && pipeline) {
-        inserted++;
-        insertedProspectIds.push(pipeline.id);
-        existingNames.add(key);
-      }
-    }
-
-    // Update batch lead count
-    await supabase
-      .from("prospect_batches")
-      .update({ lead_count: (batch.lead_count || 0) + inserted })
-      .eq("id", batch_id);
-
-    // Fire auto-enrichment via Inngest (only if we inserted prospects with place IDs)
-    const enrichableIds = insertedProspectIds.filter((_, i) => {
-      // Match back to the prospect that was inserted at this index
-      return true; // All scraped prospects have google_place_id from the scrape
-    });
-
-    if (enrichableIds.length > 0) {
-      await inngest.send({
-        name: "ops/batch.auto-enrich",
-        data: {
-          batchId: batch_id,
-          prospectIds: enrichableIds,
-        },
-      });
-    }
-
-    // Record actual spending
-    // Count text search calls separately from detail calls
-    const textSearchCalls = cities.length; // At minimum 1 per city
-    const detailCalls = apiCalls - textSearchCalls;
-    await recordSpending("google_text_search", textSearchCalls, 0.032, `Scrape: ${cities.join(", ")}`);
-    if (detailCalls > 0) {
-      await recordSpending("google_place_details", detailCalls, 0.017, `Scrape: ${inserted} inserted`);
-    }
-
-    const estimatedCost = (textSearchCalls * 0.032 + detailCalls * 0.017).toFixed(2);
-
     return NextResponse.json({
-      success: true,
-      scraped: prospects.length,
-      inserted,
-      duplicates_skipped_before_api: duplicatesSkippedBeforeApi,
-      duplicates_skipped_at_insert: prospects.length - inserted,
-      api_calls: apiCalls,
-      estimated_cost: `$${estimatedCost}`,
-      estimated_saved: `$${(duplicatesSkippedBeforeApi * 0.017).toFixed(2)}`,
-      auto_enrich_triggered: enrichableIds.length > 0,
+      dry_run: true,
+      cached: true,
+      found: preview.length,
+      new_prospects: newCount,
+      duplicates: dupCount,
+      filtered_out: filteredCount,
+      search_api_calls: searchCalls,
+      detail_api_calls: detailCalls,
+      dry_run_cost: `$${(searchCost + detailCost).toFixed(2)}`,
+      confirm_cost: "$0.00",
+      total_cost: `$${(searchCost + detailCost).toFixed(2)}`,
+      preview,
     });
   } catch (err: any) {
     console.error("Scrape error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+// ── DELETE /api/ops/scrape ──────────────────────────────────────────
+// Cleanup: delete empty batches when user cancels without confirming
+export async function DELETE(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (!auth.authorized) return auth.response;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const batchId = searchParams.get("batch_id");
+
+    if (!batchId) {
+      return NextResponse.json({ error: "batch_id required" }, { status: 400 });
+    }
+
+    // Only delete empty pending batches
+    const { data: batch } = await supabase
+      .from("prospect_batches")
+      .select("id, lead_count, scrape_status")
+      .eq("id", batchId)
+      .single();
+
+    if (!batch) {
+      return NextResponse.json({ error: "Batch not found" }, { status: 404 });
+    }
+
+    if ((batch.lead_count || 0) > 0 || batch.scrape_status === "confirmed") {
+      return NextResponse.json(
+        { error: "Cannot delete batch with leads or confirmed scrape" },
+        { status: 400 }
+      );
+    }
+
+    // Delete batch (cascade deletes cache rows)
+    await supabase
+      .from("prospect_batches")
+      .delete()
+      .eq("id", batchId);
+
+    return NextResponse.json({ deleted: true });
+  } catch (err: any) {
+    console.error("Scrape delete error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
