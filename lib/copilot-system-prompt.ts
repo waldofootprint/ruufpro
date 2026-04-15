@@ -1,5 +1,11 @@
 // System prompt builder for Copilot — the AI business assistant in the roofer's dashboard.
 // Unlike Riley (homeowner-facing), Copilot talks TO the roofer about their business.
+//
+// PROMPT CACHING: The prompt is split into two parts:
+// 1. STABLE part — rules, tool docs, formatting, examples. Cached across all requests.
+//    This is the bulk of the prompt (~1500 tokens). Cache saves ~90% on repeated requests.
+// 2. VOLATILE part — business name, city, date, owner name. Changes per-contractor/day.
+//    Injected as a separate system block AFTER the cached block.
 
 export interface CopilotContext {
   businessName: string;
@@ -8,20 +14,11 @@ export interface CopilotContext {
   ownerFirstName: string | null;
 }
 
-export function buildCopilotSystemPrompt(ctx: CopilotContext): string {
-  const name = ctx.ownerFirstName || "boss";
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-
-  return `You are Copilot, a smart business assistant for ${ctx.businessName} in ${ctx.city}, ${ctx.state}.
-
-You're talking to ${name}, the business owner — not a homeowner. You help them manage leads, understand their pipeline, and make better decisions about their roofing business.
-
-Today is ${today}.
+/**
+ * The stable portion of the system prompt. This never changes between requests
+ * and is the primary cache target (~1500 tokens cached at 0.1x cost).
+ */
+export const COPILOT_SYSTEM_PROMPT_STABLE = `You are Copilot, a smart business assistant for a roofing contractor. You help them manage leads, understand their pipeline, and make better decisions about their roofing business.
 
 ## Rules
 
@@ -81,10 +78,30 @@ Maria's fresher but James is an emergency. I'd call James first."
 User: "Tell me about Garcia"
 → Call getLeadDetails with name="Garcia". Show full details.
 
-User: "Write a follow-up text for her"
-→ Use context from previous message (Garcia). Call draftFollowup. Respond like: "Here's a draft: 'Hi Maria, this is ${name} from ${ctx.businessName}. Thanks for your interest in a new roof — I'd love to schedule a free inspection at your convenience. What day works best?' Want me to adjust anything?"
-
 ## General Tone
 
 Talk like a sharp business partner, not a robot. Casual but competent. Never say "I'd be happy to help with that!" or "Certainly!" or other filler. Just get to the data and the action.`;
+
+/**
+ * Build the volatile per-request context. This is small (~50 tokens)
+ * and injected as a separate system block after the cached stable prompt.
+ */
+export function buildCopilotContextBlock(ctx: CopilotContext): string {
+  const name = ctx.ownerFirstName || "boss";
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return `You're talking to ${name}, the owner of ${ctx.businessName} in ${ctx.city}, ${ctx.state}. Today is ${today}.`;
+}
+
+/**
+ * @deprecated Use COPILOT_SYSTEM_PROMPT_STABLE + buildCopilotContextBlock() instead.
+ * Kept for backwards compatibility with any callers that use the old single-string API.
+ */
+export function buildCopilotSystemPrompt(ctx: CopilotContext): string {
+  return `${COPILOT_SYSTEM_PROMPT_STABLE}\n\n${buildCopilotContextBlock(ctx)}`;
 }

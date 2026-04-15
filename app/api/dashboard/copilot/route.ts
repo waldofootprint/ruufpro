@@ -9,7 +9,10 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { z } from "zod";
-import { buildCopilotSystemPrompt } from "@/lib/copilot-system-prompt";
+import {
+  COPILOT_SYSTEM_PROMPT_STABLE,
+  buildCopilotContextBlock,
+} from "@/lib/copilot-system-prompt";
 import {
   getLeadsForCopilot,
   getLeadDetailsForCopilot,
@@ -194,8 +197,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
 
-    // Build system prompt
-    const systemPrompt = buildCopilotSystemPrompt({
+    // Build system prompt — split into stable (cached) + volatile (per-request)
+    // Stable part (~1500 tokens): rules, tool docs, formatting, examples
+    // Volatile part (~50 tokens): business name, city, date
+    // Cache saves ~90% on the stable portion for repeated requests
+    const volatileContext = buildCopilotContextBlock({
       businessName: contractor.business_name,
       city: contractor.city,
       state: contractor.state,
@@ -205,10 +211,26 @@ export async function POST(request: NextRequest) {
     // Get current usage for response header
     const usage = await getCopilotUsageToday(supabase, contractorId);
 
-    // Stream response with tools
+    // Stream response with tools + prompt caching
+    // The @ai-sdk/anthropic provider maps providerOptions.anthropic.cacheControl
+    // to Anthropic's cache_control API. The stable system prompt (~1500 tokens)
+    // is cached for 5 min (0.1x cost on reads). Volatile context (name, date, city)
+    // is appended after the cache boundary so it doesn't invalidate the cache.
     const result = streamText({
       model: anthropic("claude-haiku-4-5-20251001"),
-      system: systemPrompt,
+      system: [
+        {
+          role: "system" as const,
+          content: COPILOT_SYSTEM_PROMPT_STABLE,
+          providerOptions: {
+            anthropic: { cacheControl: { type: "ephemeral" } },
+          },
+        },
+        {
+          role: "system" as const,
+          content: volatileContext,
+        },
+      ],
       messages: await convertToModelMessages(messages),
       maxOutputTokens: 1024,
       temperature: 0.3, // Lower than Riley — data-driven, more deterministic
