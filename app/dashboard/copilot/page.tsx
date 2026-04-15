@@ -335,12 +335,26 @@ export default function CopilotPage() {
     updateLead(lead.id, "log_action", { actionType: "Called" });
   }
 
-  function handleSendEmail(lead: LeadData) {
-    // TODO: Wire Resend API for actual email delivery
+  async function handleSendEmail(lead: LeadData) {
+    if (!lead.email) return;
+    const draft = generateDraft(lead, tone, businessName);
+
+    // Optimistic UI update
     const newEntry = { action: "Emailed", timestamp: new Date().toISOString() };
     const newLog = [...(lead.copilot_action_log || []), newEntry];
     patchLeadLocal(lead.id, { copilot_action_log: newLog });
-    updateLead(lead.id, "log_action", { actionType: "Emailed" });
+
+    // Send via Resend — trackable delivery
+    const result = await updateLead(lead.id, "send_email", {
+      leadEmail: lead.email,
+      subject: `Following up on your roofing estimate`,
+      body: draft,
+    });
+
+    if (!result?.sent) {
+      // Revert optimistic update on failure
+      patchLeadLocal(lead.id, { copilot_action_log: lead.copilot_action_log });
+    }
   }
 
   // Toggle status pill — manual milestones only, persisted to DB

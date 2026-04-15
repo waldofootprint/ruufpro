@@ -1981,3 +1981,103 @@ export const outreachAutoSend = inngest.createFunction(
     return sendResult;
   }
 );
+
+// ---------------------------------------------------------------------------
+// Stale Lead Detection — daily cron to flag leads going cold
+// Runs at 7am ET, scans all Pro contractor leads for:
+// - New leads with no status change in 48h
+// - Quoted leads with no movement in 3+ days
+// - Contacted leads with no follow-up in 5+ days
+// Updates lead temperature so they bubble to top of Copilot queue.
+// ---------------------------------------------------------------------------
+export const staleLeadDetection = inngest.createFunction(
+  {
+    id: "stale-lead-detection",
+    retries: 2,
+    triggers: [{ cron: "0 11 * * *" }], // 7am ET (UTC-4)
+  },
+  async ({ step }) => {
+    const results = await step.run("detect-stale-leads", async () => {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      // Get all Pro contractors
+      const { data: contractors } = await supabase
+        .from("contractors")
+        .select("id, email, business_name, owner_first_name")
+        .eq("tier", "pro");
+
+      if (!contractors || contractors.length === 0) return { checked: 0, flagged: 0 };
+
+      const now = new Date();
+      const h48ago = new Date(now.getTime() - 48 * 3600000).toISOString();
+      const d3ago = new Date(now.getTime() - 3 * 86400000).toISOString();
+      const d5ago = new Date(now.getTime() - 5 * 86400000).toISOString();
+      let totalFlagged = 0;
+
+      for (const c of contractors) {
+        // New leads, no contact in 48h
+        const { data: staleNew } = await supabase
+          .from("leads")
+          .select("id")
+          .eq("contractor_id", c.id)
+          .eq("status", "new")
+          .is("contacted_at", null)
+          .lt("created_at", h48ago);
+
+        // Quoted leads, no movement in 3 days
+        const { data: staleQuoted } = await supabase
+          .from("leads")
+          .select("id")
+          .eq("contractor_id", c.id)
+          .eq("status", "quoted")
+          .lt("created_at", d3ago);
+
+        // Contacted but no follow-up in 5 days
+        const { data: staleContacted } = await supabase
+          .from("leads")
+          .select("id")
+          .eq("contractor_id", c.id)
+          .eq("status", "contacted")
+          .lt("contacted_at", d5ago);
+
+        const allStale = [
+          ...(staleNew || []),
+          ...(staleQuoted || []),
+          ...(staleContacted || []),
+        ];
+
+        if (allStale.length > 0) {
+          // Update temperature to "hot" so they bubble up in Copilot
+          const ids = allStale.map((l) => l.id);
+          await supabase
+            .from("leads")
+            .update({ temperature: "hot" })
+            .in("id", ids)
+            .neq("temperature", "hot"); // Don't re-flag already hot leads
+
+          totalFlagged += allStale.length;
+        }
+      }
+
+      return { checked: contractors.length, flagged: totalFlagged };
+    });
+
+    // Notify if leads were flagged
+    if (results.flagged > 0) {
+      await step.run("notify-stale-leads", async () => {
+        const { sendAlert } = await import("@/lib/alerts");
+        await sendAlert({
+          title: "Stale leads detected",
+          message: `${results.flagged} leads going cold across ${results.checked} contractors. They've been bumped to urgent in Copilot.`,
+          severity: "warning",
+        });
+      });
+    }
+
+    return results;
+  }
+);

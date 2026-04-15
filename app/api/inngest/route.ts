@@ -18,6 +18,7 @@ import {
   prospectFormSubmit,
   batchAutoEnrich,
   outreachAutoSend,
+  staleLeadDetection,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -40,5 +41,6 @@ export const { GET, POST, PUT } = serve({
     prospectFormSubmit,
     batchAutoEnrich,
     outreachAutoSend,
+    staleLeadDetection,
   ],
 });

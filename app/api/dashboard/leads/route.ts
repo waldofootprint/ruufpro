@@ -103,6 +103,66 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ log: newLog });
     }
 
+    case "send_email": {
+      // Send email to homeowner via Resend — trackable delivery + reply detection
+      const { subject, body, leadEmail } = data || {};
+      if (!leadEmail || !body) {
+        return NextResponse.json({ error: "leadEmail and body required" }, { status: 400 });
+      }
+
+      // Get contractor info for the "from" address
+      const { data: contractor } = await auth.supabase
+        .from("contractors")
+        .select("email, business_name, owner_first_name")
+        .eq("id", auth.contractorId)
+        .single();
+
+      if (!contractor) return NextResponse.json({ error: "Contractor not found" }, { status: 500 });
+
+      try {
+        const { Resend } = await import("resend");
+        const resend = new Resend(process.env.RESEND_API_KEY);
+
+        const fromName = contractor.owner_first_name
+          ? `${contractor.owner_first_name} at ${contractor.business_name}`
+          : contractor.business_name;
+
+        const { data: emailResult, error: emailError } = await resend.emails.send({
+          from: `${fromName} <leads@ruufpro.com>`,
+          replyTo: contractor.email,
+          to: leadEmail,
+          subject: subject || `Following up on your roofing estimate`,
+          text: body,
+        });
+
+        if (emailError) {
+          return NextResponse.json({ error: emailError.message }, { status: 500 });
+        }
+
+        // Log the action on the lead
+        const currentLog: Array<{ action: string; timestamp: string; meta?: Record<string, string> }> =
+          lead.copilot_action_log || [];
+        const newLog = [
+          ...currentLog,
+          {
+            action: "Emailed",
+            timestamp: new Date().toISOString(),
+            meta: { resend_id: emailResult?.id || "", subject: subject || "" },
+          },
+        ];
+
+        await auth.supabase
+          .from("leads")
+          .update({ copilot_action_log: newLog })
+          .eq("id", leadId);
+
+        return NextResponse.json({ sent: true, resend_id: emailResult?.id, log: newLog });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Email send failed";
+        return NextResponse.json({ error: msg }, { status: 500 });
+      }
+    }
+
     case "save_notes": {
       const notes = data?.notes ?? "";
       const { error } = await auth.supabase
