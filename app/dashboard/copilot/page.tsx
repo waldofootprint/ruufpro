@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { supabase } from "@/lib/supabase";
 import { useDashboard } from "../DashboardContext";
 import type { Lead } from "@/lib/types";
@@ -222,6 +224,10 @@ function matchesFilter(lead: LeadData, filter: FilterType): boolean {
 
 // ── Main Component ───────────────────────────────────────────────────────
 
+// AI draft cache — keyed by leadId, stores all 3 tone variants
+type AIDrafts = { direct: string; warm: string; formal: string };
+
+
 export default function CopilotPage() {
   const { contractorId, businessName, tier } = useDashboard();
   const [leads, setLeads] = useState<LeadData[]>([]);
@@ -234,6 +240,24 @@ export default function CopilotPage() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingNote, setSavingNote] = useState(false);
+  const [aiDraftCache, setAiDraftCache] = useState<Record<string, AIDrafts>>({});
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [chatSessionId] = useState(() => crypto.randomUUID());
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [chatInput, setChatInput] = useState("");
+
+  // Copilot chat — streams from the existing /api/dashboard/copilot route
+  const {
+    messages: chatMessages,
+    sendMessage,
+    status: chatStatus,
+    error: chatError,
+  } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/dashboard/copilot",
+      body: { sessionId: chatSessionId },
+    }),
+  });
 
   // Direct Supabase fetch — same pattern as leads page
   useEffect(() => {
@@ -273,6 +297,46 @@ export default function CopilotPage() {
     }
     loadLeads();
   }, [contractorId]);
+
+  // Auto-scroll chat to bottom on new messages
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  // Fetch AI drafts when a lead is selected
+  useEffect(() => {
+    if (!selectedLead) return;
+    if (aiDraftCache[selectedLead.id]) return; // already cached
+
+    let cancelled = false;
+    setDraftLoading(true);
+
+    fetch("/api/dashboard/copilot/drafts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId: selectedLead.id, channel: "text" }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.drafts) return;
+        setAiDraftCache((prev) => ({ ...prev, [data.leadId]: data.drafts }));
+      })
+      .catch(() => {}) // silently fall back to hardcoded templates
+      .finally(() => { if (!cancelled) setDraftLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [selectedLead?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Get the current draft — AI if available, hardcoded fallback
+  function getCurrentDraft(lead: LeadData, t: ToneType): string {
+    const ai = aiDraftCache[lead.id];
+    if (ai) return ai[t];
+    return generateDraft(lead, t, businessName);
+  }
+
+  function isAIDraft(lead: LeadData): boolean {
+    return !!aiDraftCache[lead.id];
+  }
 
   // Filter + sort by urgency priority (emergency first, browsing last)
   const filteredLeads = leads
@@ -315,7 +379,7 @@ export default function CopilotPage() {
 
   // Action handlers — these LOG actions, they do NOT change status
   function handleSendText(lead: LeadData) {
-    const draft = generateDraft(lead, tone, businessName);
+    const draft = getCurrentDraft(lead, tone);
     const encoded = encodeURIComponent(draft);
     window.open(`sms:${lead.phone}?body=${encoded}`, "_self");
 
@@ -337,7 +401,7 @@ export default function CopilotPage() {
 
   async function handleSendEmail(lead: LeadData) {
     if (!lead.email) return;
-    const draft = generateDraft(lead, tone, businessName);
+    const draft = getCurrentDraft(lead, tone);
 
     // Optimistic UI update
     const newEntry = { action: "Emailed", timestamp: new Date().toISOString() };
@@ -512,8 +576,11 @@ export default function CopilotPage() {
                   {lead.status !== "lost" && (
                     <div className="ml-4 mb-3 p-2.5 bg-amber-50/60 border border-amber-100 rounded-lg">
                       <p className="text-[11px] text-slate-600 italic leading-relaxed line-clamp-3">
-                        {generateDraft(lead, "direct", businessName)}
+                        {getCurrentDraft(lead, "direct")}
                       </p>
+                      {isAIDraft(lead) && (
+                        <span className="text-[9px] text-amber-400 mt-1 block">AI draft</span>
+                      )}
                     </div>
                   )}
 
@@ -659,9 +726,20 @@ export default function CopilotPage() {
                   </div>
 
                   {/* Draft Text */}
-                  <p className="text-sm text-slate-700 italic leading-relaxed mb-5">
-                    &ldquo;{generateDraft(selectedLead, tone, businessName)}&rdquo;
-                  </p>
+                  <div className="relative mb-5">
+                    {draftLoading && !aiDraftCache[selectedLead.id] && (
+                      <div className="absolute inset-0 flex items-center gap-2 bg-white/80 rounded">
+                        <div className="w-3 h-3 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                        <span className="text-xs text-slate-400">Generating AI draft...</span>
+                      </div>
+                    )}
+                    <p className="text-sm text-slate-700 italic leading-relaxed">
+                      &ldquo;{getCurrentDraft(selectedLead, tone)}&rdquo;
+                    </p>
+                    {isAIDraft(selectedLead) && (
+                      <span className="inline-block mt-2 text-[10px] text-slate-300 uppercase tracking-wider">AI-generated</span>
+                    )}
+                  </div>
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3">
@@ -704,7 +782,7 @@ export default function CopilotPage() {
                     </div>
                   </div>
 
-                  {/* Property Intel */}
+                  {/* Property Intel — needs Realty Mole integration */}
                   <div className="p-5 border-r border-slate-200">
                     <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">
                       Property
@@ -714,7 +792,7 @@ export default function CopilotPage() {
                       <InfoRow label="Size" value="—" />
                       <InfoRow label="Roof age" value="—" />
                       <InfoRow label="Last sale" value="—" />
-                      <InfoRow label="Roof" value="—" />
+                      <InfoRow label="Value" value="—" />
                     </div>
                     <p className="text-[10px] text-slate-300 mt-3 italic">Property data coming soon</p>
                   </div>
@@ -845,12 +923,116 @@ export default function CopilotPage() {
                 </div>
               </div>
             ) : (
-              /* Chat Tab — Placeholder for now */
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <MessageSquare className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                  <p className="text-sm text-slate-400">Chat with Copilot coming soon</p>
-                  <p className="text-xs text-slate-300 mt-1">Ask about any lead or get a morning briefing</p>
+              /* ── Chat Tab ── */
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
+                  {chatMessages.length === 0 && (
+                    <div className="text-center py-12">
+                      <MessageSquare className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                      <p className="text-sm text-slate-500 mb-4">Ask Copilot anything about your leads</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {[
+                          "How am I doing this week?",
+                          "Show me hot leads",
+                          "Any uncontacted leads?",
+                          "Draft a follow-up for my newest lead",
+                        ].map((q) => (
+                          <button
+                            key={q}
+                            onClick={() => {
+                              sendMessage({ text: q });
+                            }}
+                            className="px-3 py-1.5 text-xs text-slate-500 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {chatMessages.map((msg) => {
+                    // Extract text from parts array (v6 format)
+                    const text = msg.parts
+                      .filter((p): p is { type: "text"; text: string } => p.type === "text")
+                      .map((p) => p.text)
+                      .join("");
+
+                    if (!text) return null;
+
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[80%] rounded-xl px-4 py-3 ${
+                            msg.role === "user"
+                              ? "bg-slate-800 text-white"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {(chatStatus === "streaming" || chatStatus === "submitted") &&
+                    chatMessages[chatMessages.length - 1]?.role !== "assistant" && (
+                    <div className="flex justify-start">
+                      <div className="bg-slate-100 rounded-xl px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {chatError && (
+                    <div className="flex justify-start">
+                      <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 max-w-[80%]">
+                        <p className="text-sm text-red-600">
+                          {chatError.message?.includes("429")
+                            ? "Daily limit reached — try again tomorrow."
+                            : "Something went wrong. Try again."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div ref={chatEndRef} />
+                </div>
+
+                {/* Input */}
+                <div className="border-t border-slate-200 px-8 py-4">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!chatInput.trim() || chatStatus === "streaming" || chatStatus === "submitted") return;
+                      sendMessage({ text: chatInput });
+                      setChatInput("");
+                    }}
+                    className="flex items-center gap-3"
+                  >
+                    <input
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Ask about your leads, pipeline, or draft a message..."
+                      className="flex-1 text-sm text-slate-700 border border-slate-200 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-slate-300"
+                      disabled={chatStatus === "streaming" || chatStatus === "submitted"}
+                    />
+                    <button
+                      type="submit"
+                      disabled={chatStatus === "streaming" || chatStatus === "submitted" || !chatInput.trim()}
+                      className="px-4 py-2.5 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-40 transition-colors"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </form>
                 </div>
               </div>
             )}
