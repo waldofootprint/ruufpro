@@ -5,6 +5,7 @@ import type { PipelineStage } from "@/lib/ops-pipeline";
 import { STAGE_LABELS } from "@/lib/ops-pipeline";
 import { OUTREACH_METHOD_LABELS } from "@/lib/prospect-scoring";
 import { getIcpScore, ICP_STYLES, STAGE_PILL, fmtTimestamp, daysSince } from "./shared";
+import { scoreNfcProspect, NFC_TIER_STYLES, type NfcTier } from "@/lib/nfc-scoring";
 
 // ── "Why is this stuck?" helper ───────────────────────────────────
 function getStuckReason(lead: any): { text: string; color: string } | null {
@@ -347,7 +348,7 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
                             </td>
                             <td className={td}>
                               {lead.preview_site_url ? (
-                                <a href={lead.preview_site_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
+                                <a href={lead.preview_site_url.startsWith("http") ? lead.preview_site_url : `https://ruufpro.com${lead.preview_site_url}`} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
                               ) : <span className="text-[#D1D1D6]">—</span>}
                             </td>
                           </tr>
@@ -436,7 +437,7 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
         </td>
         <td className={td}>
           {lead.preview_site_url ? (
-            <a href={lead.preview_site_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
+            <a href={lead.preview_site_url.startsWith("http") ? lead.preview_site_url : `https://ruufpro.com${lead.preview_site_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
           ) : <span className="text-[#D1D1D6]">—</span>}
         </td>
         <td className={td}>
@@ -466,12 +467,75 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
       </tr>
 
       {/* Expanded Detail Row */}
-      {isExpanded && (
+      {isExpanded && (() => {
+        const nfcScore = scoreNfcProspect({
+          google_place_id: lead.google_place_id,
+          has_estimate_widget: lead.has_estimate_widget,
+          rating: lead.rating,
+          reviews_count: lead.reviews_count,
+          their_website_url: lead.their_website_url,
+          website_status: lead.their_website_url ? "has_website" : "none",
+          fl_license_type: lead.fl_license_type,
+          photos: lead.photos,
+          google_reviews: lead.google_reviews,
+          phone: lead.phone,
+          facebook_page_url: lead.facebook_page_url,
+          business_name: lead.business_name,
+        });
+        const nfcStyle = NFC_TIER_STYLES[nfcScore.tier];
+        const previewFullUrl = lead.preview_site_url
+          ? (lead.preview_site_url.startsWith("http") ? lead.preview_site_url : `https://ruufpro.com${lead.preview_site_url}`)
+          : null;
+        const photos = lead.photos || [];
+        const reviews = lead.google_reviews || [];
+        const services = lead.ai_services || lead.extracted_services || [];
+
+        return (
         <tr>
           <td colSpan={9} className="p-0">
             <div className="bg-[#F8FAFF] border-b border-[#E5E5EA] p-5">
-              <div className="grid grid-cols-3 gap-4">
-                {/* Column 1: Contact Info + ICP */}
+
+              {/* Preview Site Banner */}
+              {previewFullUrl && (
+                <div className="mb-4 p-3 bg-[#EFF6FF] border border-[#007AFF33] rounded-xl flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-bold text-[#007AFF]">Preview Site Built</div>
+                    <div className="text-[10px] text-[#3B82F6] mt-0.5 font-mono">{previewFullUrl}</div>
+                  </div>
+                  <a
+                    href={previewFullUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[11px] font-semibold bg-[#007AFF] text-white hover:bg-[#0056D2] px-4 py-2 rounded-lg transition-colors"
+                  >
+                    View Preview Site ↗
+                  </a>
+                </div>
+              )}
+
+              {/* Scoring Chips Row */}
+              <div className="flex items-center gap-2 mb-4">
+                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>
+                  {icpStyle.label}
+                </span>
+                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${nfcStyle.bg} ${nfcStyle.text} border ${nfcStyle.border}`}>
+                  {nfcStyle.label} ({nfcScore.score}pts)
+                </span>
+                {lead.fl_license_type && (
+                  <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-[#E8F5E9] text-[#2E7D32] border border-[#A5D6A7]">
+                    FL Licensed: {lead.fl_license_type}
+                  </span>
+                )}
+                {nfcScore.reviewAutomationSuspected && (
+                  <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-[#FFF3E0] text-[#E65100] border border-[#FFCC80]">
+                    Review Automation Suspected
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                {/* Column 1: Contact Info */}
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">Contact Info</div>
                   <div className="space-y-1">
@@ -479,88 +543,150 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
                       ["Owner", lead.owner_name || "—"],
                       ["Email", lead.owner_email || "—"],
                       ["Phone", lead.phone || "—"],
+                      ["Address", lead.address || "—"],
                       ["Rating", lead.rating ? `${lead.rating}★ (${lead.reviews_count || 0} reviews)` : "—"],
-                      ["Website", lead.their_website_url ? lead.their_website_url.replace(/^https?:\/\/(www\.)?/, "") : "None"],
                     ].map(([label, value]) => (
-                      <div key={label} className="flex justify-between text-xs">
-                        <span className="text-[#8E8E93]">{label}</span>
-                        <span className="font-semibold text-right">{value}</span>
+                      <div key={label} className="flex justify-between text-xs gap-2">
+                        <span className="text-[#8E8E93] flex-shrink-0">{label}</span>
+                        <span className="font-semibold text-right truncate" title={String(value)}>{value}</span>
                       </div>
                     ))}
-                    {lead.preview_site_url && (
-                      <div className="flex justify-between text-xs">
-                        <span className="text-[#8E8E93]">Preview</span>
-                        <a href={lead.preview_site_url} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] font-medium">View ↗</a>
-                      </div>
-                    )}
-                    {lead.contact_form_url && (
-                      <div className="flex justify-between text-xs">
-                        <span className="text-[#8E8E93]">Form</span>
-                        <a href={lead.contact_form_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] font-medium truncate max-w-[150px]">
-                          {lead.contact_form_url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")} ↗
+                    {lead.their_website_url && (
+                      <div className="flex justify-between text-xs gap-2">
+                        <span className="text-[#8E8E93] flex-shrink-0">Website</span>
+                        <a href={lead.their_website_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] font-medium truncate">
+                          {lead.their_website_url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")} ↗
                         </a>
                       </div>
                     )}
-                    {lead.form_field_mapping?.form_type && (
-                      <div className="flex justify-between text-xs">
-                        <span className="text-[#8E8E93]">Form Type</span>
-                        <span className="font-semibold">{lead.form_field_mapping.form_type}</span>
+                    {lead.facebook_page_url && (
+                      <div className="flex justify-between text-xs gap-2">
+                        <span className="text-[#8E8E93] flex-shrink-0">Facebook</span>
+                        <a href={lead.facebook_page_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] font-medium truncate">
+                          FB Page ↗
+                        </a>
                       </div>
                     )}
                     {lead.outreach_method && (
-                      <div className="flex justify-between text-xs">
-                        <span className="text-[#8E8E93]">Outreach</span>
+                      <div className="flex justify-between text-xs gap-2">
+                        <span className="text-[#8E8E93] flex-shrink-0">Outreach</span>
                         <span className="font-semibold capitalize">{lead.outreach_method}</span>
                       </div>
                     )}
-                    {lead.form_submission_error && (
-                      <div className="flex justify-between text-xs">
-                        <span className="text-[#8E8E93]">Error</span>
-                        <span className="text-red-500 text-[10px] max-w-[180px] truncate" title={lead.form_submission_error}>{lead.form_submission_error}</span>
-                      </div>
-                    )}
                   </div>
 
-                  {/* ICP Qualification */}
-                  <div className="mt-3 pt-3 border-t border-[#E5E5EA]">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93]">ICP Quality</div>
-                      <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>
-                        {icpStyle.label}
-                      </span>
-                    </div>
-                    <div className="space-y-0.5">
-                      {icp.signals.map((signal: string, i: number) => (
-                        <div key={i} className="flex items-center gap-1.5 text-[11px]">
-                          <span className={signal.includes("No ") || signal.includes("low") ? "text-[#C7C7CC]" : "text-[#34C759]"}>
-                            {signal.includes("No ") || signal.includes("low") ? "○" : "✓"}
+                  {/* Services */}
+                  {services.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-[#E5E5EA]">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-1.5">Services</div>
+                      <div className="flex flex-wrap gap-1">
+                        {services.slice(0, 8).map((s: string, i: number) => (
+                          <span key={i} className="text-[9px] font-medium px-2 py-0.5 rounded-lg bg-[#F0F7FF] text-[#1E40AF] border border-[#DBEAFE]">
+                            {s}
                           </span>
-                          <span className={signal.includes("No ") || signal.includes("low") ? "text-[#AEAEB2]" : "text-[#3C3C43]"}>{signal}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {icp.outreach_methods.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-[#E5E5EA]">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-1.5">Outreach Channels</div>
-                        <div className="flex flex-wrap gap-1">
-                          {icp.outreach_methods.map((method: string) => {
-                            const style = OUTREACH_METHOD_LABELS[method as keyof typeof OUTREACH_METHOD_LABELS];
-                            return style ? (
-                              <span key={method} className={`text-[9px] font-semibold px-2 py-0.5 rounded-lg ${style.color}`}>
-                                {style.label}
-                              </span>
-                            ) : null;
-                          })}
-                        </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Column 2: Pipeline Timeline */}
+                {/* Column 2: Enrichment Data */}
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">Enrichment Data</div>
+
+                  {/* Photos */}
+                  {photos.length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-[10px] text-[#8E8E93] mb-1">{photos.length} photo{photos.length !== 1 ? "s" : ""} found</div>
+                      <div className="flex gap-1 flex-wrap">
+                        {photos.slice(0, 6).map((photo: any, i: number) => (
+                          <div key={i} className="w-[52px] h-[52px] rounded-lg overflow-hidden border border-[#E5E5EA] bg-[#F5F5F7]">
+                            {photo.url ? (
+                              <img src={photo.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-[#C7C7CC]">📷</div>
+                            )}
+                          </div>
+                        ))}
+                        {photos.length > 6 && (
+                          <div className="w-[52px] h-[52px] rounded-lg border border-[#E5E5EA] bg-[#F5F5F7] flex items-center justify-center text-[10px] text-[#8E8E93] font-semibold">
+                            +{photos.length - 6}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Google Reviews */}
+                  {reviews.length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-[10px] text-[#8E8E93] mb-1">{reviews.length} review{reviews.length !== 1 ? "s" : ""} captured</div>
+                      <div className="space-y-1.5 max-h-[140px] overflow-y-auto">
+                        {reviews.slice(0, 3).map((r: any, i: number) => (
+                          <div key={i} className="bg-white rounded-lg p-2 border border-[#F0F0F2]">
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="text-[10px] text-[#FF9F0A]">{"★".repeat(r.rating || 5)}</span>
+                              {r.author_name && <span className="text-[9px] text-[#AEAEB2]">— {r.author_name}</span>}
+                            </div>
+                            <div className="text-[10px] text-[#3C3C43] leading-tight line-clamp-2">{r.text || "No text"}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Facebook About */}
+                  {lead.facebook_about && (
+                    <div>
+                      <div className="text-[10px] text-[#8E8E93] mb-1">Facebook About</div>
+                      <div className="text-[10px] text-[#3C3C43] leading-tight bg-white rounded-lg p-2 border border-[#F0F0F2] line-clamp-3">
+                        {lead.facebook_about}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Column 3: AI-Generated Copy */}
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">AI-Generated Copy</div>
+                  {lead.ai_rewritten_at ? (
+                    <div className="space-y-2.5">
+                      {lead.ai_hero_headline && (
+                        <div>
+                          <div className="text-[9px] font-semibold text-[#8E8E93] uppercase mb-0.5">Hero Headline</div>
+                          <div className="text-[12px] font-bold text-[#1D1D1F]">{lead.ai_hero_headline}</div>
+                        </div>
+                      )}
+                      {lead.ai_about_text && (
+                        <div>
+                          <div className="text-[9px] font-semibold text-[#8E8E93] uppercase mb-0.5">About Text</div>
+                          <div className="text-[10px] text-[#3C3C43] leading-tight line-clamp-4">{lead.ai_about_text}</div>
+                        </div>
+                      )}
+                      {lead.ai_email_subject && (
+                        <div className="pt-2 border-t border-[#E5E5EA]">
+                          <div className="text-[9px] font-semibold text-[#8E8E93] uppercase mb-0.5">Email Subject</div>
+                          <div className="text-[11px] font-semibold text-[#1D1D1F]">{lead.ai_email_subject}</div>
+                        </div>
+                      )}
+                      {lead.ai_email_body && (
+                        <div>
+                          <div className="text-[9px] font-semibold text-[#8E8E93] uppercase mb-0.5">Email Body</div>
+                          <div className="text-[10px] text-[#3C3C43] leading-tight bg-white rounded-lg p-2 border border-[#F0F0F2] whitespace-pre-line line-clamp-6">
+                            {lead.ai_email_body}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-[#C7C7CC]">Not yet rewritten by AI</div>
+                  )}
+                </div>
+
+                {/* Column 4: Pipeline + Conversation */}
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">Pipeline Timeline</div>
-                  <div className="space-y-0">
+                  <div className="space-y-0 mb-3">
                     {timeline.map((item, i) => (
                       <div key={i} className="flex items-start gap-2.5 py-1 relative">
                         {i < timeline.length - 1 && (
@@ -578,46 +704,39 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
                       </div>
                     ))}
                   </div>
-                </div>
 
-                {/* Column 3: Conversation */}
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-2">Conversation</div>
-                  {lead.reply_text ? (
-                    <>
-                      <div className="bg-[#E8F5E9] rounded-xl rounded-bl-sm p-3 mb-2">
-                        <div className="text-[10px] font-semibold text-[#2E7D32] mb-1">Their Reply</div>
-                        <div className="text-xs text-[#1B5E20] leading-relaxed">{lead.reply_text}</div>
-                      </div>
-                      {lead.replied_at && (
-                        <div className="text-[10px] text-[#FF9F0A] font-medium mb-2">
-                          Time since reply: {daysSince(lead.replied_at)}d ago
-                        </div>
+                  {/* NFC Scoring Breakdown */}
+                  <div className="pt-3 border-t border-[#E5E5EA]">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-1.5">NFC Card Score</div>
+                    <div className="space-y-0.5">
+                      {nfcScore.autoSkipReason ? (
+                        <div className="text-[10px] text-[#991B1B] font-medium">{nfcScore.reasons[0]}</div>
+                      ) : (
+                        nfcScore.reasons.slice(0, 6).map((reason: string, i: number) => (
+                          <div key={i} className={`text-[10px] ${reason.startsWith("-") ? "text-[#DC2626]" : "text-[#3C3C43]"}`}>
+                            {reason}
+                          </div>
+                        ))
                       )}
-                    </>
-                  ) : (
-                    <div className="text-xs text-[#C7C7CC]">No reply yet</div>
-                  )}
-                  {lead.draft_response && (
-                    <div className="bg-[#F3E5F5] rounded-xl rounded-br-sm p-3 mt-2">
-                      <div className="text-[10px] font-semibold text-[#7B1FA2] mb-1">Draft Response</div>
-                      <div className="text-xs text-[#4A148C] leading-relaxed italic">{lead.draft_response}</div>
+                    </div>
+                  </div>
+
+                  {/* Conversation */}
+                  {lead.reply_text && (
+                    <div className="pt-3 border-t border-[#E5E5EA] mt-3">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-1.5">Reply</div>
+                      <div className="bg-[#E8F5E9] rounded-lg p-2">
+                        <div className="text-[10px] text-[#1B5E20] leading-tight line-clamp-3">{lead.reply_text}</div>
+                      </div>
                     </div>
                   )}
-                  <div className="mt-3 space-y-1">
-                    {lead.emails_sent_count > 0 && (
-                      <div className="text-[10px] text-[#8E8E93]">Emails sent: {lead.emails_sent_count}</div>
-                    )}
-                    {lead.draft_status && lead.draft_status !== "none" && (
-                      <div className="text-[10px] text-[#7B1FA2] font-medium">Draft status: {lead.draft_status}</div>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
           </td>
         </tr>
-      )}
+        );
+      })()}
     </>
   );
 }

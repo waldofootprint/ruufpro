@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { scoreNfcProspect, NFC_TIER_STYLES } from "@/lib/nfc-scoring";
 
 type SiteState = "approved" | "neutral" | "rejected";
 
@@ -73,42 +74,77 @@ export function SiteReviewPanel({ batchId, onApprove }: { batchId: string; onApp
         <strong className="text-[#007AFF]">How it works:</strong> All sites start approved (green ✓). Click once to skip, click again to reject (red ✗), click again to re-approve.
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-2.5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5">
         {leads.map((lead) => {
           const state = states[lead.id] || "approved";
           const s = stateStyles[state];
+          const nfcResult = scoreNfcProspect({
+            google_place_id: lead.google_place_id,
+            has_estimate_widget: lead.has_estimate_widget,
+            rating: lead.rating,
+            reviews_count: lead.reviews_count,
+            their_website_url: lead.their_website_url,
+            website_status: lead.their_website_url ? "has_website" : "none",
+            fl_license_type: lead.fl_license_type,
+            photos: lead.photos,
+            google_reviews: lead.google_reviews,
+            phone: lead.phone,
+            facebook_page_url: lead.facebook_page_url,
+            business_name: lead.business_name,
+          });
+          const nfcStyle = NFC_TIER_STYLES[nfcResult.tier];
+          const photoCount = lead.photos?.length || 0;
+          const reviewCount = lead.google_reviews?.length || 0;
+          const previewUrl = lead.preview_site_url
+            ? (lead.preview_site_url.startsWith("http") ? lead.preview_site_url : `https://ruufpro.com${lead.preview_site_url}`)
+            : null;
           return (
             <div
               key={lead.id}
               onClick={() => cycleState(lead.id)}
-              className={`flex items-center gap-3 border rounded-[10px] p-3 cursor-pointer transition-all hover:shadow-sm ${s.card}`}
+              className={`border rounded-[10px] p-3 cursor-pointer transition-all hover:shadow-sm ${s.card}`}
             >
-              <div className="flex flex-col items-center">
-                <div className={`w-[22px] h-[22px] rounded-md border-2 flex items-center justify-center text-xs font-bold ${s.check}`}>
-                  {s.icon}
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center">
+                  <div className={`w-[22px] h-[22px] rounded-md border-2 flex items-center justify-center text-xs font-bold ${s.check}`}>
+                    {s.icon}
+                  </div>
+                  <div className={`text-[9px] font-bold uppercase tracking-[0.06em] mt-0.5 ${s.label}`}>
+                    {state === "approved" ? "Approved" : state === "neutral" ? "Skipped" : "Rejected"}
+                  </div>
                 </div>
-                <div className={`text-[9px] font-bold uppercase tracking-[0.06em] mt-0.5 ${s.label}`}>
-                  {state === "approved" ? "Approved" : state === "neutral" ? "Skipped" : "Rejected"}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13px] font-semibold truncate">{lead.business_name || "Unknown"}</span>
+                    <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${nfcStyle.bg} ${nfcStyle.text} border ${nfcStyle.border}`}>
+                      {nfcResult.tier} {nfcResult.score}pts
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-[#8E8E93] mt-0.5">
+                    {lead.city ? `${lead.city}, ${lead.state || ""}` : ""}
+                    {lead.rating > 0 ? ` · ${lead.rating}★` : ""}
+                    {lead.reviews_count > 0 ? ` (${lead.reviews_count})` : ""}
+                    {lead.their_website_url ? ` · Has site` : " · No website"}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    {photoCount > 0 && <span className="text-[9px] text-[#34C759]">📷 {photoCount}</span>}
+                    {reviewCount > 0 && <span className="text-[9px] text-[#34C759]">⭐ {reviewCount}</span>}
+                    {lead.fl_license_type && <span className="text-[9px] text-[#2E7D32]">🪪 Licensed</span>}
+                    {lead.owner_email && <span className="text-[9px] text-[#007AFF]">✉ Email</span>}
+                  </div>
                 </div>
+                {previewUrl && (
+                  <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[11px] text-white bg-[#007AFF] font-semibold px-3 py-1.5 rounded-lg hover:bg-[#0056D2] flex-shrink-0 transition-colors"
+                  >
+                    View Site ↗
+                  </a>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold truncate">{lead.business_name || "Unknown"}</div>
-                <div className="text-[11px] text-[#8E8E93] mt-0.5">
-                  {lead.city ? `${lead.city}, ${lead.state || ""}` : ""}
-                  {lead.their_website_url ? ` · ${lead.their_website_url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}` : " · No website"}
-                </div>
-              </div>
-              {lead.preview_site_url && (
-                <a
-                  href={lead.preview_site_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-[11px] text-[#007AFF] font-medium px-2.5 py-1 rounded-md border border-[#007AFF33] hover:bg-[#EFF6FF] flex-shrink-0 transition-colors"
-                >
-                  View ↗
-                </a>
-              )}
             </div>
           );
         })}
