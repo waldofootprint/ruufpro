@@ -75,37 +75,45 @@ async function getTopProspects() {
   return data || [];
 }
 
-// Simple NFC scoring inline (mirrors lib/nfc-scoring.ts logic)
+// Demo prospect scoring inline (mirrors lib/demo-prospect-scoring.ts logic)
 function scoreProspectForNfc(p) {
   const reviews = p.reviews_count ?? 0;
   const rating = p.rating ?? 0;
 
   // Auto-skip
   if (!p.google_place_id) return { score: -1, tier: "skip", reason: "No place ID" };
-  if (p.has_estimate_widget) return { score: -1, tier: "skip", reason: "Has competitor widget" };
+  if (!p.their_website_url) return { score: -1, tier: "skip", reason: "No website" };
+  if (p.competitor_tools?.length > 0) return { score: -1, tier: "skip", reason: "Has competitor tool" };
   if (rating > 0 && rating < 4.0) return { score: -1, tier: "skip", reason: `${rating}★ too low` };
-  if (reviews <= 2) return { score: -1, tier: "skip", reason: "Too few reviews" };
-  if (reviews >= 50) return { score: -1, tier: "skip", reason: "Too many reviews" };
+  if (reviews < 3) return { score: -1, tier: "skip", reason: "Too few reviews" };
+  if (reviews > 49) return { score: -1, tier: "skip", reason: "Too many reviews" };
 
   let score = 0;
-  if (!p.their_website_url) score += 3;
-  else score -= 3;
-  if (reviews >= 5 && reviews <= 25) score += 2;
-  else if (reviews >= 26 && reviews <= 40) score += 1;
-  else if (reviews >= 3 && reviews <= 4) score -= 1;
+  // Website data richness
+  if (p.website_faq?.length > 0) score += 3;
+  if (p.website_services?.length > 0) score += 3;
+  if (p.facebook_page_url) score += 2;
+  if (p.owner_name) score += 2;
+  if (p.website_about) score += 2;
+  if (p.website_service_areas?.length > 0) score += 1;
+  if (p.website_testimonials?.length > 0) score += 1;
+  // Review count
+  if (reviews >= 3 && reviews <= 15) score += 3;
+  else if (reviews >= 16 && reviews <= 30) score += 2;
+  // Organic pattern
+  if (p.google_reviews?.length >= 3) score += 2;
+  // Rating
   if (rating >= 4.5) score += 2;
   else if (rating >= 4.0) score += 1;
-  if (p.fl_license_type) score += 2;
-  if (p.google_reviews?.length >= 3) score += 2; // organic pattern (simplified)
-  if (p.photos?.length > 0) score += 1;
-  if (p.phone && p.phone !== "unknown") score += 1;
-  if (p.facebook_page_url) score += 1;
+  // Recent reviews
   if (p.google_reviews?.length > 0) {
     const sixMonthsAgo = Date.now() / 1000 - 180 * 24 * 60 * 60;
     if (p.google_reviews.some((r) => r.time && r.time > sixMonthsAgo)) score += 1;
   }
+  // Phone
+  if (p.phone && p.phone !== "unknown") score += 1;
 
-  const tier = score >= 14 ? "platinum" : score >= 10 ? "gold" : score >= 7 ? "silver" : "skip";
+  const tier = score >= 16 ? "platinum" : score >= 12 ? "gold" : score >= 8 ? "silver" : "skip";
   return { score, tier };
 }
 

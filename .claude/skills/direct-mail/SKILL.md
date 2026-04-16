@@ -2,122 +2,37 @@
 name: direct-mail
 description: >
   Generates personalized direct mail letters for roofing contractor prospects. Assigns NFC
-  Google Review cards using the scoring system in lib/nfc-scoring.ts. Generates QR codes
-  linking to preview sites. Outputs print-ready letters with personalization variables filled
-  from prospect data. Trigger when the user says "direct mail", "mail letters", "NFC cards",
-  "assign cards", "print letters", or asks about physical outreach to roofer prospects.
+  Google Review cards. Generates QR codes linking to demo pages. Uses scoring from
+  lib/demo-prospect-scoring.ts. Trigger when the user says "direct mail", "mail letters",
+  "NFC cards", "assign cards", "print letters", or asks about physical outreach to roofer prospects.
 ---
 
 # Direct Mail Skill
 
-You generate personalized direct mail letters for roofing contractor outreach. Each letter includes a QR code linking to a free preview site we already built for them, and an NFC Google Review card enclosed as a gift.
+You generate personalized direct mail letters for roofing contractor outreach. Each letter includes a QR code linking to a personalized demo page showcasing RuufPro's AI tools (estimate widget + Riley chatbot trained on their business data), and an NFC Google Review card enclosed as a gift.
 
 ---
 
 ## The System
 
-1. **Prospect scoring** — `lib/nfc-scoring.ts` ranks prospects: Platinum/Gold/Silver/Skip
-2. **Only Gold+ get physical mail** — NFC cards are limited (~200 remaining)
-3. **Preview sites** — already built at `ruufpro.com/site/{random-slug}` using their Google data
-4. **NFC cards** — redirect to the roofer's Google Review page via Netlify dynamic links
-5. **QR codes** — link to their preview site with a "Claim This Site" button
+1. **Prospect scoring** — `lib/demo-prospect-scoring.ts` ranks prospects: Platinum/Gold/Silver/Skip
+2. **Targets roofers WITH websites** — more data = better Riley AI training
+3. **Auto-skips** — competitor tools (Roofle/Roofr/chatbots/Podium), franchises, multi-state, review automation
+4. **Only Gold+ get physical mail** — NFC cards are limited (~200 remaining)
+5. **Demo pages** — at `ruufpro.com/demo/{random-slug}` with working estimate widget + Riley chatbot
+6. **NFC cards** — redirect to the roofer's Google Review page via Netlify dynamic links
+7. **QR codes** — link to their demo page with a "Claim This" CTA
 
-## Letter Template — Version F (Current)
+## Letter Template — Version G (Current — Demo Page Pitch)
 
-```
-Hey {{first_name}},
+Template will be written in Phase 5. Core pitch: "I trained an AI that knows your business."
 
-I was looking up roofers in {{city}} and came across {{business_name}}.
-{{rating}} stars on Google. Your customers clearly like working with you.
-
-I build free websites for local roofing companies, and I put one
-together for yours. Your Google photos, your reviews, your phone
-number. All set up.
-
-Nobody can find it unless you share the link. It's on a private URL.
-Scan this to take a look:
-
-[ QR CODE — {{site_url}} ]
-
-If you like it, claim it and it goes live. If not, no worries.
-
-The site comes with a free 14-day trial of AI tools built for roofers:
-
-- AI roof estimate calculator — homeowners get an instant ballpark
-  price on your site. You get their name, number, and address
-  without lifting a finger.
-
-- AI chatbot — answers homeowner questions and captures leads 24/7.
-  Even when you're on a roof and can't pick up the phone. (If you
-  don't respond to a lead in 5 minutes, there's an 80% chance they
-  call someone else.)
-
-- Automatic review requests — emails your customers after a completed
-  job asking for a Google review. More five-star reviews = more calls
-  from Google.
-
-After 14 days the tools are $149/mo if you want them. The website and
-the review card are yours forever either way.
-
-There's a Google Review card in this envelope. Hand it to your next
-happy customer. They tap their phone on it and your review page opens.
-No app, no link to remember.
-
-I wanted to lead with value, not a pitch. If nothing else, I hope the
-card helps you stack up a few more five-star reviews.
-
-Thanks for checking it out.
-
-Hannah
-RuufPro · Florida
-```
-
-## Alternate Version E (Softer / Shorter)
-
-```
-Hey {{first_name}},
-
-I was looking up roofers in {{city}} and came across {{business_name}}.
-{{rating}} stars on Google. Your customers clearly like working with you.
-
-I build free websites for local roofing companies, and I put one
-together for yours. Your Google photos, your reviews, your phone
-number. All set up.
-
-Nobody can find it unless you share the link. It's on a private URL
-that isn't indexed by Google. Scan this to take a look:
-
-[ QR CODE — {{site_url}} ]
-
-If you like it, claim it and it goes live. If not, no worries. It
-just sits there.
-
-The site comes loaded with tools you can try free for 14 days:
-
-- Estimate calculator — homeowners get a ballpark roof price on your
-  site. You get their contact info.
-
-- AI assistant — answers questions and captures leads while you're
-  on a job
-
-- Automatic review requests — emails your customers after a job
-  asking for a Google review
-
-After 14 days the tools are $149/mo. The website and the review card
-are yours forever either way.
-
-Speaking of — there's a Google Review card in this envelope. Hand it
-to your next happy customer. They tap their phone on it and your
-Google review page opens. No app, no link to remember.
-
-I wanted to lead with value, not a pitch. If nothing else, I hope the
-card helps you stack up a few more five-star reviews.
-
-Thanks for checking it out.
-
-Hannah
-RuufPro · Florida
-```
+Key changes from Version F:
+- Opening references something specific from their website (top service, founding year)
+- Core offer: AI assistant + estimate widget trained on THEIR data
+- QR code links to `/demo/[slug]` (not `/site/[slug]`)
+- CTA: "Scan the QR code to see your AI tools in action"
+- If owner name found: addressed to "{{first_name}}" not "Owner"
 
 ## Opening Line Variants (by review count)
 
@@ -145,8 +60,8 @@ RuufPro · Florida
 ```
 SELECT * FROM prospect_pipeline
 WHERE nfc_tier IN ('platinum', 'gold')
-  AND nfc_card_assigned IS NULL
-  AND site_slug IS NOT NULL
+  AND nfc_card_number IS NULL
+  AND demo_page_url IS NOT NULL
 ORDER BY nfc_score DESC
 LIMIT 25;
 ```
@@ -185,8 +100,10 @@ LIMIT 25;
 
 ## Key Files
 
-- NFC scoring: `lib/nfc-scoring.ts`
-- QR generator: `tools/generate-qr.mjs`
+- Prospect scoring: `lib/demo-prospect-scoring.ts`
+- NFC card assignment: `tools/assign-nfc-cards.mjs`
+- QR generator: `tools/generate-qr-codes.mjs`
 - Letter research: `research/direct-mail-letter-research.md`
 - Letter drafts: `research/direct-mail-letter-drafts.md`
 - Vault prompt: `vault/083-direct-mail-letter-prompt.md`
+- Implementation plan: `decisions/demo-page-pivot-plan-apr16.md`

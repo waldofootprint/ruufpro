@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import type { PipelineStage } from "@/lib/ops-pipeline";
 import { STAGE_LABELS } from "@/lib/ops-pipeline";
-import { getNfcScore, SCORE_STYLES, STAGE_PILL, fmtTimestamp, daysSince } from "./shared";
-import { scoreNfcProspect, NFC_TIER_STYLES, type NfcTier } from "@/lib/nfc-scoring";
+import { getProspectScore, SCORE_STYLES, STAGE_PILL, fmtTimestamp, daysSince } from "./shared";
+import { scoreDemoProspect, PROSPECT_TIER_STYLES, type ProspectTier } from "@/lib/demo-prospect-scoring";
 
 // ── "Why is this stuck?" helper ───────────────────────────────────
 function getStuckReason(lead: any): { text: string; color: string } | null {
@@ -293,8 +293,8 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
                     <tbody>
                       {sorted.map((lead) => {
                         const isChecked = selected.has(lead.id);
-                        const nfc = getNfcScore(lead);
-                        const nfcTierStyle = SCORE_STYLES[nfc.tier];
+                        const prospectResult = getProspectScore(lead);
+                        const tierStyle = SCORE_STYLES[prospectResult.tier];
                         const domain = lead.their_website_url?.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
                         const td = "text-xs px-3 py-2.5 border-b border-[#F0F0F2]";
 
@@ -317,7 +317,7 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
                             <td className={`${td} font-semibold text-[#1D1D1F]`}>
                               <div className="flex items-center gap-2">
                                 {lead.business_name || "Unknown"}
-                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${nfcTierStyle.bg} ${nfcTierStyle.text} border ${nfcTierStyle.border}`}>{nfcTierStyle.label}</span>
+                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${tierStyle.bg} ${tierStyle.text} border ${tierStyle.border}`}>{tierStyle.label}</span>
                                 {(() => {
                                   const stuck = getStuckReason(lead);
                                   return stuck ? <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${stuck.color}`}>{stuck.text}</span> : null;
@@ -370,8 +370,8 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
 // ═══════════════════════════════════════════════════════════════════
 export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { lead: any; isExpanded: boolean; isSelected: boolean; onSelect: () => void; onToggle: () => void }) {
   const td = "text-xs px-3 py-2.5 border-b border-[#F5F5F5]";
-  const nfcLeadScore = getNfcScore(lead);
-  const nfcTierStyle = SCORE_STYLES[nfcLeadScore.tier];
+  const prospectScore = getProspectScore(lead);
+  const prospectTierStyle = SCORE_STYLES[prospectScore.tier];
 
   const timeline: { label: string; date: string | null; status: "done" | "active" | "pending" }[] = [
     { label: "Scraped", date: lead.scraped_at, status: lead.scraped_at ? "done" : "pending" },
@@ -400,8 +400,8 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
         <td className={`${td} font-semibold text-[#1D1D1F]`}>
           <div className="flex items-center gap-2">
             {lead.business_name || "—"}
-            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${nfcTierStyle.bg} ${nfcTierStyle.text} border ${nfcTierStyle.border}`}>
-              {nfcTierStyle.label}
+            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${prospectTierStyle.bg} ${prospectTierStyle.text} border ${prospectTierStyle.border}`}>
+              {prospectTierStyle.label}
             </span>
           </div>
         </td>
@@ -467,21 +467,8 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
 
       {/* Expanded Detail Row */}
       {isExpanded && (() => {
-        const nfcScore = scoreNfcProspect({
-          google_place_id: lead.google_place_id,
-          has_estimate_widget: lead.has_estimate_widget,
-          rating: lead.rating,
-          reviews_count: lead.reviews_count,
-          their_website_url: lead.their_website_url,
-          website_status: lead.their_website_url ? "has_website" : "none",
-          fl_license_type: lead.fl_license_type,
-          photos: lead.photos,
-          google_reviews: lead.google_reviews,
-          phone: lead.phone,
-          facebook_page_url: lead.facebook_page_url,
-          business_name: lead.business_name,
-        });
-        const nfcStyle = NFC_TIER_STYLES[nfcScore.tier];
+        const demoScore = getProspectScore(lead);
+        const demoStyle = SCORE_STYLES[demoScore.tier];
         const previewFullUrl = lead.preview_site_url
           ? (lead.preview_site_url.startsWith("http") ? lead.preview_site_url : `https://ruufpro.com${lead.preview_site_url}`)
           : null;
@@ -515,18 +502,15 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
 
               {/* Scoring Chips Row */}
               <div className="flex items-center gap-2 mb-4">
-                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${nfcTierStyle.bg} ${nfcTierStyle.text} border ${nfcTierStyle.border}`}>
-                  {nfcTierStyle.label}
-                </span>
-                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${nfcStyle.bg} ${nfcStyle.text} border ${nfcStyle.border}`}>
-                  {nfcStyle.label} ({nfcScore.score}pts)
+                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${demoStyle.bg} ${demoStyle.text} border ${demoStyle.border}`}>
+                  {demoStyle.label} ({demoScore.score}pts)
                 </span>
                 {lead.fl_license_type && (
                   <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-[#E8F5E9] text-[#2E7D32] border border-[#A5D6A7]">
                     FL Licensed: {lead.fl_license_type}
                   </span>
                 )}
-                {nfcScore.reviewAutomationSuspected && (
+                {demoScore.reviewAutomationSuspected && (
                   <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-[#FFF3E0] text-[#E65100] border border-[#FFCC80]">
                     Review Automation Suspected
                   </span>
@@ -704,14 +688,14 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
                     ))}
                   </div>
 
-                  {/* NFC Scoring Breakdown */}
+                  {/* Prospect Score Breakdown */}
                   <div className="pt-3 border-t border-[#E5E5EA]">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-1.5">NFC Card Score</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8E8E93] mb-1.5">Demo Score</div>
                     <div className="space-y-0.5">
-                      {nfcScore.autoSkipReason ? (
-                        <div className="text-[10px] text-[#991B1B] font-medium">{nfcScore.reasons[0]}</div>
+                      {demoScore.autoSkipReason ? (
+                        <div className="text-[10px] text-[#991B1B] font-medium">{demoScore.reasons[0]}</div>
                       ) : (
-                        nfcScore.reasons.slice(0, 6).map((reason: string, i: number) => (
+                        demoScore.reasons.slice(0, 8).map((reason: string, i: number) => (
                           <div key={i} className={`text-[10px] ${reason.startsWith("-") ? "text-[#DC2626]" : "text-[#3C3C43]"}`}>
                             {reason}
                           </div>

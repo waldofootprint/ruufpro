@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getNfcScore, SCORE_STYLES } from "./shared";
+import { getProspectScore, SCORE_STYLES } from "./shared";
 
 type TriageState = "selected" | "parked" | "skipped";
 
@@ -43,7 +43,7 @@ export function TriagePanel({ batchId, onDone }: { batchId: string; onDone: () =
     setStates((prev) => {
       const next = { ...prev };
       leads.forEach((lead) => {
-        const score = getNfcScore(lead);
+        const score = getProspectScore(lead);
         if (score.tier === "platinum" || score.tier === "gold") next[lead.id] = "selected";
       });
       return next;
@@ -142,7 +142,7 @@ export function TriagePanel({ batchId, onDone }: { batchId: string; onDone: () =
       {/* Tier filter tabs */}
       <div className="flex gap-1.5 mb-3">
         {(["all", "platinum", "gold", "silver"] as const).map((t) => {
-          const count = t === "all" ? leads.length : leads.filter(l => getNfcScore(l).tier === t).length;
+          const count = t === "all" ? leads.length : leads.filter(l => getProspectScore(l).tier === t).length;
           const active = tierFilter === t;
           const style = t !== "all" ? SCORE_STYLES[t] : null;
           return (
@@ -166,10 +166,10 @@ export function TriagePanel({ batchId, onDone }: { batchId: string; onDone: () =
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5">
-        {leads.filter(l => tierFilter === "all" || getNfcScore(l).tier === tierFilter).map((lead) => {
+        {leads.filter(l => tierFilter === "all" || getProspectScore(l).tier === tierFilter).map((lead) => {
           const state = states[lead.id] || "selected";
           const s = triageStyles[state];
-          const score = getNfcScore(lead);
+          const score = getProspectScore(lead);
           const richness = getDataRichness(lead);
           const tierStyle = SCORE_STYLES[score.tier as keyof typeof SCORE_STYLES] || SCORE_STYLES.silver;
 

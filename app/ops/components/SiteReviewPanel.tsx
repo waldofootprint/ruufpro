@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { scoreNfcProspect, NFC_TIER_STYLES } from "@/lib/nfc-scoring";
+import { scoreDemoProspect, PROSPECT_TIER_STYLES } from "@/lib/demo-prospect-scoring";
 
 type SiteState = "approved" | "neutral" | "rejected";
 
@@ -78,21 +78,24 @@ export function SiteReviewPanel({ batchId, onApprove }: { batchId: string; onApp
         {leads.map((lead) => {
           const state = states[lead.id] || "approved";
           const s = stateStyles[state];
-          const nfcResult = scoreNfcProspect({
+          const demoResult = scoreDemoProspect({
             google_place_id: lead.google_place_id,
-            has_estimate_widget: lead.has_estimate_widget,
             rating: lead.rating,
             reviews_count: lead.reviews_count,
             their_website_url: lead.their_website_url,
-            website_status: lead.their_website_url ? "has_website" : "none",
-            fl_license_type: lead.fl_license_type,
-            photos: lead.photos,
-            google_reviews: lead.google_reviews,
             phone: lead.phone,
             facebook_page_url: lead.facebook_page_url,
             business_name: lead.business_name,
+            google_reviews: lead.google_reviews,
+            website_faq: lead.website_faq,
+            website_services: lead.website_services,
+            website_about: lead.website_about,
+            owner_name: lead.owner_name,
+            website_service_areas: lead.website_service_areas,
+            website_testimonials: lead.website_testimonials,
+            competitor_tools: lead.competitor_tools,
           });
-          const nfcStyle = NFC_TIER_STYLES[nfcResult.tier];
+          const demoStyle = PROSPECT_TIER_STYLES[demoResult.tier];
           const photoCount = lead.photos?.length || 0;
           const reviewCount = lead.google_reviews?.length || 0;
           const previewUrl = lead.preview_site_url
@@ -116,8 +119,8 @@ export function SiteReviewPanel({ batchId, onApprove }: { batchId: string; onApp
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[13px] font-semibold truncate">{lead.business_name || "Unknown"}</span>
-                    <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${nfcStyle.bg} ${nfcStyle.text} border ${nfcStyle.border}`}>
-                      {nfcResult.tier} {nfcResult.score}pts
+                    <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${demoStyle.bg} ${demoStyle.text} border ${demoStyle.border}`}>
+                      {demoResult.tier} {demoResult.score}pts
                     </span>
                   </div>
                   <div className="text-[11px] text-[#8E8E93] mt-0.5">

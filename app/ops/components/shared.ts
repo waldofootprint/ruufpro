@@ -1,6 +1,6 @@
 import type { PipelineStage, ProspectBatch } from "@/lib/ops-pipeline";
 import { STAGE_LABELS } from "@/lib/ops-pipeline";
-import { scoreNfcProspect, NFC_TIER_STYLES } from "@/lib/nfc-scoring";
+import { scoreDemoProspect, PROSPECT_TIER_STYLES } from "@/lib/demo-prospect-scoring";
 
 // ── Formatters ────────────────────────────────────────────────────
 export function fmtDate(d: string) {
@@ -52,26 +52,31 @@ export const STAGE_PILL: Record<string, string> = {
   unsubscribed: "bg-red-100 text-red-600",
 };
 
-// ── NFC scoring (single source of truth) ─────────────────────────
-export function getNfcScore(lead: any) {
-  const result = scoreNfcProspect({
+// ── Demo prospect scoring (single source of truth) ───────────────
+export function getProspectScore(lead: any) {
+  const result = scoreDemoProspect({
     google_place_id: lead.google_place_id,
-    has_estimate_widget: lead.has_estimate_widget ?? false,
     rating: lead.rating ?? 0,
     reviews_count: lead.reviews_count ?? 0,
     their_website_url: lead.their_website_url ?? null,
-    website_status: lead.their_website_url ? "has_website" : "none",
-    fl_license_type: lead.fl_license_type ?? null,
-    photos: lead.photos ?? null,
-    google_reviews: lead.google_reviews ?? null,
     phone: lead.phone ?? null,
     facebook_page_url: lead.facebook_page_url ?? null,
     business_name: lead.business_name ?? "",
+    google_reviews: lead.google_reviews ?? null,
+    website_faq: lead.website_faq ?? null,
+    website_services: lead.website_services ?? null,
+    website_about: lead.website_about ?? null,
+    owner_name: lead.owner_name ?? null,
+    website_service_areas: lead.website_service_areas ?? null,
+    website_testimonials: lead.website_testimonials ?? null,
+    competitor_tools: lead.competitor_tools ?? null,
+    is_franchise: lead.is_franchise ?? false,
+    is_multi_state: lead.is_multi_state ?? false,
   });
   return result;
 }
 
-export const SCORE_STYLES = NFC_TIER_STYLES;
+export const SCORE_STYLES = PROSPECT_TIER_STYLES;
 
 // ── Types ─────────────────────────────────────────────────────────
 export interface AttentionItem {

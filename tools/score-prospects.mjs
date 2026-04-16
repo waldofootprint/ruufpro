@@ -1,20 +1,18 @@
 #!/usr/bin/env node
 
-// Prospect Scorer — takes scraped CSV, scores each prospect into NFC tiers,
+// Prospect Scorer — takes scraped CSV, scores each prospect into demo tiers,
 // and inserts into prospect_pipeline table for ops dashboard review.
 //
-// Scoring mirrors lib/nfc-scoring.ts (single source of truth).
+// Scoring mirrors lib/demo-prospect-scoring.ts (single source of truth).
 //
-// NFC Tiers:
-//   Platinum — 14+ points, top prospects
-//   Gold     — 10-13 points, strong prospects
-//   Silver   — 7-9 points, maybe
-//   Skip     — <7 points, <4.0 rating, 0-2 reviews, 50+ reviews, or has estimate widget
+// Demo Tiers:
+//   Platinum — 16+ points, top prospects (most website data for Riley)
+//   Gold     — 12-15 points, strong prospects
+//   Silver   — 8-11 points, maybe
+//   Skip     — <8 points, no website, competitor tools, franchise, <4.0★, <3 or >49 reviews
 //
 // Outreach routing:
 //   Direct mail is primary channel
-//   Has website, no form → cold_email
-//   Gold + LinkedIn      → linkedin_draft (secondary)
 //
 // Usage:
 //   node tools/score-prospects.mjs --csv .tmp/prospects/tampa_fl_scraped.csv
@@ -30,10 +28,17 @@ import { existsSync } from "fs";
 // --------------- Config ---------------
 
 const TIERS = {
+  platinum: "Platinum",
   gold: "Gold",
   silver: "Silver",
   skip: "Skip",
 };
+
+const FRANCHISE_NAMES = [
+  "mighty dog", "storm guard", "centimark", "leaf home", "bone dry",
+  "erie metal", "long roofing", "baker roofing", "tecta america",
+  "nations roof", "roofing corp of america", "roof connect",
+];
 
 // --------------- Argument Parsing ---------------
 
@@ -62,19 +67,27 @@ function parseArgs() {
 function scoreProspect(row) {
   const reviewCount = parseInt(row.google_review_count || row.user_ratings_total || "0", 10);
   const rating = parseFloat(row.google_rating || row.rating || "0");
-  const hasEstimateWidget = row.has_estimate_widget === "true";
   const hasWebsite = row.website && row.website !== "none" && row.website !== "";
   const hasPhone = row.phone && row.phone !== "" && row.phone !== "unknown";
   const hasFacebook = row.facebook_page_url && row.facebook_page_url !== "";
-  const hasLicense = row.fl_license_type && row.fl_license_type !== "";
+  const ownerName = row.owner_name || "";
+  const businessName = row.business_name || row.name || "";
 
   const reasons = [];
   const outreachMethod = "direct_mail";
 
-  // ── Auto-skip conditions (mirrors lib/nfc-scoring.ts) ────────
+  // ── Auto-skip conditions (mirrors lib/demo-prospect-scoring.ts) ────
 
-  if (hasEstimateWidget) {
-    reasons.push("Has estimate widget — using competitor");
+  // Must have website — we need it for Riley AI training
+  if (!hasWebsite) {
+    reasons.push("No website — need site data for Riley AI training");
+    return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
+  }
+
+  // Franchise check
+  const lowerName = businessName.toLowerCase();
+  if (FRANCHISE_NAMES.some(f => lowerName.includes(f))) {
+    reasons.push("Franchise brand — targeting small local crews only");
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
@@ -83,48 +96,53 @@ function scoreProspect(row) {
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  if (reviewCount <= 2) {
+  if (reviewCount < 3) {
     reasons.push(`${reviewCount} reviews — too new, possible side hustle`);
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  if (reviewCount >= 50) {
+  if (reviewCount > 49) {
     reasons.push(`${reviewCount} reviews — too established for NFC card`);
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  // ── Point scoring (mirrors lib/nfc-scoring.ts) ───────────────
+  // ── Point scoring (mirrors lib/demo-prospect-scoring.ts) ───────
 
   let score = 0;
 
-  // Website: no website = +3 (highest need), has website = -3
-  if (!hasWebsite) { score += 3; reasons.push("+3 No website — highest need"); }
-  else { score -= 3; reasons.push("-3 Has website"); }
-
-  // Review count sweet spot
-  if (reviewCount >= 5 && reviewCount <= 25) { score += 2; reasons.push(`+2 ${reviewCount} reviews — sweet spot`); }
-  else if (reviewCount >= 3 && reviewCount <= 4) { score += 1; reasons.push(`+1 ${reviewCount} reviews — very new`); }
-  else if (reviewCount >= 26 && reviewCount <= 49) { score += 0; reasons.push(`+0 ${reviewCount} reviews — growing`); }
+  // Review count — fewer reviews = more need for NFC card
+  if (reviewCount >= 3 && reviewCount <= 15) { score += 3; reasons.push(`+3 ${reviewCount} reviews — sweet spot`); }
+  else if (reviewCount >= 16 && reviewCount <= 30) { score += 2; reasons.push(`+2 ${reviewCount} reviews — growing`); }
+  // 31-49 = +0
 
   // Rating
-  if (rating >= 4.8) { score += 2; reasons.push(`+2 ${rating}★ — excellent`); }
-  else if (rating >= 4.5) { score += 1; reasons.push(`+1 ${rating}★ — good`); }
+  if (rating >= 4.5) { score += 2; reasons.push(`+2 ${rating}★ — takes pride in work`); }
+  else if (rating >= 4.0) { score += 1; reasons.push(`+1 ${rating}★ — good rating`); }
 
-  // FL license
-  if (hasLicense) { score += 2; reasons.push("+2 FL Licensed"); }
+  // Organic review pattern (simplified — no timestamp data in CSV)
+  if (reviewCount >= 3) { score += 2; reasons.push("+2 Organic pattern assumed (no timestamp data)"); }
 
   // Phone
   if (hasPhone) { score += 1; reasons.push("+1 Has phone"); }
 
   // Facebook
-  if (hasFacebook) { score += 1; reasons.push("+1 Has Facebook"); }
+  if (hasFacebook) { score += 2; reasons.push("+2 Has Facebook page"); }
 
-  // ── Tier assignment ──────────────────────────────────────────
+  // Owner name
+  if (ownerName) { score += 2; reasons.push(`+2 Owner name: ${ownerName}`); }
+
+  // Website data richness fields (populated after website scrape)
+  // These will be 0 at CSV import time — re-score after scraping
+  // FAQ, services, about, service areas, testimonials handled by lib/demo-prospect-scoring.ts
+
+  // Recent reviews (+1) — can't check from CSV, skip
+
+  // ── Tier assignment (new thresholds) ────────────────────────
 
   let tier;
-  if (score >= 14) tier = "platinum";
-  else if (score >= 10) tier = "gold";
-  else if (score >= 7) tier = "silver";
+  if (score >= 16) tier = "platinum";
+  else if (score >= 12) tier = "gold";
+  else if (score >= 8) tier = "silver";
   else tier = "skip";
 
   reasons.unshift(`Score: ${score} → ${tier.toUpperCase()}`);
@@ -295,32 +313,24 @@ async function main() {
   });
 
   // Summary
-  const tierCounts = { gold: 0, silver: 0, skip: 0 };
-  const methodCounts = { form: 0, cold_email: 0, linkedin_draft: 0 };
+  const tierCounts = { platinum: 0, gold: 0, silver: 0, skip: 0 };
   for (const row of scored) {
-    tierCounts[row.tier]++;
-    if (row.outreach_method) methodCounts[row.outreach_method]++;
+    tierCounts[row.tier] = (tierCounts[row.tier] || 0) + 1;
   }
 
-  console.log("┌─────────────────────────────────┐");
-  console.log("│       PROSPECT SCORING          │");
-  console.log("├─────────┬───────┬───────────────┤");
-  console.log(`│  Gold   │  ${String(tierCounts.gold).padStart(3)}  │ Best fit      │`);
-  console.log(`│  Silver │  ${String(tierCounts.silver).padStart(3)}  │ Good fit      │`);
-  console.log(`│  Skip   │  ${String(tierCounts.skip).padStart(3)}  │ Not a fit     │`);
-  console.log("├─────────┼───────┼───────────────┤");
-  console.log(`│  Total  │  ${String(scored.length).padStart(3)}  │               │`);
-  console.log("└─────────┴───────┴───────────────┘");
-  console.log("");
-  console.log("┌─────────────────────────────────┐");
-  console.log("│     OUTREACH ROUTING            │");
-  console.log("├──────────────┬───────┬──────────┤");
-  console.log(`│  Cold Email  │  ${String(methodCounts.cold_email).padStart(3)}  │ Primary  │`);
-  console.log(`│  Form Submit │  ${String(methodCounts.form).padStart(3)}  │ Auto     │`);
-  console.log("└──────────────┴───────┴──────────┘");
+  console.log("┌──────────────────────────────────────┐");
+  console.log("│       DEMO PROSPECT SCORING          │");
+  console.log("├──────────┬───────┬───────────────────┤");
+  console.log(`│ Platinum │  ${String(tierCounts.platinum).padStart(3)}  │ Top prospects     │`);
+  console.log(`│ Gold     │  ${String(tierCounts.gold).padStart(3)}  │ Strong prospects  │`);
+  console.log(`│ Silver   │  ${String(tierCounts.silver).padStart(3)}  │ Maybe             │`);
+  console.log(`│ Skip     │  ${String(tierCounts.skip).padStart(3)}  │ Not a fit         │`);
+  console.log("├──────────┼───────┼───────────────────┤");
+  console.log(`│ Total    │  ${String(scored.length).padStart(3)}  │                   │`);
+  console.log("└──────────┴───────┴───────────────────┘");
 
   // Show details per tier
-  for (const tier of ["gold", "silver", "skip"]) {
+  for (const tier of ["platinum", "gold", "silver", "skip"]) {
     const tierRows = scored.filter((r) => r.tier === tier);
     if (tierRows.length === 0) continue;
 

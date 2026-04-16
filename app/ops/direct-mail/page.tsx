@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { scoreNfcProspect, NFC_TIER_STYLES, type NfcTier } from "@/lib/nfc-scoring";
+import { scoreDemoProspect, PROSPECT_TIER_STYLES, type ProspectTier } from "@/lib/demo-prospect-scoring";
 
 // ── Types ────────────────────────────────────────────────────────
 interface Prospect {
@@ -62,20 +62,16 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function computeNfc(lead: Prospect) {
-  return scoreNfcProspect({
+function computeScore(lead: Prospect) {
+  return scoreDemoProspect({
     google_place_id: lead.google_place_id,
-    has_estimate_widget: lead.has_estimate_widget,
     rating: lead.rating,
     reviews_count: lead.reviews_count,
     their_website_url: lead.their_website_url,
-    website_status: lead.their_website_url ? "has_website" : "none",
-    fl_license_type: lead.fl_license_type,
-    photos: lead.photos,
-    google_reviews: lead.google_reviews,
     phone: lead.phone,
     facebook_page_url: lead.facebook_page_url,
     business_name: lead.business_name,
+    google_reviews: lead.google_reviews,
   });
 }
 
@@ -318,9 +314,9 @@ export default function DirectMailPage() {
         ).length;
 
         // NFC tier breakdown
-        const nfcBreakdown = batchLeads.reduce(
+        const tierBreakdown = batchLeads.reduce(
           (acc, p) => {
-            const nfc = computeNfc(p);
+            const nfc = computeScore(p);
             acc[nfc.tier] = (acc[nfc.tier] || 0) + 1;
             return acc;
           },
@@ -373,13 +369,13 @@ export default function DirectMailPage() {
                 {/* NFC tier chips */}
                 {batchLeads.length > 0 && (
                   <div className="flex gap-1">
-                    {(["platinum", "gold", "silver", "skip"] as NfcTier[]).map((tier) =>
-                      nfcBreakdown[tier] ? (
+                    {(["platinum", "gold", "silver", "skip"] as ProspectTier[]).map((tier) =>
+                      tierBreakdown[tier] ? (
                         <span
                           key={tier}
-                          className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${NFC_TIER_STYLES[tier].bg} ${NFC_TIER_STYLES[tier].text} border ${NFC_TIER_STYLES[tier].border}`}
+                          className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${PROSPECT_TIER_STYLES[tier].bg} ${PROSPECT_TIER_STYLES[tier].text} border ${PROSPECT_TIER_STYLES[tier].border}`}
                         >
-                          {nfcBreakdown[tier]} {tier}
+                          {tierBreakdown[tier]} {tier}
                         </span>
                       ) : null
                     )}
@@ -449,8 +445,8 @@ export default function DirectMailPage() {
                     {batchLeads.map((lead) => {
                       const state = approvalStates[lead.id] || "skipped";
                       const s = stateStyles[state];
-                      const nfcResult = computeNfc(lead);
-                      const nfcStyle = NFC_TIER_STYLES[nfcResult.tier];
+                      const demoResult = computeScore(lead);
+                      const demoStyle = PROSPECT_TIER_STYLES[demoResult.tier];
                       const isAlreadyApproved =
                         lead.site_approved_at || lead.stage === "site_approved" || lead.stage === "sent";
                       const canToggle = lead.stage === "site_built" && lead.preview_site_url;
@@ -492,9 +488,9 @@ export default function DirectMailPage() {
                                   {lead.business_name || "Unknown"}
                                 </span>
                                 <span
-                                  className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${nfcStyle.bg} ${nfcStyle.text} border ${nfcStyle.border}`}
+                                  className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${demoStyle.bg} ${demoStyle.text} border ${demoStyle.border}`}
                                 >
-                                  {nfcResult.tier} {nfcResult.score}pts
+                                  {demoResult.tier} {demoResult.score}pts
                                 </span>
                                 {STAGE_DISPLAY[lead.stage] && (
                                   <span

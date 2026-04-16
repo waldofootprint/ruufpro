@@ -181,8 +181,8 @@ export function scoreNfcProspect(p: NfcProspectInput): NfcScoreResult {
     score += 2;
     reasons.push("+2 Bad/free website — needs upgrade");
   } else {
-    score -= 3;
-    reasons.push("-3 Has professional website — lower motivation");
+    score -= 1;
+    reasons.push("-1 Has website — but ours is likely better");
   }
 
   // Review count sweet spot
