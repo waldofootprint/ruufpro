@@ -76,8 +76,9 @@ export async function POST(req: NextRequest) {
       .eq("gate_type", gate_type)
       .eq("status", "pending");
 
-    // Gate 1 approved → fire auto-send via Instantly
-    if (gate_type === "site_review" && data?.length) {
+    // Gate 1 approved → fire auto-send via Instantly (only if Instantly is configured)
+    const instantlyConfigured = !!(process.env.INSTANTLY_API_KEY && process.env.INSTANTLY_DEFAULT_CAMPAIGN_ID);
+    if (gate_type === "site_review" && data?.length && instantlyConfigured) {
       await inngest.send({
         name: "ops/outreach.auto-send",
         data: {
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ approved: data?.length || 0, auto_send_triggered: gate_type === "site_review" });
+    return NextResponse.json({ approved: data?.length || 0, auto_send_triggered: gate_type === "site_review" && instantlyConfigured });
 
   } else if (action === "approve_selected" && prospect_ids?.length) {
     // Move only selected leads
@@ -124,8 +125,9 @@ export async function POST(req: NextRequest) {
       .eq("gate_type", gate_type)
       .eq("status", "pending");
 
-    // Gate 1 approved → fire auto-send for selected prospects
-    if (gate_type === "site_review" && data?.length) {
+    // Gate 1 approved → fire auto-send for selected prospects (only if Instantly is configured)
+    const instantlyReady = !!(process.env.INSTANTLY_API_KEY && process.env.INSTANTLY_DEFAULT_CAMPAIGN_ID);
+    if (gate_type === "site_review" && data?.length && instantlyReady) {
       await inngest.send({
         name: "ops/outreach.auto-send",
         data: {
@@ -135,7 +137,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ approved: data?.length || 0, remaining: remaining || 0, auto_send_triggered: gate_type === "site_review" });
+    return NextResponse.json({ approved: data?.length || 0, remaining: remaining || 0, auto_send_triggered: gate_type === "site_review" && instantlyReady });
 
   } else if (action === "reject_selected" && prospect_ids?.length) {
     // Mark rejected leads as unsubscribed (remove from pipeline)

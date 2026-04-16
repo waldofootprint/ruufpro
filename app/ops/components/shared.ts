@@ -1,7 +1,6 @@
 import type { PipelineStage, ProspectBatch } from "@/lib/ops-pipeline";
 import { STAGE_LABELS } from "@/lib/ops-pipeline";
-import { scoreProspect, TIER_STYLES } from "@/lib/prospect-scoring";
-import type { ProspectInput } from "@/lib/prospect-scoring";
+import { scoreNfcProspect, NFC_TIER_STYLES } from "@/lib/nfc-scoring";
 
 // ── Formatters ────────────────────────────────────────────────────
 export function fmtDate(d: string) {
@@ -53,26 +52,26 @@ export const STAGE_PILL: Record<string, string> = {
   unsubscribed: "bg-red-100 text-red-600",
 };
 
-// ── ICP scoring ───────────────────────────────────────────────────
-export function getIcpScore(lead: any) {
-  const input: ProspectInput = {
-    reviews_count: lead.reviews_count ?? null,
-    rating: lead.rating ?? null,
-    has_estimate_widget: false,
+// ── NFC scoring (single source of truth) ─────────────────────────
+export function getNfcScore(lead: any) {
+  const result = scoreNfcProspect({
+    google_place_id: lead.google_place_id,
+    has_estimate_widget: lead.has_estimate_widget ?? false,
+    rating: lead.rating ?? 0,
+    reviews_count: lead.reviews_count ?? 0,
     their_website_url: lead.their_website_url ?? null,
     website_status: lead.their_website_url ? "has_website" : "none",
-    contact_form_url: lead.contact_form_url ?? null,
-    has_captcha: lead.has_captcha ?? false,
-    linkedin_url: lead.linkedin_url ?? null,
-    owner_email: lead.owner_email ?? null,
+    fl_license_type: lead.fl_license_type ?? null,
+    photos: lead.photos ?? null,
+    google_reviews: lead.google_reviews ?? null,
     phone: lead.phone ?? null,
-    years_in_business: lead.years_in_business ?? null,
-  };
-  const result = scoreProspect(input);
-  return { tier: result.tier, signals: result.signals, outreach_methods: result.outreach_methods, reasons: result.reasons };
+    facebook_page_url: lead.facebook_page_url ?? null,
+    business_name: lead.business_name ?? "",
+  });
+  return result;
 }
 
-export const ICP_STYLES = TIER_STYLES;
+export const SCORE_STYLES = NFC_TIER_STYLES;
 
 // ── Types ─────────────────────────────────────────────────────────
 export interface AttentionItem {

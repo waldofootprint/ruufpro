@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getIcpScore, ICP_STYLES } from "./shared";
+import { getNfcScore, SCORE_STYLES } from "./shared";
 
 type TriageState = "selected" | "parked" | "skipped";
 
@@ -11,7 +11,7 @@ export function TriagePanel({ batchId, onDone }: { batchId: string; onDone: () =
   const [states, setStates] = useState<Record<string, TriageState>>({});
   const [submitting, setSubmitting] = useState(false);
   const [parkReason, setParkReason] = useState<Record<string, string>>({});
-  const [tierFilter, setTierFilter] = useState<"all" | "gold" | "silver">("all");
+  const [tierFilter, setTierFilter] = useState<"all" | "platinum" | "gold" | "silver">("all");
 
   useEffect(() => {
     async function load() {
@@ -43,8 +43,8 @@ export function TriagePanel({ batchId, onDone }: { batchId: string; onDone: () =
     setStates((prev) => {
       const next = { ...prev };
       leads.forEach((lead) => {
-        const score = getIcpScore(lead);
-        if (score.tier === "gold") next[lead.id] = "selected";
+        const score = getNfcScore(lead);
+        if (score.tier === "platinum" || score.tier === "gold") next[lead.id] = "selected";
       });
       return next;
     });
@@ -141,22 +141,21 @@ export function TriagePanel({ batchId, onDone }: { batchId: string; onDone: () =
 
       {/* Tier filter tabs */}
       <div className="flex gap-1.5 mb-3">
-        {(["all", "gold", "silver"] as const).map((t) => {
-          const count = t === "all" ? leads.length : leads.filter(l => getIcpScore(l).tier === t).length;
+        {(["all", "platinum", "gold", "silver"] as const).map((t) => {
+          const count = t === "all" ? leads.length : leads.filter(l => getNfcScore(l).tier === t).length;
           const active = tierFilter === t;
+          const style = t !== "all" ? SCORE_STYLES[t] : null;
           return (
             <button
               key={t}
               onClick={() => setTierFilter(t)}
               className={`text-[11px] font-semibold px-3 py-1 rounded-lg border transition-colors ${
                 active
-                  ? t === "gold" ? "bg-[#FFF8E1] text-[#92400E] border-[#FDE68A]"
-                  : t === "silver" ? "bg-[#F5F5F7] text-[#3C3C43] border-[#D1D1D6]"
-                  : "bg-[#007AFF] text-white border-[#007AFF]"
+                  ? style ? `${style.bg} ${style.text} ${style.border}` : "bg-[#007AFF] text-white border-[#007AFF]"
                   : "bg-white text-[#8E8E93] border-[#E5E5EA] hover:bg-[#F5F5F7]"
               }`}
             >
-              {t === "all" ? "All" : t === "gold" ? "Gold" : "Silver"} ({count})
+              {t === "all" ? "All" : style?.label || t} ({count})
             </button>
           );
         })}
@@ -167,12 +166,12 @@ export function TriagePanel({ batchId, onDone }: { batchId: string; onDone: () =
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5">
-        {leads.filter(l => tierFilter === "all" || getIcpScore(l).tier === tierFilter).map((lead) => {
+        {leads.filter(l => tierFilter === "all" || getNfcScore(l).tier === tierFilter).map((lead) => {
           const state = states[lead.id] || "selected";
           const s = triageStyles[state];
-          const score = getIcpScore(lead);
+          const score = getNfcScore(lead);
           const richness = getDataRichness(lead);
-          const tierStyle = ICP_STYLES[score.tier as keyof typeof ICP_STYLES] || ICP_STYLES.silver;
+          const tierStyle = SCORE_STYLES[score.tier as keyof typeof SCORE_STYLES] || SCORE_STYLES.silver;
 
           return (
             <div

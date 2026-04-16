@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { OUTREACH_METHOD_LABELS } from "@/lib/prospect-scoring";
+const OUTREACH_METHOD_LABELS: Record<string, { label: string; color: string }> = {
+  cold_email: { label: "Email", color: "bg-blue-100 text-blue-700" },
+  form: { label: "Form", color: "bg-green-100 text-green-700" },
+  linkedin_draft: { label: "LinkedIn", color: "bg-purple-100 text-purple-700" },
+  direct_mail: { label: "Mail", color: "bg-amber-100 text-amber-700" },
+};
 import { getCampaignType, generateEmailPreview, generateFormMessage } from "@/lib/outreach-templates";
 
 type OutreachState = "approved" | "neutral" | "rejected";

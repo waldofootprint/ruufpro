@@ -36,6 +36,13 @@
     "stitch": {
       "command": "npx",
       "args": ["-y", "@_davideast/stitch-mcp", "proxy"]
+    },
+    "supabase": {
+      "command": "npx",
+      "args": ["-y", "@supabase/mcp-server-supabase@latest", "--project-ref", "comcpamnxjtldlnnudqc"],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_4dc4b3b733b40bc44edc10373f1d692b94007a59"
+      }
     }
   }
 }

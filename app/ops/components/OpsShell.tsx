@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 const NAV_ITEMS = [
+  { href: "/ops/direct-mail", label: "Direct Mail", icon: "📬" },
   { href: "/ops", label: "Pipeline", icon: "📈", badgeKey: "gates" },
   { href: "/ops/sms", label: "SMS Automations", icon: "💬" },
   { href: "/ops/health", label: "System Health", icon: "⚡" },

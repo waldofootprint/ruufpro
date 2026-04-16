@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 
-// Prospect Scorer — takes scraped CSV, scores each prospect into tiers,
+// Prospect Scorer — takes scraped CSV, scores each prospect into NFC tiers,
 // and inserts into prospect_pipeline table for ops dashboard review.
 //
-// Scoring mirrors lib/prospect-scoring.ts (single source of truth).
+// Scoring mirrors lib/nfc-scoring.ts (single source of truth).
 //
-// Tiers:
-//   Gold   — 0-30 reviews, 3.5+ rating, no estimate widget
-//   Silver — 31-100 reviews, 3.5+ rating, no estimate widget
-//   Skip   — 100+ reviews OR <3.5 rating OR has estimate widget
+// NFC Tiers:
+//   Platinum — 14+ points, top prospects
+//   Gold     — 10-13 points, strong prospects
+//   Silver   — 7-9 points, maybe
+//   Skip     — <7 points, <4.0 rating, 0-2 reviews, 50+ reviews, or has estimate widget
 //
-// Outreach routing (per prospect):
-//   No website           → cold_email
-//   Has website + form   → form
+// Outreach routing:
+//   Direct mail is primary channel
 //   Has website, no form → cold_email
 //   Gold + LinkedIn      → linkedin_draft (secondary)
 //
@@ -62,73 +62,73 @@ function parseArgs() {
 function scoreProspect(row) {
   const reviewCount = parseInt(row.google_review_count || row.user_ratings_total || "0", 10);
   const rating = parseFloat(row.google_rating || row.rating || "0");
-  const hasForm = row.scrape_status === "success" && row.contact_form_url && row.contact_form_url !== "";
   const hasEstimateWidget = row.has_estimate_widget === "true";
   const hasWebsite = row.website && row.website !== "none" && row.website !== "";
-  const hasLinkedIn = row.linkedin_url && row.linkedin_url !== "";
-  const hasEmail = row.email || row.owner_email;
+  const hasPhone = row.phone && row.phone !== "" && row.phone !== "unknown";
+  const hasFacebook = row.facebook_page_url && row.facebook_page_url !== "";
+  const hasLicense = row.fl_license_type && row.fl_license_type !== "";
 
   const reasons = [];
+  const outreachMethod = "direct_mail";
 
-  // ── Skip conditions (checked first) ──────────────────────────
+  // ── Auto-skip conditions (mirrors lib/nfc-scoring.ts) ────────
 
   if (hasEstimateWidget) {
-    const providers = row.estimate_widget_providers || "unknown";
-    reasons.push(`Has estimate widget (${providers})`);
+    reasons.push("Has estimate widget — using competitor");
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  if (reviewCount >= 100) {
-    reasons.push(`${reviewCount} reviews — too established`);
+  if (rating > 0 && rating < 4.0) {
+    reasons.push(`${rating}★ — below 4.0 threshold`);
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  if (rating > 0 && rating < 3.5) {
-    reasons.push(`${rating}★ — too low, quality issues`);
+  if (reviewCount <= 2) {
+    reasons.push(`${reviewCount} reviews — too new, possible side hustle`);
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  // ── Outreach method routing ──────────────────────────────────
-
-  let outreachMethod = "cold_email"; // default
-  if (hasWebsite && hasForm) {
-    outreachMethod = "form";
+  if (reviewCount >= 50) {
+    reasons.push(`${reviewCount} reviews — too established for NFC card`);
+    return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  // ── Gold: 0-30 reviews, 3.5+ rating ─────────────────────────
+  // ── Point scoring (mirrors lib/nfc-scoring.ts) ───────────────
 
-  if (reviewCount <= 30 && (rating === 0 || rating >= 3.5)) {
-    if (reviewCount === 0) reasons.push("Zero reviews — brand new crew");
-    else if (reviewCount <= 10) reasons.push(`${reviewCount} reviews — very new`);
-    else reasons.push(`${reviewCount} reviews — small crew`);
+  let score = 0;
 
-    if (rating > 0) reasons.push(`${rating}★ rating`);
+  // Website: no website = +3 (highest need), has website = -3
+  if (!hasWebsite) { score += 3; reasons.push("+3 No website — highest need"); }
+  else { score -= 3; reasons.push("-3 Has website"); }
 
-    if (!hasWebsite) reasons.push("No website — highest need");
-    else if (hasForm) reasons.push("Has contact form");
+  // Review count sweet spot
+  if (reviewCount >= 5 && reviewCount <= 25) { score += 2; reasons.push(`+2 ${reviewCount} reviews — sweet spot`); }
+  else if (reviewCount >= 3 && reviewCount <= 4) { score += 1; reasons.push(`+1 ${reviewCount} reviews — very new`); }
+  else if (reviewCount >= 26 && reviewCount <= 49) { score += 0; reasons.push(`+0 ${reviewCount} reviews — growing`); }
 
-    if (outreachMethod === "cold_email" && !hasEmail) reasons.push("⚠ No email — needs enrichment");
+  // Rating
+  if (rating >= 4.8) { score += 2; reasons.push(`+2 ${rating}★ — excellent`); }
+  else if (rating >= 4.5) { score += 1; reasons.push(`+1 ${rating}★ — good`); }
 
-    return { tier: "gold", reasons, reviewCount, rating, outreachMethod };
-  }
+  // FL license
+  if (hasLicense) { score += 2; reasons.push("+2 FL Licensed"); }
 
-  // ── Silver: 31-100 reviews, 3.5+ rating ─────────────────────
+  // Phone
+  if (hasPhone) { score += 1; reasons.push("+1 Has phone"); }
 
-  if (reviewCount <= 100 && (rating === 0 || rating >= 3.5)) {
-    reasons.push(`${reviewCount} reviews — growing business`);
-    if (rating > 0) reasons.push(`${rating}★ rating`);
+  // Facebook
+  if (hasFacebook) { score += 1; reasons.push("+1 Has Facebook"); }
 
-    if (!hasWebsite) reasons.push("No website — still needs us");
-    else if (hasForm) reasons.push("Has contact form");
+  // ── Tier assignment ──────────────────────────────────────────
 
-    if (outreachMethod === "cold_email" && !hasEmail) reasons.push("⚠ No email — needs enrichment");
+  let tier;
+  if (score >= 14) tier = "platinum";
+  else if (score >= 10) tier = "gold";
+  else if (score >= 7) tier = "silver";
+  else tier = "skip";
 
-    return { tier: "silver", reasons, reviewCount, rating, outreachMethod };
-  }
-
-  // Fallback (shouldn't reach given checks above)
-  reasons.push("Does not match any tier");
-  return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
+  reasons.unshift(`Score: ${score} → ${tier.toUpperCase()}`);
+  return { tier, reasons, reviewCount, rating, outreachMethod };
 }
 
 // --------------- Pipeline Insert ---------------

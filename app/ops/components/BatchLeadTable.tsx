@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import type { PipelineStage } from "@/lib/ops-pipeline";
 import { STAGE_LABELS } from "@/lib/ops-pipeline";
-import { OUTREACH_METHOD_LABELS } from "@/lib/prospect-scoring";
-import { getIcpScore, ICP_STYLES, STAGE_PILL, fmtTimestamp, daysSince } from "./shared";
+import { getNfcScore, SCORE_STYLES, STAGE_PILL, fmtTimestamp, daysSince } from "./shared";
 import { scoreNfcProspect, NFC_TIER_STYLES, type NfcTier } from "@/lib/nfc-scoring";
 
 // ── "Why is this stuck?" helper ───────────────────────────────────
@@ -294,8 +293,8 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
                     <tbody>
                       {sorted.map((lead) => {
                         const isChecked = selected.has(lead.id);
-                        const icp = getIcpScore(lead);
-                        const icpStyle = ICP_STYLES[icp.tier];
+                        const nfc = getNfcScore(lead);
+                        const nfcTierStyle = SCORE_STYLES[nfc.tier];
                         const domain = lead.their_website_url?.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
                         const td = "text-xs px-3 py-2.5 border-b border-[#F0F0F2]";
 
@@ -318,7 +317,7 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
                             <td className={`${td} font-semibold text-[#1D1D1F]`}>
                               <div className="flex items-center gap-2">
                                 {lead.business_name || "Unknown"}
-                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>{icpStyle.label}</span>
+                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${nfcTierStyle.bg} ${nfcTierStyle.text} border ${nfcTierStyle.border}`}>{nfcTierStyle.label}</span>
                                 {(() => {
                                   const stuck = getStuckReason(lead);
                                   return stuck ? <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${stuck.color}`}>{stuck.text}</span> : null;
@@ -371,8 +370,8 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
 // ═══════════════════════════════════════════════════════════════════
 export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { lead: any; isExpanded: boolean; isSelected: boolean; onSelect: () => void; onToggle: () => void }) {
   const td = "text-xs px-3 py-2.5 border-b border-[#F5F5F5]";
-  const icp = getIcpScore(lead);
-  const icpStyle = ICP_STYLES[icp.tier];
+  const nfcLeadScore = getNfcScore(lead);
+  const nfcTierStyle = SCORE_STYLES[nfcLeadScore.tier];
 
   const timeline: { label: string; date: string | null; status: "done" | "active" | "pending" }[] = [
     { label: "Scraped", date: lead.scraped_at, status: lead.scraped_at ? "done" : "pending" },
@@ -401,8 +400,8 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
         <td className={`${td} font-semibold text-[#1D1D1F]`}>
           <div className="flex items-center gap-2">
             {lead.business_name || "—"}
-            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>
-              {icpStyle.label}
+            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${nfcTierStyle.bg} ${nfcTierStyle.text} border ${nfcTierStyle.border}`}>
+              {nfcTierStyle.label}
             </span>
           </div>
         </td>
@@ -516,8 +515,8 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
 
               {/* Scoring Chips Row */}
               <div className="flex items-center gap-2 mb-4">
-                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${icpStyle.bg} ${icpStyle.text} border ${icpStyle.border}`}>
-                  {icpStyle.label}
+                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${nfcTierStyle.bg} ${nfcTierStyle.text} border ${nfcTierStyle.border}`}>
+                  {nfcTierStyle.label}
                 </span>
                 <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${nfcStyle.bg} ${nfcStyle.text} border ${nfcStyle.border}`}>
                   {nfcStyle.label} ({nfcScore.score}pts)
