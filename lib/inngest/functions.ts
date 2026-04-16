@@ -199,7 +199,16 @@ export const reviewRequest = inngest.createFunction(
     triggers: [{ event: "sms/review.requested" }],
   },
   async ({ event, step }) => {
-    const { contractorId, leadId } = event.data;
+    const { contractorId, leadId, delay } = event.data;
+
+    // Respect contractor's timing preference (configured in /dashboard/reviews)
+    if (delay && delay !== "immediate") {
+      const delayMap: Record<string, string> = { "1_hour": "1h", "1_day": "1d", "3_days": "3d" };
+      const sleepDuration = delayMap[delay];
+      if (sleepDuration) {
+        await step.sleep("review-delay", sleepDuration);
+      }
+    }
 
     const result = await step.run("send-review-request", async () => {
       const { sendReviewRequest } = await import("@/lib/sms-workflows");

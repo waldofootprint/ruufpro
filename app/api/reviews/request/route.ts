@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     // Look up the contractor for this user
     const { data: contractor } = await supabase
       .from("contractors")
-      .select("id, business_name, google_review_url")
+      .select("id, business_name, google_review_url, review_email_delay")
       .eq("user_id", user.id)
       .single();
 
@@ -124,13 +124,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Emit event to Inngest — handles review SMS with retry + monitoring
+    // Emit event to Inngest — handles review email with retry + delay + monitoring
     const { inngest } = await import("@/lib/inngest/client");
     await inngest.send({
       name: "sms/review.requested",
       data: {
         contractorId: contractor.id,
         leadId: lead.id,
+        delay: contractor.review_email_delay || "immediate",
       },
     });
 

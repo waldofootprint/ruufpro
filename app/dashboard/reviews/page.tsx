@@ -7,7 +7,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDashboard } from "../DashboardContext";
-import { Star, Check, ExternalLink, Eye, Send } from "lucide-react";
+import { Star, Check, ExternalLink, Eye, Send, TrendingUp, MousePointerClick, MessageSquare, Users, Loader2 } from "lucide-react";
 
 const DEFAULT_SUBJECT = "How was your experience with {{business_name}}?";
 const DEFAULT_HEADING = "Thanks for choosing {{business_name}}!";
@@ -33,6 +33,13 @@ export default function ReviewsPage() {
   const [emailButton, setEmailButton] = useState(DEFAULT_BUTTON);
   const [emailDelay, setEmailDelay] = useState("immediate");
 
+  // Review stats
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [stats, setStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [batchSending, setBatchSending] = useState(false);
+  const [batchResult, setBatchResult] = useState<string | null>(null);
+
   useEffect(() => {
     async function load() {
       if (!contractorId) return;
@@ -57,6 +64,61 @@ export default function ReviewsPage() {
     }
     load();
   }, [contractorId]);
+
+  // Fetch review analytics
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/dashboard/review-stats");
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch { /* silent */ }
+      setStatsLoading(false);
+    }
+    if (contractorId && tier !== "free") loadStats();
+  }, [contractorId, tier]);
+
+  async function handleBatchSend() {
+    if (!stats?.unrequested_completed || batchSending) return;
+    if (!window.confirm(`Send review request emails to ${stats.unrequested_completed} completed jobs?`)) return;
+
+    setBatchSending(true);
+    setBatchResult(null);
+    try {
+      // Fetch the actual lead IDs for unrequested completed jobs
+      const { data: completedLeads } = await supabase
+        .from("leads")
+        .select("id")
+        .eq("contractor_id", contractorId)
+        .in("status", ["completed", "won"]);
+
+      if (!completedLeads || completedLeads.length === 0) {
+        setBatchResult("No completed jobs found.");
+        setBatchSending(false);
+        return;
+      }
+
+      const res = await fetch("/api/reviews/batch-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadIds: completedLeads.map((l: { id: string }) => l.id) }),
+      });
+      const data = await res.json();
+      if (data.queued > 0) {
+        setBatchResult(`${data.queued} review request${data.queued === 1 ? "" : "s"} queued!${data.skipped > 0 ? ` (${data.skipped} already requested)` : ""}`);
+        // Refresh stats
+        const refreshRes = await fetch("/api/dashboard/review-stats");
+        if (refreshRes.ok) setStats(await refreshRes.json());
+      } else {
+        setBatchResult(data.error || "No eligible leads to send to.");
+      }
+    } catch {
+      setBatchResult("Failed to send. Try again.");
+    }
+    setBatchSending(false);
+  }
 
   async function handleSave() {
     if (!contractorId) return;
@@ -126,9 +188,104 @@ export default function ReviewsPage() {
   return (
     <div className="max-w-xl mx-auto">
       <h1 className="text-2xl font-bold text-slate-900 mb-1">Reviews</h1>
-      <p className="text-[13px] text-slate-500 mb-8">
+      <p className="text-[13px] text-slate-500 mb-6">
         Automatically request Google reviews after every completed job.
       </p>
+
+      {/* Review Analytics */}
+      {!statsLoading && stats && (
+        <>
+          {/* Stat cards */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Send className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-[11px] font-semibold text-slate-400 uppercase">Sent</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{stats.total_sent}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{stats.this_month.sent} this month</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <MousePointerClick className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-semibold text-slate-400 uppercase">Clicked</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{stats.total_clicked}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{stats.click_rate}% click rate</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Star className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-[11px] font-semibold text-slate-400 uppercase">Reviewed</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{stats.total_reviewed}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{stats.review_rate}% review rate</p>
+            </div>
+          </div>
+
+          {/* Batch CTA — unrequested completed jobs */}
+          {stats.unrequested_completed > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Users className="w-4.5 h-4.5 text-amber-600" />
+                  <div>
+                    <p className="text-[13px] font-bold text-amber-800">
+                      {stats.unrequested_completed} completed job{stats.unrequested_completed === 1 ? "" : "s"} with no review request
+                    </p>
+                    <p className="text-[11px] text-amber-600 mt-0.5">Send review requests to grow your Google rating</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleBatchSend}
+                  disabled={batchSending}
+                  className="px-3.5 py-2 bg-amber-600 text-white rounded-lg text-[12px] font-semibold hover:bg-amber-700 transition disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  {batchSending ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending...</> : "Send to All"}
+                </button>
+              </div>
+              {batchResult && (
+                <p className={`text-[12px] mt-2.5 font-medium ${batchResult.includes("queued") ? "text-emerald-600" : "text-slate-500"}`}>
+                  {batchResult}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Recent activity */}
+          {stats.recent_requests.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-4">
+              <div className="px-5 py-3 border-b border-slate-100">
+                <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide">Recent Requests</h3>
+              </div>
+              <div className="divide-y divide-slate-50">
+                {stats.recent_requests.slice(0, 5).map((req: any, i: number) => (
+                  <div key={req.id || i} className="px-5 py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-[13px] font-medium text-slate-800">{req.lead_name}</p>
+                      <p className="text-[10px] text-slate-400">
+                        {req.sent_at ? new Date(req.sent_at).toLocaleDateString() : "Pending"}
+                      </p>
+                    </div>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      req.status === "reviewed" ? "bg-emerald-50 text-emerald-600" :
+                      req.status === "clicked" ? "bg-blue-50 text-blue-600" :
+                      req.status === "email_sent" || req.status === "reminder_sent" ? "bg-amber-50 text-amber-600" :
+                      "bg-slate-50 text-slate-400"
+                    }`}>
+                      {req.status === "reviewed" ? "Reviewed" :
+                       req.status === "clicked" ? "Clicked" :
+                       req.status === "reminder_sent" ? "Reminded" :
+                       req.status === "email_sent" ? "Sent" :
+                       "Pending"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Master toggle */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 mb-4">

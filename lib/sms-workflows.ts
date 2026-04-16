@@ -35,10 +35,10 @@ export async function sendReviewRequest(
     return { success: false, error: "Lead has no email address" };
   }
 
-  // Look up the contractor's business name, review URL, and automation toggle
+  // Look up the contractor's business name, review URL, automation toggle, and email customization
   const { data: contractor, error: contractorError } = await supabase
     .from("contractors")
-    .select("business_name, google_review_url, review_request_enabled")
+    .select("business_name, google_review_url, review_request_enabled, review_email_subject, review_email_heading, review_email_body, review_email_button")
     .eq("id", contractorId)
     .single();
 
@@ -63,34 +63,39 @@ export async function sendReviewRequest(
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ruufpro.com";
   const reviewUrl = `${siteUrl}/api/reviews/track/${trackingToken}`;
 
-  // Send review request email via Resend
+  // Send review request email via Resend — uses contractor's custom template or defaults
   const firstName = lead.name?.split(" ")[0] || "there";
   const { Resend } = await import("resend");
   const resend = new Resend(process.env.RESEND_API_KEY);
 
+  // Custom email fields with fallbacks (matches dashboard defaults)
+  const biz = contractor.business_name;
+  const emailSubject = (contractor.review_email_subject || `How was your experience with {{business_name}}?`).replace(/\{\{business_name\}\}/g, biz);
+  const emailHeading = (contractor.review_email_heading || `Thanks for choosing {{business_name}}!`).replace(/\{\{business_name\}\}/g, biz);
+  const emailBody = (contractor.review_email_body || `We hope everything went well. If you have a minute, a quick review would really help us out.`).replace(/\{\{business_name\}\}/g, biz);
+  const emailButton = contractor.review_email_button || "⭐ Leave a Review";
+
   try {
     const { error: emailError } = await resend.emails.send({
-      from: `${contractor.business_name} via RuufPro <reviews@ruufpro.com>`,
+      from: `${biz} via RuufPro <reviews@ruufpro.com>`,
       to: lead.email,
-      subject: `How was your experience with ${contractor.business_name}?`,
+      subject: emailSubject,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
           <p style="font-size: 16px; color: #111827; line-height: 1.6;">
             Hi ${firstName},
           </p>
           <p style="font-size: 16px; color: #111827; line-height: 1.6;">
-            Thanks for choosing <strong>${contractor.business_name}</strong>!
-            We hope everything went well. If you have a minute, a quick review
-            would really help us out.
+            ${emailHeading} ${emailBody}
           </p>
           <div style="text-align: center; margin: 28px 0;">
             <a href="${reviewUrl}"
                style="display: inline-block; background: #2563eb; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-              ⭐ Leave a Review
+              ${emailButton}
             </a>
           </div>
           <p style="font-size: 13px; color: #9ca3af; text-align: center; line-height: 1.5;">
-            Sent on behalf of ${contractor.business_name}<br/>
+            Sent on behalf of ${biz}<br/>
             <a href="${siteUrl}" style="color: #9ca3af;">Powered by RuufPro</a>
           </p>
         </div>

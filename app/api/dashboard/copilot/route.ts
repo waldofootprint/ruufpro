@@ -17,6 +17,10 @@ import {
   getLeadsForCopilot,
   getLeadDetailsForCopilot,
   getBusinessSnapshotForCopilot,
+  getReviewStatsForCopilot,
+  findUnreviewedCustomersForCopilot,
+  sendBatchReviewRequestsForCopilot,
+  draftReviewResponseForCopilot,
 } from "@/lib/copilot-tools";
 
 // ---------------------------------------------------------------------------
@@ -317,6 +321,58 @@ export async function POST(request: NextRequest) {
           inputSchema: z.object({}),
           execute: async () => {
             return getBusinessSnapshotForCopilot(supabase, contractorId);
+          },
+        }),
+
+        // ── Review / Reputation Tools ──────────────────────────────────
+
+        getReviewStats: tool({
+          description:
+            "Get review request metrics — how many sent, clicked, reviewed, conversion rates, " +
+            "and recent activity. Call this for 'how are my reviews doing', 'review stats', " +
+            "'review performance', or any question about reviews.",
+          inputSchema: z.object({}),
+          execute: async () => {
+            return getReviewStatsForCopilot(supabase, contractorId);
+          },
+        }),
+
+        findUnreviewedCustomers: tool({
+          description:
+            "Find completed/won jobs that haven't been asked for a review yet. Call this for " +
+            "'who hasn't left a review', 'unreviewed customers', 'who should I ask for reviews'.",
+          inputSchema: z.object({}),
+          execute: async () => {
+            return findUnreviewedCustomersForCopilot(supabase, contractorId);
+          },
+        }),
+
+        sendReviewRequests: tool({
+          description:
+            "Send review request emails to one or more completed-job customers. Call this when " +
+            "the user says 'send review requests to all of them', 'ask them for reviews', or confirms " +
+            "sending after seeing the unreviewed list. IMPORTANT: Always confirm with the user before calling this.",
+          inputSchema: z.object({
+            leadIds: z
+              .array(z.string())
+              .describe("Array of lead UUIDs to send review requests to (max 10)"),
+          }),
+          execute: async ({ leadIds }) => {
+            return sendBatchReviewRequestsForCopilot(supabase, contractorId, leadIds);
+          },
+        }),
+
+        draftReviewResponse: tool({
+          description:
+            "Help draft a professional response to a Google review. Call this when the user asks " +
+            "'help me reply to this review', 'draft a response', or pastes a review they received. " +
+            "Returns guidelines — you compose the actual response.",
+          inputSchema: z.object({
+            reviewText: z.string().describe("The text of the Google review to respond to"),
+            starRating: z.number().min(1).max(5).describe("The star rating (1-5)"),
+          }),
+          execute: async ({ reviewText, starRating }) => {
+            return draftReviewResponseForCopilot(reviewText, starRating, contractor.business_name);
           },
         }),
       },

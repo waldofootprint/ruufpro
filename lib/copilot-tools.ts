@@ -254,3 +254,239 @@ export async function getBusinessSnapshotForCopilot(
     oldest_uncontacted: oldestUncontacted,
   };
 }
+
+// ── Review Tool Types ─────────────────────────────────────────────────
+
+export interface ReviewStats {
+  total_sent: number;
+  total_clicked: number;
+  total_reviewed: number;
+  click_rate: string;
+  review_rate: string;
+  this_month: { sent: number; clicked: number; reviewed: number };
+  last_month: { sent: number; clicked: number; reviewed: number };
+  recent_requests: Array<{
+    lead_name: string;
+    status: string;
+    sent_at: string;
+    sent_ago: string;
+  }>;
+}
+
+export interface UnreviewedCustomer {
+  lead_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  status: string;
+  created_at: string;
+  completed_ago: string;
+}
+
+// ── Review Tool Functions ─────────────────────────────────────────────
+
+/**
+ * Get review request metrics — sent, clicked, reviewed, conversion rates.
+ * "How are my reviews doing?" / "Review stats" / "Review performance"
+ */
+export async function getReviewStatsForCopilot(
+  supabase: SupabaseClient,
+  contractorId: string
+): Promise<ReviewStats> {
+  const { data, error } = await supabase
+    .from("review_requests")
+    .select("id, status, sent_at, clicked_at, reviewed_at, created_at, leads(name)")
+    .eq("contractor_id", contractorId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch review stats: ${error.message}`);
+
+  const all = data || [];
+  const sent = all.filter((r: any) => r.status !== "pending");
+  const clicked = all.filter((r: any) => r.clicked_at);
+  const reviewed = all.filter((r: any) => r.status === "reviewed");
+
+  // Monthly boundaries
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  const inRange = (r: any, start: Date, end: Date) => {
+    const d = new Date(r.created_at);
+    return d >= start && d < end;
+  };
+
+  const recent = all.slice(0, 5).map((r: any) => ({
+    lead_name: (r.leads as any)?.name || "Unknown",
+    status: r.status,
+    sent_at: r.sent_at,
+    sent_ago: formatTimeAgo(r.created_at),
+  }));
+
+  return {
+    total_sent: sent.length,
+    total_clicked: clicked.length,
+    total_reviewed: reviewed.length,
+    click_rate: sent.length > 0 ? `${Math.round((clicked.length / sent.length) * 100)}%` : "N/A",
+    review_rate: sent.length > 0 ? `${Math.round((reviewed.length / sent.length) * 100)}%` : "N/A",
+    this_month: {
+      sent: sent.filter((r: any) => inRange(r, monthStart, now)).length,
+      clicked: clicked.filter((r: any) => inRange(r, monthStart, now)).length,
+      reviewed: reviewed.filter((r: any) => inRange(r, monthStart, now)).length,
+    },
+    last_month: {
+      sent: sent.filter((r: any) => inRange(r, lastMonthStart, monthStart)).length,
+      clicked: clicked.filter((r: any) => inRange(r, lastMonthStart, monthStart)).length,
+      reviewed: reviewed.filter((r: any) => inRange(r, lastMonthStart, monthStart)).length,
+    },
+    recent_requests: recent,
+  };
+}
+
+/**
+ * Find completed/won jobs that haven't been asked for a review yet.
+ * "Who hasn't left a review?" / "Unreviewed customers" / "Who should I ask?"
+ */
+export async function findUnreviewedCustomersForCopilot(
+  supabase: SupabaseClient,
+  contractorId: string
+): Promise<{ customers: UnreviewedCustomer[]; total: number; message: string }> {
+  // Get completed/won leads
+  const { data: completedLeads, error: leadsErr } = await supabase
+    .from("leads")
+    .select("id, name, email, phone, status, created_at")
+    .eq("contractor_id", contractorId)
+    .in("status", ["completed", "won"])
+    .order("created_at", { ascending: false });
+
+  if (leadsErr) throw new Error(`Failed to fetch leads: ${leadsErr.message}`);
+  if (!completedLeads || completedLeads.length === 0) {
+    return { customers: [], total: 0, message: "No completed jobs yet." };
+  }
+
+  // Get existing review requests for these leads
+  const leadIds = completedLeads.map(l => l.id);
+  const { data: existingRequests } = await supabase
+    .from("review_requests")
+    .select("lead_id")
+    .eq("contractor_id", contractorId)
+    .in("lead_id", leadIds);
+
+  const requestedIds = new Set((existingRequests || []).map(r => r.lead_id));
+
+  // Filter to unrequested leads
+  const unrequested = completedLeads
+    .filter(l => !requestedIds.has(l.id))
+    .slice(0, 20)
+    .map(l => ({
+      lead_id: l.id,
+      name: l.name,
+      email: l.email,
+      phone: l.phone,
+      status: l.status,
+      created_at: l.created_at,
+      completed_ago: formatTimeAgo(l.created_at),
+    }));
+
+  const total = completedLeads.filter(l => !requestedIds.has(l.id)).length;
+  const msg = total > 0
+    ? `You have ${total} completed job${total === 1 ? "" : "s"} with no review request sent.`
+    : "All completed jobs have been asked for reviews — nice work!";
+
+  return { customers: unrequested, total, message: msg };
+}
+
+/**
+ * Send review request emails to a batch of leads via Inngest.
+ * "Send review requests to all of them" / "Ask them for reviews"
+ * Cap: 10 per batch from Copilot (safety limit for AI-initiated sends).
+ */
+export async function sendBatchReviewRequestsForCopilot(
+  supabase: SupabaseClient,
+  contractorId: string,
+  leadIds: string[]
+): Promise<{ queued: number; skipped: number; errors: string[] }> {
+  if (leadIds.length > 10) {
+    return { queued: 0, skipped: 0, errors: ["Maximum 10 review requests per Copilot batch. Try a smaller group."] };
+  }
+
+  // Verify contractor has Google review URL configured
+  const { data: contractor } = await supabase
+    .from("contractors")
+    .select("google_review_url, review_email_delay")
+    .eq("id", contractorId)
+    .single();
+
+  if (!contractor?.google_review_url) {
+    return { queued: 0, skipped: 0, errors: ["No Google review URL configured. Set it in Dashboard → Reviews."] };
+  }
+
+  // Verify leads belong to this contractor and are completed/won with email
+  const { data: leads } = await supabase
+    .from("leads")
+    .select("id, name, email, status")
+    .eq("contractor_id", contractorId)
+    .in("id", leadIds)
+    .in("status", ["completed", "won"]);
+
+  if (!leads || leads.length === 0) {
+    return { queued: 0, skipped: 0, errors: ["No eligible completed leads found."] };
+  }
+
+  // Check for duplicates
+  const { data: existing } = await supabase
+    .from("review_requests")
+    .select("lead_id")
+    .eq("contractor_id", contractorId)
+    .in("lead_id", leads.map(l => l.id));
+
+  const alreadyRequested = new Set((existing || []).map(r => r.lead_id));
+  const eligible = leads.filter(l => l.email && !alreadyRequested.has(l.id));
+  const skipped = leads.length - eligible.length;
+
+  // Send via Inngest
+  const { inngest } = await import("@/lib/inngest/client");
+  const errors: string[] = [];
+  let queued = 0;
+
+  for (const lead of eligible) {
+    try {
+      await inngest.send({
+        name: "sms/review.requested",
+        data: {
+          contractorId,
+          leadId: lead.id,
+          delay: contractor.review_email_delay || "immediate",
+        },
+      });
+      queued++;
+    } catch (err: any) {
+      errors.push(`${lead.name}: ${err.message}`);
+    }
+  }
+
+  return { queued, skipped, errors };
+}
+
+/**
+ * Return context for drafting a response to a Google review.
+ * "Help me reply to this 3-star review" / "Draft a response to this review"
+ * Returns guidelines — the AI model composes the actual response.
+ */
+export function draftReviewResponseForCopilot(
+  reviewText: string,
+  starRating: number,
+  businessName: string
+): { review_text: string; star_rating: number; business_name: string; guidelines: string } {
+  const isPositive = starRating >= 4;
+  const guidelines = isPositive
+    ? `This is a positive review (${starRating}/5 stars). Write a warm, genuine thank-you response. Reference a specific detail from their review to show you read it. Keep it under 3 sentences. Sign off with the business name. Don't be generic — make it personal.`
+    : `This is a critical review (${starRating}/5 stars). Write a professional, empathetic response. Acknowledge their experience, apologize for the issue, and offer to resolve it offline ("please call us at..." or "email us at..."). Keep it under 4 sentences. Never be defensive or argue. Show you take feedback seriously. Sign off with the business name.`;
+
+  return {
+    review_text: reviewText,
+    star_rating: starRating,
+    business_name: businessName,
+    guidelines,
+  };
+}
