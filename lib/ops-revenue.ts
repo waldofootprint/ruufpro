@@ -46,7 +46,7 @@ export interface RevenueResponse {
 // Funnel stages in order (simplified for revenue tracking — skip intermediate stages)
 export const FUNNEL_STAGES = [
   "scraped",
-  "site_built",
+  "demo_built",
   "sent",
   "replied",
   "interested",
@@ -56,8 +56,8 @@ export const FUNNEL_STAGES = [
 
 // What to do when each funnel step is the bottleneck
 export const BOTTLENECK_ACTIONS: Record<string, { action: string; href: string }> = {
-  "scraped→site_built":       { action: "Build preview sites for scraped prospects", href: "/ops" },
-  "site_built→sent":          { action: "Approve sites + outreach in Pipeline gates", href: "/ops" },
+  "scraped→demo_built":       { action: "Build demo pages for scraped prospects", href: "/ops" },
+  "demo_built→sent":          { action: "Approve demos + outreach in Pipeline gates", href: "/ops" },
   "sent→replied":             { action: "Low reply rate — test new subject lines", href: "https://app.instantly.ai" },
   "replied→interested":       { action: "Replies aren't converting — review reply handler", href: "/ops" },
   "interested→free_signup":   { action: "Interested but not signing up — reduce friction", href: "/ops/settings" },

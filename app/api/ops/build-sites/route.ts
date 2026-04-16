@@ -75,7 +75,7 @@ function formatReviews(
 // Body: { batch_id }
 // For each prospect in the batch at "enriched" stage (or "scraped" if
 // no enrichment needed), creates a contractor record + site record
-// using the Modern Clean template, then advances to "site_built".
+// using the Modern Clean template, then advances to "demo_built".
 export async function POST(req: NextRequest) {
   const auth = await requireOpsAuth();
   if (!auth.authorized) return auth.response;
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       .from("prospect_pipeline")
       .select("*")
       .in("stage", ["ai_rewritten", "enriched", "scraped"])
-      .is("preview_site_url", null);
+      .is("demo_page_url", null);
 
     if (prospect_ids?.length) {
       query = query.in("id", prospect_ids);
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         built: 0,
-        message: "No prospects need sites built",
+        message: "No prospects need demo pages built",
       });
     }
 
@@ -224,10 +224,10 @@ export async function POST(req: NextRequest) {
             await supabase
               .from("prospect_pipeline")
               .update({
-                preview_site_url: `/site/${retrySlug}`,
-                stage: "site_built",
+                demo_page_url: `/demo-preview/${retrySlug}`,
+                stage: "demo_built",
                 stage_entered_at: new Date().toISOString(),
-                site_built_at: new Date().toISOString(),
+                demo_page_built_at: new Date().toISOString(),
               })
               .eq("id", prospect.id);
 
@@ -243,10 +243,10 @@ export async function POST(req: NextRequest) {
         await supabase
           .from("prospect_pipeline")
           .update({
-            preview_site_url: `/site/${slug}`,
-            stage: "site_built",
+            demo_page_url: `/demo-preview/${slug}`,
+            stage: "demo_built",
             stage_entered_at: new Date().toISOString(),
-            site_built_at: new Date().toISOString(),
+            demo_page_built_at: new Date().toISOString(),
           })
           .eq("id", prospect.id);
 
@@ -258,19 +258,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Auto-create site_review gate if any sites were built
+    // Auto-create demo_review gate if any sites were built
     if (built > 0) {
       const { data: existingGate } = await supabase
         .from("pipeline_gates")
         .select("id")
         .eq("batch_id", batch_id)
-        .eq("gate_type", "site_review")
+        .eq("gate_type", "demo_review")
         .maybeSingle();
 
       if (!existingGate) {
         await supabase.from("pipeline_gates").insert({
           batch_id,
-          gate_type: "site_review",
+          gate_type: "demo_review",
           status: "pending",
           items_pending: built,
           items_approved: 0,

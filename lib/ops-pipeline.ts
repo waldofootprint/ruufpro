@@ -1,17 +1,17 @@
 // Ops pipeline types — shared between API routes and UI components.
 
 // ── Pipeline Stages ──────────────────────────────────────────────────
-// v3 flow: scrape → auto-enrich (Google+FB+email+license) → AI rewrite →
-//   auto-build site → [Gate 1: approve sites] → auto-send via Instantly →
+// v4 flow: scrape → auto-enrich (Google+FB+email+license) → AI rewrite →
+//   scrape website → build demo page → [Gate 1: approve demos] → auto-send →
 //   track replies → [Gate 2: approve reply drafts] → respond
 export const PIPELINE_STAGES = [
   // Automated acquisition
   "scraped",
   "enriched",
   "ai_rewritten",
-  "site_built",
-  // Gate 1: Hannah approves sites
-  "site_approved",
+  "demo_built",
+  // Gate 1: Hannah approves demo pages
+  "demo_approved",
   // Automated outreach
   "sent",
   // Gate 2: Hannah approves reply drafts
@@ -25,6 +25,8 @@ export const PIPELINE_STAGES = [
   "free_signup",
   "paid",
   // Legacy stages — kept so existing DB rows don't break queries
+  "site_built",
+  "site_approved",
   "google_enriched",
   "awaiting_triage",
   "parked",
@@ -42,8 +44,8 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   scraped: "Scraped",
   enriched: "Enriched",
   ai_rewritten: "AI Polished",
-  site_built: "Site Built",
-  site_approved: "Approved",
+  demo_built: "Demo Ready",
+  demo_approved: "Approved",
   sent: "Sent",
   replied: "Replied",
   responded: "Responded",
@@ -54,6 +56,8 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   free_signup: "Signup",
   paid: "Paid",
   // Legacy
+  site_built: "Demo Ready",
+  site_approved: "Approved",
   google_enriched: "Enriched",
   awaiting_triage: "To Triage",
   parked: "Parked",
@@ -69,8 +73,8 @@ export const DISPLAY_STAGES: PipelineStage[] = [
   "scraped",
   "enriched",
   "ai_rewritten",
-  "site_built",
-  "site_approved",
+  "demo_built",
+  "demo_approved",
   "sent",
   "replied",
   "responded",
@@ -80,24 +84,24 @@ export const DISPLAY_STAGES: PipelineStage[] = [
 ];
 
 // ── Gates ────────────────────────────────────────────────────────────
-// v3: only 2 gates (site review + reply draft approval)
-export const GATE_TYPES = ["site_review", "draft_approval"] as const;
+// v4: only 2 gates (demo page review + reply draft approval)
+export const GATE_TYPES = ["demo_review", "draft_approval"] as const;
 export type GateType = (typeof GATE_TYPES)[number];
 
 export const GATE_LABELS: Record<GateType, string> = {
-  site_review: "Review Sites",
+  demo_review: "Review Demo Pages",
   draft_approval: "Approve Reply Drafts",
 };
 
 // Which stage triggers each gate
 export const GATE_TRIGGER_STAGE: Record<GateType, PipelineStage> = {
-  site_review: "site_built",
+  demo_review: "demo_built",
   draft_approval: "replied",
 };
 
 // Which stage leads advance to after gate approval
 export const GATE_APPROVED_STAGE: Record<GateType, PipelineStage> = {
-  site_review: "site_approved",
+  demo_review: "demo_approved",
   draft_approval: "responded",
 };
 
@@ -120,7 +124,7 @@ export interface ProspectBatch {
 
 export interface GateStatus {
   id: string;
-  gate_type: GateType;
+  gate_type: GateType | string; // string for legacy gate types (site_review)
   items_pending: number;
   items_approved: number;
   items_rejected: number;
@@ -144,7 +148,7 @@ export interface PipelineProspect {
   // Pipeline data
   owner_name: string | null;
   owner_email: string | null;
-  preview_site_url: string | null;
+  demo_page_url: string | null;
   their_website_url: string | null;
   emails_sent_count: number;
   reply_category: string | null;
@@ -204,8 +208,8 @@ export interface PipelineProspect {
   scraped_at: string;
   google_enriched_at: string | null;
   enriched_at: string | null;
-  site_built_at: string | null;
-  site_approved_at: string | null;
+  demo_page_built_at: string | null;
+  demo_page_approved_at: string | null;
   contact_lookup_at: string | null;
   contact_ready_at: string | null;
   sent_at: string | null;

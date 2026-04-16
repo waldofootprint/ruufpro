@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   // Find qualifying prospects: outreach_approved, has email, cold_email method
   let query = supabase
     .from("prospect_pipeline")
-    .select("id, business_name, owner_name, owner_email, phone, their_website_url, city, state, preview_site_url")
+    .select("id, business_name, owner_name, owner_email, phone, their_website_url, city, state, demo_page_url")
     .eq("stage", "outreach_approved")
     .not("owner_email", "is", null);
 
@@ -78,11 +78,11 @@ export async function POST(req: NextRequest) {
       custom_variables: {
         city: p.city || "",
         state: p.state || "FL",
-        preview_url: p.preview_site_url
-          ? `https://ruufpro.com${p.preview_site_url}`
+        preview_url: p.demo_page_url
+          ? `https://ruufpro.com${p.demo_page_url}`
           : "",
-        claim_url: p.preview_site_url
-          ? `https://ruufpro.com${p.preview_site_url.replace("/site/", "/claim/")}`
+        claim_url: p.demo_page_url
+          ? `https://ruufpro.com${p.demo_page_url.replace("/demo-preview/", "/claim/")}`
           : "",
       },
     };

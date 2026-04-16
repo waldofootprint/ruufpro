@@ -22,7 +22,7 @@ export function daysSince(d: string | null): number {
 export function stageColor(stage: PipelineStage, count: number): string {
   if (count === 0) return "text-[#D1D1D6]";
   const hot: PipelineStage[] = ["interested", "free_signup", "paid"];
-  const warn: PipelineStage[] = ["site_built"];
+  const warn: PipelineStage[] = ["demo_built"];
   if (hot.includes(stage)) return "text-[#34C759] font-extrabold";
   if (warn.includes(stage)) return "text-[#FF9F0A]";
   return "text-[#3C3C43]";
@@ -34,6 +34,9 @@ export const STAGE_PILL: Record<string, string> = {
   awaiting_triage: "bg-[#FFF8E1] text-[#F57F17]",
   parked: "bg-[#FFF3E0] text-[#E65100]",
   enriched: "bg-blue-50 text-blue-600",
+  demo_built: "bg-[#EDE7F6] text-[#5E35B1]",
+  demo_approved: "bg-teal-50 text-teal-600",
+  // Legacy
   site_built: "bg-[#EDE7F6] text-[#5E35B1]",
   site_approved: "bg-teal-50 text-teal-600",
   contact_lookup: "bg-indigo-50 text-indigo-600",
@@ -89,5 +92,5 @@ export interface AttentionItem {
   days: number;
   urgency: "ok" | "warn" | "urgent";
   batch_label: string;
-  type: "reply_wait" | "draft_pending" | "site_review" | "parked_revival" | "triage_pending";
+  type: "reply_wait" | "draft_pending" | "demo_review" | "site_review" | "parked_revival" | "triage_pending";
 }

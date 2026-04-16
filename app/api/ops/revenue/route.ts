@@ -41,7 +41,7 @@ function countVelocity(
 
   for (const r of rows) {
     if (inRange(r.scraped_at, start, end)) scraped++;
-    if (inRange(r.site_built_at, start, end)) sites_built++;
+    if (inRange(r.demo_page_built_at, start, end)) sites_built++;
     if (inRange(r.sent_at, start, end)) sent++;
     if (inRange(r.replied_at, start, end)) replies++;
     // For interested/signups, check converted_at or stage_entered_at with matching stage
@@ -86,7 +86,7 @@ function computeBottleneck(rows: any[]): Bottleneck | null {
   // Map funnel stage → timestamp field
   const stageTimestamp: Record<string, string> = {
     scraped: "scraped_at",
-    site_built: "site_built_at",
+    demo_built: "demo_page_built_at",
     sent: "sent_at",
     replied: "replied_at",
     interested: "stage_entered_at", // no dedicated timestamp
@@ -158,7 +158,7 @@ export async function GET() {
   const [pipelineResult, viewsResult, repliesResult, metricsResult] = await Promise.all([
     supabase
       .from("prospect_pipeline")
-      .select("id, stage, batch_id, owner_name, owner_email, preview_site_url, reply_category, stage_entered_at, scraped_at, enriched_at, site_built_at, site_approved_at, outreach_approved_at, sent_at, replied_at, responded_at, converted_at, contractors(business_name, city, state)")
+      .select("id, stage, batch_id, owner_name, owner_email, demo_page_url, reply_category, stage_entered_at, scraped_at, enriched_at, demo_page_built_at, demo_page_approved_at, outreach_approved_at, sent_at, replied_at, responded_at, converted_at, contractors(business_name, city, state)")
       .order("stage_entered_at", { ascending: false }),
     supabase
       .from("prospect_views")
@@ -210,7 +210,7 @@ export async function GET() {
         city: contractor?.city || "",
         stage: r.stage,
         reply_category: r.reply_category,
-        preview_url: r.preview_site_url,
+        preview_url: r.demo_page_url,
         email: r.owner_email,
         days_in_stage: daysInStage,
       };

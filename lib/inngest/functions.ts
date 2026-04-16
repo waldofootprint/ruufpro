@@ -1469,7 +1469,7 @@ export const prospectFormSubmit = inngest.createFunction(
         .select(
           "id, contractor_id, business_name, owner_name, phone, their_website_url, " +
           "contact_form_url, form_field_mapping, has_captcha, " +
-          "form_submission_attempts, form_submission_status, preview_site_url"
+          "form_submission_attempts, form_submission_status, demo_page_url"
         )
         .maybeSingle();
 
@@ -1574,7 +1574,7 @@ export const prospectFormSubmit = inngest.createFunction(
         requiredRadios: (mapping.required_radios as Array<{ selector: string; value: string }>) || [],
         businessName: p.business_name as string,
         ownerName: p.owner_name as string | null,
-        previewSiteUrl: p.preview_site_url as string,
+        demoPageUrl: p.demo_page_url as string,
         claimUrl,
         senderName: "Hannah Waldo",
         senderEmail: "forms@getruufpro.com",
@@ -1870,7 +1870,7 @@ export const batchAutoEnrich = inngest.createFunction(
 
 // ---------------------------------------------------------------------------
 // Outreach Auto-Send (v3 Pipeline)
-// Trigger: "ops/outreach.auto-send" — fired after Gate 1 (site_review) approval
+// Trigger: "ops/outreach.auto-send" — fired after Gate 1 (demo_review) approval
 // Adds approved prospects to Instantly campaign for cold email delivery.
 // ---------------------------------------------------------------------------
 export const outreachAutoSend = inngest.createFunction(
@@ -1903,7 +1903,7 @@ export const outreachAutoSend = inngest.createFunction(
       // Get approved prospects with email
       const { data: prospects } = await supabase
         .from("prospect_pipeline")
-        .select("id, business_name, owner_name, owner_email, phone, city, state, preview_site_url, ai_email_subject, ai_email_body")
+        .select("id, business_name, owner_name, owner_email, phone, city, state, demo_page_url, ai_email_subject, ai_email_body")
         .in("id", prospectIds)
         .eq("stage", "site_approved")
         .not("owner_email", "is", null);
@@ -1938,8 +1938,8 @@ export const outreachAutoSend = inngest.createFunction(
           custom_variables: {
             city: p.city || "",
             state: p.state || "FL",
-            preview_url: p.preview_site_url
-              ? `https://ruufpro.com${p.preview_site_url}`
+            preview_url: p.demo_page_url
+              ? `https://ruufpro.com${p.demo_page_url}`
               : "",
             // AI email template variables (Instantly uses these in email templates)
             ai_subject: p.ai_email_subject || "",

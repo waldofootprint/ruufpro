@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   const { data: leads, error } = await supabase
     .from("prospect_pipeline")
-    .select("id, business_name, owner_name, owner_email, phone, city, state, their_website_url, preview_site_url, contact_form_url, has_captcha, outreach_method")
+    .select("id, business_name, owner_name, owner_email, phone, city, state, their_website_url, demo_page_url, contact_form_url, has_captcha, outreach_method")
     .in("id", approved_ids);
 
   if (error || !leads) {
@@ -89,11 +89,11 @@ export async function POST(req: NextRequest) {
         custom_variables: {
           city: p.city || "",
           state: p.state || "FL",
-          preview_url: p.preview_site_url
-            ? `https://ruufpro.com${p.preview_site_url}`
+          preview_url: p.demo_page_url
+            ? `https://ruufpro.com${p.demo_page_url}`
             : "",
-          claim_url: p.preview_site_url
-            ? `https://ruufpro.com${p.preview_site_url.replace("/site/", "/claim/")}`
+          claim_url: p.demo_page_url
+            ? `https://ruufpro.com${p.demo_page_url.replace("/demo-preview/", "/claim/")}`
             : "",
         },
       };

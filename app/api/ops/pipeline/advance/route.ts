@@ -7,17 +7,19 @@ import { requireOpsAuth } from "@/lib/ops-auth";
 
 // Stage progression map — which stage comes next
 const NEXT_STAGE: Record<string, string> = {
-  // v2 flow (new batches)
+  // v4 flow (demo page pipeline)
   scraped: "google_enriched",
   google_enriched: "awaiting_triage",
-  awaiting_triage: "site_built",
-  site_built: "site_approved",
-  site_approved: "contact_lookup",
+  awaiting_triage: "demo_built",
+  demo_built: "demo_approved",
+  demo_approved: "contact_lookup",
   contact_lookup: "contact_ready",
   contact_ready: "outreach_approved",
   outreach_approved: "sent",
   // Legacy (existing batches that used old enrichment flow)
-  enriched: "site_built",
+  enriched: "demo_built",
+  site_built: "demo_approved",
+  site_approved: "contact_lookup",
 };
 
 export async function POST(req: NextRequest) {
@@ -60,8 +62,8 @@ export async function POST(req: NextRequest) {
 
     // Set the appropriate timestamp
     if (nextStage === "google_enriched") updateData.google_enriched_at = now;
-    else if (nextStage === "site_built") updateData.site_built_at = now;
-    else if (nextStage === "site_approved") updateData.site_approved_at = now;
+    else if (nextStage === "demo_built") updateData.demo_page_built_at = now;
+    else if (nextStage === "demo_approved") updateData.demo_page_approved_at = now;
     else if (nextStage === "contact_lookup") updateData.contact_lookup_at = now;
     else if (nextStage === "contact_ready") updateData.contact_ready_at = now;
     else if (nextStage === "outreach_approved") updateData.outreach_approved_at = now;

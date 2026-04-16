@@ -1,0 +1,544 @@
+[
+  {
+    "name": "Roofle RoofQuote PRO",
+    "url": "https://offers.roofle.com/",
+    "tier": "SaaS Widget",
+    "priority": 1,
+    "status": "tested",
+    "startMethod": "Manual inputs (no address)",
+    "inputsRequired": [],
+    "inputsOptional": [
+      "Type search here",
+      "term"
+    ],
+    "dataSources": [
+      "Material-specific pricing",
+      "Financing/payment options"
+    ],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 4175ms",
+    "disclaimers": "",
+    "notableFeatures": [
+      "Financing integration",
+      "Embedded iframe widget",
+      "Multiple material options"
+    ],
+    "errors": [],
+    "screenshotFile": "01-roofle-roofquote-pro.png"
+  },
+  {
+    "name": "Roofr Instant Estimator",
+    "url": "https://roofr.com/estimator",
+    "tier": "SaaS Widget",
+    "priority": 1,
+    "status": "tested",
+    "startMethod": "Embedded widget (iframe)",
+    "inputsRequired": [],
+    "inputsOptional": [],
+    "dataSources": [
+      "Financing/payment options"
+    ],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3673ms",
+    "disclaimers": "estimates based on your real pricing by answering a few questions. | estimate based on your pricing and services. And you?",
+    "notableFeatures": [
+      "Financing integration",
+      "Embedded iframe widget",
+      "Widget source: 117678728.intellimizeio.com, "
+    ],
+    "errors": [],
+    "screenshotFile": "02-roofr-instant-estimator.png"
+  },
+  {
+    "name": "Instant Roofer",
+    "url": "https://www.instantroofer.com/",
+    "tier": "SaaS Platform",
+    "priority": 1,
+    "status": "tested",
+    "startMethod": "Address entry",
+    "inputsRequired": [],
+    "inputsOptional": [
+      "Enter your home address"
+    ],
+    "dataSources": [
+      "Material-specific pricing",
+      "Financing/payment options"
+    ],
+    "outputType": "",
+    "estimateGiven": "Prices visible on page: $199, $10, $15,403, $10, $30, $10, $199, $10",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3572ms",
+    "disclaimers": "Estimate | ESTIMATES | Estimate",
+    "notableFeatures": [
+      "Financing integration",
+      "Multiple material options"
+    ],
+    "errors": [],
+    "screenshotFile": "03-instant-roofer.png"
+  },
+  {
+    "name": "RoofHero",
+    "url": "https://www.roofhero.com/",
+    "tier": "Lead Gen Platform",
+    "priority": 1,
+    "status": "tested",
+    "startMethod": "Address entry",
+    "inputsRequired": [
+      "Enter your address...",
+      "Enter Your Email"
+    ],
+    "inputsOptional": [],
+    "dataSources": [
+      "Satellite/aerial imagery",
+      "Material-specific pricing"
+    ],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "Yes — email",
+    "speedEstimate": "Page load: 3489ms",
+    "disclaimers": "Estimate in Seconds | estimate online. Match with the best roofer. | Estimate",
+    "notableFeatures": [
+      "Satellite imagery",
+      "Multiple material options",
+      "CTAs: Get Estimate, Submit"
+    ],
+    "errors": [],
+    "screenshotFile": "04-roofhero.png"
+  },
+  {
+    "name": "eRoofQuote",
+    "url": "https://www.eroofquote.com/free-online-roof-estimate/",
+    "tier": "Lead Gen Tool",
+    "priority": 1,
+    "status": "tested",
+    "startMethod": "Manual inputs (no address)",
+    "inputsRequired": [
+      "First",
+      "Last",
+      "Email *",
+      "Phone *"
+    ],
+    "inputsOptional": [
+      "Pitch",
+      "Source *",
+      "wpforms[fields][17]",
+      "g-recaptcha-response"
+    ],
+    "dataSources": [
+      "Satellite/aerial imagery",
+      "Material-specific pricing",
+      "Financing/payment options"
+    ],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "Yes — email + phone",
+    "speedEstimate": "Page load: 3635ms",
+    "disclaimers": "Estimate Tool | estimate | estimated monthly payments.",
+    "notableFeatures": [
+      "Financing integration",
+      "Satellite imagery",
+      "Embedded iframe widget",
+      "Multiple material options",
+      "Widget source: www.google.com, www.google.com",
+      "CTAs: Get Exact Quote, What is the Roof Quote Tool?\n+, How does the tool calculate my roof size and pitch?\n+, What types of roofs can I get a quote for?\n+, How accurate is the roof cost estimate?\n+"
+    ],
+    "errors": [],
+    "screenshotFile": "05-eroofquote.png"
+  },
+  {
+    "name": "GAF Roof Cost Calculator",
+    "url": "https://www.gaf.com/en-us/plan-design/homeowner-education/roof-cost/calculator",
+    "tier": "Manufacturer",
+    "priority": 1,
+    "status": "tested",
+    "startMethod": "Unknown / JavaScript widget",
+    "inputsRequired": [],
+    "inputsOptional": [],
+    "dataSources": [],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3158ms",
+    "disclaimers": "",
+    "notableFeatures": [],
+    "errors": [],
+    "screenshotFile": "06-gaf-roof-cost-calculator.png"
+  },
+  {
+    "name": "PITCH Roofing",
+    "url": "https://pitchroofing.com/roofing-resources/free-online-roofing-calculator/",
+    "tier": "Contractor Site",
+    "priority": 2,
+    "status": "tested",
+    "startMethod": "Unknown / JavaScript widget",
+    "inputsRequired": [],
+    "inputsOptional": [],
+    "dataSources": [],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3308ms",
+    "disclaimers": "",
+    "notableFeatures": [],
+    "errors": [],
+    "screenshotFile": "07-pitch-roofing.png"
+  },
+  {
+    "name": "Clear View Roofers",
+    "url": "https://clearviewroofers.com/instant-roof-quote-calculator/",
+    "tier": "Contractor Site",
+    "priority": 2,
+    "status": "tested",
+    "startMethod": "Address entry",
+    "inputsRequired": [
+      "Residential",
+      "Commercial",
+      "Yes",
+      "No",
+      "Yes",
+      "No",
+      "1",
+      "2",
+      "3",
+      "Home / Structure Square Footage *",
+      "Shingle",
+      "Clay",
+      "Flat Roof",
+      "Metal",
+      "Concrete",
+      "Other",
+      "Flat",
+      "Low",
+      "Medium",
+      "High",
+      "First Name *",
+      "Last Name *",
+      "Email Address *",
+      "Phone Number *",
+      "Property ZIP Code *"
+    ],
+    "inputsOptional": [
+      "g-recaptcha-response"
+    ],
+    "dataSources": [
+      "Financing/payment options"
+    ],
+    "outputType": "",
+    "estimateGiven": "Prices visible on page: $80",
+    "contactGated": "Yes — email + phone",
+    "speedEstimate": "Page load: 3832ms",
+    "disclaimers": "Estimate The Cost Of Your New Roof Or Roof Replacement. | estimate for a new roof or roof replacement. The new roof cost calculator uses information about your home to provide a roofing cost estimate in minut",
+    "notableFeatures": [
+      "Financing integration",
+      "Embedded iframe widget",
+      "Widget source: www.google.com",
+      "CTAs: Calculate"
+    ],
+    "errors": [
+      "Interaction failed: elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting"
+    ],
+    "screenshotFile": "08-clear-view-roofers.png"
+  },
+  {
+    "name": "Troy Roofing USA",
+    "url": "https://www.troyroofingusa.com/instant-roofing-cost-estimator-free-online-calculator",
+    "tier": "Contractor Site",
+    "priority": 2,
+    "status": "tested",
+    "startMethod": "Embedded widget (iframe)",
+    "inputsRequired": [],
+    "inputsOptional": [],
+    "dataSources": [
+      "Satellite/aerial imagery",
+      "Material-specific pricing"
+    ],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3749ms",
+    "disclaimers": "estimates the size of your roof to help calculate your roof repair cost in seconds, while offering a large selection of beautiful, high quality roofin | estimates without any wait. | Estimate",
+    "notableFeatures": [
+      "Satellite imagery",
+      "Embedded iframe widget",
+      "Multiple material options",
+      "Widget source: app.roofle.com"
+    ],
+    "errors": [],
+    "screenshotFile": "09-troy-roofing-usa.png"
+  },
+  {
+    "name": "Elvis General Construction",
+    "url": "https://elvisgeneralconstructionllc.com/roof-cost-calculator/",
+    "tier": "Contractor Site",
+    "priority": 2,
+    "status": "tested",
+    "startMethod": "Embedded widget (iframe)",
+    "inputsRequired": [],
+    "inputsOptional": [],
+    "dataSources": [
+      "Satellite/aerial imagery",
+      "Material-specific pricing"
+    ],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3640ms",
+    "disclaimers": "Estimates with Our AI-Powered Roof Cost Calculator | estimates and hello to instant, accurate, and reliable quotes. | Estimates: Our advanced AI technology provides you with an instant roof estimate in just a few simple steps. No more waiting days for a quote – get yo",
+    "notableFeatures": [
+      "Satellite imagery",
+      "Embedded iframe widget",
+      "Multiple material options",
+      "Widget source: book.instantroofer.com"
+    ],
+    "errors": [],
+    "screenshotFile": "10-elvis-general-construction.png"
+  },
+  {
+    "name": "HW Construction",
+    "url": "https://www.hwconstruction.com/roof-cost-calculator",
+    "tier": "Contractor Site",
+    "priority": 2,
+    "status": "tested",
+    "startMethod": "Embedded widget (iframe)",
+    "inputsRequired": [],
+    "inputsOptional": [],
+    "dataSources": [
+      "Material-specific pricing",
+      "Financing/payment options"
+    ],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3722ms",
+    "disclaimers": "estimate with several product options in seconds. | estimate without an in-home or virtual consultation?",
+    "notableFeatures": [
+      "Financing integration",
+      "Embedded iframe widget",
+      "Multiple material options",
+      "Widget source: app.roofle.com"
+    ],
+    "errors": [],
+    "screenshotFile": "11-hw-construction.png"
+  },
+  {
+    "name": "Beyond Roofing",
+    "url": "https://www.beyondroofingcompany.com/free-roof-estimate-calculator/",
+    "tier": "Contractor Site",
+    "priority": 2,
+    "status": "tested",
+    "startMethod": "Embedded widget (iframe)",
+    "inputsRequired": [],
+    "inputsOptional": [],
+    "dataSources": [],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 4546ms",
+    "disclaimers": "ESTIMATE CALCULATOR | Estimate | Estimate Fast?",
+    "notableFeatures": [
+      "Embedded iframe widget",
+      "Widget source: app.roofr.com"
+    ],
+    "errors": [],
+    "screenshotFile": "12-beyond-roofing.png"
+  },
+  {
+    "name": "RoofingCalc",
+    "url": "https://www.roofingcalc.com/",
+    "tier": "Generic Tool",
+    "priority": 3,
+    "status": "tested + zip entered",
+    "startMethod": "Zip code entry",
+    "inputsRequired": [
+      "Enter ZIP",
+      "Enter ZIP"
+    ],
+    "inputsOptional": [
+      "s",
+      "size2",
+      "size1",
+      "slope",
+      "Difficulty",
+      "existing",
+      "floors",
+      "skylights",
+      "chimneys",
+      "ridge vent",
+      "Materials",
+      "Search for:"
+    ],
+    "dataSources": [
+      "Material-specific pricing"
+    ],
+    "outputType": "",
+    "estimateGiven": "Prices visible on page: $0, $0, $0, $7,500, $14,500, $8,225, $13,000, $13,000, $10,000, $8,000",
+    "contactGated": "Yes — phone",
+    "speedEstimate": "Page load: 3830ms",
+    "disclaimers": "Estimate Roof Costs - RoofingCalc.com | estimates made easy | Estimate a Roof",
+    "notableFeatures": [
+      "Embedded iframe widget",
+      "Multiple material options",
+      "Widget source: jetpack.wordpress.com"
+    ],
+    "errors": [],
+    "screenshotFile": "13-roofingcalc.png"
+  },
+  {
+    "name": "RoofQuotes.com",
+    "url": "https://roofquotes.com/roofing-calculator",
+    "tier": "Generic Tool",
+    "priority": 3,
+    "status": "tested + zip entered",
+    "startMethod": "Zip code entry",
+    "inputsRequired": [],
+    "inputsOptional": [
+      "Enter Zip Code",
+      "Zip Code"
+    ],
+    "dataSources": [
+      "Material-specific pricing",
+      "Financing/payment options"
+    ],
+    "outputType": "",
+    "estimateGiven": "Prices visible on page: $350, $750, $500, $1,500, $1,000, $1,800, $1,500, $3,000, $600, $1,000",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3248ms",
+    "disclaimers": "Estimate Your Roof Replacement Cost | estimate for your specific neighborhood in seconds. | Estimate",
+    "notableFeatures": [
+      "Financing integration",
+      "Embedded iframe widget",
+      "Multiple material options",
+      "Widget source: framer.com",
+      "CTAs: Get Instant Estimate, See My Price, How do I calculate the square footage of my roof?, How many quotes should I get before choosing a roofer?"
+    ],
+    "errors": [],
+    "screenshotFile": "14-roofquotes-com.png"
+  },
+  {
+    "name": "Roofing Insights",
+    "url": "https://www.roofinginsights.com/roof-cost-calculator",
+    "tier": "Generic Tool",
+    "priority": 3,
+    "status": "tested",
+    "startMethod": "Manual inputs (no address)",
+    "inputsRequired": [
+      "Search…"
+    ],
+    "inputsOptional": [],
+    "dataSources": [],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3257ms",
+    "disclaimers": "estimate for your roofing project. | estimate instantly. | estimated price range based on your roof size, location, and materials. It’s a great starting point, but your final quote may vary depending on roof c",
+    "notableFeatures": [
+      "Embedded iframe widget",
+      "Widget source: app.roofle.com"
+    ],
+    "errors": [],
+    "screenshotFile": "15-roofing-insights.png"
+  },
+  {
+    "name": "InstantRoofingCalculator.org",
+    "url": "https://instantroofingcalculator.org/",
+    "tier": "Generic Tool",
+    "priority": 3,
+    "status": "tested",
+    "startMethod": "Address entry",
+    "inputsRequired": [
+      "Enter your address"
+    ],
+    "inputsOptional": [],
+    "dataSources": [
+      "Satellite/aerial imagery",
+      "Material-specific pricing",
+      "Financing/payment options"
+    ],
+    "outputType": "",
+    "estimateGiven": "No prices visible without interaction",
+    "contactGated": "No (visible inputs)",
+    "speedEstimate": "Page load: 3681ms",
+    "disclaimers": "estimate | estimate with our easy-to-use calculator; helping homeowners make smarter, faster decisions about their roof. | estimates.",
+    "notableFeatures": [
+      "Financing integration",
+      "Satellite imagery",
+      "Embedded iframe widget",
+      "Multiple material options",
+      "CTAs: See My Estimate, GET STARTED, GET ESTIMATE"
+    ],
+    "errors": [
+      "Interaction failed: elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting"
+    ],
+    "screenshotFile": "16-instantroofingcalculator-org.png"
+  },
+  {
+    "name": "Pro-Mapper",
+    "url": "https://www.pro-mapper.com/roofing/roof-replacement-cost/",
+    "tier": "Generic Tool",
+    "priority": 3,
+    "status": "tested + interacted",
+    "startMethod": "Address entry",
+    "inputsRequired": [
+      "Enter your email address"
+    ],
+    "inputsOptional": [],
+    "dataSources": [
+      "Material-specific pricing",
+      "Financing/payment options"
+    ],
+    "outputType": "",
+    "estimateGiven": "After interaction: $5,800, $13,500, $9,500, $4.00, $11.00, $5,500, $8,000, $8,000, $15,000, $15,000, $45,000, $50, $100, $1,000, $3,000",
+    "contactGated": "Yes — email",
+    "speedEstimate": "Page load: 3353ms",
+    "disclaimers": "Estimate: Use our interactive calculator to get a detailed cost breakdown based on your specific roof size, material preferences, and location. Calcul | estimate for your home size and specifications? Our roofing cost calculator takes into account your exact square footage, material preferences, roof c",
+    "notableFeatures": [
+      "Financing integration",
+      "Multiple material options",
+      "CTAs: How can I get an accurate estimate for my roof?"
+    ],
+    "errors": [],
+    "screenshotFile": "17-pro-mapper.png"
+  },
+  {
+    "name": "Roof Maxx",
+    "url": "https://roofmaxx.com/learning-hub/roof-replacement-cost-calculator/",
+    "tier": "Manufacturer/Service",
+    "priority": 3,
+    "status": "tested",
+    "startMethod": "Manual inputs (no address)",
+    "inputsRequired": [
+      "Home’s Sq. Ft. Living Space:",
+      "Credit Card",
+      "firstname",
+      "lastname",
+      "email",
+      "Stay connected! By subscribing, you agree to receive emails from us about our latest news, offers, and services. You can unsubscribe at any time. See our privacy policy for details.",
+      "cc-num",
+      "firstname",
+      "lastname",
+      "email",
+      "   Stay connected! By subscribing, you agree to receive emails from us about our latest news, offers, and services. You can unsubscribe at any time. See our privacy policy for details.  ",
+      "cc-num"
+    ],
+    "inputsOptional": [],
+    "dataSources": [
+      "Material-specific pricing"
+    ],
+    "outputType": "",
+    "estimateGiven": "Prices visible on page: $10,000, $30,000",
+    "contactGated": "Yes — email",
+    "speedEstimate": "Page load: 4081ms",
+    "disclaimers": "ESTIMATE | ESTIMATE | actually need one?",
+    "notableFeatures": [
+      "Embedded iframe widget",
+      "Multiple material options",
+      "CTAs: Calculate Roof Price"
+    ],
+    "errors": [],
+    "screenshotFile": "18-roof-maxx.png"
+  }
+]

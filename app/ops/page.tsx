@@ -195,15 +195,15 @@ export default function OpsPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        const parts = [`Built ${data.built}/${data.total} preview sites`];
+        const parts = [`Built ${data.built}/${data.total} demo pages`];
         if (data.errors?.length) parts.push(`${data.errors.length} errors`);
         setFormActionResult(parts.join(" · "));
         await fetchPipeline();
       } else {
-        setFormActionResult(`Build sites failed: ${data.error}`);
+        setFormActionResult(`Build demos failed: ${data.error}`);
       }
     } catch {
-      setFormActionResult("Build sites request failed");
+      setFormActionResult("Build demos request failed");
     } finally {
       setBuildingSites(null);
     }
@@ -450,7 +450,7 @@ export default function OpsPage() {
             days: 0,
             urgency: "warn",
             batch_label: label,
-            type: gate.gate_type === "site_review" ? "site_review" : gate.gate_type === "draft_approval" ? "draft_pending" : "reply_wait",
+            type: (gate.gate_type === "demo_review" || gate.gate_type === "site_review") ? "demo_review" : gate.gate_type === "draft_approval" ? "draft_pending" : "reply_wait",
           });
         }
       });
@@ -1141,7 +1141,7 @@ export default function OpsPage() {
                               Detect Contact Forms
                             </button>
                             <button onClick={() => { setBatchAction(null); handleBuildSites(batch.id); }} className="w-full text-left px-4 py-2.5 text-[12px] text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors border-b border-[#F2F2F7]">
-                              🏠 Build Preview Sites
+                              🏠 Build Demo Pages
                             </button>
                             <button onClick={() => { setBatchAction(null); setConfirmAction({ type: "send_emails", batchId: batch.id, label: "Send cold emails to all approved leads in this batch?" }); }} className="w-full text-left px-4 py-2.5 text-[12px] text-[#C62828] hover:bg-[#FFEBEE] transition-colors border-b border-[#F2F2F7]">
                               Send Emails (Instantly)
@@ -1239,7 +1239,7 @@ export default function OpsPage() {
                                     onClick={(e) => { e.stopPropagation(); setExpandedGate(isGateExpanded ? null : gateKey); }}
                                     className="text-[11px] font-semibold bg-white text-[#92400E] border border-[#FDE68A] hover:bg-[#FFF8E1] px-3.5 py-1.5 rounded-lg transition-colors"
                                   >
-                                    {gate.gate_type === "site_review" ? "Review 1-by-1" : "Preview"}
+                                    {(gate.gate_type === "demo_review" || gate.gate_type === "site_review") ? "Review 1-by-1" : "Preview"}
                                   </button>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleGateApproval(gate.gate_type as GateType, batch.id, gate.items_pending); }}
@@ -1257,8 +1257,8 @@ export default function OpsPage() {
                     </div>
                   )}
 
-                  {/* ── Site Review Panel (Gate 1) ── */}
-                  {expandedGate && pendingGates.some(g => `${g.gate_type}-${batch.id}` === expandedGate && g.gate_type === "site_review") && (
+                  {/* ── Demo Review Panel (Gate 1) ── */}
+                  {expandedGate && pendingGates.some(g => `${g.gate_type}-${batch.id}` === expandedGate && (g.gate_type === "demo_review" || g.gate_type === "site_review")) && (
                     <SiteReviewPanel batchId={batch.id} onApprove={() => { setExpandedGate(null); fetchPipeline(); }} />
                   )}
 

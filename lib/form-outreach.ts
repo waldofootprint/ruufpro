@@ -29,7 +29,7 @@ export interface FormSubmissionInput {
   // Data to fill
   businessName: string;
   ownerName: string | null;
-  previewSiteUrl: string;
+  demoPageUrl: string;
   claimUrl: string;
   senderName: string;
   senderEmail: string;

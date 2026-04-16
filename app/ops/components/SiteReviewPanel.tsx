@@ -16,7 +16,7 @@ export function SiteReviewPanel({ batchId, onApprove }: { batchId: string; onApp
         const res = await fetch(`/api/ops/pipeline/leads?batch_id=${batchId}`);
         if (res.ok) {
           const data = await res.json();
-          const siteLeads = data.filter((l: any) => l.stage === "site_built" && l.preview_site_url);
+          const siteLeads = data.filter((l: any) => l.stage === "demo_built" && l.demo_page_url);
           setLeads(siteLeads);
           const initial: Record<string, SiteState> = {};
           siteLeads.forEach((l: any) => { initial[l.id] = "approved"; });
@@ -52,7 +52,7 @@ export function SiteReviewPanel({ batchId, onApprove }: { batchId: string; onApp
     <div className="border-t border-[#E5E5EA] p-5 bg-[#FAFAFA]">
       <div className="flex justify-between items-center mb-3">
         <div>
-          <div className="text-xs font-bold uppercase tracking-[0.05em]">Review Preview Sites</div>
+          <div className="text-xs font-bold uppercase tracking-[0.05em]">Review Demo Pages</div>
           <div className="text-xs text-[#007AFF] font-semibold mt-0.5">{approvedCount} approved · {rejectedCount} rejected</div>
         </div>
         <div className="flex gap-2">
@@ -71,7 +71,7 @@ export function SiteReviewPanel({ batchId, onApprove }: { batchId: string; onApp
       </div>
 
       <div className="text-[11px] text-[#8E8E93] mb-3 px-3 py-2 bg-[#F0F7FF] rounded-lg border border-[#007AFF22]">
-        <strong className="text-[#007AFF]">How it works:</strong> All sites start approved (green ✓). Click once to skip, click again to reject (red ✗), click again to re-approve.
+        <strong className="text-[#007AFF]">How it works:</strong> All demo pages start approved (green ✓). Click once to skip, click again to reject (red ✗), click again to re-approve.
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5">
@@ -98,8 +98,8 @@ export function SiteReviewPanel({ batchId, onApprove }: { batchId: string; onApp
           const demoStyle = PROSPECT_TIER_STYLES[demoResult.tier];
           const photoCount = lead.photos?.length || 0;
           const reviewCount = lead.google_reviews?.length || 0;
-          const previewUrl = lead.preview_site_url
-            ? (lead.preview_site_url.startsWith("http") ? lead.preview_site_url : `https://ruufpro.com${lead.preview_site_url}`)
+          const previewUrl = lead.demo_page_url
+            ? (lead.demo_page_url.startsWith("http") ? lead.demo_page_url : `https://ruufpro.com${lead.demo_page_url}`)
             : null;
           return (
             <div
@@ -144,7 +144,7 @@ export function SiteReviewPanel({ batchId, onApprove }: { batchId: string; onApp
                     onClick={(e) => e.stopPropagation()}
                     className="text-[11px] text-white bg-[#007AFF] font-semibold px-3 py-1.5 rounded-lg hover:bg-[#0056D2] flex-shrink-0 transition-colors"
                   >
-                    View Site ↗
+                    View Demo ↗
                   </a>
                 )}
               </div>

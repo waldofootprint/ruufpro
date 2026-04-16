@@ -83,9 +83,9 @@ export async function GET() {
   // Auto-create/update gates when leads reach gate stages.
   // Uses upsert with partial unique index (batch_id, gate_type WHERE status='pending')
   // to prevent duplicate gates from concurrent polling requests.
-  // v3 pipeline: only 2 gates (site review + draft approval)
+  // v4 pipeline: only 2 gates (demo review + draft approval)
   const GATE_TRIGGERS: { stage: string; gate_type: string }[] = [
-    { stage: "site_built", gate_type: "site_review" },
+    { stage: "demo_built", gate_type: "demo_review" },
     { stage: "replied", gate_type: "draft_approval" },
   ];
 

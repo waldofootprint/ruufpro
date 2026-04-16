@@ -11,8 +11,8 @@ function getStuckReason(lead: any): { text: string; color: string } | null {
   const s = lead.stage;
   if (s === "scraped" && !lead.photos_enriched_at) return { text: "Needs enrichment", color: "text-[#8E8E93] bg-[#F5F5F7]" };
   if (s === "google_enriched" || s === "awaiting_triage") return { text: "Needs triage", color: "text-[#F57F17] bg-[#FFF8E1]" };
-  if (s === "site_built" && !lead.site_approved_at) return { text: "Needs site review", color: "text-[#F57F17] bg-[#FFF8E1]" };
-  if (s === "site_approved" || s === "contact_lookup") return { text: "Looking up contact", color: "text-[#8E8E93] bg-[#F5F5F7]" };
+  if (s === "demo_built" && !lead.demo_page_approved_at) return { text: "Needs demo review", color: "text-[#F57F17] bg-[#FFF8E1]" };
+  if (s === "demo_approved" || s === "contact_lookup") return { text: "Looking up contact", color: "text-[#8E8E93] bg-[#F5F5F7]" };
   if (s === "contact_ready") return { text: "Needs outreach approval", color: "text-[#F57F17] bg-[#FFF8E1]" };
   if (s === "outreach_approved") {
     const method = lead.outreach_method;
@@ -25,10 +25,10 @@ function getStuckReason(lead: any): { text: string; color: string } | null {
   return null;
 }
 
-const STAGE_ORDER: string[] = ["scraped", "enriched", "site_built", "site_approved", "outreach_approved", "sent", "awaiting_reply", "replied", "draft_ready", "responded", "interested", "free_signup", "paid", "not_now", "objection", "unsubscribed"];
+const STAGE_ORDER: string[] = ["scraped", "enriched", "demo_built", "demo_approved", "outreach_approved", "sent", "awaiting_reply", "replied", "draft_ready", "responded", "interested", "free_signup", "paid", "not_now", "objection", "unsubscribed"];
 
 const STAGE_ICONS: Record<string, string> = {
-  scraped: "🔍", enriched: "📋", site_built: "🏗", site_approved: "✅",
+  scraped: "🔍", enriched: "📋", demo_built: "🏗", demo_approved: "✅",
   outreach_approved: "📤", sent: "📬", awaiting_reply: "⏳", replied: "💬",
   draft_ready: "📝", responded: "↩", interested: "🟢", free_signup: "🎉",
   paid: "💰", not_now: "⏸", objection: "🔴", unsubscribed: "❌",
@@ -180,7 +180,7 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
   const selectedLeads = leads.filter(l => selected.has(l.id));
   const selectedNeedEnrich = selectedLeads.filter(l => !l.enriched_at);
   const selectedNeedPhotos = selectedLeads.filter(l => l.google_place_id && !l.photos_enriched_at);
-  const selectedNeedSites = selectedLeads.filter(l => (l.stage === "scraped" || l.stage === "enriched") && !l.preview_site_url);
+  const selectedNeedSites = selectedLeads.filter(l => (l.stage === "scraped" || l.stage === "enriched") && !l.demo_page_url);
 
   const stageGroups = STAGE_ORDER
     .map(stage => ({ stage, leads: leads.filter(l => l.stage === stage) }));
@@ -222,7 +222,7 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
                 disabled={buildingSelected}
                 className="text-[11px] font-semibold text-white bg-[#1565C0] hover:bg-[#0D47A1] disabled:bg-[#90CAF9] px-4 py-1.5 rounded-lg transition-colors"
               >
-                {buildingSelected ? "Building..." : `🏠 Build ${selectedNeedSites.length} Sites`}
+                {buildingSelected ? "Building..." : `🏠 Build ${selectedNeedSites.length} Demos`}
               </button>
             )}
             <button
@@ -278,7 +278,7 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
                           { key: "reviews_count", label: "Reviews" },
                           { key: "_data_richness", label: "Site Readiness" },
                           { key: "their_website_url", label: "Website" },
-                          { key: "preview_site_url", label: "Preview" },
+                          { key: "demo_page_url", label: "Preview" },
                         ].map(({ key, label }) => (
                           <th
                             key={key}
@@ -346,8 +346,8 @@ export function BatchLeadTable({ batchId }: { batchId: string }) {
                               ) : <span className="text-[#FF9F0A] font-medium">No website</span>}
                             </td>
                             <td className={td}>
-                              {lead.preview_site_url ? (
-                                <a href={lead.preview_site_url.startsWith("http") ? lead.preview_site_url : `https://ruufpro.com${lead.preview_site_url}`} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
+                              {lead.demo_page_url ? (
+                                <a href={lead.demo_page_url.startsWith("http") ? lead.demo_page_url : `https://ruufpro.com${lead.demo_page_url}`} target="_blank" rel="noopener noreferrer" className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
                               ) : <span className="text-[#D1D1D6]">—</span>}
                             </td>
                           </tr>
@@ -376,8 +376,8 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
   const timeline: { label: string; date: string | null; status: "done" | "active" | "pending" }[] = [
     { label: "Scraped", date: lead.scraped_at, status: lead.scraped_at ? "done" : "pending" },
     { label: "Enriched", date: lead.enriched_at, status: lead.enriched_at ? "done" : "pending" },
-    { label: "Site Built", date: lead.site_built_at, status: lead.site_built_at ? "done" : "pending" },
-    { label: "Site Approved", date: lead.site_approved_at, status: lead.site_approved_at ? "done" : "pending" },
+    { label: "Demo Built", date: lead.demo_page_built_at, status: lead.demo_page_built_at ? "done" : "pending" },
+    { label: "Demo Approved", date: lead.demo_page_approved_at, status: lead.demo_page_approved_at ? "done" : "pending" },
     { label: "Sent", date: lead.sent_at, status: lead.sent_at ? "done" : "pending" },
     { label: "Replied", date: lead.replied_at, status: lead.replied_at ? "done" : "pending" },
   ];
@@ -435,8 +435,8 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
           )}
         </td>
         <td className={td}>
-          {lead.preview_site_url ? (
-            <a href={lead.preview_site_url.startsWith("http") ? lead.preview_site_url : `https://ruufpro.com${lead.preview_site_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
+          {lead.demo_page_url ? (
+            <a href={lead.demo_page_url.startsWith("http") ? lead.demo_page_url : `https://ruufpro.com${lead.demo_page_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#007AFF] hover:underline font-medium">Preview ↗</a>
           ) : <span className="text-[#D1D1D6]">—</span>}
         </td>
         <td className={td}>
@@ -469,8 +469,8 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
       {isExpanded && (() => {
         const demoScore = getProspectScore(lead);
         const demoStyle = SCORE_STYLES[demoScore.tier];
-        const previewFullUrl = lead.preview_site_url
-          ? (lead.preview_site_url.startsWith("http") ? lead.preview_site_url : `https://ruufpro.com${lead.preview_site_url}`)
+        const previewFullUrl = lead.demo_page_url
+          ? (lead.demo_page_url.startsWith("http") ? lead.demo_page_url : `https://ruufpro.com${lead.demo_page_url}`)
           : null;
         const photos = lead.photos || [];
         const reviews = lead.google_reviews || [];
@@ -481,11 +481,11 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
           <td colSpan={9} className="p-0">
             <div className="bg-[#F8FAFF] border-b border-[#E5E5EA] p-5">
 
-              {/* Preview Site Banner */}
+              {/* Demo Page Banner */}
               {previewFullUrl && (
                 <div className="mb-4 p-3 bg-[#EFF6FF] border border-[#007AFF33] rounded-xl flex items-center justify-between">
                   <div>
-                    <div className="text-[11px] font-bold text-[#007AFF]">Preview Site Built</div>
+                    <div className="text-[11px] font-bold text-[#007AFF]">Demo Page Built</div>
                     <div className="text-[10px] text-[#3B82F6] mt-0.5 font-mono">{previewFullUrl}</div>
                   </div>
                   <a
@@ -495,7 +495,7 @@ export function LeadRow({ lead, isExpanded, isSelected, onSelect, onToggle }: { 
                     onClick={(e) => e.stopPropagation()}
                     className="text-[11px] font-semibold bg-[#007AFF] text-white hover:bg-[#0056D2] px-4 py-2 rounded-lg transition-colors"
                   >
-                    View Preview Site ↗
+                    View Demo Page ↗
                   </a>
                 </div>
               )}

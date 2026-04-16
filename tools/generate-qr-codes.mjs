@@ -35,8 +35,8 @@ const topN = args.includes("--top") ? parseInt(args[args.indexOf("--top") + 1]) 
 async function getProspects() {
   let query = supabase
     .from("prospect_pipeline")
-    .select("id, business_name, preview_site_url, nfc_card_number, nfc_score, nfc_tier, google_place_id")
-    .not("preview_site_url", "is", null);
+    .select("id, business_name, demo_page_url, nfc_card_number, nfc_score, nfc_tier, google_place_id")
+    .not("demo_page_url", "is", null);
 
   if (batchId) {
     query = query.eq("batch_id", batchId);
@@ -72,9 +72,9 @@ async function generateQrCodes() {
 
   let generated = 0;
   for (const p of prospects) {
-    const url = p.preview_site_url.startsWith("http")
-      ? p.preview_site_url
-      : `${BASE_URL}${p.preview_site_url}`;
+    const url = p.demo_page_url.startsWith("http")
+      ? p.demo_page_url
+      : `${BASE_URL}${p.demo_page_url}`;
 
     const cardNum = p.nfc_card_number ? String(p.nfc_card_number).padStart(3, "0") : "000";
     const slug = slugify(p.business_name);

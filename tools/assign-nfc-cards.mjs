@@ -63,7 +63,7 @@ async function getTopProspects() {
     .from("prospect_pipeline")
     .select("*")
     .is("nfc_card_number", null)
-    .not("preview_site_url", "is", null)
+    .not("demo_page_url", "is", null)
     .not("google_place_id", "is", null);
 
   if (batchId) {
@@ -191,9 +191,9 @@ async function main() {
     state: p.state,
     address: p.address,
     reviewUrl: buildGoogleReviewUrl(p.google_place_id),
-    previewSiteUrl: p.preview_site_url.startsWith("http")
-      ? p.preview_site_url
-      : `https://ruufpro.com${p.preview_site_url}`,
+    previewSiteUrl: p.demo_page_url.startsWith("http")
+      ? p.demo_page_url
+      : `https://ruufpro.com${p.demo_page_url}`,
     score: p.nfcResult.score,
     tier: p.nfcResult.tier,
     rating: p.rating,

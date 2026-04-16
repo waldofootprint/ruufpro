@@ -20,7 +20,7 @@ interface Prospect {
   photos: string[] | null;
   google_reviews: any[] | null;
   facebook_page_url: string | null;
-  preview_site_url: string | null;
+  demo_page_url: string | null;
   stage: string;
   has_estimate_widget: boolean;
   nfc_tier: string | null;
@@ -29,7 +29,7 @@ interface Prospect {
   nfc_assigned_at: string | null;
   qr_code_url: string | null;
   letter_status: string | null;
-  site_approved_at: string | null;
+  demo_page_approved_at: string | null;
   stage_entered_at: string;
   created_at: string;
 }
@@ -52,8 +52,8 @@ const STAGE_DISPLAY: Record<string, { label: string; color: string }> = {
   google_enriched: { label: "Enriched", color: "bg-blue-50 text-blue-600" },
   enriched: { label: "Enriched", color: "bg-blue-50 text-blue-600" },
   ai_rewritten: { label: "Enriched", color: "bg-blue-50 text-blue-600" },
-  site_built: { label: "Site Ready", color: "bg-[#EDE7F6] text-[#5E35B1]" },
-  site_approved: { label: "Approved", color: "bg-[#C8E6C9] text-[#1B5E20]" },
+  demo_built: { label: "Demo Ready", color: "bg-[#EDE7F6] text-[#5E35B1]" },
+  demo_approved: { label: "Approved", color: "bg-[#C8E6C9] text-[#1B5E20]" },
   sent: { label: "Mailed", color: "bg-[#E0F7FA] text-[#00838F]" },
 };
 
@@ -110,8 +110,8 @@ export default function DirectMailPage() {
     }
   }, []);
 
-  // Only show prospects that have reached site_built or beyond — earlier stages are noise
-  const ACTIONABLE_STAGES = new Set(["site_built", "site_approved", "sent", "interested", "paid", "not_now"]);
+  // Only show prospects that have reached demo_built or beyond — earlier stages are noise
+  const ACTIONABLE_STAGES = new Set(["demo_built", "demo_approved", "sent", "interested", "paid", "not_now"]);
 
   const fetchLeads = useCallback(async (batchId: string) => {
     try {
@@ -121,12 +121,12 @@ export default function DirectMailPage() {
       const actionable = allLeads.filter((p) => ACTIONABLE_STAGES.has(p.stage));
       setProspects((prev) => ({ ...prev, [batchId]: actionable }));
 
-      // Initialize approval states — site_built = ready to approve, site_approved = already done
+      // Initialize approval states — demo_built = ready to approve, demo_approved = already done
       const states: Record<string, ApprovalState> = {};
       actionable.forEach((p) => {
-        if (p.site_approved_at || p.stage === "site_approved" || p.stage === "sent") {
+        if (p.demo_page_approved_at || p.stage === "demo_approved" || p.stage === "sent") {
           states[p.id] = "approved";
-        } else if (p.stage === "site_built" && p.preview_site_url) {
+        } else if (p.stage === "demo_built" && p.demo_page_url) {
           states[p.id] = "approved"; // default to approved, click to change
         } else {
           states[p.id] = "skipped";
@@ -170,10 +170,10 @@ export default function DirectMailPage() {
   async function handleApproveSelected(batchId: string) {
     const batchLeads = prospects[batchId] || [];
     const toApprove = batchLeads.filter(
-      (p) => approvalStates[p.id] === "approved" && p.stage === "site_built"
+      (p) => approvalStates[p.id] === "approved" && p.stage === "demo_built"
     );
     const toReject = batchLeads.filter(
-      (p) => approvalStates[p.id] === "rejected" && p.stage === "site_built"
+      (p) => approvalStates[p.id] === "rejected" && p.stage === "demo_built"
     );
 
     if (toApprove.length === 0 && toReject.length === 0) return;
@@ -186,7 +186,7 @@ export default function DirectMailPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            gate_type: "site_review",
+            gate_type: "demo_review",
             batch_id: batchId,
             action: "approve_selected",
             prospect_ids: toApprove.map((p) => p.id),
@@ -200,7 +200,7 @@ export default function DirectMailPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            gate_type: "site_review",
+            gate_type: "demo_review",
             batch_id: batchId,
             action: "reject_selected",
             prospect_ids: toReject.map((p) => p.id),
@@ -273,7 +273,7 @@ export default function DirectMailPage() {
         <div>
           <h2 className="text-lg font-bold tracking-tight">Direct Mail</h2>
           <p className="text-xs text-[#8E8E93] mt-0.5">
-            Review prospects, approve sites, assign NFC cards
+            Review prospects, approve demo pages, assign NFC cards
           </p>
         </div>
         <div className="text-[10px] text-[#AEAEB2]">
@@ -300,9 +300,9 @@ export default function DirectMailPage() {
         const isExpanded = expandedBatch === batch.id;
 
         // Compute stats
-        const siteBuilt = batchLeads.filter((p) => p.stage === "site_built" && p.preview_site_url);
+        const siteBuilt = batchLeads.filter((p) => p.stage === "demo_built" && p.demo_page_url);
         const siteApproved = batchLeads.filter(
-          (p) => p.site_approved_at || p.stage === "site_approved" || p.stage === "sent"
+          (p) => p.demo_page_approved_at || p.stage === "demo_approved" || p.stage === "sent"
         );
         const withNfc = batchLeads.filter((p) => p.nfc_card_number);
         const withQr = batchLeads.filter((p) => p.qr_code_url);
@@ -310,7 +310,7 @@ export default function DirectMailPage() {
 
         // Count pending approvals
         const pendingApprovals = batchLeads.filter(
-          (p) => p.stage === "site_built" && p.preview_site_url
+          (p) => p.stage === "demo_built" && p.demo_page_url
         ).length;
 
         // NFC tier breakdown
@@ -413,7 +413,7 @@ export default function DirectMailPage() {
                 <div className="text-lg mb-1">⏳</div>
                 <div className="text-[13px] font-semibold text-[#3C3C43]">Pipeline in progress</div>
                 <div className="text-[11px] text-[#8E8E93] mt-1">
-                  Prospects are being scraped and enriched. Cards will appear here once preview sites are built.
+                  Prospects are being scraped and enriched. Cards will appear here once demo pages are built.
                 </div>
               </div>
             )}
@@ -448,12 +448,12 @@ export default function DirectMailPage() {
                       const demoResult = computeScore(lead);
                       const demoStyle = PROSPECT_TIER_STYLES[demoResult.tier];
                       const isAlreadyApproved =
-                        lead.site_approved_at || lead.stage === "site_approved" || lead.stage === "sent";
-                      const canToggle = lead.stage === "site_built" && lead.preview_site_url;
-                      const previewUrl = lead.preview_site_url
-                        ? lead.preview_site_url.startsWith("http")
-                          ? lead.preview_site_url
-                          : `https://ruufpro.com${lead.preview_site_url}`
+                        lead.demo_page_approved_at || lead.stage === "demo_approved" || lead.stage === "sent";
+                      const canToggle = lead.stage === "demo_built" && lead.demo_page_url;
+                      const previewUrl = lead.demo_page_url
+                        ? lead.demo_page_url.startsWith("http")
+                          ? lead.demo_page_url
+                          : `https://ruufpro.com${lead.demo_page_url}`
                         : null;
 
                       return (
@@ -541,7 +541,7 @@ export default function DirectMailPage() {
                               </div>
                             </div>
 
-                            {/* View Site button */}
+                            {/* View Demo button */}
                             {previewUrl && (
                               <a
                                 href={previewUrl}
@@ -550,7 +550,7 @@ export default function DirectMailPage() {
                                 onClick={(e) => e.stopPropagation()}
                                 className="text-[11px] text-white bg-[#007AFF] font-semibold px-3 py-1.5 rounded-lg hover:bg-[#0056D2] flex-shrink-0 transition-colors"
                               >
-                                View Site ↗
+                                View Demo ↗
                               </a>
                             )}
                           </div>

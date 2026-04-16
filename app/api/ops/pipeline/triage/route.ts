@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         const { error } = await supabase
           .from("prospect_pipeline")
           .update({
-            stage: "site_built",
+            stage: "demo_built",
             stage_entered_at: now,
             triage_decision: "selected",
             triage_decided_at: now,

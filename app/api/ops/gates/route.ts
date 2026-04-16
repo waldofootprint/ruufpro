@@ -12,7 +12,9 @@ export async function POST(req: NextRequest) {
   const auth = await requireOpsAuth();
   if (!auth.authorized) return auth.response;
   const body: GateActionRequest = await req.json();
-  const { gate_type, batch_id, action, prospect_ids } = body;
+  const { batch_id, action, prospect_ids } = body;
+  // gate_type widened to string to handle legacy "site_review" from DB
+  const gate_type = body.gate_type as string;
 
   if (!gate_type || !batch_id || !action) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -23,11 +25,13 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Support both v3 gates and legacy gates still in DB
+  // Support both v4 gates and legacy gates still in DB
   const approvedStageMap: Record<string, string> = {
-    site_review: "site_approved",
+    demo_review: "demo_approved",
     draft_approval: "responded",
-    triage_review: "site_built",
+    // Legacy gates — still process if they exist in DB
+    site_review: "site_approved",
+    triage_review: "demo_built",
     outreach_approval: "outreach_approved",
   };
   const nextStage = approvedStageMap[gate_type];
@@ -37,9 +41,10 @@ export async function POST(req: NextRequest) {
 
   // Determine which stage leads are currently in (the gate trigger stage)
   const currentStageMap: Record<string, string> = {
-    site_review: "site_built",
+    demo_review: "demo_built",
     draft_approval: "replied",
     // Legacy gates — still process if they exist in DB
+    site_review: "site_built",
     triage_review: "awaiting_triage",
     outreach_approval: "contact_ready",
   };
@@ -55,7 +60,7 @@ export async function POST(req: NextRequest) {
       .update({
         stage: nextStage,
         stage_entered_at: new Date().toISOString(),
-        ...(gate_type === "site_review" ? { site_approved_at: new Date().toISOString() } : {}),
+        ...(gate_type === "demo_review" || gate_type === "site_review" ? { demo_page_approved_at: new Date().toISOString() } : {}),
       })
       .eq("batch_id", batch_id)
       .eq("stage", currentStage)
@@ -78,7 +83,7 @@ export async function POST(req: NextRequest) {
 
     // Gate 1 approved → fire auto-send via Instantly (only if Instantly is configured)
     const instantlyConfigured = !!(process.env.INSTANTLY_API_KEY && process.env.INSTANTLY_DEFAULT_CAMPAIGN_ID);
-    if (gate_type === "site_review" && data?.length && instantlyConfigured) {
+    if ((gate_type === "demo_review" || gate_type === "site_review") && data?.length && instantlyConfigured) {
       await inngest.send({
         name: "ops/outreach.auto-send",
         data: {
@@ -88,7 +93,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ approved: data?.length || 0, auto_send_triggered: gate_type === "site_review" && instantlyConfigured });
+    return NextResponse.json({ approved: data?.length || 0, auto_send_triggered: (gate_type === "demo_review" || gate_type === "site_review") && instantlyConfigured });
 
   } else if (action === "approve_selected" && prospect_ids?.length) {
     // Move only selected leads
@@ -97,7 +102,7 @@ export async function POST(req: NextRequest) {
       .update({
         stage: nextStage,
         stage_entered_at: new Date().toISOString(),
-        ...(gate_type === "site_review" ? { site_approved_at: new Date().toISOString() } : {}),
+        ...(gate_type === "demo_review" || gate_type === "site_review" ? { demo_page_approved_at: new Date().toISOString() } : {}),
       })
       .in("id", prospect_ids)
       .eq("batch_id", batch_id)
@@ -127,7 +132,7 @@ export async function POST(req: NextRequest) {
 
     // Gate 1 approved → fire auto-send for selected prospects (only if Instantly is configured)
     const instantlyReady = !!(process.env.INSTANTLY_API_KEY && process.env.INSTANTLY_DEFAULT_CAMPAIGN_ID);
-    if (gate_type === "site_review" && data?.length && instantlyReady) {
+    if ((gate_type === "demo_review" || gate_type === "site_review") && data?.length && instantlyReady) {
       await inngest.send({
         name: "ops/outreach.auto-send",
         data: {
@@ -137,7 +142,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ approved: data?.length || 0, remaining: remaining || 0, auto_send_triggered: gate_type === "site_review" && instantlyReady });
+    return NextResponse.json({ approved: data?.length || 0, remaining: remaining || 0, auto_send_triggered: (gate_type === "demo_review" || gate_type === "site_review") && instantlyReady });
 
   } else if (action === "reject_selected" && prospect_ids?.length) {
     // Mark rejected leads as unsubscribed (remove from pipeline)
