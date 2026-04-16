@@ -332,29 +332,193 @@ async function extractSiteData(page) {
 
     result.service_areas = result.service_areas.slice(0, 20);
 
-    // ---- Estimate Widget Detection ----
-    // Check if they already have Roofle, Roofr, EagleView, or similar estimate tools
+    // ---- Competitor Tool Detection ----
     const htmlLower = document.documentElement.innerHTML.toLowerCase();
-    const estimateWidgets = [];
+    const competitorTools = [];
 
-    if (htmlLower.includes("roofle") || htmlLower.includes("roofle.com")) estimateWidgets.push("roofle");
-    if (htmlLower.includes("roofr") || htmlLower.includes("roofr.com")) estimateWidgets.push("roofr");
-    if (htmlLower.includes("eagleview") || htmlLower.includes("eagle view")) estimateWidgets.push("eagleview");
-    if (htmlLower.includes("roofquote") || htmlLower.includes("roof-quote")) estimateWidgets.push("roofquote");
-    if (htmlLower.includes("instant estimate") || htmlLower.includes("instant quote") || htmlLower.includes("online estimate")) {
-      // Check for iframes (common embed pattern)
-      const iframes = document.querySelectorAll("iframe");
-      for (const iframe of iframes) {
-        const src = (iframe.getAttribute("src") || "").toLowerCase();
-        if (src.includes("roofle") || src.includes("roofr") || src.includes("eagleview") || src.includes("estimate")) {
-          estimateWidgets.push("iframe_widget");
+    // Estimate widgets
+    if (htmlLower.includes("roofle") || htmlLower.includes("roofle.com")) competitorTools.push("roofle");
+    if (htmlLower.includes("roofr") || htmlLower.includes("roofr.com")) competitorTools.push("roofr");
+    if (htmlLower.includes("iroofing")) competitorTools.push("iroofing");
+    if (htmlLower.includes("roofquote") || htmlLower.includes("roof-quote")) competitorTools.push("roofquote");
+    if (htmlLower.includes("instantroofer")) competitorTools.push("instantroofer");
+
+    // Chatbot widgets
+    if (htmlLower.includes("intercom")) competitorTools.push("intercom");
+    if (htmlLower.includes("drift.com") || htmlLower.includes("drift-widget")) competitorTools.push("drift");
+    if (htmlLower.includes("tidio") || htmlLower.includes("tidiochat")) competitorTools.push("tidio");
+    if (htmlLower.includes("livechat") || htmlLower.includes("livechatinc")) competitorTools.push("livechat");
+    if (htmlLower.includes("crisp.chat") || htmlLower.includes("crisp-client")) competitorTools.push("crisp");
+    if (htmlLower.includes("hubspot") && (htmlLower.includes("chat") || htmlLower.includes("conversations"))) competitorTools.push("hubspot_chat");
+    if (htmlLower.includes("zendesk") && htmlLower.includes("chat")) competitorTools.push("zendesk_chat");
+    if (htmlLower.includes("tawk.to") || htmlLower.includes("tawk")) competitorTools.push("tawk");
+
+    // Review platforms
+    if (htmlLower.includes("podium")) competitorTools.push("podium");
+    if (htmlLower.includes("birdeye")) competitorTools.push("birdeye");
+    if (htmlLower.includes("nicejob")) competitorTools.push("nicejob");
+    if (htmlLower.includes("gatherup")) competitorTools.push("gatherup");
+    if (htmlLower.includes("grade.us")) competitorTools.push("grade.us");
+
+    // GHL / GoHighLevel
+    if (htmlLower.includes("highlevel") || htmlLower.includes("gohighlevel") || htmlLower.includes("leadconnector")) competitorTools.push("ghl");
+
+    // Check iframes for embedded tools
+    const iframes = document.querySelectorAll("iframe");
+    for (const iframe of iframes) {
+      const src = (iframe.getAttribute("src") || "").toLowerCase();
+      if (src.includes("roofle") || src.includes("roofr") || src.includes("estimate")) competitorTools.push("iframe_widget");
+      if (src.includes("tidio") || src.includes("intercom") || src.includes("drift")) competitorTools.push("iframe_chat");
+    }
+
+    result.has_estimate_widget = competitorTools.some(t => ["roofle", "roofr", "iroofing", "roofquote", "instantroofer", "iframe_widget"].includes(t));
+    result.estimate_widget_providers = competitorTools.filter(t => ["roofle", "roofr", "iroofing", "roofquote", "instantroofer", "iframe_widget"].includes(t));
+    result.competitor_tools = [...new Set(competitorTools)];
+
+    // ---- FAQ Extraction ----
+    result.faq = [];
+    const faqPatterns = /faq|frequently asked|common questions|q\s*&\s*a/i;
+    for (const heading of allHeadings) {
+      if (faqPatterns.test(text(heading)) || faqPatterns.test(heading.id || "")) {
+        const parent = heading.closest("section") || heading.parentElement;
+        if (parent) {
+          // Look for FAQ schema markup first
+          const schemaScripts = document.querySelectorAll('script[type="application/ld+json"]');
+          for (const script of schemaScripts) {
+            try {
+              const data = JSON.parse(script.textContent);
+              if (data["@type"] === "FAQPage" && data.mainEntity) {
+                for (const item of data.mainEntity) {
+                  result.faq.push({
+                    question: item.name || "",
+                    answer: (item.acceptedAnswer?.text || "").slice(0, 500),
+                  });
+                }
+              }
+            } catch {}
+          }
+
+          // Look for dt/dd pairs (definition lists)
+          if (result.faq.length === 0) {
+            const dts = parent.querySelectorAll("dt");
+            const dds = parent.querySelectorAll("dd");
+            for (let i = 0; i < Math.min(dts.length, dds.length); i++) {
+              result.faq.push({
+                question: text(dts[i]).slice(0, 200),
+                answer: text(dds[i]).slice(0, 500),
+              });
+            }
+          }
+
+          // Look for accordion-style (button/summary + content)
+          if (result.faq.length === 0) {
+            const summaries = parent.querySelectorAll("summary, button[aria-expanded], [class*='accordion']");
+            for (const summary of summaries) {
+              const q = text(summary).slice(0, 200);
+              const sibling = summary.nextElementSibling || summary.parentElement?.querySelector("p, div");
+              const a = sibling ? text(sibling).slice(0, 500) : "";
+              if (q.length > 5 && a.length > 5) {
+                result.faq.push({ question: q, answer: a });
+              }
+            }
+          }
+
+          // Fallback: pairs of headings + paragraphs with question marks
+          if (result.faq.length === 0) {
+            const subHeadings = parent.querySelectorAll("h3, h4, h5, strong");
+            for (const sh of subHeadings) {
+              const q = text(sh);
+              if (q.includes("?") && q.length > 10) {
+                const nextP = sh.nextElementSibling;
+                const a = nextP ? text(nextP).slice(0, 500) : "";
+                if (a.length > 10) {
+                  result.faq.push({ question: q, answer: a });
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+    }
+    result.faq = result.faq.slice(0, 15);
+
+    // ---- Owner / Founder Name Extraction ----
+    result.owner_name = null;
+    const ownerPatterns = /owner|founder|president|ceo|principal|proprietor/i;
+
+    // Check about section first
+    if (aboutSection) {
+      const aboutParent = aboutSection.closest("section") || aboutSection.parentElement;
+      if (aboutParent) {
+        const aboutFullText = aboutParent.innerText || "";
+        const ownerMatch = aboutFullText.match(/(?:owner|founder|president|ceo|principal)[:\s,]*([A-Z][a-z]+ [A-Z][a-z]+)/);
+        if (ownerMatch) result.owner_name = ownerMatch[1];
+      }
+    }
+
+    // Check team page link
+    if (!result.owner_name) {
+      const links = document.querySelectorAll("a");
+      for (const link of links) {
+        const href = (link.getAttribute("href") || "").toLowerCase();
+        const linkText = (link.textContent || "").toLowerCase();
+        if (href.includes("team") || href.includes("about") || linkText.includes("meet") || linkText.includes("our team")) {
+          // Found a team link — check nearby content
           break;
         }
       }
     }
 
-    result.has_estimate_widget = estimateWidgets.length > 0;
-    result.estimate_widget_providers = estimateWidgets;
+    // Check for structured data (Person schema)
+    if (!result.owner_name) {
+      const schemaScripts = document.querySelectorAll('script[type="application/ld+json"]');
+      for (const script of schemaScripts) {
+        try {
+          const data = JSON.parse(script.textContent);
+          if (data["@type"] === "LocalBusiness" && data.founder) {
+            result.owner_name = typeof data.founder === "string" ? data.founder : data.founder.name;
+          }
+          if (data["@type"] === "Person" && data.jobTitle && ownerPatterns.test(data.jobTitle)) {
+            result.owner_name = data.name;
+          }
+        } catch {}
+      }
+    }
+
+    // Check footer for "Owner: Name" pattern
+    if (!result.owner_name) {
+      const footer = document.querySelector("footer");
+      if (footer) {
+        const footerText = footer.innerText || "";
+        const footerMatch = footerText.match(/(?:owner|founder|president)[:\s,]*([A-Z][a-z]+ [A-Z][a-z]+)/);
+        if (footerMatch) result.owner_name = footerMatch[1];
+      }
+    }
+
+    // ---- Franchise Detection ----
+    const franchiseNames = [
+      "mighty dog", "storm guard", "centimark", "leaf home", "bone dry",
+      "erie metal", "long roofing", "baker roofing", "tecta america",
+      "nations roof", "roofing corp of america", "roof connect",
+    ];
+    const pageTitle = (document.title || "").toLowerCase();
+    const businessNameLower = (result.hero_headline || pageTitle).toLowerCase();
+    result.is_franchise = franchiseNames.some(f => businessNameLower.includes(f));
+
+    // Also check for franchise language
+    if (!result.is_franchise) {
+      result.is_franchise = allText.includes("franchise") && (allText.includes("locations nationwide") || allText.includes("corporate office"));
+    }
+
+    // ---- Multi-State Detection ----
+    result.is_multi_state = false;
+    const stateAbbrs = allText.match(/\b[A-Z]{2}\b/g) || [];
+    const usStates = new Set(["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]);
+    const statesFound = new Set(stateAbbrs.filter(s => usStates.has(s)));
+    if (statesFound.size >= 5) {
+      result.is_multi_state = true;
+    }
 
     return result;
   });
@@ -829,8 +993,10 @@ async function main() {
         const form = data.form || {};
         const serviceCount = data.services?.length || 0;
         const reviewCount = data.reviews?.length || 0;
+        const faqCount = data.faq?.length || 0;
+        const competitorCount = data.competitor_tools?.length || 0;
         const formStatus = form.found ? (form.has_captcha ? "CAPTCHA" : `${form.form_type}`) : "none";
-        console.log(`  ✓ Found: ${serviceCount} services, ${reviewCount} reviews, phone: ${data.phone || "none"}, form: ${formStatus}`);
+        console.log(`  ✓ ${serviceCount} services, ${faqCount} FAQ, ${reviewCount} reviews, phone: ${data.phone || "none"}, form: ${formStatus}${competitorCount > 0 ? `, COMPETITORS: ${data.competitor_tools.join(",")}` : ""}${data.owner_name ? `, owner: ${data.owner_name}` : ""}${data.is_franchise ? " FRANCHISE" : ""}${data.is_multi_state ? " MULTI-STATE" : ""}`);
         results.push({
           ...row,
           scraped_tagline: data.tagline || "",
@@ -853,6 +1019,12 @@ async function main() {
           estimate_widget_providers: (data.estimate_widget_providers || []).join("; "),
           years_in_business: data.years_in_business || "",
           founded_year: data.founded_year || "",
+          // New demo-page fields
+          competitor_tools: (data.competitor_tools || []).join("; "),
+          scraped_faq: JSON.stringify(data.faq || []),
+          scraped_owner_name: data.owner_name || "",
+          is_franchise: data.is_franchise ? "true" : "false",
+          is_multi_state: data.is_multi_state ? "true" : "false",
         });
       } else {
         failed++;
@@ -877,6 +1049,8 @@ async function main() {
       "form_type", "form_honeypot_fields", "form_required_selects", "form_required_radios",
       "has_estimate_widget", "estimate_widget_providers",
       "years_in_business", "founded_year",
+      "competitor_tools", "scraped_faq", "scraped_owner_name",
+      "is_franchise", "is_multi_state",
     ].filter((c, i, arr) => arr.indexOf(c) === i); // dedupe
     const outputPath = opts.output || opts.csv.replace(".csv", "_scraped.csv");
     writeCsv(outputPath, results, enrichedCols);
