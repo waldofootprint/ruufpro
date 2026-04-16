@@ -173,7 +173,7 @@ function generateDraft(lead: LeadData, tone: ToneType, businessName: string): st
   return `${first}, thank you for contacting ${businessName}. We would be happy to schedule a complimentary inspection at your earliest convenience. Please let us know what dates work best for your schedule.`;
 }
 
-function scoreLead(lead: LeadData): { score: number; verdict: string; factors: string[] } {
+function scoreLead(lead: LeadData, estimateViews: number = 0): { score: number; verdict: string; factors: string[] } {
   let score = 50; // baseline
   const factors: string[] = [];
 
@@ -200,6 +200,11 @@ function scoreLead(lead: LeadData): { score: number; verdict: string; factors: s
   // Source quality
   if (lead.source === "estimate_widget") { score += 5; factors.push("Estimate request"); }
   if (lead.source === "ai_chatbot") { score += 3; factors.push("Chat engagement"); }
+
+  // Estimate engagement — multiple views = active comparison shopping
+  if (estimateViews >= 5) { score += 15; factors.push(`Checked estimate ${estimateViews}x`); }
+  else if (estimateViews >= 3) { score += 10; factors.push(`Checked estimate ${estimateViews}x`); }
+  else if (estimateViews >= 2) { score += 5; factors.push("Revisited estimate"); }
 
   // Clamp to 0-100
   score = Math.max(0, Math.min(100, score));
@@ -245,6 +250,7 @@ export default function CopilotPage() {
   const [chatSessionId] = useState(() => crypto.randomUUID());
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [chatInput, setChatInput] = useState("");
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
 
   // Copilot chat — streams from the existing /api/dashboard/copilot route
   const {
@@ -294,6 +300,20 @@ export default function CopilotPage() {
       setLeads(mapped);
       if (mapped.length > 0) setSelectedLead(mapped[0]);
       setLoading(false);
+
+      // Fetch estimate view counts for all leads
+      const { data: eventData } = await supabase
+        .from("widget_events")
+        .select("lead_id")
+        .eq("contractor_id", contractorId)
+        .in("event_type", ["widget_view", "living_estimate_view"])
+        .not("lead_id", "is", null);
+
+      const counts: Record<string, number> = {};
+      (eventData || []).forEach((e: any) => {
+        counts[e.lead_id] = (counts[e.lead_id] || 0) + 1;
+      });
+      setViewCounts(counts);
     }
     loadLeads();
   }, [contractorId]);
@@ -779,6 +799,7 @@ export default function CopilotPage() {
                       <InfoRow label="Material" value={selectedLead.estimate_material || "—"} />
                       <InfoRow label="Phone" value={selectedLead.phone || "—"} />
                       <InfoRow label="Email" value={selectedLead.email || "—"} />
+                      <InfoRow label="Est. views" value={viewCounts[selectedLead.id] ? `${viewCounts[selectedLead.id]}x` : "—"} />
                     </div>
                   </div>
 
@@ -799,7 +820,7 @@ export default function CopilotPage() {
 
                   {/* Score */}
                   {(() => {
-                    const s = scoreLead(selectedLead);
+                    const s = scoreLead(selectedLead, viewCounts[selectedLead.id] || 0);
                     return (
                       <div className="p-5">
                         <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">

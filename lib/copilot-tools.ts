@@ -473,6 +473,76 @@ export async function sendBatchReviewRequestsForCopilot(
  * "Help me reply to this 3-star review" / "Draft a response to this review"
  * Returns guidelines — the AI model composes the actual response.
  */
+// ── Engagement / Replay Count Types ───────────────────────────────────
+
+export interface LeadEngagement {
+  lead_id: string;
+  lead_name: string;
+  widget_views: number;
+  living_estimate_views: number;
+  total_views: number;
+  first_view: string;
+  last_view: string;
+  last_view_ago: string;
+}
+
+// ── Engagement / Replay Count Tool Functions ──────────────────────────
+
+/**
+ * Get estimate view counts for a specific lead — widget views + living estimate views.
+ * "How engaged is Garcia?" / "Has anyone been checking their estimate?" / "Is she still interested?"
+ */
+export async function getLeadEngagementForCopilot(
+  supabase: SupabaseClient,
+  contractorId: string,
+  nameOrId: string
+): Promise<{ found: boolean; engagement: LeadEngagement | null; message: string }> {
+  const lead = await getLeadDetailsForCopilot(supabase, contractorId, nameOrId);
+  if (!lead) {
+    return { found: false, engagement: null, message: "No lead found matching that name." };
+  }
+
+  const { data: events } = await supabase
+    .from("widget_events")
+    .select("event_type, created_at")
+    .eq("lead_id", lead.id)
+    .in("event_type", ["widget_view", "living_estimate_view"])
+    .order("created_at", { ascending: true });
+
+  const rows = events || [];
+  const widgetViews = rows.filter((e: any) => e.event_type === "widget_view").length;
+  const leViews = rows.filter((e: any) => e.event_type === "living_estimate_view").length;
+  const total = widgetViews + leViews;
+
+  if (total === 0) {
+    return {
+      found: true,
+      engagement: null,
+      message: `${lead.name} hasn't revisited their estimate yet.`,
+    };
+  }
+
+  const engagement: LeadEngagement = {
+    lead_id: lead.id,
+    lead_name: lead.name,
+    widget_views: widgetViews,
+    living_estimate_views: leViews,
+    total_views: total,
+    first_view: rows[0].created_at,
+    last_view: rows[rows.length - 1].created_at,
+    last_view_ago: formatTimeAgo(rows[rows.length - 1].created_at),
+  };
+
+  const msg = total > 2
+    ? `${lead.name} has checked their estimate ${total} times — last visit ${engagement.last_view_ago}.`
+    : `${lead.name} has viewed their estimate ${total} time${total === 1 ? "" : "s"}.`;
+
+  return { found: true, engagement, message: msg };
+}
+
+// ── Review Tool Types ─────────────────────────────────────────────────
+// (moved down to keep engagement tools grouped above)
+
 export function draftReviewResponseForCopilot(
   reviewText: string,
   starRating: number,

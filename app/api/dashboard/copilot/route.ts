@@ -21,6 +21,7 @@ import {
   findUnreviewedCustomersForCopilot,
   sendBatchReviewRequestsForCopilot,
   draftReviewResponseForCopilot,
+  getLeadEngagementForCopilot,
 } from "@/lib/copilot-tools";
 
 // ---------------------------------------------------------------------------
@@ -373,6 +374,23 @@ export async function POST(request: NextRequest) {
           }),
           execute: async ({ reviewText, starRating }) => {
             return draftReviewResponseForCopilot(reviewText, starRating, contractor.business_name);
+          },
+        }),
+
+        // ── Engagement / Replay Count ─────────────────────────────────
+
+        getLeadEngagement: tool({
+          description:
+            "Check how many times a lead has viewed their estimate — both the initial widget " +
+            "and the living estimate page. Call when asked about lead engagement, interest level, " +
+            "'how interested is [name]', 'are they checking their estimate', or replay count.",
+          inputSchema: z.object({
+            nameOrId: z
+              .string()
+              .describe("The lead's name (partial match OK) or UUID"),
+          }),
+          execute: async ({ nameOrId }) => {
+            return getLeadEngagementForCopilot(supabase, contractorId, nameOrId);
           },
         }),
       },

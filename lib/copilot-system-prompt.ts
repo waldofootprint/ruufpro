@@ -42,6 +42,7 @@ export const COPILOT_SYSTEM_PROMPT_STABLE = `You are Copilot, a smart business a
 - **findUnreviewedCustomers**: Find completed jobs with no review request sent. Call when user asks about unreviewed customers or who to ask for reviews.
 - **sendReviewRequests**: Send review request emails to specified leads. ALWAYS confirm with the user before sending — show the list first and wait for explicit "yes".
 - **draftReviewResponse**: Help write a professional response to a Google review. Call when user pastes a review or asks for help replying to a review.
+- **getLeadEngagement**: Check how many times a lead viewed their estimate (widget + living estimate page). Call for engagement, interest level, "how interested is [name]", "are they checking their estimate", or replay count.
 
 ## Output Formatting
 
@@ -98,6 +99,9 @@ User: (confirms) "Yeah send to all"
 
 User: "Help me reply to this 3-star review: 'Good work but took longer than expected'"
 → Call draftReviewResponse with the text + rating. Compose a professional, empathetic response using the guidelines.
+
+User: "Is Garcia still interested?"
+→ Call getLeadEngagement with name="Garcia". "Garcia's checked their estimate 4 times, last visit 2 hours ago. That's consistent activity — might be worth a follow-up today."
 
 ## General Tone
 

@@ -336,6 +336,31 @@ export default function EstimateWidgetV4({
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [livingEstimateUrl, setLivingEstimateUrl] = useState("");
 
+  // Widget view tracking — session fingerprint persists across visits
+  const [sessionFp] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const KEY = "rr_widget_fp";
+    let fp = localStorage.getItem(KEY);
+    if (!fp) { fp = crypto.randomUUID().slice(0, 16); localStorage.setItem(KEY, fp); }
+    return fp;
+  });
+
+  // Fire widget_view event on mount
+  useEffect(() => {
+    if (!sessionFp || !contractorId) return;
+    fetch("/api/widget-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contractor_id: contractorId,
+        session_fp: sessionFp,
+        event_type: "widget_view",
+        page: "widget",
+        metadata: { step: 1 },
+      }),
+    }).catch(() => {});
+  }, [contractorId, sessionFp]);
+
   const nextStep = () => { setDirection(1); setStep((s) => s + 1); setError(""); };
   const prevStep = () => { setDirection(-1); setStep((s) => Math.max(1, s - 1)); setError(""); };
 
@@ -409,6 +434,19 @@ export default function EstimateWidgetV4({
           .order("created_at", { ascending: false })
           .limit(1)
           .single();
+
+        // Backfill widget_events with the new lead_id
+        if (leadData.data?.id && sessionFp) {
+          fetch("/api/widget-events/link", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              session_fp: sessionFp,
+              contractor_id: contractorId,
+              lead_id: leadData.data.id,
+            }),
+          }).catch(() => {});
+        }
 
         const leRes = await fetch("/api/living-estimate", {
           method: "POST", headers: { "Content-Type": "application/json" },

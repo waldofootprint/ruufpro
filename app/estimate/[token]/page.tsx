@@ -49,6 +49,8 @@ interface Contractor {
 
 interface LivingEstimate {
   id: string;
+  contractor_id: string;
+  lead_id: string | null;
   share_token: string;
   homeowner_name: string;
   homeowner_address: string | null;
@@ -113,6 +115,25 @@ export default function LivingEstimatePage() {
       setIsSigned(est.status === "signed");
       setSignerName(est.signer_name || est.homeowner_name || "");
       setLoading(false);
+
+      // Track living estimate view
+      if (est.contractor_id) {
+        const KEY = "rr_widget_fp";
+        let fp = localStorage.getItem(KEY);
+        if (!fp) { fp = crypto.randomUUID().slice(0, 16); localStorage.setItem(KEY, fp); }
+        fetch("/api/widget-events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contractor_id: est.contractor_id,
+            session_fp: fp,
+            event_type: "living_estimate_view",
+            page: "living_estimate",
+            lead_id: est.lead_id || null,
+            metadata: { share_token: token },
+          }),
+        }).catch(() => {});
+      }
     }
     if (token) load();
   }, [token]);
