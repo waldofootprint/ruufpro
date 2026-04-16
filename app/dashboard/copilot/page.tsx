@@ -19,6 +19,7 @@ import {
   MessageSquare,
   FileEdit,
   Check,
+  Eye,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -799,8 +800,23 @@ export default function CopilotPage() {
                       <InfoRow label="Material" value={selectedLead.estimate_material || "—"} />
                       <InfoRow label="Phone" value={selectedLead.phone || "—"} />
                       <InfoRow label="Email" value={selectedLead.email || "—"} />
-                      <InfoRow label="Est. views" value={viewCounts[selectedLead.id] ? `${viewCounts[selectedLead.id]}x` : "—"} />
                     </div>
+                    {/* Estimate engagement callout — only shows when there are views */}
+                    {viewCounts[selectedLead.id] > 0 && (() => {
+                      const views = viewCounts[selectedLead.id];
+                      const isHigh = views >= 3;
+                      return (
+                        <div className={`mt-3 flex items-center gap-2 px-3 py-2 rounded-lg ${
+                          isHigh ? "bg-violet-50 border border-violet-100" : "bg-slate-50 border border-slate-100"
+                        }`}>
+                          <Eye className={`w-3.5 h-3.5 flex-shrink-0 ${isHigh ? "text-violet-500" : "text-slate-400"}`} />
+                          <span className={`text-[11px] font-medium ${isHigh ? "text-violet-600" : "text-slate-500"}`}>
+                            Viewed estimate {views}x
+                            {isHigh && " — keeps coming back"}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Property Intel — needs Realty Mole integration */}
