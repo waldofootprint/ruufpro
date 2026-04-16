@@ -1,7 +1,37 @@
 # Direct Mail Letter Drafts — Keepers
 
 > Date: 2026-04-16
-> Status: Workshopping. Version F is current favorite.
+> Status: **Version G APPROVED.** Full decision log in vault/084 and decisions/letter-version-g-decisions.md
+
+---
+
+## Version G — FINAL (Approved Apr 16)
+
+I build AI tools for roofers. I made a set for {{business_name}}.
+
+A homeowner Googles "roofer in {{city}}" at 10pm. Your AI answers their questions, measures their roof from satellite, and sends you the lead before morning. That's one of the tools. Scan the QR code to see the rest:
+
+[ QR CODE ]
+
+This page is private — only you can see it.
+
+- **Riley** — an AI trained on your business that talks to homeowners, answers their questions, and captures leads. Even when you're on a roof.
+- **Instant satellite estimates** — homeowners enter their address, get a ballpark price. You get a lead you can actually work — roof measurements, material preference, budget range, and an AI urgency score. Ready when you are.
+- **Lead Copilot** — open your dashboard, see your hottest leads ranked, read the follow-up it already wrote for you, tweak it, hit send. Back on the roof in 5 minutes.
+- **Google reviews on autopilot** — the card in this envelope is a Google Review card. Your customer taps their phone, your review page opens. Pair it with automated follow-up emails after every job, and you're stacking 5-star reviews without lifting a finger.
+
+Put these tools wherever your customers look — your Google page, your email signature, a QR code on your truck. Anywhere you share the link, your AI is working.
+
+Try it free for 14 days. The review card is yours either way. Hope it helps you stack a few more five-star reviews.
+
+Hannah
+RuufPro · Florida
+
+**~200 words**
+
+---
+
+## Previous Versions (archived below)
 
 ---
 
