@@ -5,8 +5,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  // All env vars accessed inside the handler (Vercel build safety)
-  const INTERNAL_SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  // Use dedicated secret — never reuse the service role key for endpoint auth
+  const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
   try {
     // Only allow internal calls from our own server

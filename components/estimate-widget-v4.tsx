@@ -246,6 +246,13 @@ interface EstimateResponse {
     is_satellite: boolean;
     detail_display: string;
   };
+  weather_surge?: {
+    detected: boolean;
+    active: boolean;  // true only when roofer opted in
+    multiplier: number;
+    alerts: string[];
+    severity: string;
+  } | null;
 }
 
 // ----- STEP TRANSITION (enhanced with scale for 3D feel) -----
@@ -276,10 +283,33 @@ export default function EstimateWidgetV4({
   contractorId,
   contractorName,
   contractorPhone,
+  accentColor,
   variant = "dark",
 }: EstimateWidgetProps) {
-  const C = variant === "light" ? LIGHT : GLASS;
-  const S = variant === "light" ? LIGHT_SHADOW : SHADOW;
+  // Build color system — if accentColor is provided, override the primary/accent navy
+  const baseC = variant === "light" ? LIGHT : GLASS;
+  const C = accentColor && variant === "light" ? {
+    ...baseC,
+    inputBorderFocus: accentColor,
+    cardSelectedBorder: accentColor,
+    cardSelectedBg: `${accentColor}10`,
+    primaryBg: accentColor,
+    fillBg: accentColor,
+    fillGlow: `${accentColor}33`,
+    pillSelectedBorder: accentColor,
+    pillSelectedText: accentColor,
+    pillSelectedBg: `${accentColor}10`,
+  } : baseC;
+  const baseS = variant === "light" ? LIGHT_SHADOW : SHADOW;
+  const S = accentColor && variant === "light" ? {
+    ...baseS,
+    cardSelected: `0 0 0 2px ${accentColor}, 0 2px 8px ${accentColor}1A`,
+    btnPrimary: `0 4px 14px ${accentColor}40, 0 1px 3px rgba(0,0,0,0.08)`,
+    btnPrimaryHover: `0 6px 20px ${accentColor}4D, 0 2px 4px rgba(0,0,0,0.08)`,
+    btnPrimaryActive: `0 2px 8px ${accentColor}33`,
+    pillSelected: `0 0 0 2px ${accentColor}`,
+    inputFocus: `inset 0 1px 2px rgba(0,0,0,0.04), 0 0 0 3px ${accentColor}1A`,
+  } : baseS;
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -342,6 +372,7 @@ export default function EstimateWidgetV4({
           estimate_low: primaryEst?.price_low, estimate_high: primaryEst?.price_high,
           estimate_material: primaryMaterial, estimate_roof_sqft: data.roof_data?.roof_area_sqft,
           timeline: timeline || null,
+          sms_consent: agreedToSms,
         }),
       }).catch(() => {});
 
@@ -441,10 +472,10 @@ export default function EstimateWidgetV4({
     <div
       className="mx-auto w-full max-w-[480px] overflow-hidden rounded-3xl"
       style={{
-        background: C.container,
-        ...(variant === "dark" ? { backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" } : {}),
-        border: `1px solid ${C.containerBorder}`,
-        boxShadow: S.container,
+        background: accentColor ? "transparent" : C.container,
+        ...(variant === "dark" && !accentColor ? { backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" } : {}),
+        border: accentColor ? "none" : `1px solid ${C.containerBorder}`,
+        boxShadow: accentColor ? "none" : S.container,
         fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif',
       }}
     >
@@ -904,8 +935,8 @@ export default function EstimateWidgetV4({
                 </button>
                 <span className="text-[12px] leading-relaxed" style={{ color: C.textSecondary }}>
                   I agree to the{" "}
-                  <a href="/terms" target="_blank" style={{ color: variant === "light" ? "#1E3A5F" : "rgba(255,255,255,0.7)" }} className="hover:underline">Terms of Service</a> and{" "}
-                  <a href="/privacy" target="_blank" style={{ color: variant === "light" ? "#1E3A5F" : "rgba(255,255,255,0.7)" }} className="hover:underline">Privacy Policy</a>
+                  <a href="/terms" target="_blank" style={{ color: variant === "light" ? C.primaryBg : "rgba(255,255,255,0.7)" }} className="hover:underline">Terms of Service</a> and{" "}
+                  <a href="/privacy" target="_blank" style={{ color: variant === "light" ? C.primaryBg : "rgba(255,255,255,0.7)" }} className="hover:underline">Privacy Policy</a>
                   <span style={{ color: C.red }} className="ml-0.5">*</span>
                 </span>
               </label>
@@ -968,6 +999,23 @@ export default function EstimateWidgetV4({
                 {estimateData.roof_data.detail_display}
               </p>
             </div>
+
+            {/* Weather surge notice — shown when roofer has enabled storm pricing */}
+            {estimateData.weather_surge?.active && (
+              <div
+                className="rounded-xl px-4 py-3 flex items-start gap-3"
+                style={{
+                  background: variant === "light" ? "#FFF7ED" : "rgba(251,146,60,0.1)",
+                  border: `1px solid ${variant === "light" ? "#FDBA74" : "rgba(251,146,60,0.25)"}`,
+                }}
+              >
+                <span className="text-[14px] mt-0.5">&#9888;</span>
+                <p className="text-[12px] leading-relaxed" style={{ color: C.textSecondary }}>
+                  <strong style={{ color: C.text }}>Weather alert in your area.</strong>{" "}
+                  Prices may be higher than normal due to increased demand.
+                </p>
+              </div>
+            )}
 
             {/* G/B/B Material Cards — stacked for mobile-first */}
             <div className="space-y-3">
@@ -1058,9 +1106,9 @@ export default function EstimateWidgetV4({
             >
               <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: C.textTertiary }} />
               <p className="text-[12px] leading-relaxed" style={{ color: C.textSecondary }}>
-                <strong style={{ color: C.text }}>Note:</strong> These are ballpark estimates,
-                not final quotes. Actual price depends on roof condition, access, and
-                other factors assessed during a free inspection.
+                <strong style={{ color: C.text }}>Not a binding quote.</strong> This is an approximate
+                estimate based on satellite imagery and public property records. Actual costs
+                may vary after on-site inspection. Final pricing is determined by the contractor.
               </p>
             </div>
 

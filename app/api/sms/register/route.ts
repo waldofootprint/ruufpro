@@ -44,12 +44,54 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
 
     // Build registration data from contractor record
-    // Split business_name into first/last for sole props, or use as-is
-    const nameParts = (contractor.business_name || "").split(" ");
-    const firstName = nameParts[0] || "Owner";
-    const lastName = nameParts.slice(1).join(" ") || contractor.business_name || "Owner";
+    // Use real owner name if available, fall back to parsing business_name
+    let firstName = contractor.owner_first_name;
+    let lastName = contractor.owner_last_name;
+    if (!firstName || !lastName) {
+      // Fallback for legacy records without owner name
+      const nameParts = (contractor.business_name || "").split(" ");
+      firstName = firstName || nameParts[0] || "Owner";
+      lastName = lastName || nameParts.slice(1).join(" ") || "Owner";
+    }
+
+    // Block registration if business type not set — prevents silent sole prop downgrade
+    if (!contractor.legal_entity_type) {
+      return NextResponse.json(
+        { error: "Please select your business type (LLC, Corporation, or Sole Proprietor) in your business details before registering for SMS." },
+        { status: 400 }
+      );
+    }
+
+    // Validate required fields for LLC/Corporation path
+    const isLLC = contractor.legal_entity_type !== "sole_proprietor";
+    if (isLLC && !contractor.ein) {
+      return NextResponse.json(
+        { error: "EIN is required for LLC/Corporation registration. Please add it in your business details." },
+        { status: 400 }
+      );
+    }
+    if (!contractor.phone) {
+      return NextResponse.json(
+        { error: "Phone number is required for SMS registration. Please add it in your business details." },
+        { status: 400 }
+      );
+    }
+    if (!contractor.address || !contractor.zip) {
+      return NextResponse.json(
+        { error: "Street address and ZIP code are required for SMS registration. Please add them in your business details." },
+        { status: 400 }
+      );
+    }
 
     const { startRegistration } = await import("@/lib/twilio-10dlc");
+
+    // Build the slug-based website URL for the contractor
+    const { data: site } = await supabase
+      .from("sites")
+      .select("slug")
+      .eq("contractor_id", contractor.id)
+      .single();
+    const siteSlug = site?.slug || contractor.business_name?.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
     const result = await startRegistration({
       contractorId: contractor.id,
@@ -60,13 +102,13 @@ export async function POST(req: NextRequest) {
       phone: contractor.phone?.startsWith("+") ? contractor.phone : `+1${contractor.phone.replace(/\D/g, "")}`,
       mobilePhone: body.mobilePhone || undefined,
       ssnLast4: body.ssnLast4 || undefined,
-      street: contractor.address || "",
+      street: contractor.address,
       city: contractor.city,
       state: contractor.state,
-      zip: contractor.zip || "",
-      legalEntityType: contractor.legal_entity_type || "sole_proprietor",
+      zip: contractor.zip,
+      legalEntityType: contractor.legal_entity_type,
       ein: contractor.ein || undefined,
-      websiteUrl: `https://${contractor.business_name?.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.ruufpro.com`,
+      websiteUrl: `https://${siteSlug}.ruufpro.com`,
     });
 
     return NextResponse.json(result);

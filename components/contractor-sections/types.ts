@@ -41,6 +41,8 @@ export interface ContractorSiteData {
 
   // Widget
   hasEstimateWidget: boolean;
+  hasAiChatbot: boolean;
+  chatGreeting?: string | null;
   contractorId: string;
 
   // Conversion
@@ -54,4 +56,10 @@ export interface ContractorSiteData {
   zip: string | null;
   logoUrl: string | null;
   licenseNumber: string | null;
+
+  // Gallery photos (from Google Places + Facebook enrichment)
+  galleryImages: string[];
+
+  // Business hours (from contractor profile, used for chatbot)
+  businessHours: Record<string, { open: string; close: string } | null> | null;
 }

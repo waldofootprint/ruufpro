@@ -5,6 +5,7 @@
 // Uses lazy Twilio client initialization (same pattern as lib/twilio.ts).
 
 import { createServerSupabase } from "./supabase-server";
+import { inngest } from "./inngest/client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,6 +61,7 @@ const POLICY_SECONDARY_CUSTOMER_PROFILE = "RNdfbf3fae0e1107f8aded0e7cead80bf5";
 const POLICY_SOLE_PROP_STARTER = "RN806dd6cd175f314e1f96a9727ee271f4";
 
 // RuufPro's Primary Customer Profile SID (set after one-time ISV setup in Twilio Console)
+// Required for ISV flow — without it, contractor brands won't be linked to our ISV profile.
 const PRIMARY_PROFILE_SID = process.env.TWILIO_PRIMARY_PROFILE_SID || "";
 
 // Webhook base URL
@@ -96,15 +98,73 @@ async function getClient() {
 export async function startRegistration(
   data: ContractorRegistrationData
 ): Promise<RegistrationResult> {
-  const isSoleProp = data.legalEntityType === "sole_proprietor" || !data.ein;
+  // Guard: PRIMARY_PROFILE_SID must be set for ISV flow
+  if (!PRIMARY_PROFILE_SID) {
+    throw new Error("TWILIO_PRIMARY_PROFILE_SID env var is not set — cannot register contractors without ISV profile linkage");
+  }
+
+  // Respect the contractor's stated business type — never silently downgrade to sole prop.
+  // The registration API already validates that LLCs have an EIN before reaching here.
+  const isSoleProp = data.legalEntityType === "sole_proprietor";
   const supabase = createServerSupabase();
 
-  try {
-    if (isSoleProp) {
-      return await registerSoleProprietor(data, supabase);
-    } else {
-      return await registerStandardBrand(data, supabase);
+  // Duplicate registration guard — prevent double-click creating duplicate Twilio resources
+  const { data: existing } = await supabase
+    .from("sms_numbers")
+    .select("registration_status")
+    .eq("contractor_id", data.contractorId)
+    .single();
+
+  if (existing) {
+    const activeStatuses = ["profile_pending", "profile_approved", "brand_pending", "brand_otp_required", "brand_approved", "campaign_pending", "campaign_approved"];
+    if (activeStatuses.includes(existing.registration_status)) {
+      return {
+        success: false,
+        status: existing.registration_status as RegistrationStatus,
+        error: `Registration already in progress (${existing.registration_status}). Check SMS dashboard for status.`,
+      };
     }
+  }
+
+  if (isSoleProp) {
+    // Sole prop flow has a 30s wait between phases — run via Inngest for durability.
+    // This prevents Vercel serverless timeout and orphaned Twilio resources on failure.
+    await supabase
+      .from("sms_numbers")
+      .upsert({
+        contractor_id: data.contractorId,
+        registration_path: "sole_proprietor",
+        registration_status: "profile_pending",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "contractor_id" });
+
+    await inngest.send({
+      name: "sms/registration.sole-prop",
+      data: {
+        contractorId: data.contractorId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        businessName: data.businessName,
+        email: data.email,
+        phone: data.phone,
+        mobilePhone: data.mobilePhone || data.phone,
+        street: data.street,
+        city: data.city,
+        state: data.state,
+        zip: data.zip,
+        websiteUrl: data.websiteUrl,
+        ssnLast4: data.ssnLast4 || null,
+      },
+    });
+
+    return {
+      success: true,
+      status: "profile_pending",
+    };
+  }
+
+  try {
+    return await registerStandardBrand(data, supabase);
   } catch (err: any) {
     console.error("10DLC registration error:", err.message || err);
 
@@ -124,14 +184,28 @@ export async function startRegistration(
 
 // ---------------------------------------------------------------------------
 // Sole Proprietor Path (no EIN, OTP verification)
+// Split into two phases for Inngest durability:
+//   Phase 1: Create starter profile (steps 1-5) — returns profile SID
+//   Phase 2: Create trust bundle (steps 6-9) — runs after 30s Inngest sleep
 // ---------------------------------------------------------------------------
 
-async function registerSoleProprietor(
-  data: ContractorRegistrationData,
-  supabase: any
-): Promise<RegistrationResult> {
+/**
+ * Phase 1: Creates the Starter Customer Profile in Twilio Trust Hub.
+ * Called from the Inngest sole-prop registration function.
+ */
+export async function createSoleProprietorStarterProfile(data: {
+  contractorId: string;
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  email: string;
+  phone: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}): Promise<{ profileSid: string }> {
   const client = await getClient();
-  const mobilePhone = data.mobilePhone || data.phone;
 
   // Step 1: Create Starter Customer Profile
   const profile = await client.trusthub.v1.customerProfiles.create({
@@ -168,22 +242,18 @@ async function registerSoleProprietor(
   });
 
   // Step 4: Attach components to Starter Profile
-  // Attach EndUser
   await client.trusthub.v1
     .customerProfiles(profile.sid)
     .customerProfilesEntityAssignments.create({ objectSid: endUser.sid });
 
-  // Attach Address document
   await client.trusthub.v1
     .customerProfiles(profile.sid)
     .customerProfilesEntityAssignments.create({ objectSid: addressDoc.sid });
 
-  // Attach Primary ISV Profile
-  if (PRIMARY_PROFILE_SID) {
-    await client.trusthub.v1
-      .customerProfiles(profile.sid)
-      .customerProfilesEntityAssignments.create({ objectSid: PRIMARY_PROFILE_SID });
-  }
+  // Attach Primary ISV Profile (guaranteed set by startRegistration guard)
+  await client.trusthub.v1
+    .customerProfiles(profile.sid)
+    .customerProfilesEntityAssignments.create({ objectSid: PRIMARY_PROFILE_SID });
 
   // Step 5: Evaluate + Submit Starter Profile
   await client.trusthub.v1
@@ -194,8 +264,25 @@ async function registerSoleProprietor(
     status: "pending-review",
   });
 
-  // Wait 30s for Twilio to process (per Twilio docs for sole prop flow)
-  await delay(30000);
+  return { profileSid: profile.sid };
+}
+
+/**
+ * Phase 2: Creates the A2P Trust Bundle after Twilio processes the starter profile.
+ * Called from the Inngest sole-prop registration function after step.sleep("30s").
+ */
+export async function createSoleProprietorTrustBundle(data: {
+  contractorId: string;
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  email: string;
+  phone: string;
+  mobilePhone: string;
+  ssnLast4: string | null;
+  profileSid: string;
+}): Promise<{ trustProductSid: string }> {
+  const client = await getClient();
 
   // Step 6: Create Sole Proprietor A2P Trust Bundle
   const trustProduct = await client.trusthub.v1.trustProducts.create({
@@ -214,7 +301,7 @@ async function registerSoleProprietor(
       last_name: data.lastName,
       email: data.email,
       phone_number: data.phone,
-      mobile_phone_number: mobilePhone,
+      mobile_phone_number: data.mobilePhone,
       brand_name: data.businessName,
       vertical: "CONSTRUCTION",
       ...(data.ssnLast4 ? { last_4_digits_ssn: data.ssnLast4 } : {}),
@@ -228,7 +315,7 @@ async function registerSoleProprietor(
 
   await client.trusthub.v1
     .trustProducts(trustProduct.sid)
-    .trustProductsEntityAssignments.create({ objectSid: profile.sid });
+    .trustProductsEntityAssignments.create({ objectSid: data.profileSid });
 
   // Step 9: Evaluate + Submit Trust Bundle
   await client.trusthub.v1
@@ -239,25 +326,7 @@ async function registerSoleProprietor(
     status: "pending-review",
   });
 
-  // Save progress to database — brand will be auto-created by Twilio,
-  // OTP will be sent to the contractor's mobile phone
-  await supabase
-    .from("sms_numbers")
-    .upsert({
-      contractor_id: data.contractorId,
-      registration_path: "sole_proprietor",
-      registration_status: "brand_otp_required",
-      customer_profile_sid: profile.sid,
-      trust_product_sid: trustProduct.sid,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "contractor_id" });
-
-  return {
-    success: true,
-    status: "brand_otp_required",
-    customerProfileSid: profile.sid,
-    trustProductSid: trustProduct.sid,
-  };
+  return { trustProductSid: trustProduct.sid };
 }
 
 // ---------------------------------------------------------------------------
@@ -359,10 +428,8 @@ async function registerStandardBrand(
     supportDoc.sid,
   ];
 
-  // Attach ISV Primary Profile if configured
-  if (PRIMARY_PROFILE_SID) {
-    entitiesToAttach.push(PRIMARY_PROFILE_SID);
-  }
+  // Attach ISV Primary Profile (guaranteed set by startRegistration guard)
+  entitiesToAttach.push(PRIMARY_PROFILE_SID);
 
   for (const objectSid of entitiesToAttach) {
     await client.trusthub.v1
@@ -467,6 +534,17 @@ export async function registerBrand(contractorId: string): Promise<RegistrationR
     return { success: false, status: "failed", error: "No registration record found" };
   }
 
+  // Guard: if brand already registered (e.g., cron retry after DB write failure),
+  // skip creation to avoid duplicate TCR registrations ($4+ each).
+  if (record.brand_registration_sid) {
+    console.log(`registerBrand: brand already exists for ${contractorId} (${record.brand_registration_sid}), skipping creation`);
+    return {
+      success: true,
+      status: record.registration_status,
+      brandRegistrationSid: record.brand_registration_sid,
+    };
+  }
+
   const isSoleProp = record.registration_path === "sole_proprietor";
 
   const brand = await client.messaging.v1.brandRegistrations.create({
@@ -474,10 +552,10 @@ export async function registerBrand(contractorId: string): Promise<RegistrationR
     a2PProfileBundleSid: record.trust_product_sid,
     brandType: isSoleProp ? "SOLE_PROPRIETOR" : "STANDARD",
     skipAutomaticSecVet: true,
-    mock: false,
+    mock: process.env.NODE_ENV !== "production",
   });
 
-  await supabase
+  const { error: brandUpdateError } = await supabase
     .from("sms_numbers")
     .update({
       brand_registration_sid: brand.sid,
@@ -485,6 +563,11 @@ export async function registerBrand(contractorId: string): Promise<RegistrationR
       updated_at: new Date().toISOString(),
     })
     .eq("contractor_id", contractorId);
+
+  if (brandUpdateError) {
+    console.error(`registerBrand: DB update failed for ${contractorId}:`, brandUpdateError);
+    throw new Error(`Failed to save brand registration: ${brandUpdateError.message}`);
+  }
 
   return {
     success: true,
@@ -516,102 +599,142 @@ export async function completeCampaignRegistration(
   const contractor = record.contractors;
   const isSoleProp = record.registration_path === "sole_proprietor";
 
-  // Create Messaging Service
-  const messagingService = await client.messaging.v1.services.create({
-    friendlyName: `${contractor.business_name} SMS`.slice(0, 64),
-    inboundRequestUrl: `${WEBHOOK_BASE}/api/sms/webhook`,
-    statusCallback: `${WEBHOOK_BASE}/api/sms/webhook/delivery-status`,
-    stickySender: true,
-    useInboundWebhookOnNumber: false,
-  });
-
-  // Buy local number matching contractor's area code
-  const areaCode = extractAreaCode(contractor.phone);
-  const available = await client.availablePhoneNumbers("US").local.list({
-    areaCode: areaCode || undefined,
-    smsEnabled: true,
-    voiceEnabled: true,
-    limit: 1,
-  });
-
-  if (!available || available.length === 0) {
-    throw new Error(`No numbers available in area code ${areaCode}`);
-  }
-
-  const purchased = await client.incomingPhoneNumbers.create({
-    phoneNumber: available[0].phoneNumber,
-    friendlyName: `${contractor.business_name} 10DLC`,
-    smsMethod: "POST",
-    smsUrl: `${WEBHOOK_BASE}/api/sms/webhook`,
-    voiceMethod: "POST",
-    voiceUrl: `${WEBHOOK_BASE}/api/sms/voice-webhook`,
-  });
-
-  // Add number to Messaging Service
-  await client.messaging.v1
-    .services(messagingService.sid)
-    .phoneNumbers.create({ phoneNumberSid: purchased.sid });
-
-  // Register campaign
-  // LOW_VOLUME_MIXED gives best deliverability for both sole props and LLCs
-  // SOLE_PROPRIETOR is the brand type, not campaign type
-  const campaignUseCase = "LOW_VOLUME_MIXED";
-
-  // A2P Wizard compliance website — must be set before campaign registration
+  // MUST check compliance URL BEFORE creating any Twilio resources.
+  // Otherwise we buy a number and create a messaging service that get orphaned.
   const complianceUrl = record.compliance_website_url;
   if (!complianceUrl) {
     return {
       success: false,
-      status: "failed",
+      status: "brand_approved" as RegistrationStatus,
       error: "Missing compliance website URL. Run A2P Wizard for this contractor first, then paste the URL in SMS settings.",
     };
   }
   const privacyUrl = `${complianceUrl}/privacy`;
   const termsUrl = `${complianceUrl}/terms`;
 
-  const campaign = await client.messaging.v1
-    .services(messagingService.sid)
-    .usAppToPerson.create({
-      brandRegistrationSid: record.brand_registration_sid,
-      description: `${contractor.business_name} sends non-promotional SMS messages to customers regarding inspection results, project milestones, and estimate follow-ups. Customers may also optionally opt in to receive promotional notifications, including roof care tips, upgrade options, and protection plans. Promotional messages are only sent to users who provide separate, explicit consent via an online form. Message frequency varies, up to 4 messages per month. Message & data rates may apply. Recipients can reply STOP to opt out at any time. Users can review our Privacy Policy at ${privacyUrl} and Terms of Service at ${termsUrl} .`,
-      messageSamples: [
-        `Hi {FirstName}, this is {RepName} from ${contractor.business_name}. Thank you for reaching out to us! We received your inquiry and a team member will be in touch within the next 24 hours. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
-        `Hi {FirstName}, thanks for choosing ${contractor.business_name}! We'd love your feedback on our work. Share your experience here: {ReviewLink}. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
-        `Hi {FirstName}, sorry we missed your call! This is ${contractor.business_name}. We'll get back to you shortly. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
-        `Hi {FirstName}, this is ${contractor.business_name}. Just following up on your roofing estimate. Have any questions? We're happy to help. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
-      ],
-      usAppToPersonUsecase: campaignUseCase,
-      messageFlow: `Users opt in by submitting their mobile phone number and actively selecting one or both unchecked consent checkboxes on the contact form at ${complianceUrl}. Each checkbox clearly describes the category of messages the user will receive (non-promotional or promotional). Consent is optional and not required to use the service. After submitting the form and selecting consent, users receive a confirmation SMS message. Please refer to ${complianceUrl} for the most up-to-date version of the business website and opt-in form.`,
-      hasEmbeddedLinks: true,
-      hasEmbeddedPhone: false,
-      subscriberOptIn: true,
-      ageGated: false,
-      directLending: false,
-      optInKeywords: ["START", "YES"],
-      optOutKeywords: ["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"],
-      helpKeywords: ["HELP", "INFO"],
-      optOutMessage: `You have been unsubscribed from ${contractor.business_name} messages. You will no longer receive texts. Reply HELP for help.`,
-      helpMessage: `${contractor.business_name}: For help, call ${contractor.phone}. Reply STOP to unsubscribe.`,
+  // Track created resources for rollback if later steps fail
+  let messagingServiceSid: string | null = null;
+  let purchasedNumberSid: string | null = null;
+  let purchasedPhoneNumber: string | null = null;
+
+  try {
+    // Create Messaging Service
+    const messagingService = await client.messaging.v1.services.create({
+      friendlyName: `${contractor.business_name} SMS`.slice(0, 64),
+      inboundRequestUrl: `${WEBHOOK_BASE}/api/sms/webhook`,
+      statusCallback: `${WEBHOOK_BASE}/api/sms/webhook/delivery-status`,
+      stickySender: true,
+      useInboundWebhookOnNumber: false,
     });
+    messagingServiceSid = messagingService.sid;
 
-  // Save everything to database
-  await supabase
-    .from("sms_numbers")
-    .update({
-      phone_number: purchased.phoneNumber,
-      twilio_sid: purchased.sid,
-      messaging_service_sid: messagingService.sid,
-      campaign_sid: campaign.sid,
-      registration_status: "campaign_pending",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("contractor_id", contractorId);
+    // Buy local number — try contractor's area code first, then fall back
+    const areaCode = extractAreaCode(contractor.phone);
+    const available = await findAvailableNumber(client, areaCode, contractor.state);
 
-  return {
-    success: true,
-    status: "campaign_pending",
-    messagingServiceSid: messagingService.sid,
-  };
+    if (!available) {
+      throw new Error(`No numbers available in area code ${areaCode} or state ${contractor.state}. Contact support.`);
+    }
+
+    const purchased = await client.incomingPhoneNumbers.create({
+      phoneNumber: available.phoneNumber,
+      friendlyName: `${contractor.business_name} 10DLC`,
+      smsMethod: "POST",
+      smsUrl: `${WEBHOOK_BASE}/api/sms/webhook`,
+      voiceMethod: "POST",
+      voiceUrl: `${WEBHOOK_BASE}/api/sms/voice-webhook`,
+    });
+    purchasedNumberSid = purchased.sid;
+    purchasedPhoneNumber = purchased.phoneNumber;
+
+    // Add number to Messaging Service
+    await client.messaging.v1
+      .services(messagingService.sid)
+      .phoneNumbers.create({ phoneNumberSid: purchased.sid });
+
+    // Register campaign
+    const campaignUseCase = "LOW_VOLUME_MIXED";
+
+    const campaign = await client.messaging.v1
+      .services(messagingService.sid)
+      .usAppToPerson.create({
+        brandRegistrationSid: record.brand_registration_sid,
+        description: `${contractor.business_name} sends non-promotional SMS messages to customers regarding inspection results, project milestones, and estimate follow-ups. Customers may also optionally opt in to receive promotional notifications, including roof care tips, upgrade options, and protection plans. Promotional messages are only sent to users who provide separate, explicit consent via an online form. Message frequency varies, up to 4 messages per month. Message & data rates may apply. Recipients can reply STOP to opt out at any time. Users can review our Privacy Policy at ${privacyUrl} and Terms of Service at ${termsUrl} .`,
+        messageSamples: [
+          `Hi {FirstName}, this is {RepName} from ${contractor.business_name}. Thank you for reaching out to us! We received your inquiry and a team member will be in touch within the next 24 hours. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
+          `Hi {FirstName}, thanks for choosing ${contractor.business_name}! We'd love your feedback on our work. Share your experience here: {ReviewLink}. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
+          `Hi {FirstName}, sorry we missed your call! This is ${contractor.business_name}. We'll get back to you shortly. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
+          `Hi {FirstName}, this is ${contractor.business_name}. Just following up on your roofing estimate. Have any questions? We're happy to help. Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`,
+        ],
+        usAppToPersonUsecase: campaignUseCase,
+        messageFlow: `Users opt in by submitting their mobile phone number and actively selecting one or both unchecked consent checkboxes on the contact form at ${complianceUrl}. Each checkbox clearly describes the category of messages the user will receive (non-promotional or promotional). Consent is optional and not required to use the service. After submitting the form and selecting consent, users receive a confirmation SMS message. Please refer to ${complianceUrl} for the most up-to-date version of the business website and opt-in form.`,
+        hasEmbeddedLinks: true,
+        hasEmbeddedPhone: false,
+        subscriberOptIn: true,
+        ageGated: false,
+        directLending: false,
+        optInKeywords: ["START", "YES"],
+        optOutKeywords: ["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"],
+        helpKeywords: ["HELP", "INFO"],
+        optOutMessage: `You have been unsubscribed from ${contractor.business_name} messages. You will no longer receive texts. Reply HELP for help.`,
+        helpMessage: `${contractor.business_name}: For help, call ${contractor.phone}. Reply STOP to unsubscribe.`,
+      });
+
+    // Save everything to database
+    const { error: saveError } = await supabase
+      .from("sms_numbers")
+      .update({
+        phone_number: purchasedPhoneNumber,
+        twilio_sid: purchasedNumberSid,
+        messaging_service_sid: messagingServiceSid,
+        campaign_sid: campaign.sid,
+        registration_status: "campaign_pending",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("contractor_id", contractorId);
+
+    if (saveError) {
+      console.error(`completeCampaignRegistration: DB save failed for ${contractorId}:`, saveError);
+      // Resources exist in Twilio but DB is stale — don't rollback, just alert
+      try {
+        const { sendAlert } = await import("@/lib/alerts");
+        await sendAlert({
+          title: "Campaign registered but DB save failed",
+          message: `Contractor ${contractorId}: campaign ${campaign.sid} created but DB update failed. Manual fix needed.`,
+          severity: "error",
+        });
+      } catch { /* non-blocking */ }
+    }
+
+    return {
+      success: true,
+      status: "campaign_pending",
+      messagingServiceSid: messagingServiceSid || undefined,
+    };
+  } catch (campaignError: any) {
+    // Rollback: release purchased number and delete messaging service
+    console.error(`completeCampaignRegistration failed for ${contractorId}, rolling back:`, campaignError.message);
+
+    if (purchasedNumberSid) {
+      try {
+        await client.incomingPhoneNumbers(purchasedNumberSid).remove();
+        console.log(`Rollback: released number ${purchasedPhoneNumber} (${purchasedNumberSid})`);
+      } catch (releaseErr: any) {
+        console.error(`Rollback: failed to release number ${purchasedNumberSid}:`, releaseErr.message);
+      }
+    }
+
+    if (messagingServiceSid) {
+      try {
+        await client.messaging.v1.services(messagingServiceSid).remove();
+        console.log(`Rollback: deleted messaging service ${messagingServiceSid}`);
+      } catch (svcErr: any) {
+        console.error(`Rollback: failed to delete messaging service ${messagingServiceSid}:`, svcErr.message);
+      }
+    }
+
+    throw campaignError; // Re-throw so caller knows it failed
+  }
 }
 
 /**
@@ -621,7 +744,31 @@ export async function completeCampaignRegistration(
 export async function activateSMS(contractorId: string): Promise<void> {
   const supabase = createServerSupabase();
 
-  await supabase
+  // Idempotency guard — prevent double activation from webhook + cron race.
+  // If already active, skip silently. This prevents duplicate emails and DB writes.
+  const { data: smsNumber, error: fetchError } = await supabase
+    .from("sms_numbers")
+    .select("phone_number, status, registration_status")
+    .eq("contractor_id", contractorId)
+    .single();
+
+  if (fetchError || !smsNumber) {
+    console.error(`activateSMS: no sms_numbers record for ${contractorId}`);
+    return;
+  }
+
+  if (smsNumber.registration_status === "campaign_approved" && smsNumber.status === "active") {
+    console.log(`activateSMS: already active for ${contractorId}, skipping`);
+    return;
+  }
+
+  // Guard against syncing a NULL phone number — this would break all routing
+  if (!smsNumber.phone_number) {
+    console.error(`activateSMS: phone_number is NULL for ${contractorId} — cannot activate`);
+    throw new Error("Cannot activate SMS: no phone number provisioned");
+  }
+
+  const { error: updateError } = await supabase
     .from("sms_numbers")
     .update({
       status: "active",
@@ -631,15 +778,89 @@ export async function activateSMS(contractorId: string): Promise<void> {
     })
     .eq("contractor_id", contractorId);
 
-  await supabase
+  if (updateError) {
+    console.error(`activateSMS: failed to update sms_numbers for ${contractorId}:`, updateError);
+    throw new Error(`Failed to activate SMS: ${updateError.message}`);
+  }
+
+  // Sync twilio_number + sms_enabled to contractors table.
+  // Without twilio_number, inbound SMS webhooks can't match this contractor,
+  // which means STOP keywords silently fail (TCPA compliance risk).
+  const { error: contractorUpdateError } = await supabase
     .from("contractors")
     .update({
       sms_enabled: true,
+      twilio_number: smsNumber.phone_number,
       updated_at: new Date().toISOString(),
     })
     .eq("id", contractorId);
 
-  console.log(`SMS activated for contractor ${contractorId}`);
+  if (contractorUpdateError) {
+    console.error(`activateSMS: failed to sync twilio_number for ${contractorId}:`, contractorUpdateError);
+    // Don't throw — SMS is activated in sms_numbers, contractor sync can be retried
+  }
+
+  // Send activation email to the contractor so they know SMS is live
+  try {
+    const { data: contractor } = await supabase
+      .from("contractors")
+      .select("email, business_name")
+      .eq("id", contractorId)
+      .single();
+
+    if (contractor?.email) {
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const phoneDisplay = smsNumber?.phone_number
+        ? smsNumber.phone_number.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3")
+        : "your new number";
+
+      await resend.emails.send({
+        from: "RuufPro <noreply@ruufpro.com>",
+        to: contractor.email,
+        subject: `🎉 Your business number is live — ${phoneDisplay}`,
+        html: `
+          <div style="font-family:-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;">
+            <h2 style="margin:0 0 12px;">Your SMS is live!</h2>
+            <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 20px;">
+              Great news — your dedicated business number <strong>${phoneDisplay}</strong> has been approved and activated for ${contractor.business_name}.
+            </p>
+            <p style="font-size:15px;line-height:1.6;margin:0 0 8px;font-weight:600;">Here's what's now active:</p>
+            <ul style="color:#6b7280;font-size:14px;line-height:1.8;padding-left:20px;margin:0 0 20px;">
+              <li><strong>Lead auto-response</strong> — instant text when a homeowner submits a form</li>
+              <li><strong>Missed-call text-back</strong> — automatic text when you miss a call</li>
+              <li><strong>Review requests</strong> — one-tap SMS asking customers for Google reviews</li>
+            </ul>
+            <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 20px;">
+              No setup needed — everything runs automatically. You can manage settings in your dashboard.
+            </p>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/sms"
+               style="display:inline-block;background:#1D1D1F;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">
+              View SMS Dashboard →
+            </a>
+            <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:24px;">RuufPro · Your leads, faster.</p>
+          </div>
+        `,
+      });
+    }
+  } catch (emailErr) {
+    // Don't let email failure block activation — SMS is already live
+    console.error("Activation email failed (non-blocking):", emailErr);
+  }
+
+  // Alert Hannah in Slack + email that a contractor just went live
+  try {
+    const { sendAlert } = await import("@/lib/alerts");
+    await sendAlert({
+      title: "SMS activated",
+      message: `Contractor ${contractorId} is now live with number ${smsNumber?.phone_number || "unknown"}`,
+      severity: "info",
+    });
+  } catch {
+    // Non-blocking
+  }
+
+  console.log(`SMS activated for contractor ${contractorId} — number: ${smsNumber?.phone_number || "unknown"}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -655,6 +876,7 @@ export async function checkAllPendingRegistrations(): Promise<void> {
   const client = await getClient();
   const supabase = createServerSupabase();
 
+  // Paginated query — prevent timeout with large contractor counts
   const { data: pending } = await supabase
     .from("sms_numbers")
     .select("*")
@@ -664,7 +886,8 @@ export async function checkAllPendingRegistrations(): Promise<void> {
       "brand_otp_required",
       "brand_approved",
       "campaign_pending",
-    ]);
+    ])
+    .limit(100);
 
   if (!pending || pending.length === 0) return;
 
@@ -675,8 +898,12 @@ export async function checkAllPendingRegistrations(): Promise<void> {
           .customerProfiles(record.customer_profile_sid)
           .fetch();
 
-        if (profile.status === "twilio-approved") {
+        // Case-insensitive — Twilio may return "twilio-approved", "Twilio-Approved", etc.
+        const profileStatus = (profile.status || "").toLowerCase();
+        if (profileStatus === "twilio-approved") {
           await registerBrand(record.contractor_id);
+        } else if (profileStatus === "twilio-rejected") {
+          await handleRegistrationFailure(record.contractor_id, `Profile rejected by Twilio`, supabase);
         }
       }
 
@@ -689,19 +916,43 @@ export async function checkAllPendingRegistrations(): Promise<void> {
           .brandRegistrations(record.brand_registration_sid)
           .fetch();
 
-        if (brand.status === "APPROVED") {
-          // Check if compliance URL is set before attempting campaign registration
+        const brandStatus = (brand.status || "").toUpperCase();
+        if (brandStatus === "APPROVED") {
           if (!record.compliance_website_url) {
-            // Notify admin — A2P Wizard submission needed for this contractor
-            await notifyA2PWizardNeeded(record.contractor_id, supabase);
-            // Update status so we know brand is approved but waiting on compliance URL
             await supabase
               .from("sms_numbers")
-              .update({ registration_status: "brand_approved" })
+              .update({
+                registration_status: "brand_approved",
+                updated_at: new Date().toISOString(),
+              })
               .eq("contractor_id", record.contractor_id);
+
+            // Trigger A2P Wizard automation via Inngest
+            try {
+              const { inngest } = await import("@/lib/inngest/client");
+              await inngest.send({
+                name: "sms/brand.approved",
+                data: { contractorId: record.contractor_id },
+              });
+            } catch {
+              // Fallback: notify Hannah to do it manually (throttled to every 3 days)
+              const lastNotified = record.a2p_wizard_notified_at
+                ? new Date(record.a2p_wizard_notified_at)
+                : null;
+              const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+              if (!lastNotified || lastNotified < threeDaysAgo) {
+                await notifyA2PWizardNeeded(record.contractor_id, supabase);
+                await supabase
+                  .from("sms_numbers")
+                  .update({ a2p_wizard_notified_at: new Date().toISOString() })
+                  .eq("contractor_id", record.contractor_id);
+              }
+            }
           } else {
             await completeCampaignRegistration(record.contractor_id);
           }
+        } else if (brandStatus === "FAILED") {
+          await handleRegistrationFailure(record.contractor_id, `Brand registration failed`, supabase);
         }
       }
 
@@ -710,7 +961,7 @@ export async function checkAllPendingRegistrations(): Promise<void> {
         if (record.compliance_website_url) {
           await completeCampaignRegistration(record.contractor_id);
         }
-        // If still no URL, do nothing — Hannah will get notified again next check
+        // No notification here — handled above with 3-day throttle
       }
 
       if (record.registration_status === "campaign_pending" && record.campaign_sid && record.messaging_service_sid) {
@@ -719,13 +970,62 @@ export async function checkAllPendingRegistrations(): Promise<void> {
           .usAppToPerson(record.campaign_sid)
           .fetch();
 
-        if (campaigns.campaignStatus === "VERIFIED") {
+        const campaignStatus = (campaigns.campaignStatus || "").toUpperCase();
+        if (campaignStatus === "VERIFIED") {
           await activateSMS(record.contractor_id);
+        } else if (campaignStatus === "FAILED") {
+          await handleRegistrationFailure(record.contractor_id, `Campaign registration failed`, supabase);
+        }
+
+        // Stuck detection — alert if campaign_pending for >20 days
+        const updatedAt = record.updated_at ? new Date(record.updated_at) : null;
+        const twentyDaysAgo = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
+        if (updatedAt && updatedAt < twentyDaysAgo) {
+          try {
+            const { sendAlert } = await import("@/lib/alerts");
+            await sendAlert({
+              title: "Stuck registration detected",
+              message: `Contractor ${record.contractor_id} has been in campaign_pending for 20+ days. Manual intervention may be needed.`,
+              severity: "warning",
+            });
+          } catch {
+            // Non-blocking
+          }
         }
       }
     } catch (err: any) {
       console.error(`10DLC status check failed for ${record.contractor_id}:`, err.message);
+      // Log individual failures but continue processing other contractors
     }
+  }
+}
+
+/**
+ * Handle registration failure — update DB, notify admin, alert contractor.
+ */
+async function handleRegistrationFailure(
+  contractorId: string,
+  reason: string,
+  supabase: ReturnType<typeof createServerSupabase>
+): Promise<void> {
+  await supabase
+    .from("sms_numbers")
+    .update({
+      registration_status: "failed",
+      registration_error: reason,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("contractor_id", contractorId);
+
+  try {
+    const { sendAlert } = await import("@/lib/alerts");
+    await sendAlert({
+      title: "SMS registration failed",
+      message: `Contractor ${contractorId}: ${reason}`,
+      severity: "error",
+    });
+  } catch {
+    // Non-blocking
   }
 }
 
@@ -743,12 +1043,21 @@ export async function resendOTP(contractorId: string): Promise<{ success: boolea
 
   const { data: record } = await supabase
     .from("sms_numbers")
-    .select("brand_registration_sid")
+    .select("brand_registration_sid, last_otp_sent_at")
     .eq("contractor_id", contractorId)
     .single();
 
   if (!record?.brand_registration_sid) {
     return { success: false, error: "No brand registration found" };
+  }
+
+  // Server-side rate limit — enforce 60s cooldown regardless of UI
+  if (record.last_otp_sent_at) {
+    const elapsed = Date.now() - new Date(record.last_otp_sent_at).getTime();
+    if (elapsed < 60_000) {
+      const waitSec = Math.ceil((60_000 - elapsed) / 1000);
+      return { success: false, error: `Please wait ${waitSec} seconds before requesting another code` };
+    }
   }
 
   try {
@@ -766,6 +1075,93 @@ export async function resendOTP(contractorId: string): Promise<{ success: boolea
   } catch (err: any) {
     return { success: false, error: err.message };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Number lifecycle — release numbers when contractors churn
+// ---------------------------------------------------------------------------
+
+/**
+ * Release a contractor's Twilio phone number and clean up messaging service.
+ * Call this when a contractor cancels, gets deleted, or needs a fresh start.
+ * Releases the number from Twilio billing and marks DB record accordingly.
+ */
+export async function releaseContractorNumber(contractorId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = createServerSupabase();
+
+  const { data: record } = await supabase
+    .from("sms_numbers")
+    .select("twilio_sid, messaging_service_sid, phone_number")
+    .eq("contractor_id", contractorId)
+    .single();
+
+  if (!record) {
+    return { success: true }; // Nothing to release
+  }
+
+  const client = await getClient();
+  const errors: string[] = [];
+
+  // Release the phone number from Twilio (stops billing)
+  if (record.twilio_sid) {
+    try {
+      await client.incomingPhoneNumbers(record.twilio_sid).remove();
+      console.log(`Released number ${record.phone_number} (${record.twilio_sid}) for contractor ${contractorId}`);
+    } catch (err: any) {
+      if (!err.message?.includes("404")) {
+        console.error(`Failed to release number ${record.twilio_sid}:`, err.message);
+        errors.push(`Number release: ${err.message}`);
+      }
+    }
+  }
+
+  // Always clean up messaging service — even if number release failed (stops billing leak)
+  if (record.messaging_service_sid) {
+    try {
+      await client.messaging.v1.services(record.messaging_service_sid).remove();
+      console.log(`Deleted messaging service ${record.messaging_service_sid} for contractor ${contractorId}`);
+    } catch (err: any) {
+      if (!err.message?.includes("404")) {
+        console.error(`Failed to delete messaging service ${record.messaging_service_sid}:`, err.message);
+        errors.push(`Messaging service: ${err.message}`);
+      }
+    }
+  }
+
+  // Update DB — mark as released (always, even on partial Twilio failure)
+  const { error: smsError } = await supabase
+    .from("sms_numbers")
+    .update({
+      status: "released",
+      registration_status: "not_started",
+      phone_number: null,
+      twilio_sid: null,
+      messaging_service_sid: null,
+      campaign_sid: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("contractor_id", contractorId);
+
+  if (smsError) errors.push(`DB sms_numbers: ${smsError.message}`);
+
+  // Clear contractor's SMS fields
+  const { error: contractorError } = await supabase
+    .from("contractors")
+    .update({
+      sms_enabled: false,
+      twilio_number: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", contractorId);
+
+  if (contractorError) errors.push(`DB contractors: ${contractorError.message}`);
+
+  if (errors.length > 0) {
+    console.error(`releaseContractorNumber partial failures for ${contractorId}:`, errors);
+    return { success: false, error: errors.join("; ") };
+  }
+
+  return { success: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -826,6 +1222,50 @@ async function notifyA2PWizardNeeded(
   }
 }
 
+/**
+ * Try to find an available local number — falls back through:
+ * 1. Contractor's area code (ideal — matches their business phone)
+ * 2. Same state, any area code
+ * 3. Any US local number
+ */
+async function findAvailableNumber(
+  client: any,
+  areaCode: string,
+  state: string
+): Promise<{ phoneNumber: string } | null> {
+  // Attempt 1: exact area code
+  if (areaCode) {
+    const exact = await client.availablePhoneNumbers("US").local.list({
+      areaCode,
+      smsEnabled: true,
+      voiceEnabled: true,
+      limit: 1,
+    });
+    if (exact && exact.length > 0) return exact[0];
+  }
+
+  // Attempt 2: same state
+  if (state) {
+    const sameState = await client.availablePhoneNumbers("US").local.list({
+      inRegion: state,
+      smsEnabled: true,
+      voiceEnabled: true,
+      limit: 1,
+    });
+    if (sameState && sameState.length > 0) return sameState[0];
+  }
+
+  // Attempt 3: any US number
+  const anyUS = await client.availablePhoneNumbers("US").local.list({
+    smsEnabled: true,
+    voiceEnabled: true,
+    limit: 1,
+  });
+  if (anyUS && anyUS.length > 0) return anyUS[0];
+
+  return null;
+}
+
 function extractAreaCode(phone: string): string {
   // Remove +1 prefix and grab first 3 digits
   const cleaned = phone.replace(/\D/g, "");
@@ -835,6 +1275,3 @@ function extractAreaCode(phone: string): string {
   return cleaned.slice(0, 3);
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}

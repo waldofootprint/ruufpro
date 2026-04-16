@@ -3,6 +3,7 @@
 import type { ContractorSiteData } from "../contractor-sections/types";
 import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
 import FloatingTextUs from "../contractor-sections/floating-text-us";
+import ChatWidget from "../chat-widget/ChatWidget";
 import ApexHero from "../contractor-sections/apex/hero";
 
 interface ApexTemplateProps {
@@ -29,6 +30,14 @@ export default function ApexTemplate({ templateData }: ApexTemplateProps) {
       />
       <FloatingEstimateCTA hasEstimateWidget={d.hasEstimateWidget} phone={d.phone} />
       <FloatingTextUs phone={d.phone} />
+      <ChatWidget
+        contractorId={d.contractorId}
+        businessName={d.businessName}
+        hasAiChatbot={d.hasAiChatbot ?? false}
+        customGreeting={d.chatGreeting}
+        accentColor="#2563EB"
+        fontFamily="'Inter', sans-serif"
+      />
     </main>
   );
 }

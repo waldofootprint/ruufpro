@@ -26,7 +26,6 @@ Email rules enforced:
 
 import argparse
 import csv
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -37,6 +36,17 @@ OUTPUT_DIR = Path(__file__).parent.parent / ".tmp" / "sequences"
 
 # Send delay in days from previous email (for Instantly sequence config)
 SEND_DELAYS_DAYS = [0, 3, 7, 14, 21]  # Email 1 on day 0, then relative offsets
+
+# CAN-SPAM compliant footer (required on every cold email)
+# Includes: physical address, unsubscribe instruction, legal entity name
+CAN_SPAM_FOOTER = dedent("""\
+
+    —
+    Hannah Waldo
+    Feedback Footprint LLC d/b/a RuufPro
+    8734 54th Ave E, Bradenton, FL 34211
+    Reply STOP to unsubscribe\
+""")
 
 
 # ---------------------------------------------------------------------------
@@ -59,10 +69,7 @@ SEQUENCES = {
 
                 I build free professional websites for roofing contractors. No catch, no contract, no credit card. Takes about 10 minutes to get yours live.
 
-                Worth a quick look?
-
-                Hannah
-                RuufPro\
+                Worth a quick look?\
             """),
         },
         # Email 2 — Mockup (screenshot)
@@ -77,9 +84,7 @@ SEQUENCES = {
 
                 This is completely free. No strings attached. I build these for roofers who are tired of losing jobs to competitors with better online presence.
 
-                Want me to send you the login so you can go live today?
-
-                Hannah\
+                Want me to send you the login so you can go live today?\
             """),
         },
         # Email 3 — Social proof
@@ -92,9 +97,7 @@ SEQUENCES = {
 
                 One of them got a $14,000 reroof job from a homeowner who found him through his new site — first week it was live. He'd been running his business for six years with no web presence at all.
 
-                I have yours stubbed out already. If you want to see it, just reply and I'll send you the link.
-
-                Hannah\
+                I have yours stubbed out already. If you want to see it, just reply and I'll send you the link.\
             """),
         },
         # Email 4 — Observation
@@ -109,9 +112,7 @@ SEQUENCES = {
 
                 The free site I built for you is still sitting here. 10 minutes to go live.
 
-                Worth it?
-
-                Hannah\
+                Worth it?\
             """),
         },
         # Email 5 — Breakup
@@ -124,10 +125,7 @@ SEQUENCES = {
 
                 But the free website I built for {business_name} is still here if you ever want it. No pitch, no follow-up after this, no obligation. If the timing is ever right, just reply and I'll send you the login.
 
-                Good luck out there this season.
-
-                Hannah
-                RuufPro\
+                Good luck out there this season.\
             """),
         },
     ],
@@ -145,10 +143,7 @@ SEQUENCES = {
 
                 I build free professional roofing websites. Clean, fast, mobile-first. Yours would be ready in about 10 minutes, and it would replace what you have now.
 
-                Interested in seeing what it could look like?
-
-                Hannah
-                RuufPro\
+                Interested in seeing what it could look like?\
             """),
         },
         # Email 2 — Mockup
@@ -165,9 +160,7 @@ SEQUENCES = {
 
                 This is free. No cost, no contract, no catch. I do this for roofing contractors who want a site that actually wins them jobs.
 
-                Want to go live with it?
-
-                Hannah\
+                Want to go live with it?\
             """),
         },
         # Email 3 — Social proof
@@ -182,9 +175,7 @@ SEQUENCES = {
 
                 I already have a mockup ready for {business_name}. Takes 10 minutes to replace what you have.
 
-                Want to see the before and after?
-
-                Hannah\
+                Want to see the before and after?\
             """),
         },
         # Email 4 — Observation
@@ -201,9 +192,7 @@ SEQUENCES = {
 
                 I've already built it — free, no contract. 10 minutes to go live.
 
-                Worth a look?
-
-                Hannah\
+                Worth a look?\
             """),
         },
         # Email 5 — Breakup
@@ -218,10 +207,7 @@ SEQUENCES = {
 
                 Just reply anytime and I'll pick it back up right where we left off.
 
-                Good luck this season.
-
-                Hannah
-                RuufPro\
+                Good luck this season.\
             """),
         },
     ],
@@ -239,10 +225,7 @@ SEQUENCES = {
 
                 Roofle charges $350/month for this. We charge $99.
 
-                Worth 5 minutes to see how it works?
-
-                Hannah
-                RuufPro\
+                Worth 5 minutes to see how it works?\
             """),
         },
         # Email 2 — Demo link
@@ -259,9 +242,7 @@ SEQUENCES = {
 
                 Most contractors close 20-30% of widget leads within the first two weeks.
 
-                Want to add it to the {business_name} site?
-
-                Hannah\
+                Want to add it to the {business_name} site?\
             """),
         },
         # Email 3 — Social proof
@@ -276,9 +257,7 @@ SEQUENCES = {
 
                 His words: "I had no idea my site was sending people away because they couldn't get a number."
 
-                I can add the widget to the {business_name} site in about 20 minutes. Want to see if it makes sense?
-
-                Hannah\
+                I can add the widget to the {business_name} site in about 20 minutes. Want to see if it makes sense?\
             """),
         },
         # Email 4 — Observation
@@ -291,9 +270,7 @@ SEQUENCES = {
 
                 The widget sends estimate requests straight to your phone. Homeowners don't want to wait for a callback — they want a number right now. Giving them that converts more of your traffic into actual jobs.
 
-                Worth 5 minutes to talk through it?
-
-                Hannah\
+                Worth 5 minutes to talk through it?\
             """),
         },
         # Email 5 — Breakup
@@ -308,10 +285,7 @@ SEQUENCES = {
 
                 No hard sell — just wanted to make sure you knew the option exists.
 
-                Good luck out there this season.
-
-                Hannah
-                RuufPro\
+                Good luck out there this season.\
             """),
         },
     ],
@@ -357,7 +331,7 @@ def generate_sequence(prospect: dict, campaign: str) -> list[dict]:
     emails = []
     for i, template in enumerate(templates):
         subject = render_template(template["subject"], variables)
-        body = render_template(template["body"], variables)
+        body = render_template(template["body"], variables) + CAN_SPAM_FOOTER
         wc = word_count(body)
         emails.append({
             "email_num": i + 1,

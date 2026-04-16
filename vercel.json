@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "next build",
+  "buildCommand": "NODE_OPTIONS='--max-old-space-size=7168' next build",
   "devCommand": "next dev",
   "installCommand": "npm install",
   "regions": ["iad1"],
@@ -20,11 +20,27 @@
     {
       "path": "/api/cron/daily-digest",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/morning-summary",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/expire-trials",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/chat-cleanup",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/scrape-cleanup",
+      "schedule": "0 9 * * *"
     }
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/((?!widget|chat/).*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
@@ -33,6 +49,32 @@
         {
           "key": "X-Frame-Options",
           "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    },
+    {
+      "source": "/widget/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    },
+    {
+      "source": "/chat/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
         },
         {
           "key": "X-XSS-Protection",

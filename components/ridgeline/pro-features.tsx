@@ -303,25 +303,54 @@ export default function RidgelineProFeatures() {
 
           <StepConnector />
 
-          {/* Step 3: Missed-Call Text-Back */}
+          {/* Step 3: Riley AI Chatbot */}
           <FeatureCard
             step={3}
-            label="Missed-Call Text-Back"
-            title="You're On A Roof. Phone Rings. You Can't Answer."
-            outcome="No problem. RuufPro texts them back instantly with a professional message — the lead stays warm until you're free. Every lead syncs to your existing CRM or system automatically, so nothing falls through the cracks."
-            stat="85% of leads are lost to voicemail. Not yours."
+            label="AI Chatbot"
+            title="A Homeowner Has Questions At 11pm. Riley Has Answers."
+            outcome="Riley is your AI assistant — trained on your business, your services, your pricing. She answers homeowner questions instantly, captures their info, and hands you a qualified lead. Works 24/7, even when you're asleep."
+            stat="64% of homeowners research contractors after business hours. Riley never clocks out."
           >
-            <div>
-              <PhoneMockup>
-                <MessagesHeader initials="RC" name="Robert Chen" />
-                <div className="px-3 py-4 space-y-2.5 bg-white flex-1 flex flex-col justify-end">
-                  <p className="text-[10px] text-center text-gray-400 mb-1">Today 2:34 PM</p>
-                  <SmsBubble message="Hi Robert, this is Jenna at IronShield Roofing. Sorry I missed you! How can we help with your roof today? Reply with your address for a free inspection." time="2:34 PM" isOutgoing />
-                  <SmsBubble message="Hi! Yes I need a roof inspection. I'm at 742 Evergreen Terrace." time="2:41 PM" />
+            <div className="w-full max-w-[320px] mx-auto">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+                {/* Chat header */}
+                <div className="bg-[#1B3A4B] px-4 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#D4863E] flex items-center justify-center text-white text-xs font-bold">R</div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Riley</p>
+                    <p className="text-[10px] text-white/50">IronShield Roofing Assistant</p>
+                  </div>
+                  <div className="ml-auto w-2 h-2 rounded-full bg-emerald-400" />
                 </div>
-                <MessagesInputBar />
-              </PhoneMockup>
-              <p className="text-[10px] text-[#1B3A4B]/30 text-center mt-4">Connects to HubSpot, Jobber, AccuLynx, Google Sheets, and 5,000+ other tools.</p>
+                {/* Chat messages */}
+                <div className="px-4 py-4 space-y-3 bg-gray-50 min-h-[220px]">
+                  <div className="flex gap-2">
+                    <div className="w-6 h-6 rounded-full bg-[#D4863E] flex items-center justify-center text-white text-[8px] font-bold shrink-0 mt-0.5">R</div>
+                    <div className="bg-white border border-gray-100 rounded-xl rounded-tl-sm px-3 py-2 text-[12px] text-gray-700 leading-relaxed max-w-[85%]">
+                      Hi! I&apos;m Riley, IronShield&apos;s assistant. How can I help with your roof?
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="bg-[#1B3A4B] rounded-xl rounded-tr-sm px-3 py-2 text-[12px] text-white leading-relaxed max-w-[85%]">
+                      How much does a roof replacement cost?
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="w-6 h-6 rounded-full bg-[#D4863E] flex items-center justify-center text-white text-[8px] font-bold shrink-0 mt-0.5">R</div>
+                    <div className="bg-white border border-gray-100 rounded-xl rounded-tl-sm px-3 py-2 text-[12px] text-gray-700 leading-relaxed max-w-[85%]">
+                      Great question! For a typical home, asphalt shingle replacements run <strong>$8,000-$15,000</strong> depending on size and pitch. Want an instant estimate? Just enter your address in our calculator!
+                    </div>
+                  </div>
+                </div>
+                {/* Input */}
+                <div className="bg-white border-t border-gray-100 px-3 py-2 flex items-center gap-2">
+                  <div className="flex-1 bg-gray-50 rounded-full border border-gray-200 px-3 py-1.5 text-[11px] text-gray-400">Ask Riley anything...</div>
+                  <div className="w-7 h-7 rounded-full bg-[#D4863E] flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[10px] text-[#1B3A4B]/30 text-center mt-4">Works on your RuufPro site or embed on any existing website.</p>
             </div>
           </FeatureCard>
 
@@ -332,19 +361,27 @@ export default function RidgelineProFeatures() {
             step={4}
             reverse
             label="Review Automation"
-            title="One Text After Every Job. Reviews Stack Up While You Sleep."
-            outcome="After a job is marked complete, RuufPro sends a friendly review request. No awkward asking. No forgetting. Just 5-star reviews on autopilot."
+            title="Mark the Job Done. Reviews Roll In While You Sleep."
+            outcome="After a job is marked complete, RuufPro emails the homeowner a friendly review request — your business name, one big button, done. No awkward asking. No forgetting. Just 5-star reviews on autopilot."
             stat="Roofers who ask for reviews close 5x more jobs."
           >
-            <PhoneMockup>
-              <MessagesHeader initials="SM" name="Sarah Mitchell" />
-              <div className="px-3 py-4 space-y-2.5 bg-white flex-1 flex flex-col justify-end">
-                <p className="text-[10px] text-center text-gray-400 mb-1">Today 4:15 PM</p>
-                <SmsBubble message="Hi Sarah, we hope you enjoyed your experience with IronShield Roofing! Would you mind taking a moment to leave a review? Here's the link: g.page/ironshield" time="4:15 PM" isOutgoing />
-                <SmsBubble message="Absolutely! You guys did a great job. Just left you 5 stars ⭐" time="4:22 PM" />
+            {/* Email mockup */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden max-w-[260px] mx-auto">
+              <div className="bg-gray-50 border-b border-gray-200 px-3 py-2">
+                <p className="text-[9px] text-gray-400">From: IronShield Roofing via RuufPro</p>
+                <p className="text-[9px] text-gray-400">To: sarah.mitchell@email.com</p>
+                <p className="text-[10px] font-semibold text-gray-700 mt-0.5">How was your experience with IronShield Roofing?</p>
               </div>
-              <MessagesInputBar />
-            </PhoneMockup>
+              <div className="px-4 py-4 text-center">
+                <p className="text-[11px] text-gray-600 leading-relaxed mb-3">
+                  Hi Sarah, thanks for choosing IronShield Roofing! If you have a minute, a quick review would really help us out.
+                </p>
+                <div className="bg-blue-600 text-white text-[11px] font-semibold py-2 px-4 rounded-md inline-block">
+                  ⭐ Leave a Review
+                </div>
+                <p className="text-[8px] text-gray-300 mt-3">Sent on behalf of IronShield Roofing</p>
+              </div>
+            </div>
           </FeatureCard>
         </div>
 

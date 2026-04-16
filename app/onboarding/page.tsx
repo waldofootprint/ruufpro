@@ -93,7 +93,14 @@ export default function OnboardingPage() {
   const [offersFinancing, setOffersFinancing] = useState(false);
   const [warrantyYears, setWarrantyYears] = useState<number | null>(null);
   const [yearsInBusiness, setYearsInBusiness] = useState<number | null>(null);
-  const [legalEntityType, setLegalEntityType] = useState("sole_proprietor");
+  const [legalEntityType, setLegalEntityType] = useState("");
+
+  // Editor — business details (for SMS registration)
+  const [ownerFirstName, setOwnerFirstName] = useState("");
+  const [ownerLastName, setOwnerLastName] = useState("");
+  const [ein, setEin] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [zip, setZip] = useState("");
 
   // Editor — about
   const [showAbout, setShowAbout] = useState(true);
@@ -177,6 +184,14 @@ export default function OnboardingPage() {
 
     if (!slug) { setError("Please enter a valid business name."); setLoading(false); return; }
 
+    const RESERVED_SLUGS = new Set([
+      "www", "app", "api", "admin", "dashboard", "login", "signup", "onboarding",
+      "widget", "chat", "ops", "hq", "command-center", "welcome", "resources",
+      "calculator", "preview", "demo", "mission-control", "sitemap", "robots",
+      "mail", "email", "billing", "support", "help", "status", "docs",
+    ]);
+    if (RESERVED_SLUGS.has(slug)) { setError("That name is reserved. Please use a different business name."); setLoading(false); return; }
+
     const finalAbout = showAbout ? (aboutText || defaultAbout) : null;
     const finalCities = serviceAreaCities.length > 0 ? serviceAreaCities : [city];
     const finalHeadline = headline || defaultHeadline;
@@ -188,8 +203,13 @@ export default function OnboardingPage() {
         user_id: userId,
         email: (await supabase.auth.getUser()).data.user?.email || "",
         business_name: businessName, phone, city, state,
+        zip: zip || null,
+        address: streetAddress || null,
+        owner_first_name: ownerFirstName || null,
+        owner_last_name: ownerLastName || null,
+        ein: legalEntityType && legalEntityType !== "sole_proprietor" ? (ein || null) : null,
         business_type: "residential",
-        legal_entity_type: legalEntityType,
+        legal_entity_type: legalEntityType || null,
         is_licensed: showTrust ? isLicensed : false,
         is_insured: showTrust ? isInsured : false,
         gaf_master_elite: showTrust ? gafMasterElite : false,
@@ -226,10 +246,55 @@ export default function OnboardingPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contractorId: contractor.id }),
-    }).catch(() => {}); // Silent fail — emails are important but not blocking
+    }).catch(() => {});
+
+    // Notify Slack — new signup
+    fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event: "signup", data: { businessName, city, state } }),
+    }).catch(() => {});
 
     setLoading(false);
     setScreen("published");
+  }
+
+  async function handleSkip() {
+    if (!userId) { router.push("/signup"); return; }
+    if (!businessName || !phone || !city || !state) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+
+    const { error: contractorErr } = await supabase
+      .from("contractors")
+      .insert({
+        user_id: userId,
+        email: (await supabase.auth.getUser()).data.user?.email || "",
+        business_name: businessName,
+        phone,
+        city,
+        state,
+        business_type: "residential",
+        service_area_cities: [city],
+      });
+
+    if (contractorErr) {
+      setError(contractorErr.message.includes("duplicate") ? "You already have an account set up." : contractorErr.message);
+      setLoading(false);
+      return;
+    }
+
+    // Notify Slack — new signup (skip flow)
+    fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event: "signup", data: { businessName, city, state } }),
+    }).catch(() => {});
+
+    router.push("/dashboard");
   }
 
   if (!userId) {
@@ -295,7 +360,15 @@ export default function OnboardingPage() {
             </button>
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-4">
+          <button
+            onClick={handleSkip}
+            disabled={loading}
+            className="w-full text-center text-xs text-gray-500 mt-4 hover:text-gray-700 transition-colors disabled:opacity-50"
+          >
+            I already have a website — just give me the tools →
+          </button>
+
+          <p className="text-center text-xs text-gray-400 mt-2">
             Free forever. No credit card. Your site is optimized for Google from day one.
           </p>
         </div>
@@ -317,7 +390,7 @@ export default function OnboardingPage() {
   // ============================================================
   // SCREEN 3: Edit Mode — Two-column with sticky preview
   // ============================================================
-  return (
+  if (screen === "editor") return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-6xl px-4 py-6">
         {/* Header */}
@@ -391,6 +464,58 @@ export default function OnboardingPage() {
                 })}
               </div>
               {services.length === 0 && <p style={{ fontSize: 12, color: "#ef4444", marginTop: 8 }}>Select at least one service</p>}
+            </div>
+
+            {/* Business Details — needed for SMS registration */}
+            <div ref={setSectionRef("business")} data-section="business" className="bg-white rounded-xl border border-gray-200 p-5">
+              <h2 className="text-base font-semibold text-gray-900 mb-1">Business Details</h2>
+              <p className="text-xs text-gray-500 mb-3">Required for SMS setup — needed to register your business phone number with carriers.</p>
+
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <label className="block">
+                  <span className="text-xs font-medium text-gray-600">Owner First Name <span className="text-red-400">*</span></span>
+                  <input type="text" value={ownerFirstName} onChange={(e) => setOwnerFirstName(e.target.value)} placeholder="Joe"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-medium text-gray-600">Owner Last Name <span className="text-red-400">*</span></span>
+                  <input type="text" value={ownerLastName} onChange={(e) => setOwnerLastName(e.target.value)} placeholder="Smith"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+                </label>
+              </div>
+
+              <label className="block mb-3">
+                <span className="text-xs font-medium text-gray-600">Business Type <span className="text-red-400">*</span></span>
+                <select value={legalEntityType} onChange={(e) => setLegalEntityType(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900">
+                  <option value="" disabled>Select your business type</option>
+                  <option value="llc">LLC</option>
+                  <option value="corporation">Corporation</option>
+                  <option value="sole_proprietor">Sole Proprietor (no EIN)</option>
+                  <option value="partnership">Partnership</option>
+                </select>
+              </label>
+
+              {legalEntityType && legalEntityType !== "sole_proprietor" && (
+                <label className="block mb-3">
+                  <span className="text-xs font-medium text-gray-600">EIN (Employer Identification Number) <span className="text-red-400">*</span></span>
+                  <input type="text" value={ein} onChange={(e) => setEin(e.target.value.replace(/[^\d-]/g, "").slice(0, 10))} placeholder="XX-XXXXXXX"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+                  <p className="text-[10px] text-gray-400 mt-1">Required for LLC/Corporation. Used for carrier verification only — never shared.</p>
+                </label>
+              )}
+
+              <label className="block mb-3">
+                <span className="text-xs font-medium text-gray-600">Street Address <span className="text-red-400">*</span></span>
+                <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} placeholder="123 Main St"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-gray-600">ZIP Code <span className="text-red-400">*</span></span>
+                <input type="text" inputMode="numeric" value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))} placeholder="33601"
+                  className="mt-1 block w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900" />
+              </label>
             </div>
 
             {/* Trust Signals */}
@@ -473,6 +598,11 @@ export default function OnboardingPage() {
               <button
                 onClick={() => {
                   if (services.length === 0) { setError("Select at least one service."); return; }
+                  if (!ownerFirstName.trim() || !ownerLastName.trim()) { setError("Owner first and last name are required."); return; }
+                  if (!legalEntityType) { setError("Please select a business type."); return; }
+                  if (legalEntityType !== "sole_proprietor" && !ein.trim()) { setError("EIN is required for your business type."); return; }
+                  if (!streetAddress.trim()) { setError("Street address is required."); return; }
+                  if (!zip.trim()) { setError("ZIP code is required."); return; }
                   handlePublish();
                 }}
                 disabled={loading}

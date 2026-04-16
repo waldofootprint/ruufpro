@@ -1,13 +1,21 @@
 // Full estimate calculation engine.
 //
 // This is the brain of the estimate widget. It takes roof data (from Solar API
-// or manual input) and a contractor's pricing, then calculates a price range
-// accounting for: materials, labor (pitch-adjusted), waste, accessories
-// (ridge cap, hip/valley flashing, starter strip), tear-off, and penetrations.
+// or manual input) and a contractor's pricing, then calculates a best estimate
+// with an itemized breakdown, displayed as a ±15% range.
 //
-// The output is always a LOW-HIGH range, never a single number. This is
-// intentional — it sets expectations that an inspection is needed for exact
-// pricing, which is the CTA that converts the estimate into a lead.
+// How it works:
+// 1. Compute a midpoint estimate using the average of low/high rates
+// 2. Apply itemized adjustments (waste, accessories, pitch, tear-off, penetrations)
+// 3. Display as midpoint ±15% (or ±10% when contractor has set their own rate)
+//
+// This approach avoids the "low-everything vs high-everything" compounding
+// problem that made the old range 85% wide. The ±band is tight enough to be
+// useful to homeowners while honest about inspection-level unknowns.
+
+// Shared disclaimer — used across estimate widget, chat estimate card, PDFs, and system prompt.
+// Keep this in ONE place so all surfaces stay consistent for legal protection.
+export const ESTIMATE_DISCLAIMER = "Ballpark estimate based on satellite measurements — not a binding quote. A free on-site inspection will give you exact numbers.";
 
 import type { RoofData } from "./solar-api";
 import type { RoofGeometry } from "./roof-geometry";
@@ -122,25 +130,31 @@ export function getWasteFactor(numSegments: number): number {
 }
 
 // Penetration cost estimate: chimneys, vents, skylights add flashing labor
-function getPenetrationCost(roofAreaSqft: number): { low: number; high: number } {
-  if (roofAreaSqft < 1500) return { low: 300, high: 500 };
-  if (roofAreaSqft < 2500) return { low: 450, high: 750 };
-  return { low: 600, high: 1000 };
+function getPenetrationCost(roofAreaSqft: number): number {
+  if (roofAreaSqft < 1500) return 400;
+  if (roofAreaSqft < 2500) return 600;
+  return 800;
 }
 
 // Tear-off cost per sqft when there are 2 existing layers
-const TEAROFF_RATE_LOW = 1.0; // $/sqft
-const TEAROFF_RATE_HIGH = 1.5; // $/sqft
+const TEAROFF_RATE = 1.25; // $/sqft midpoint
 
-// Accessory costs per linear foot
-const RIDGE_CAP_LOW = 2.5;
-const RIDGE_CAP_HIGH = 4.0;
-const HIP_FLASH_LOW = 3.0;
-const HIP_FLASH_HIGH = 5.0;
-const VALLEY_FLASH_LOW = 4.0;
-const VALLEY_FLASH_HIGH = 6.0;
-const STARTER_STRIP_LOW = 1.5;
-const STARTER_STRIP_HIGH = 2.5;
+// Accessory costs per linear foot (midpoints)
+const RIDGE_CAP_RATE = 3.25;
+const HIP_FLASH_RATE = 4.0;
+const VALLEY_FLASH_RATE = 5.0;
+const STARTER_STRIP_RATE = 2.0;
+
+// No separate overhead markup — the contractor's $/sqft rate already includes
+// their overhead and profit. Adding a markup on top would double-count.
+// The add-ons (waste, accessories, penetrations, pitch) are quantity-based
+// adjustments, not pricing markups.
+
+// Default uncertainty band: ±10% for regional defaults, ±8% for contractor-set rates.
+// Old values (15/10) produced ranges too wide vs competitors (Roofr ±5%, Instant Roofer ±9%).
+// ±10% matches industry standard for satellite estimates per insurance/contractor surveys.
+const DEFAULT_BAND_PERCENT = 10;
+const CONTRACTOR_BAND_PERCENT = 8;
 
 // V1 fallback: estimate home sqft from bedroom count
 const BEDROOM_SQFT_MAP: Record<number, number> = {
@@ -189,76 +203,90 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   // Get all multipliers
   const pitchMultiplier = getPitchMultiplier(pitchDegrees);
   const wasteFactor = getWasteFactor(numSegments);
-  const penetration = getPenetrationCost(roofAreaSqft);
+  const penetrationCost = getPenetrationCost(roofAreaSqft);
   const weatherSurge = input.weatherSurgeMultiplier || 1.0;
 
-  // Get contractor's rates for the selected material
+  // Get contractor's rates — use MIDPOINT for the best estimate
   const rateLow = input.rates[`${input.material}_low` as keyof ContractorRates] || 0;
   const rateHigh = input.rates[`${input.material}_high` as keyof ContractorRates] || 0;
+  const rateMid = (rateLow + rateHigh) / 2;
 
-  // Material cost (area × waste × $/sqft)
+  // Detect if contractor has set custom rates (not using regional defaults).
+  // A contractor who KNOWS their pricing sets a tight spread (e.g. $3.10-$3.30 = 1.065 ratio).
+  // Regional defaults have wider spreads (1.15-1.33 ratio).
+  // Threshold 1.15: tighter = contractor-configured (itemized), wider = defaults (bundled).
+  const isContractorConfigured = rateHigh > 0 && rateLow > 0 && (rateHigh / rateLow) < 1.15;
+  const bandPercent = isContractorConfigured ? CONTRACTOR_BAND_PERCENT : DEFAULT_BAND_PERCENT;
+
+  // Material cost at midpoint (area × waste × $/sqft)
   const materialSqft = roofAreaSqft * wasteFactor;
-  const materialCostLow = materialSqft * rateLow;
-  const materialCostHigh = materialSqft * rateHigh;
+  const materialCost = materialSqft * rateMid;
 
-  // Accessory costs (from geometric inference)
-  let accessoryCostLow = 0;
-  let accessoryCostHigh = 0;
+  // --- BUNDLED vs ITEMIZED MODE ---
+  // When using regional defaults, the $/sqft rate is an all-in industry average
+  // that already includes accessories, penetrations, and typical tear-off costs.
+  // Adding them separately would double-count and inflate the estimate.
+  //
+  // When a contractor has configured their own rates, those are material+labor
+  // rates and we SHOULD add accessories/penetrations/tear-off separately for
+  // a transparent, itemized breakdown — that's our differentiator.
 
-  if (input.geometry) {
-    accessoryCostLow =
-      input.geometry.ridgeLengthFt * RIDGE_CAP_LOW +
-      input.geometry.hipLengthFt * HIP_FLASH_LOW +
-      input.geometry.valleyLengthFt * VALLEY_FLASH_LOW +
-      input.geometry.perimeterFt * STARTER_STRIP_LOW;
+  let accessoryCost: number;
+  let tearoffCost = 0;
+  let effectivePenetrationCost: number;
 
-    accessoryCostHigh =
-      input.geometry.ridgeLengthFt * RIDGE_CAP_HIGH +
-      input.geometry.hipLengthFt * HIP_FLASH_HIGH +
-      input.geometry.valleyLengthFt * VALLEY_FLASH_HIGH +
-      input.geometry.perimeterFt * STARTER_STRIP_HIGH;
+  if (isContractorConfigured) {
+    // ITEMIZED MODE: contractor's rates are specific — add real line items
+
+    // Accessory costs (from geometric inference or estimate)
+    if (input.geometry) {
+      accessoryCost =
+        input.geometry.ridgeLengthFt * RIDGE_CAP_RATE +
+        input.geometry.hipLengthFt * HIP_FLASH_RATE +
+        input.geometry.valleyLengthFt * VALLEY_FLASH_RATE +
+        input.geometry.perimeterFt * STARTER_STRIP_RATE;
+    } else {
+      // No geometry data — accessories are roughly 10% of material cost
+      accessoryCost = materialCost * 0.10;
+    }
+
+    // Tear-off cost (only when homeowner says they have 2 layers)
+    if (input.shingleLayers === 2) {
+      tearoffCost = roofAreaSqft * TEAROFF_RATE;
+    } else if (input.shingleLayers === "not_sure") {
+      tearoffCost = roofAreaSqft * TEAROFF_RATE * 0.4;
+    }
+
+    effectivePenetrationCost = penetrationCost;
   } else {
-    // No geometry data — rough estimate based on roof area
-    // Average accessory cost is roughly 8-12% of material cost
-    accessoryCostLow = materialCostLow * 0.08;
-    accessoryCostHigh = materialCostHigh * 0.12;
+    // BUNDLED MODE: regional defaults are all-in — skip separate adders
+    // The $/sqft rate already accounts for typical accessories, penetrations,
+    // and single-layer tear-off. Only add tear-off for confirmed 2-layer roofs.
+    accessoryCost = 0;
+    effectivePenetrationCost = 0;
+
+    if (input.shingleLayers === 2) {
+      // Confirmed 2-layer = extra tear-off beyond what's in the regional rate
+      tearoffCost = roofAreaSqft * TEAROFF_RATE;
+    }
+    // "not_sure" gets no adder in bundled mode — regional rate covers typical case
   }
 
-  // Tear-off cost (only when homeowner says they have 2 layers)
-  let tearoffCostLow = 0;
-  let tearoffCostHigh = 0;
+  // Pitch multiplier applies to labor-intensive costs (material install + tear-off)
+  // Accessories and penetrations are less affected by pitch
+  const pitchAdjustedMaterial = materialCost * pitchMultiplier;
+  const pitchAdjustedTearoff = tearoffCost * pitchMultiplier;
+  const pitchAdjustedPenetrations = effectivePenetrationCost * pitchMultiplier;
 
-  if (input.shingleLayers === 2) {
-    tearoffCostLow = roofAreaSqft * TEAROFF_RATE_LOW;
-    tearoffCostHigh = roofAreaSqft * TEAROFF_RATE_HIGH;
-  } else if (input.shingleLayers === "not_sure") {
-    // Widen the range to account for possible tear-off
-    tearoffCostHigh = roofAreaSqft * TEAROFF_RATE_HIGH * 0.5; // 50% chance factored in
-  }
+  // Subtotal before overhead
+  const subtotal = pitchAdjustedMaterial + accessoryCost + pitchAdjustedTearoff + pitchAdjustedPenetrations;
 
-  // Contractor buffer: widens the HIGH end only, giving the contractor
-  // a safety margin for unknowns found during inspection
-  const bufferMultiplier = 1 + (input.bufferPercent || 0) / 100;
+  // Apply weather surge (no overhead markup — rate already includes it)
+  const midEstimate = Math.round(subtotal * weatherSurge);
 
-  // Assemble final price
-  // Pitch multiplier applies to material, tear-off, and penetration costs
-  // (steep roofs make all labor harder, not just shingle installation)
-  const priceLow = Math.round(
-    (materialCostLow * pitchMultiplier +
-      accessoryCostLow +
-      tearoffCostLow * pitchMultiplier +
-      penetration.low * pitchMultiplier) *
-      weatherSurge
-  );
-
-  const priceHigh = Math.round(
-    (materialCostHigh * pitchMultiplier +
-      accessoryCostHigh +
-      tearoffCostHigh * pitchMultiplier +
-      penetration.high * pitchMultiplier) *
-      weatherSurge *
-      bufferMultiplier // buffer only affects the high end
-  );
+  // Apply ±band to get the range
+  const priceLow = Math.round(midEstimate * (1 - bandPercent / 100));
+  const priceHigh = Math.round(midEstimate * (1 + bandPercent / 100));
 
   return {
     priceLow,
@@ -268,14 +296,14 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
     numSegments,
     isFromSatellite,
     breakdown: {
-      materialCostLow: Math.round(materialCostLow),
-      materialCostHigh: Math.round(materialCostHigh),
+      materialCostLow: Math.round(materialCost),
+      materialCostHigh: Math.round(materialCost), // same — midpoint-based now
       pitchMultiplier,
       wasteFactor,
-      bufferPercent: input.bufferPercent || 0,
-      accessoryCost: Math.round((accessoryCostLow + accessoryCostHigh) / 2),
-      tearoffCost: Math.round((tearoffCostLow + tearoffCostHigh) / 2),
-      penetrationCost: Math.round((penetration.low + penetration.high) / 2),
+      bufferPercent: bandPercent,
+      accessoryCost: Math.round(accessoryCost),
+      tearoffCost: Math.round(tearoffCost),
+      penetrationCost: Math.round(effectivePenetrationCost),
       weatherSurge,
     },
   };

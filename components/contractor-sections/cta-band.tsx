@@ -5,9 +5,9 @@
 import { THEME } from "./theme";
 import type { ContractorSiteData } from "./types";
 
-type CtaBandProps = Pick<ContractorSiteData, "phone" | "city" | "hasEstimateWidget">;
+type CtaBandProps = Pick<ContractorSiteData, "phone" | "city" | "hasEstimateWidget" | "offersFinancing">;
 
-export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps) {
+export default function CtaBand({ phone, city, hasEstimateWidget, offersFinancing }: CtaBandProps) {
   const phoneClean = phone.replace(/\D/g, "");
 
   return (
@@ -21,33 +21,30 @@ export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps
         overflow: "hidden",
       }}
     >
-      {/* Dot texture overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-          pointerEvents: "none",
-        }}
-      />
 
       <div style={{ position: "relative", zIndex: 1, maxWidth: 600, margin: "0 auto" }}>
         <h2
           style={{
-            fontSize: "clamp(24px, 4vw, 34px)",
+            fontSize: "clamp(24px, 4vw, 38px)",
             fontWeight: 700,
             color: "#fff",
             lineHeight: 1.15,
             marginBottom: 12,
-            fontFamily: THEME.fontSerif,
+            fontFamily: THEME.fontDisplay,
+            textTransform: "uppercase" as const,
+            letterSpacing: "0.02em",
           }}
         >
           Ready to get your roof handled?
         </h2>
-        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", marginBottom: 32, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", marginBottom: offersFinancing ? 16 : 32, lineHeight: 1.6 }}>
           Free estimate, no obligation, no pressure. We'll come out, look at your roof, and give you an honest answer. Most calls returned same day.
         </p>
+        {offersFinancing && (
+          <p style={{ fontSize: 15, fontWeight: 600, color: THEME.accent, marginBottom: 32 }}>
+            Flexible financing available — $0 down options and competitive rates.
+          </p>
+        )}
 
         <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
           {hasEstimateWidget ? (
@@ -60,7 +57,7 @@ export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps
                 padding: "14px 28px",
                 background: THEME.accent,
                 color: "#fff",
-                borderRadius: 9999,
+                borderRadius: 0,
                 fontWeight: 700,
                 fontSize: 15,
                 textDecoration: "none",
@@ -82,7 +79,7 @@ export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps
                 padding: "14px 28px",
                 background: THEME.accent,
                 color: "#fff",
-                borderRadius: 9999,
+                borderRadius: 0,
                 fontWeight: 700,
                 fontSize: 15,
                 textDecoration: "none",
@@ -104,7 +101,7 @@ export default function CtaBand({ phone, city, hasEstimateWidget }: CtaBandProps
               background: "transparent",
               color: "#fff",
               border: "1.5px solid rgba(255,255,255,0.25)",
-              borderRadius: 9999,
+              borderRadius: 0,
               fontWeight: 600,
               fontSize: 15,
               textDecoration: "none",

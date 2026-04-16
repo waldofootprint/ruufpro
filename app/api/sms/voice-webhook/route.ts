@@ -37,33 +37,64 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Only fire textback for unanswered calls
-    const missedStatuses = ["no-answer", "busy", "failed"];
-    if (callStatus && missedStatuses.includes(callStatus)) {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
-      // Look up which contractor owns this Twilio number
-      const { data: contractor } = await supabase
-        .from("contractors")
-        .select("id, business_name")
-        .eq("twilio_number", to)
+    // Look up which contractor owns this Twilio number.
+    // Primary: check contractors.twilio_number (synced at activation).
+    // Fallback: check sms_numbers.phone_number (in case twilio_number sync hasn't fired yet).
+    let contractor: { id: string; business_name: string; phone: string } | null = null;
+
+    const { data: directMatch } = await supabase
+      .from("contractors")
+      .select("id, business_name, phone")
+      .eq("twilio_number", to)
+      .single();
+
+    if (directMatch) {
+      contractor = directMatch;
+    } else {
+      // Fallback: lookup via sms_numbers table
+      const { data: smsMatch } = await supabase
+        .from("sms_numbers")
+        .select("contractor_id")
+        .eq("phone_number", to)
+        .eq("status", "active")
         .single();
 
-      if (contractor) {
-        // Emit event to Inngest — handles textback with dedup + retry
-        await inngest.send({
-          name: "sms/call.missed",
-          data: {
-            contractorId: contractor.id,
-            callerPhone: from,
-            callSid: callSid || "",
-          },
-        });
+      if (smsMatch) {
+        const { data: fallbackContractor } = await supabase
+          .from("contractors")
+          .select("id, business_name, phone")
+          .eq("id", smsMatch.contractor_id)
+          .single();
+        contractor = fallbackContractor;
+      }
+    }
 
-        // Log the missed call
+    // Only log missed calls for unanswered calls
+    const missedStatuses = ["no-answer", "busy", "failed"];
+    if (callStatus && missedStatuses.includes(callStatus) && contractor) {
+
+        // PARKED FOR LAUNCH — Missed-call text-back disabled until $10K MRR + legal review.
+        // Reason: No prior SMS consent from caller. "Conversational response" defense is
+        // untested for automated systems. Re-enable by uncommenting the Inngest event below
+        // and the missedCallTextback function in lib/inngest/functions.ts.
+        // Decision: April 11 2026, SMS Audit 3.
+        //
+        // await inngest.send({
+        //   name: "sms/call.missed",
+        //   data: {
+        //     contractorId: contractor.id,
+        //     callerPhone: from,
+        //     callSid: callSid || "",
+        //   },
+        // });
+
+        // Still log the missed call — valuable data even without auto-textback.
+        // Contractor sees it in dashboard and can manually respond.
         await supabase.from("sms_messages").insert({
           contractor_id: contractor.id,
           direction: "inbound",
@@ -74,17 +105,23 @@ export async function POST(request: NextRequest) {
           twilio_sid: callSid || null,
           status: "received",
         });
-      }
     }
 
-    // Return TwiML: ring contractor's phone for 20 seconds, then hang up.
-    // The actual forwarding number is configured on the Twilio number itself.
-    // This response handles the initial call flow if used as the primary webhook.
-    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+    // Return TwiML: forward call to contractor's personal phone for 20 seconds.
+    // If no answer, Twilio posts back with CallStatus='no-answer' and we send a textback.
+    // If we can't find the contractor or they have no phone, just say sorry and hang up.
+    const forwardNumber = contractor?.phone || null;
+    const twiml = forwardNumber
+      ? `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial timeout="20">
-    <!-- Twilio forwards to contractor's personal phone (configured per number) -->
+  <Dial timeout="20" action="${process.env.NEXT_PUBLIC_SITE_URL || ""}/api/sms/voice-webhook">
+    <Number>${forwardNumber}</Number>
   </Dial>
+  <Say>Sorry, no one is available right now. We'll text you back shortly. Goodbye.</Say>
+  <Hangup/>
+</Response>`
+      : `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
   <Say>Sorry, no one is available right now. We'll text you back shortly. Goodbye.</Say>
   <Hangup/>
 </Response>`;

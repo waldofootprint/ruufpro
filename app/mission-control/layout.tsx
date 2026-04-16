@@ -11,14 +11,7 @@ export default function MissionControlLayout({ children }: { children: ReactNode
   const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const BYPASS_AUTH = false;
-
   useEffect(() => {
-    if (BYPASS_AUTH) {
-      setAuthorized(true);
-      setLoading(false);
-      return;
-    }
     async function checkAdmin() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/login?redirect=/mission-control"); return; }

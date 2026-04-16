@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardProvider, useDashboard } from "./DashboardContext";
 import {
@@ -17,18 +17,30 @@ import {
   Settings,
   Puzzle,
   MessageSquare,
+  Bot,
+  HelpCircle,
+  CreditCard,
+  Star,
+  BarChart3,
+  Sparkles,
 } from "lucide-react";
+import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 import { supabase } from "@/lib/supabase";
 
 // ----- NAV CONFIG -----
 const SIDEBAR_ITEMS: { href: string; label: string; icon: any; showBadge?: boolean; showSmsBadge?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/leads", label: "Leads", icon: Users, showBadge: true },
+  { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles },
+  { href: "/dashboard/my-site", label: "My Website", icon: Globe },
+  { href: "/dashboard/chatbot", label: "AI Chatbot", icon: Bot },
+  { href: "/dashboard/chatbot-analytics", label: "Riley Analytics", icon: BarChart3 },
   { href: "/dashboard/estimate-settings", label: "Widget Settings", icon: Calculator },
   { href: "/dashboard/addons", label: "Estimate Add-Ons", icon: Puzzle },
-  { href: "/dashboard/my-site", label: "My Website", icon: Globe },
-  { href: "/dashboard/sms", label: "SMS & Reviews", icon: MessageSquare, showSmsBadge: true },
+  { href: "/dashboard/reviews", label: "Reviews", icon: Star },
+  { href: "/dashboard/domains", label: "Your Domain", icon: Globe },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
 ];
 
 const TAB_ITEMS = [
@@ -41,14 +53,16 @@ const TAB_ITEMS = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <DashboardProvider>
-      <DashboardShell>{children}</DashboardShell>
-    </DashboardProvider>
+    <Suspense>
+      <DashboardProvider>
+        <DashboardShell>{children}</DashboardShell>
+      </DashboardProvider>
+    </Suspense>
   );
 }
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
-  const { businessName, newLeadCount, unreadSmsCount, contractorId, loading } = useDashboard();
+  const { businessName, newLeadCount, unreadSmsCount, contractorId, tier, loading } = useDashboard();
   const pathname = usePathname();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -159,6 +173,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               Notifications On
             </div>
           )}
+          <a
+            href="mailto:support@ruufpro.com"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all w-full"
+          >
+            <HelpCircle className="w-4 h-4" />
+            Support
+          </a>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all w-full"
@@ -207,7 +228,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Page content */}
-        <main className="flex-1 p-5 lg:px-8 lg:py-7 pb-24 lg:pb-7 bg-white">
+        <main className={`flex-1 pb-24 lg:pb-7 bg-white ${
+          pathname.startsWith("/dashboard/copilot") ? "p-0" : "p-5 lg:px-8 lg:py-7"
+        }`}>
+          {!pathname.startsWith("/dashboard/copilot") && <OnboardingChecklist />}
           {children}
         </main>
       </div>
@@ -244,17 +268,36 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                         Dashboard
                       </a>
                       <a
-                        href="/dashboard/sms"
+                        href="/dashboard/reviews"
                         className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
                         onClick={() => setMoreOpen(false)}
                       >
-                        <MessageSquare className="w-4 h-4 text-slate-400" />
-                        SMS & Reviews
-                        {unreadSmsCount > 0 && (
-                          <span className="ml-auto bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">
-                            {unreadSmsCount}
-                          </span>
-                        )}
+                        <Star className="w-4 h-4 text-amber-400" />
+                        Reviews
+                      </a>
+                      <a
+                        href="/dashboard/copilot"
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-400" />
+                        Copilot
+                      </a>
+                      <a
+                        href="/dashboard/chatbot"
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        <Bot className="w-4 h-4 text-violet-400" />
+                        AI Chatbot
+                      </a>
+                      <a
+                        href="/dashboard/chatbot-analytics"
+                        className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        <BarChart3 className="w-4 h-4 text-slate-400" />
+                        Riley Analytics
                       </a>
                       <a
                         href="/dashboard/settings"
@@ -311,6 +354,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
+
     </div>
   );
 }

@@ -15,6 +15,8 @@ import { supabase } from "@/lib/supabase";
 import {
   getRegionalDefaults,
   getRegionName,
+  getMetroDefaults,
+  getMetroName,
 } from "@/lib/regional-pricing";
 import { useDashboard } from "../DashboardContext";
 
@@ -37,7 +39,7 @@ const MATERIALS = [
 ];
 
 export default function EstimateSettingsPage() {
-  const { contractorId: ctxContractorId } = useDashboard();
+  const { contractorId: ctxContractorId, tier } = useDashboard();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -51,12 +53,20 @@ export default function EstimateSettingsPage() {
   const [propertyProtection, setPropertyProtection] = useState(false);
   const [changeOrder, setChangeOrder] = useState(false);
 
+  // Weather surge pricing — roofer has full control
+  const [weatherSurgeEnabled, setWeatherSurgeEnabled] = useState(false);
+  const [weatherSurgeMultiplier, setWeatherSurgeMultiplier] = useState("1.20");
+  const [weatherSurgeDurationDays, setWeatherSurgeDurationDays] = useState("7");
+  const [weatherSurgeAutoExpire, setWeatherSurgeAutoExpire] = useState(true);
+  const [weatherSurgeExpiresAt, setWeatherSurgeExpiresAt] = useState<string | null>(null);
+
   // Financing settings
   const [financingEnabled, setFinancingEnabled] = useState(false);
   const [financingProvider, setFinancingProvider] = useState("");
   const [financingTermMonths, setFinancingTermMonths] = useState("120");
   const [financingApr, setFinancingApr] = useState("");
   const [financingNote, setFinancingNote] = useState("");
+  const [isNewSettings, setIsNewSettings] = useState(false);
 
   const [rates, setRates] = useState<Rates>({
     asphalt_low: "", asphalt_high: "",
@@ -70,10 +80,10 @@ export default function EstimateSettingsPage() {
     async function loadData() {
       if (!ctxContractorId) return;
 
-      // Get contractor state for regional defaults
+      // Get contractor location for metro-level pricing defaults
       const { data: contractor } = await supabase
         .from("contractors")
-        .select("id, state")
+        .select("id, state, city")
         .eq("id", ctxContractorId)
         .single();
 
@@ -110,9 +120,16 @@ export default function EstimateSettingsPage() {
         setFinancingTermMonths(settings.financing_term_months?.toString() || "120");
         setFinancingApr(settings.financing_apr?.toString() || "");
         setFinancingNote(settings.financing_note || "");
+        setWeatherSurgeEnabled(settings.weather_surge_enabled ?? false);
+        setWeatherSurgeMultiplier(settings.weather_surge_multiplier?.toString() || "1.20");
+        setWeatherSurgeDurationDays(settings.weather_surge_duration_days?.toString() || "7");
+        setWeatherSurgeAutoExpire(settings.weather_surge_auto_expire ?? true);
+        setWeatherSurgeExpiresAt(settings.weather_surge_expires_at || null);
       } else {
-        // Pre-fill with regional defaults
-        const defaults = getRegionalDefaults(contractor.state || "TX");
+        // Pre-fill with metro-level defaults (BLS data), fall back to regional
+        const state = contractor.state || "TX";
+        const metro = getMetroDefaults(state, contractor.city || undefined);
+        const defaults = metro.rates;
         setRates({
           asphalt_low: defaults.asphalt_low.toString(),
           asphalt_high: defaults.asphalt_high.toString(),
@@ -123,6 +140,7 @@ export default function EstimateSettingsPage() {
           flat_low: defaults.flat_low.toString(),
           flat_high: defaults.flat_high.toString(),
         });
+        setIsNewSettings(true);
       }
 
       setLoading(false);
@@ -162,18 +180,58 @@ export default function EstimateSettingsPage() {
         financing_term_months: financingTermMonths ? parseInt(financingTermMonths) : null,
         financing_apr: financingApr ? parseFloat(financingApr) : null,
         financing_note: financingNote || null,
+        weather_surge_enabled: weatherSurgeEnabled,
+        weather_surge_multiplier: weatherSurgeMultiplier ? parseFloat(weatherSurgeMultiplier) : null,
+        weather_surge_duration_days: weatherSurgeDurationDays ? parseInt(weatherSurgeDurationDays) : 7,
+        weather_surge_auto_expire: weatherSurgeAutoExpire,
+        weather_surge_expires_at: weatherSurgeEnabled && weatherSurgeAutoExpire && !weatherSurgeExpiresAt
+          ? new Date(Date.now() + (parseInt(weatherSurgeDurationDays) || 7) * 86400000).toISOString()
+          : weatherSurgeExpiresAt,
       });
 
     if (saveErr) {
       setError(saveErr.message);
     } else {
       setSuccess("Settings saved! Your estimate widget is ready.");
+      setIsNewSettings(false);
     }
     setSaving(false);
   }
 
   function updateRate(key: keyof Rates, value: string) {
     setRates((prev) => ({ ...prev, [key]: value }));
+  }
+
+  // --- Tier gate ---
+  if (tier === "free") {
+    return (
+      <div className="max-w-[480px] mx-auto py-16 text-center space-y-4">
+        <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto">
+          <svg className="w-7 h-7 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h2 className="text-[18px] font-extrabold text-slate-800">Estimate Widget — Pro Feature</h2>
+        <p className="text-[13px] text-slate-500 leading-relaxed max-w-[360px] mx-auto">
+          Homeowners see instant pricing on your website — your phone rings instead of your competitor&apos;s. Set your rates, control the numbers they see.
+        </p>
+        <p className="text-[13px] font-semibold text-amber-600">Requires the $149/mo Pro plan.</p>
+        <button
+          onClick={async () => {
+            const res = await fetch("/api/stripe/checkout", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ plan: "pro_monthly" }),
+            });
+            const data = await res.json();
+            if (data.url) window.location.href = data.url;
+          }}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-lg text-[13px] font-semibold hover:bg-amber-700 transition"
+        >
+          Upgrade to Pro
+        </button>
+      </div>
+    );
   }
 
   if (loading) {
@@ -185,6 +243,7 @@ export default function EstimateSettingsPage() {
   }
 
   const regionName = getRegionName(contractorState);
+  const metroDisplayName = getMetroName(contractorState) || regionName;
   const defaults = getRegionalDefaults(contractorState);
 
   return (
@@ -196,6 +255,16 @@ export default function EstimateSettingsPage() {
         Set your pricing per square foot for each material. These rates are
         used to calculate instant estimates for homeowners.
       </p>
+
+      {isNewSettings && (
+        <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-3">
+          <span className="text-amber-500 text-lg leading-none mt-0.5">*</span>
+          <div>
+            <p className="text-sm font-semibold text-slate-900">We pre-filled {metroDisplayName} averages for you</p>
+            <p className="text-xs text-slate-500 mt-0.5">Adjust to match your pricing, then hit Save to activate your widget.</p>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
@@ -306,6 +375,149 @@ export default function EstimateSettingsPage() {
           Example: With a 15% buffer, a $10,000-$14,000 estimate becomes $10,000-$16,100.
           The low end stays the same — only the high end widens.
         </p>
+      </div>
+
+      {/* Storm Surge Pricing — full roofer control */}
+      <div id="storm-surge" className="rounded-xl bg-white border border-gray-200/60 p-6 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-[#1B3A4B]">
+            Storm Surge Pricing
+          </h2>
+          <button
+            type="button"
+            onClick={() => setWeatherSurgeEnabled(!weatherSurgeEnabled)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              weatherSurgeEnabled ? "bg-[#D4863E]" : "bg-gray-200"
+            }`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              weatherSurgeEnabled ? "translate-x-6" : "translate-x-1"
+            }`} />
+          </button>
+        </div>
+        <p className="text-sm text-[#1B3A4B]/50 mb-4">
+          After a major storm, roofing demand spikes and prices follow. When we detect a
+          storm in your service area, we&apos;ll notify you — you decide whether to enable
+          surge pricing and exactly how much to adjust.
+        </p>
+
+        {weatherSurgeEnabled && weatherSurgeExpiresAt && (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-3 mb-4">
+            <span className="text-amber-600 text-sm font-bold leading-none mt-0.5">!</span>
+            <div>
+              <p className="text-sm font-medium text-slate-900">
+                Surge active — expires {new Date(weatherSurgeExpiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                All estimates include a +{Math.round((parseFloat(weatherSurgeMultiplier || "1.20") - 1) * 100)}% storm adjustment until then.
+                {weatherSurgeAutoExpire ? " It will auto-disable after expiry." : " You'll need to turn it off manually."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {weatherSurgeEnabled && !weatherSurgeExpiresAt && (
+          <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-start gap-3 mb-4">
+            <span className="text-emerald-600 text-sm font-bold leading-none mt-1">&#10003;</span>
+            <p className="text-sm text-slate-700">
+              Surge pricing is on with no expiry set. It will stay active until you turn it off.
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-5">
+          {/* Multiplier — how much to increase */}
+          <div>
+            <label className="block text-sm font-medium text-[#1B3A4B] mb-1">
+              Price Increase
+            </label>
+            <div className="flex gap-2">
+              {["1.10", "1.15", "1.20", "1.25", "1.35"].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setWeatherSurgeMultiplier(val)}
+                  className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+                    weatherSurgeMultiplier === val
+                      ? "bg-[#D4863E] text-white"
+                      : "bg-[#1B3A4B]/5 text-[#1B3A4B]/70 hover:bg-[#1B3A4B]/10"
+                  }`}
+                >
+                  +{Math.round((parseFloat(val) - 1) * 100)}%
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs text-[#1B3A4B]/40">Custom:</span>
+              <input
+                type="number"
+                step="0.05"
+                min="1.0"
+                max="2.0"
+                value={weatherSurgeMultiplier}
+                onChange={(e) => setWeatherSurgeMultiplier(e.target.value)}
+                className="block w-24 rounded-lg border border-gray-200/60 px-3 py-1.5 text-sm text-[#1B3A4B] focus:border-[#D4863E] focus:outline-none focus:ring-1 focus:ring-[#D4863E]"
+              />
+              <span className="text-xs text-[#1B3A4B]/40">
+                = +{Math.round((parseFloat(weatherSurgeMultiplier || "1.0") - 1) * 100)}% on all estimates
+              </span>
+            </div>
+          </div>
+
+          {/* Duration — how long surge stays active */}
+          <div>
+            <label className="block text-sm font-medium text-[#1B3A4B] mb-1">
+              Duration
+            </label>
+            <div className="flex gap-2">
+              {[
+                { val: "3", label: "3 days" },
+                { val: "7", label: "1 week" },
+                { val: "14", label: "2 weeks" },
+                { val: "30", label: "30 days" },
+              ].map((opt) => (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => setWeatherSurgeDurationDays(opt.val)}
+                  className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+                    weatherSurgeDurationDays === opt.val
+                      ? "bg-[#D4863E] text-white"
+                      : "bg-[#1B3A4B]/5 text-[#1B3A4B]/70 hover:bg-[#1B3A4B]/10"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-[#1B3A4B]/40">
+              How long surge pricing stays active after you enable it.
+            </p>
+          </div>
+
+          {/* Auto-expire toggle */}
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <span className="font-medium text-[#1B3A4B] text-sm">Auto-disable after duration</span>
+              <p className="text-xs text-[#1B3A4B]/40 mt-0.5">
+                {weatherSurgeAutoExpire
+                  ? "Surge pricing will automatically turn off when the duration ends."
+                  : "You'll need to manually turn off surge pricing when you're ready."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setWeatherSurgeAutoExpire(!weatherSurgeAutoExpire)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                weatherSurgeAutoExpire ? "bg-[#D4863E]" : "bg-gray-200"
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                weatherSurgeAutoExpire ? "translate-x-6" : "translate-x-1"
+              }`} />
+            </button>
+          </label>
+        </div>
       </div>
 
       <div className="rounded-xl bg-white border border-gray-200/60 p-6 mb-6">
@@ -432,17 +644,41 @@ export default function EstimateSettingsPage() {
         )}
       </div>
 
-      {contractorId && (
+      {contractorId && !isNewSettings && (
+        <div className="rounded-xl bg-[#1B3A4B]/5 border border-gray-200/60 p-6 mb-6 space-y-5">
+          <div>
+            <h2 className="text-lg font-semibold text-[#1B3A4B] mb-2">
+              Embed on Your Website
+            </h2>
+            <p className="text-sm text-[#1B3A4B]/50 mb-3">
+              Paste this on any page to add your estimate widget. Works on WordPress, Wix, Squarespace, or any HTML site.
+            </p>
+            <pre className="bg-white rounded-lg p-3 text-xs text-[#1B3A4B]/70 overflow-x-auto border border-gray-200/60">
+              {`<script src="https://ruufpro.com/widget.js" data-contractor-id="${contractorId}"></script>`}
+            </pre>
+          </div>
+
+          {tier === "pro" && (
+            <div className="border-t border-gray-200/60 pt-5">
+              <h3 className="text-sm font-semibold text-[#1B3A4B] mb-1">
+                Riley AI Chatbot
+              </h3>
+              <p className="text-sm text-[#1B3A4B]/50 mb-3">
+                Add Riley to the same page — she answers homeowner questions and captures leads 24/7.
+              </p>
+              <pre className="bg-white rounded-lg p-3 text-xs text-[#1B3A4B]/70 overflow-x-auto border border-gray-200/60">
+                {`<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}"></script>`}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+
+      {contractorId && isNewSettings && (
         <div className="rounded-xl bg-[#1B3A4B]/5 border border-gray-200/60 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-[#1B3A4B] mb-2">
-            Embed Code
-          </h2>
-          <p className="text-sm text-[#1B3A4B]/50 mb-3">
-            Paste this on any website to add your estimate widget.
+          <p className="text-sm text-[#1B3A4B]/50">
+            Save your pricing to get your embed code.
           </p>
-          <pre className="bg-white rounded-lg p-3 text-xs text-[#1B3A4B]/70 overflow-x-auto border border-gray-200/60">
-            {`<script src="https://ruufpro.com/widget.js" data-contractor="${contractorId}"></script>`}
-          </pre>
         </div>
       )}
 

@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createAuthSupabase } from "@/lib/supabase-server";
 import { lookupProperty } from "@/lib/rentcast-api";
 
 function getSupabase() {
@@ -17,6 +18,10 @@ function getSupabase() {
 }
 
 export async function POST(request: NextRequest) {
+  const authSupabase = createAuthSupabase();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = getSupabase();
 
   try {

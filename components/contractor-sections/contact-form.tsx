@@ -44,6 +44,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
         lead_email: form.email,
         lead_message: form.message,
         source: "contact_form",
+        sms_consent: form.smsConsent,
       }),
     }).catch(() => {});
 
@@ -56,7 +57,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
     padding: "12px 16px",
     background: "#fff",
     border: `1px solid ${THEME.border}`,
-    borderRadius: 10,
+    borderRadius: 0,
     fontSize: 15,
     fontFamily: THEME.fontBody,
     color: THEME.textPrimary,
@@ -74,16 +75,16 @@ export default function ContactForm({ businessName, phone, city, state, contract
         fontFamily: THEME.fontBody,
       }}
     >
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 64, alignItems: "start" }} className="grid-cols-1! md:grid-cols-[1fr_1.2fr]!">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 64, alignItems: "start" }} className="contact-grid">
         {/* Left: contact info */}
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <div style={{ width: 3, height: 20, background: THEME.accent, borderRadius: 2, flexShrink: 0 }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: THEME.accent, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: THEME.fontDisplay }}>
+            <div style={{ width: 32, height: 2, background: THEME.accent }} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: THEME.accent, textTransform: "uppercase", letterSpacing: "0.15em", fontFamily: THEME.fontBody }}>
               Get in touch
             </span>
           </div>
-          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 12, fontFamily: THEME.fontSerif }}>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 700, color: THEME.textPrimary, lineHeight: 1.1, letterSpacing: "0.02em", marginBottom: 12, fontFamily: THEME.fontDisplay, textTransform: "uppercase" }}>
             Let's talk about your roof
           </h2>
           <p style={{ fontSize: 16, color: THEME.textSecondary, lineHeight: 1.6, marginBottom: 32 }}>
@@ -93,7 +94,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Phone */}
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: "#fff", border: `1px solid ${THEME.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 0, background: "#fff", border: `1px solid ${THEME.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.textMuted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
               </div>
               <div>
@@ -104,7 +105,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
 
             {/* Location */}
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: "#fff", border: `1px solid ${THEME.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 0, background: "#fff", border: `1px solid ${THEME.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.textMuted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
               </div>
               <div>
@@ -115,7 +116,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
 
             {/* Hours */}
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: "#fff", border: `1px solid ${THEME.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 0, background: "#fff", border: `1px solid ${THEME.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.textMuted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               </div>
               <div>
@@ -126,7 +127,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
           </div>
 
           {/* Response badge */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#ECFDF5", borderRadius: 8, padding: "8px 14px", marginTop: 24 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#ECFDF5", borderRadius: 0, padding: "8px 14px", marginTop: 24 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span style={{ fontSize: 13, fontWeight: 600, color: "#059669" }}>Avg. response: under 2 hours</span>
           </div>
@@ -246,6 +247,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
                 @media (max-width: 768px) {
                   .details-toggle { display: block !important; }
                   .details-inner { display: ${showDetails ? "block" : "none"} !important; }
+                  .contact-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
                 }
                 @media (min-width: 769px) {
                   .details-toggle { display: none !important; }
@@ -280,7 +282,7 @@ export default function ContactForm({ businessName, phone, city, state, contract
                   background: THEME.accent,
                   color: "#fff",
                   border: "none",
-                  borderRadius: 12,
+                  borderRadius: 0,
                   fontSize: 15,
                   fontWeight: 700,
                   fontFamily: THEME.fontDisplay,

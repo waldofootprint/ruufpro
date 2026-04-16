@@ -3,26 +3,90 @@
 // Public endpoint: called from the estimate widget and contact forms
 // on the contractor's public site (visitors are not logged in).
 // Validates contractor_id exists before sending.
+//
+// Rate limiting: per-IP and per-contractor burst protection.
+// Serverless instances reset on cold start, but this stops
+// sustained abuse within a warm instance.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendLeadNotificationEmail } from "@/lib/notifications";
 import { inngest } from "@/lib/inngest/client";
+import { notifySlack } from "@/lib/slack-notify";
+
+// ---------------------------------------------------------------------------
+// In-memory rate limiter (per serverless instance)
+// ---------------------------------------------------------------------------
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const MAX_PER_IP = 10;               // 10 requests per IP per minute
+const MAX_PER_CONTRACTOR = 20;       // 20 leads per contractor per minute
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(key: string, max: number): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  return entry.count > max;
+}
+
+// Clean up stale entries every 5 minutes to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  rateLimitMap.forEach((entry, key) => {
+    if (now > entry.resetAt) rateLimitMap.delete(key);
+  });
+}, 5 * 60_000);
+
+// ---------------------------------------------------------------------------
+// Phone number validation (basic E.164-ish check)
+// ---------------------------------------------------------------------------
+function isValidPhone(phone: string): boolean {
+  const cleaned = phone.replace(/\D/g, "");
+  return cleaned.length >= 10 && cleaned.length <= 15;
+}
 
 export async function POST(request: NextRequest) {
+  // Rate limit by IP
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (isRateLimited(`ip:${ip}`, MAX_PER_IP)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
+  // Use service role key — lead inserts from chatbot go through here now (ZL-004)
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
   try {
     const body = await request.json();
-    const { contractor_id, lead_name, lead_phone, lead_email, lead_address, lead_message, source, estimate_low, estimate_high, estimate_material, estimate_roof_sqft, timeline: leadTimeline, financing_interest } = body;
+    const { contractor_id, lead_name, lead_phone, lead_email, lead_address, lead_message, source, estimate_low, estimate_high, estimate_material, estimate_roof_sqft, timeline: leadTimeline, financing_interest, sms_consent, temperature, chat_session_id } = body;
 
     if (!contractor_id || !lead_name) {
       return NextResponse.json({ error: "contractor_id and lead_name required" }, { status: 400 });
     }
 
-    // Look up contractor email
+    // Validate contractor_id is a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(contractor_id)) {
+      return NextResponse.json({ error: "Invalid contractor_id" }, { status: 400 });
+    }
+
+    // Rate limit by contractor
+    if (isRateLimited(`contractor:${contractor_id}`, MAX_PER_CONTRACTOR)) {
+      return NextResponse.json({ error: "Too many requests for this contractor" }, { status: 429 });
+    }
+
+    // Validate phone number format if provided (prevents garbage strings hitting Twilio)
+    if (lead_phone && !isValidPhone(lead_phone)) {
+      return NextResponse.json({ error: "Invalid phone number format" }, { status: 400 });
+    }
+
+    // Look up contractor — must exist and be active
     const { data: contractor } = await supabase
       .from("contractors")
       .select("email, business_name")
@@ -31,6 +95,22 @@ export async function POST(request: NextRequest) {
 
     if (!contractor) {
       return NextResponse.json({ error: "Contractor not found" }, { status: 404 });
+    }
+
+    // Insert lead server-side (moved from client-side ChatWidget — ZL-004)
+    // Only for ai_chatbot source; other sources (estimate_widget, contact_form) insert their own
+    if (source === "ai_chatbot") {
+      await supabase.from("leads").insert({
+        contractor_id,
+        name: lead_name,
+        phone: lead_phone || null,
+        email: lead_email || null,
+        address: lead_address || null,
+        source: "ai_chatbot",
+        status: "new",
+        sms_consent: sms_consent || false,
+        temperature: temperature || "browsing",
+      });
     }
 
     // Send email notification
@@ -60,13 +140,22 @@ export async function POST(request: NextRequest) {
     // Include timeline if available for urgency context
     const timeline = body.timeline;
     const timelineLabel = timeline === "now" ? " · ASAP" : timeline === "1_3_months" ? " · 1-3mo" : "";
+    const tempLabel = temperature === "hot" ? " 🔥 HOT" : temperature === "warm" ? " · Warm" : "";
     const pushTitle = source === "estimate_widget"
       ? `New Estimate Lead${timelineLabel}`
+      : source === "ai_chatbot"
+      ? `New Riley Lead${tempLabel}`
       : "New Contact Form Lead";
+
+    // Build idempotency key to prevent double-sends on form resubmit or network retry.
+    // Rounded to the minute so the same lead can legitimately submit again after 60s.
+    const minuteStamp = Math.floor(Date.now() / 60_000);
+    const idempotencyKey = `lead-${contractor_id}-${lead_phone || lead_email || lead_name}-${minuteStamp}`;
 
     // Emit event to Inngest — handles push notification + auto-response SMS + CRM webhook
     // with retry, monitoring, and no silent failures
     await inngest.send({
+      id: idempotencyKey,
       name: "sms/lead.created",
       data: {
         contractorId: contractor_id,
@@ -82,11 +171,34 @@ export async function POST(request: NextRequest) {
         estimateRoofSqft: estimate_roof_sqft || null,
         timeline: leadTimeline || null,
         financingInterest: financing_interest || null,
+        smsConsent: sms_consent || false,
         pushTitle,
         pushBody,
         origin: request.nextUrl.origin,
       },
     });
+
+    // Notify Slack — Hannah sees every lead in real time
+    notifySlack({
+      type: "new_lead",
+      businessName: contractor.business_name,
+      homeownerName: lead_name,
+      phone: lead_phone || "no phone",
+      city: lead_address || "unknown",
+    }).catch(() => {});
+
+    // Mark chat conversation as lead captured (server-side, bypasses RLS)
+    if (chat_session_id && source === "ai_chatbot") {
+      const serviceSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      serviceSupabase
+        .from("chat_conversations")
+        .update({ lead_captured: true })
+        .eq("session_id", chat_session_id)
+        .then(() => {});
+    }
 
     return NextResponse.json({ emailSent, to: contractor.email });
   } catch (err) {

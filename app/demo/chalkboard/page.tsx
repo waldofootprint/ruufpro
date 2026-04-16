@@ -65,6 +65,9 @@ const mockData: ContractorSiteData = {
   zip: "37203",
   logoUrl: null,
   licenseNumber: "TN-RC-78234",
+  hasAiChatbot: false,
+  galleryImages: [],
+  businessHours: null,
 };
 
 export default function ChalkboardDemoPage() {

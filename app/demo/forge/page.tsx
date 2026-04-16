@@ -65,6 +65,9 @@ const mockData: ContractorSiteData = {
   zip: "33609",
   logoUrl: null,
   licenseNumber: "CCC1330456",
+  hasAiChatbot: false,
+  galleryImages: [],
+  businessHours: null,
 };
 
 export default function ForgeDemoPage() {

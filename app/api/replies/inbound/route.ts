@@ -12,6 +12,16 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  // Verify webhook authenticity via shared secret header.
+  // Set WEBHOOK_SECRET in Vercel env vars and configure in Instantly webhook settings.
+  const secret = process.env.WEBHOOK_SECRET;
+  if (secret) {
+    const provided = req.headers.get("x-webhook-secret") || req.headers.get("authorization")?.replace("Bearer ", "");
+    if (provided !== secret) {
+      return NextResponse.json({ error: "Invalid webhook secret" }, { status: 401 });
+    }
+  }
+
   try {
     const body = await req.json();
 
@@ -104,7 +114,42 @@ export async function POST(req: NextRequest) {
         .eq("id", reply.id);
     }
 
-    // Step 5: Auto-process unsubscribes
+    // Step 5: Update prospect_pipeline if prospect found
+    if (prospectEmail) {
+      const { data: prospect } = await supabase
+        .from("prospect_pipeline")
+        .select("id, stage")
+        .eq("owner_email", prospectEmail)
+        .limit(1)
+        .maybeSingle();
+
+      if (prospect) {
+        const now = new Date().toISOString();
+        const stageMap: Record<string, string> = {
+          interested: "interested",
+          question: "replied",
+          objection: "replied",
+          not_now: "not_now",
+          unsubscribe: "unsubscribed",
+        };
+        const newStage = stageMap[result.category] || "replied";
+
+        await supabase
+          .from("prospect_pipeline")
+          .update({
+            stage: newStage,
+            stage_entered_at: now,
+            replied_at: now,
+            reply_category: result.category,
+            reply_text: inboundText.slice(0, 2000),
+            draft_response: result.draftReply,
+            draft_status: result.category === "unsubscribe" ? "skipped" : "pending",
+          })
+          .eq("id", prospect.id);
+      }
+    }
+
+    // Step 6: Auto-process unsubscribes
     if (result.category === "unsubscribe" && prospectEmail) {
       const { addToSuppressionList } = await import("@/lib/instantly");
       await addToSuppressionList(prospectEmail);

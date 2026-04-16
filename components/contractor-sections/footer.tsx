@@ -16,7 +16,7 @@ export default function Footer({ businessName, phone, city, state, services, tie
   return (
     <footer
       style={{
-        background: THEME.textPrimary,
+        background: "#1A1A1A",
         padding: "48px 24px 32px",
         fontFamily: THEME.fontBody,
       }}

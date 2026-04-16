@@ -128,6 +128,82 @@ export async function addToSuppressionList(
   }
 }
 
+// ─── Add Leads to Campaign ──────────────────────────────
+
+export interface InstantlyLead {
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  company_name?: string;
+  phone?: string;
+  website?: string;
+  custom_variables?: Record<string, string>;
+}
+
+export async function addLeadsToCampaign(
+  campaignId: string,
+  leads: InstantlyLead[]
+): Promise<{ success: boolean; added: number; error?: string }> {
+  try {
+    const res = await instantlyFetch("/lead/add", {
+      method: "POST",
+      body: JSON.stringify({
+        campaign_id: campaignId,
+        skip_if_in_workspace: true,
+        leads: leads.map((l) => ({
+          email: l.email,
+          first_name: l.first_name || "",
+          last_name: l.last_name || "",
+          company_name: l.company_name || "",
+          phone: l.phone || "",
+          website: l.website || "",
+          ...l.custom_variables,
+        })),
+      }),
+    });
+
+    const data = await res.json();
+    return { success: true, added: data.leads_uploaded || leads.length };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error adding leads to Instantly:", message);
+    return { success: false, added: 0, error: message };
+  }
+}
+
+// ─── List Campaigns ─────────────────────────────────────
+
+export interface InstantlyCampaign {
+  id: string;
+  name: string;
+  status: string;
+}
+
+export async function listCampaigns(): Promise<InstantlyCampaign[]> {
+  try {
+    const res = await instantlyFetch("/campaign/list?limit=100&status=active");
+    const data = await res.json();
+    return data || [];
+  } catch (error) {
+    console.error("Error listing Instantly campaigns:", error);
+    return [];
+  }
+}
+
+// ─── Get Campaign Analytics ─────────────────────────────
+
+export async function getCampaignAnalytics(
+  campaignId: string
+): Promise<Record<string, unknown> | null> {
+  try {
+    const res = await instantlyFetch(`/analytics/campaign/summary?campaign_id=${campaignId}`);
+    const data = await res.json();
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Get Lead Context (for enriching replies) ────────────
 
 export async function getLeadInfo(

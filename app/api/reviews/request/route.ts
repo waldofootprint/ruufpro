@@ -1,4 +1,4 @@
-// Trigger a review request SMS to a homeowner after job completion.
+// Trigger a review request email to a homeowner after job completion.
 // Protected: requires authenticated contractor. Validates lead ownership.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     // Look up the contractor for this user
     const { data: contractor } = await supabase
       .from("contractors")
-      .select("id, business_name, google_review_url")
+      .select("id, business_name, google_review_url, review_email_delay")
       .eq("user_id", user.id)
       .single();
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Look up the lead and verify it belongs to this contractor
     const { data: lead } = await supabase
       .from("leads")
-      .select("id, name, phone, contractor_id, status")
+      .select("id, name, email, phone, contractor_id, status")
       .eq("id", leadId)
       .single();
 
@@ -94,9 +94,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!lead.phone) {
+    if (!lead.email) {
       return NextResponse.json(
-        { error: "Lead has no phone number on file" },
+        { error: "Lead has no email address on file" },
         { status: 400 }
       );
     }
@@ -108,13 +108,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Emit event to Inngest — handles review SMS with retry + monitoring
+    // Duplicate prevention — don't send two review emails for the same lead
+    const { data: existingRequest } = await supabase
+      .from("review_requests")
+      .select("id")
+      .eq("lead_id", leadId)
+      .eq("contractor_id", contractor.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingRequest) {
+      return NextResponse.json(
+        { error: "A review request was already sent for this lead" },
+        { status: 409 }
+      );
+    }
+
+    // Emit event to Inngest — handles review email with retry + delay + monitoring
     const { inngest } = await import("@/lib/inngest/client");
     await inngest.send({
       name: "sms/review.requested",
       data: {
         contractorId: contractor.id,
         leadId: lead.id,
+        delay: contractor.review_email_delay || "immediate",
       },
     });
 

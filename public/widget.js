@@ -1,6 +1,6 @@
 // RuufPro Embed Script
 // Roofers paste this on their website:
-// <script src="https://ruufpro.com/widget.js" data-contractor="abc123"></script>
+// <script src="https://ruufpro.com/widget.js" data-contractor-id="abc123"></script>
 //
 // It creates an iframe that loads the estimate widget for their specific contractor.
 
@@ -8,10 +8,10 @@
   // Find the script tag to read the contractor ID
   var scripts = document.getElementsByTagName("script");
   var currentScript = scripts[scripts.length - 1];
-  var contractorId = currentScript.getAttribute("data-contractor");
+  var contractorId = currentScript.getAttribute("data-contractor-id");
 
   if (!contractorId) {
-    console.error("RuufPro: Missing data-contractor attribute on script tag.");
+    console.error("RuufPro: Missing data-contractor-id attribute on script tag.");
     return;
   }
 

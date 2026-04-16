@@ -1,8 +1,8 @@
 "use client";
 
-// Estimate Widget Section — only renders if contractor has the paid widget.
-// Imports the widget directly (no iframe) for seamless rendering.
-// Layout: copy + steps on left, widget on right.
+// Estimate Widget Section — Amber Accent Band style.
+// Full-width amber bg with copy + trust pills left, widget right.
+// Only renders if contractor has the paid widget.
 
 import { THEME } from "./theme";
 import { motion } from "framer-motion";
@@ -25,97 +25,124 @@ export default function EstimateSection({
   return (
     <section
       id="estimate"
+      className="estimate-band"
       style={{
-        padding: THEME.sectionPadding,
-        maxWidth: THEME.maxWidth,
-        margin: "0 auto",
+        position: "relative",
+        background: THEME.accent,
+        padding: "56px 48px",
         fontFamily: THEME.fontBody,
+        overflow: "hidden",
       }}
     >
-      {/* Header — centered */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: 0.5 }}
-        style={{ textAlign: "center", marginBottom: 32 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, justifyContent: "center" }}>
-          <div style={{ width: 3, height: 20, background: THEME.accent, borderRadius: 2, flexShrink: 0 }} />
-          <span
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: THEME.accent,
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              fontFamily: THEME.fontDisplay,
-            }}
-          >
-            Instant estimate
-          </span>
-        </div>
-        <h2
-          style={{
-            fontSize: "clamp(26px, 4vw, 38px)",
-            fontWeight: 800,
-            color: THEME.textPrimary,
-            lineHeight: 1.1,
-            letterSpacing: "-0.02em",
-            marginBottom: 10,
-            fontFamily: THEME.fontSerif,
-          }}
-        >
-          Get a Ballpark
-        </h2>
-        <p style={{ fontSize: 16, color: THEME.textSecondary, lineHeight: 1.65, maxWidth: 480, margin: "0 auto" }}>
-          Instant estimate. Zero commitment.
-        </p>
-      </motion.div>
-
-      {/* Widget card — centered, contained */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.5, delay: 0.1 }}
+      {/* Dot texture overlay */}
+      <div
         style={{
-          maxWidth: 600,
-          margin: "0 auto",
-          background: THEME.bgWarm,
-          border: `1px solid ${THEME.border}`,
-          borderRadius: THEME.borderRadiusLg,
-          padding: "32px",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
+          position: "absolute",
+          inset: 0,
+          backgroundImage: "radial-gradient(rgba(0,0,0,0.08) 1px, transparent 1px)",
+          backgroundSize: "16px 16px",
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        className="estimate-band-grid"
+        style={{
           position: "relative",
-          overflow: "hidden",
+          zIndex: 1,
+          maxWidth: THEME.maxWidth,
+          margin: "0 auto",
+          display: "grid",
+          gridTemplateColumns: "1fr 1.1fr",
+          gap: 48,
+          alignItems: "center",
         }}
       >
-        <EstimateWidgetV4
-          contractorId={contractorId}
-          contractorName={businessName}
-          contractorPhone={phone}
-          variant="light"
-        />
+        {/* Left — copy + trust pills */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2
+            style={{
+              fontFamily: THEME.fontDisplay,
+              fontSize: "clamp(32px, 4vw, 48px)",
+              fontWeight: 700,
+              color: THEME.primary,
+              textTransform: "uppercase",
+              letterSpacing: "0.02em",
+              lineHeight: 1.0,
+              marginBottom: 12,
+            }}
+          >
+            Get Your Free Estimate Now
+          </h2>
+          <p
+            style={{
+              fontSize: 16,
+              color: "rgba(26,26,26,0.7)",
+              lineHeight: 1.65,
+              marginBottom: 24,
+              maxWidth: 400,
+            }}
+          >
+            No phone tag. No waiting for a callback. Enter your address and get a ballpark price in under 2 minutes.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {["Satellite-measured", "Local pricing", "Zero commitment"].map((pill) => (
+              <div
+                key={pill}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 14px",
+                  background: "rgba(26,26,26,0.1)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: THEME.primary,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+                {pill}
+              </div>
+            ))}
+          </div>
+        </motion.div>
 
-        {/* Privacy badge — inside the card */}
-        <div
+        {/* Right — widget */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.5, delay: 0.1 }}
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            marginTop: 20,
-            paddingTop: 16,
-            borderTop: `1px solid ${THEME.border}`,
+            background: "#fff",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1)",
+            overflow: "hidden",
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span style={{ fontSize: 13, fontWeight: 600, color: THEME.textMuted }}>
-            Your info stays private — we never share or sell your data
-          </span>
-        </div>
-      </motion.div>
+          <EstimateWidgetV4
+            contractorId={contractorId}
+            contractorName={businessName}
+            contractorPhone={phone}
+            variant="light"
+            accentColor={THEME.accent}
+          />
+        </motion.div>
+      </div>
+
+      {/* Mobile: stack vertically */}
+      <style>{`
+        @media (max-width: 768px) {
+          .estimate-band { padding: 40px 16px !important; }
+          .estimate-band-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+        }
+      `}</style>
     </section>
   );
 }

@@ -7,8 +7,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Users, Zap, DollarSign, ChevronRight, Star, Link2, UserPlus,
   MessageCircle, Eye, Bell, CheckCircle, X, Phone, TrendingUp,
-  Target, BarChart3, Trophy, Flame, Share2, Search, Calendar, Plus,
+  Target, BarChart3, Trophy, Flame, Share2, Search, Calendar, Plus, Bot,
 } from "lucide-react";
+import StormAlertBanner from "@/components/dashboard/StormAlertBanner";
 import type { Lead } from "@/lib/types";
 import {
   getAvgResponseTime,
@@ -28,7 +29,7 @@ type PopupType = "waiting" | "speed" | "pipeline" | "reviews" | null;
 
 export default function DashboardHome() {
   const { contractorId, businessName, tier, refreshLeadCount } = useDashboard();
-  const isPro = tier === "pro" || tier === "growth";
+  const isPro = tier === "pro";
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewCount, setReviewCount] = useState(0);
@@ -47,6 +48,7 @@ export default function DashboardHome() {
   const [addLeadSaving, setAddLeadSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "leads" | "activity">("overview");
   const [selectedNewLead, setSelectedNewLead] = useState<Lead | null>(null);
+  const [rileyStats, setRileyStats] = useState<{ conversations: number; leads: number; enabled: boolean } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -83,6 +85,34 @@ export default function DashboardHome() {
           .limit(50);
         setSmsMessages(sms || []);
       } catch { /* table may not exist */ }
+
+      // Fetch Riley stats (last 30 days)
+      try {
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+        const [convRes, chatLeadRes, contractorRes] = await Promise.all([
+          supabase
+            .from("chat_conversations")
+            .select("id", { count: "exact", head: true })
+            .eq("contractor_id", contractorId)
+            .gte("created_at", thirtyDaysAgo),
+          supabase
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .eq("contractor_id", contractorId)
+            .eq("source", "ai_chatbot")
+            .gte("created_at", thirtyDaysAgo),
+          supabase
+            .from("contractors")
+            .select("has_ai_chatbot")
+            .eq("id", contractorId)
+            .single(),
+        ]);
+        setRileyStats({
+          conversations: convRes.count || 0,
+          leads: chatLeadRes.count || 0,
+          enabled: contractorRes.data?.has_ai_chatbot || false,
+        });
+      } catch { /* tables may not exist */ }
 
       // Build activity feed
       const events: ActivityEvent[] = [];
@@ -342,6 +372,9 @@ export default function DashboardHome() {
         </button>
       </div>
 
+      {/* ===== STORM ALERT ===== */}
+      <StormAlertBanner contractorId={contractorId} />
+
       {/* ===== TABS ===== */}
       <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg w-fit mb-8">
         {(["overview", "leads", "activity"] as const).map((tab) => (
@@ -436,6 +469,39 @@ export default function DashboardHome() {
               </p>
             </button>
           </div>
+
+          {/* Riley AI Chatbot card */}
+          {isPro && rileyStats && (
+            <a
+              href={rileyStats.enabled ? "/dashboard/chatbot-analytics" : "/dashboard/chatbot"}
+              className="mb-8 flex items-center gap-4 rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 p-5 hover:shadow-sm transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-5 h-5 text-violet-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[14px] font-bold text-slate-800">Riley AI Chatbot</span>
+                  {rileyStats.enabled ? (
+                    <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase tracking-wide flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Live
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wide">Off</span>
+                  )}
+                </div>
+                <p className="text-[12px] text-slate-500 mt-0.5">
+                  {rileyStats.enabled
+                    ? rileyStats.conversations > 0
+                      ? `${rileyStats.conversations} conversation${rileyStats.conversations !== 1 ? "s" : ""} · ${rileyStats.leads} lead${rileyStats.leads !== 1 ? "s" : ""} captured (30 days)`
+                      : "Live and ready — waiting for your first visitor!"
+                    : "Train Riley with your pricing and services — she captures leads 24/7"}
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
+            </a>
+          )}
 
           {/* Two-column: Leads + Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

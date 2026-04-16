@@ -4,29 +4,31 @@
 // work as an embedded site without polluting the host's CSS.
 
 export const THEME = {
-  // Core colors
-  primary: "#1E3A5F",        // dark navy
-  accent: "#E8722A",         // orange
-  accentHover: "#D4660A",    // darker orange
-  bgWarm: "#F7F8FA",         // light gray background
+  // Core colors — Dark Iron + Amber Gold (Option C1)
+  primary: "#1A1A1A",        // dark iron
+  primarySoft: "#2A2A2A",    // slightly lighter iron
+  accent: "#D4880F",         // amber gold
+  accentHover: "#B8760D",    // darker amber
+  bgWarm: "#ECEAE6",         // warm stone
   bgWhite: "#FFFFFF",
-  textPrimary: "#1A1A2E",    // near-black
-  textSecondary: "#5A5A6E",  // muted
-  textMuted: "#6B6B7B",      // lighter muted (WCAG AA compliant)
-  border: "#EAEAE6",         // light border
-  ctaBg: "#C85A08",          // darker orange for white-text CTA buttons (WCAG AA)
-  star: "#F59E0B",           // review stars
-  success: "#16A34A",        // green checkmarks
+  bg: "#F5F3F0",             // warm off-white page bg
+  textPrimary: "#1A1A1A",    // pure dark
+  textSecondary: "#71706C",  // warm muted
+  textMuted: "#8A8884",      // lighter muted
+  border: "#DEDBD6",         // warm border
+  ctaBg: "#D4880F",          // amber gold CTA
+  star: "#D4880F",           // gold stars (matches accent)
+  success: "#5A7A3A",        // olive green
 
-  // Typography — uses CSS variables from next/font (loaded in app/layout.tsx)
-  fontDisplay: "var(--font-sora), 'Sora', sans-serif",
-  fontSerif: "var(--font-lora), 'Lora', Georgia, serif",
-  fontBody: "var(--font-dm-sans), 'DM Sans', sans-serif",
+  // Typography — Barlow Condensed (display) + Barlow (body)
+  fontDisplay: "var(--font-barlow-condensed), 'Barlow Condensed', sans-serif",
+  fontSerif: "var(--font-barlow-condensed), 'Barlow Condensed', sans-serif",
+  fontBody: "var(--font-barlow), 'Barlow', sans-serif",
 
   // Spacing
   sectionPadding: "80px 24px",
   sectionPaddingMobile: "48px 16px",
   maxWidth: "1140px",
-  borderRadius: "16px",
-  borderRadiusLg: "20px",
+  borderRadius: "0px",
+  borderRadiusLg: "0px",
 };

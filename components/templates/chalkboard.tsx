@@ -5,6 +5,7 @@
 import type { ContractorSiteData } from "../contractor-sections/types";
 import FloatingEstimateCTA from "../contractor-sections/floating-estimate-cta";
 import FloatingTextUs from "../contractor-sections/floating-text-us";
+import ChatWidget from "../chat-widget/ChatWidget";
 import ChalkNav from "../contractor-sections/chalkboard/nav";
 import ChalkHero from "../contractor-sections/chalkboard/hero";
 import ChalkTrust from "../contractor-sections/chalkboard/trust";
@@ -56,6 +57,15 @@ export default function ChalkboardTemplate(props: ContractorSiteData) {
       </div>
       <FloatingEstimateCTA hasEstimateWidget={props.hasEstimateWidget} phone={props.phone} />
       <FloatingTextUs phone={props.phone} />
+      <ChatWidget
+        contractorId={props.contractorId}
+        businessName={props.businessName}
+        hasAiChatbot={props.hasAiChatbot ?? false}
+        customGreeting={props.chatGreeting}
+        accentColor="#F6C453"
+        fontFamily="'Kalam', cursive"
+        isDarkTheme
+      />
     </main>
   );
 }

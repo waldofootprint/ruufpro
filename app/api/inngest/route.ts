@@ -3,12 +3,22 @@ import { inngest } from "@/lib/inngest/client";
 import {
   globalFailureHandler,
   leadAutoResponse,
-  missedCallTextback,
+  // missedCallTextback,  // PARKED FOR LAUNCH — April 11 2026. No prior consent from callers.
   reviewRequest,
   reviewEmailFollowup,
   leadPushNotification,
   crmWebhookExport,
+  crmDirectPush,
+  crmTokenRefresh,
   inboundSmsNotification,
+  soleProprietorRegistration,
+  a2pWizardCompliance,
+  weatherStormCheck,
+  prospectFormDetect,
+  prospectFormSubmit,
+  batchAutoEnrich,
+  outreachAutoSend,
+  staleLeadDetection,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -16,11 +26,21 @@ export const { GET, POST, PUT } = serve({
   functions: [
     globalFailureHandler,
     leadAutoResponse,
-    missedCallTextback,
+    // missedCallTextback,  // PARKED FOR LAUNCH
     reviewRequest,
     reviewEmailFollowup,
     leadPushNotification,
     crmWebhookExport,
+    crmDirectPush,
+    crmTokenRefresh,
     inboundSmsNotification,
+    soleProprietorRegistration,
+    a2pWizardCompliance,
+    weatherStormCheck,
+    prospectFormDetect,
+    prospectFormSubmit,
+    batchAutoEnrich,
+    outreachAutoSend,
+    staleLeadDetection,
   ],
 });

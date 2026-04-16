@@ -6,7 +6,7 @@ export type BusinessType = "storm_insurance" | "residential" | "full_service";
 
 export type DesignStyle = "modern_clean" | "bold_confident" | "warm_trustworthy";
 
-export type LeadSource = "contact_form" | "estimate_widget" | "external_widget";
+export type LeadSource = "contact_form" | "estimate_widget" | "external_widget" | "ai_chatbot";
 
 export type LeadStatus = "new" | "contacted" | "appointment_set" | "quoted" | "won" | "completed" | "lost";
 
@@ -18,13 +18,13 @@ export type LeadTemperature = "hot" | "warm" | "browsing";
 
 // Contractor plan tiers — derived from feature flags, not stored in DB.
 // Free: basic website only
-// Pro ($149): estimate widget + review automation + auto-reply
-// Growth ($299): everything Pro + SEO city pages + custom domain
-export type ContractorTier = "free" | "pro" | "growth";
+// Pro ($149): everything — widget, Riley, reviews, city pages, connect your domain, CRM
+export type ContractorTier = "free" | "pro";
 
-export function getTierFromContractor(contractor: Pick<Contractor, "has_estimate_widget" | "has_seo_pages" | "has_custom_domain">): ContractorTier {
-  if (contractor.has_seo_pages && contractor.has_custom_domain) return "growth";
+export function getTierFromContractor(contractor: Pick<Contractor, "has_estimate_widget" | "trial_ends_at">): ContractorTier {
   if (contractor.has_estimate_widget) return "pro";
+  // Flow B: outreach trial — Pro features active until trial_ends_at
+  if (contractor.trial_ends_at && new Date(contractor.trial_ends_at) > new Date()) return "pro";
   return "free";
 }
 
@@ -46,6 +46,11 @@ export interface Contractor {
   service_area_cities: string[] | null;
   years_in_business: number | null;
   license_number: string | null;
+  owner_first_name: string | null;
+  owner_last_name: string | null;
+  business_hours: string | null;
+  webhook_enabled: boolean;
+  webhook_url: string | null;
 
   // Trust signal checkboxes
   is_licensed: boolean;
@@ -64,10 +69,15 @@ export interface Contractor {
   has_auto_reply: boolean;
   has_seo_pages: boolean;
   has_custom_domain: boolean;
+  custom_domain: string | null;
+  has_ai_chatbot: boolean;
 
   // Billing
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+
+  // Trial (Flow B — outreach sites gifted Pro without card)
+  trial_ends_at: string | null;
 
   // Site ownership
   has_roofready_site: boolean;
@@ -150,9 +160,10 @@ export interface Lead {
   living_estimate_id: string | null;
   property_data_id: string | null;
 
-  // Lead qualification (from widget)
+  // Lead qualification (from widget or AI scoring)
   timeline: LeadTimeline | null;
   financing_interest: FinancingInterest | null;
+  temperature: LeadTemperature | null;
 
   // Speed-to-lead tracking
   contacted_at: string | null;
@@ -165,6 +176,36 @@ export interface Lead {
   estimate_segments: number | null;
 
   created_at: string;
+}
+
+export interface ChatbotConfig {
+  // Customization
+  greeting_message: string | null;
+
+  // Tier 1: Top 5 homeowner questions
+  price_range_low: number | null;
+  price_range_high: number | null;
+  offers_free_inspection: boolean;
+  typical_timeline_days: string | null;
+  materials_brands: string[] | null;
+  process_steps: string | null;
+
+  // Tier 2: Insurance, financing, warranty, emergency
+  does_insurance_work: boolean;
+  insurance_description: string | null;
+  financing_provider: string | null;
+  financing_terms: string | null;
+  warranty_description: string | null;
+  emergency_available: boolean;
+  emergency_description: string | null;
+
+  // Tier 3: Stickiness / differentiation
+  custom_faqs: Array<{ q: string; a: string }> | null;
+  differentiators: string | null;
+  team_description: string | null;
+  payment_methods: string[] | null;
+  current_promotions: string | null;
+  referral_program: string | null;
 }
 
 export interface EstimateSettings {

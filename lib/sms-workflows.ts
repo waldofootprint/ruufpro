@@ -1,18 +1,18 @@
-// High-level SMS workflows — these are the functions you call from API routes.
+// High-level workflows — review requests, auto-replies, etc.
 // Each one handles the full flow: look up data, build the message, send it, log it.
 
 import { nanoid } from "nanoid";
 import { createServerSupabase } from "./supabase-server";
-import { sendSMS, getContractorNumber } from "./twilio";
+import { sendSMS, getContractorNumber, isOptedOut } from "./twilio";
 
 // ---------------------------------------------------------------------------
-// sendReviewRequest — asks a customer to leave a Google review after a job
+// sendReviewRequest — asks a customer to leave a Google review via email
 // ---------------------------------------------------------------------------
 
 /**
- * Send a review request SMS to a lead after their job is done.
+ * Send a review request email to a lead after their job is done.
  * Looks up the lead and contractor, builds a tracked review link,
- * sends the text, and logs it in review_requests.
+ * sends the email via Resend, and logs it in review_requests.
  */
 export async function sendReviewRequest(
   contractorId: string,
@@ -23,7 +23,7 @@ export async function sendReviewRequest(
   // Look up the lead's contact info
   const { data: lead, error: leadError } = await supabase
     .from("leads")
-    .select("name, phone")
+    .select("name, email")
     .eq("id", leadId)
     .single();
 
@@ -31,14 +31,14 @@ export async function sendReviewRequest(
     return { success: false, error: "Lead not found" };
   }
 
-  if (!lead.phone) {
-    return { success: false, error: "Lead has no phone number" };
+  if (!lead.email) {
+    return { success: false, error: "Lead has no email address" };
   }
 
-  // Look up the contractor's business name and Google review URL
+  // Look up the contractor's business name, review URL, automation toggle, and email customization
   const { data: contractor, error: contractorError } = await supabase
     .from("contractors")
-    .select("business_name, google_review_url")
+    .select("business_name, google_review_url, review_request_enabled, review_email_subject, review_email_heading, review_email_body, review_email_button")
     .eq("id", contractorId)
     .single();
 
@@ -46,10 +46,13 @@ export async function sendReviewRequest(
     return { success: false, error: "Contractor not found" };
   }
 
-  // Figure out which phone number to send from
-  const fromNumber = await getContractorNumber(contractorId);
-  if (!fromNumber) {
-    return { success: false, error: "SMS not provisioned for this contractor" };
+  // Respect automation toggle — contractor can disable this in dashboard
+  if (contractor.review_request_enabled === false) {
+    return { success: false, error: "Review requests disabled by contractor" };
+  }
+
+  if (!contractor.google_review_url) {
+    return { success: false, error: "No Google review URL configured for this contractor" };
   }
 
   // Generate a unique tracking token so we can track clicks
@@ -60,37 +63,52 @@ export async function sendReviewRequest(
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ruufpro.com";
   const reviewUrl = `${siteUrl}/api/reviews/track/${trackingToken}`;
 
-  // Build the SMS body — keep it short and friendly
-  const firstName = lead.name.split(" ")[0]; // Use first name only
-  const smsBody =
-    `Hi ${firstName}, thanks for choosing ${contractor.business_name}! ` +
-    `We'd love your feedback on our work. Share your experience here:\n\n` +
-    `${reviewUrl}\n\n` +
-    `Reply STOP to opt out or HELP for assistance. Msg & data rates may apply.`;
+  // Send review request email via Resend — uses contractor's custom template or defaults
+  const firstName = lead.name?.split(" ")[0] || "there";
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
-  // Send it
-  const smsResult = await sendSMS({
-    to: lead.phone,
-    from: fromNumber,
-    body: smsBody,
-    contractorId,
-    leadId,
-    messageType: "review_request",
-  });
+  // Custom email fields with fallbacks (matches dashboard defaults)
+  const biz = contractor.business_name;
+  const emailSubject = (contractor.review_email_subject || `How was your experience with {{business_name}}?`).replace(/\{\{business_name\}\}/g, biz);
+  const emailHeading = (contractor.review_email_heading || `Thanks for choosing {{business_name}}!`).replace(/\{\{business_name\}\}/g, biz);
+  const emailBody = (contractor.review_email_body || `We hope everything went well. If you have a minute, a quick review would really help us out.`).replace(/\{\{business_name\}\}/g, biz);
+  const emailButton = contractor.review_email_button || "⭐ Leave a Review";
 
-  if (!smsResult.success) {
-    return { success: false, error: smsResult.error };
-  }
+  try {
+    const { error: emailError } = await resend.emails.send({
+      from: `${biz} via RuufPro <reviews@ruufpro.com>`,
+      to: lead.email,
+      subject: emailSubject,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <p style="font-size: 16px; color: #111827; line-height: 1.6;">
+            Hi ${firstName},
+          </p>
+          <p style="font-size: 16px; color: #111827; line-height: 1.6;">
+            ${emailHeading} ${emailBody}
+          </p>
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${reviewUrl}"
+               style="display: inline-block; background: #2563eb; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+              ${emailButton}
+            </a>
+          </div>
+          <p style="font-size: 13px; color: #9ca3af; text-align: center; line-height: 1.5;">
+            Sent on behalf of ${biz}<br/>
+            <a href="${siteUrl}" style="color: #9ca3af;">Powered by RuufPro</a>
+          </p>
+        </div>
+      `,
+    });
 
-  // Look up the sms_messages record by Twilio SID to get our DB UUID
-  let smsMessageId: string | null = null;
-  if (smsResult.messageSid) {
-    const { data: smsMsg } = await supabase
-      .from("sms_messages")
-      .select("id")
-      .eq("twilio_message_sid", smsResult.messageSid)
-      .single();
-    smsMessageId = smsMsg?.id || null;
+    if (emailError) {
+      console.error("Review request email error:", emailError);
+      return { success: false, error: "Email send failed" };
+    }
+  } catch (err: any) {
+    console.error("Review request email caught error:", err);
+    return { success: false, error: err.message || "Email send failed" };
   }
 
   // Log the review request in our database for tracking
@@ -101,9 +119,9 @@ export async function sendReviewRequest(
       lead_id: leadId,
       tracking_token: trackingToken,
       google_review_url: contractor.google_review_url,
-      sms_message_id: smsMessageId,
-      channel: "sms",
-      status: "sms_sent",
+      sms_message_id: null,
+      channel: "email",
+      status: "email_sent",
       sent_at: new Date().toISOString(),
     })
     .select("id")
@@ -111,8 +129,7 @@ export async function sendReviewRequest(
 
   if (insertError) {
     console.error("Failed to log review request:", insertError);
-    // SMS was sent successfully even if logging failed
-    return { success: true, error: "SMS sent but failed to log review request" };
+    return { success: true, error: "Email sent but failed to log review request" };
   }
 
   return { success: true, reviewRequestId: reviewRequest.id };
@@ -120,27 +137,39 @@ export async function sendReviewRequest(
 
 // ---------------------------------------------------------------------------
 // sendMissedCallTextback — auto-reply when a contractor misses a call
+// PARKED FOR LAUNCH — April 11, 2026
+//
+// Disabled until $10K MRR + TCPA legal review.
+// Reason: Caller never gave prior SMS consent. Risk/reward doesn't justify
+// it at launch. All code preserved — uncomment to re-enable.
+//
+// To re-enable:
+// 1. Uncomment this function
+// 2. Uncomment the Inngest function in lib/inngest/functions.ts (Chain 2)
+// 3. Uncomment the Inngest event in app/api/sms/voice-webhook/route.ts
+// 4. Re-add the dashboard toggle in app/dashboard/sms/page.tsx
 // ---------------------------------------------------------------------------
-
-/**
- * Send a friendly text to someone who called but didn't get through.
- * Tries to match the caller to an existing lead in the database.
- */
+/*
 export async function sendMissedCallTextback(
   contractorId: string,
   callerPhone: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; quietHours?: boolean; sendAt?: string }> {
   const supabase = createServerSupabase();
 
-  // Look up the contractor's business name
+  // Look up the contractor's business name + automation toggle
   const { data: contractor, error: contractorError } = await supabase
     .from("contractors")
-    .select("business_name")
+    .select("business_name, missed_call_textback_enabled")
     .eq("id", contractorId)
     .single();
 
   if (contractorError || !contractor) {
     return { success: false, error: "Contractor not found" };
+  }
+
+  // Respect automation toggle — contractor can disable this in SMS dashboard
+  if (contractor.missed_call_textback_enabled === false) {
+    return { success: false, error: "Missed-call textback disabled by contractor" };
   }
 
   // Get the sending number
@@ -175,11 +204,17 @@ export async function sendMissedCallTextback(
   });
 
   if (!smsResult.success) {
-    return { success: false, error: smsResult.error };
+    return {
+      success: false,
+      error: smsResult.error,
+      quietHours: smsResult.quietHours,
+      sendAt: smsResult.sendAt,
+    };
   }
 
   return { success: true };
 }
+*/
 
 // ---------------------------------------------------------------------------
 // sendLeadAutoResponse — instant SMS when a homeowner submits a contact form
@@ -200,7 +235,7 @@ export async function sendLeadAutoResponse(
   leadPhone: string,
   leadName: string,
   estimate?: { estimateLow: number | null; estimateHigh: number | null }
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; quietHours?: boolean; sendAt?: string }> {
   const supabase = createServerSupabase();
 
   // Look up the contractor
@@ -224,16 +259,8 @@ export async function sendLeadAutoResponse(
     return { success: false, error: "SMS not provisioned for this contractor" };
   }
 
-  // Check opt-out list
-  const { data: optOut } = await supabase
-    .from("sms_opt_outs")
-    .select("id")
-    .eq("phone", leadPhone)
-    .eq("contractor_id", contractorId)
-    .limit(1)
-    .single();
-
-  if (optOut) {
+  // Check opt-out list (uses correct column + fails closed on DB error)
+  if (await isOptedOut(leadPhone, contractorId)) {
     return { success: false, error: "Phone number has opted out" };
   }
 
@@ -303,7 +330,12 @@ export async function sendLeadAutoResponse(
   });
 
   if (!smsResult.success) {
-    return { success: false, error: smsResult.error };
+    return {
+      success: false,
+      error: smsResult.error,
+      quietHours: smsResult.quietHours,
+      sendAt: smsResult.sendAt,
+    };
   }
 
   return { success: true };
@@ -336,8 +368,8 @@ export async function scheduleReviewEmailFollowup(
     return { success: false, error: "Review request not found" };
   }
 
-  // Only follow up if: status is still 'sms_sent', no click recorded, and 3+ days old
-  if (request.status !== "sms_sent") {
+  // Only follow up if: status is still 'email_sent', no click recorded, and 3+ days old
+  if (request.status !== "email_sent") {
     return { success: false, error: "Review request already actioned" };
   }
 
@@ -368,7 +400,7 @@ export async function scheduleReviewEmailFollowup(
 
   try {
     const { error: emailError } = await resend.emails.send({
-      from: "RuufPro <noreply@ruufpro.com>",
+      from: `${contractor.business_name} via RuufPro <reviews@ruufpro.com>`,
       to: lead.email,
       subject: `How was your experience with ${contractor.business_name}?`,
       html: `
@@ -406,7 +438,7 @@ export async function scheduleReviewEmailFollowup(
   await supabase
     .from("review_requests")
     .update({
-      status: "email_sent",
+      status: "reminder_sent",
       email_followup_sent_at: new Date().toISOString(),
     })
     .eq("id", reviewRequestId);

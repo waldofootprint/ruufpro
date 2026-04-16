@@ -30,6 +30,10 @@ interface SendSMSResult {
   success: boolean;
   messageSid?: string;
   error?: string;
+  /** True if send was blocked by quiet hours (8am-9pm local). Caller should queue. */
+  quietHours?: boolean;
+  /** UTC ISO string — earliest time the message can be sent. Use with Inngest step.sleepUntil(). */
+  sendAt?: string;
 }
 
 interface SMSNumber {
@@ -139,19 +143,70 @@ export async function sendSMS(params: SendSMSParams): Promise<SendSMSResult> {
     }
   }
 
+  // TCPA quiet hours: no automated texts before 8am or after 9pm local time.
+  // Uses contractor's state as timezone proxy (leads are local to their service area).
+  if (contractorId) {
+    const { data: contractorForTz } = await supabase
+      .from("contractors")
+      .select("state")
+      .eq("id", contractorId)
+      .single();
+
+    if (contractorForTz?.state) {
+      const { isQuietHours, nextSendWindow } = await import("@/lib/quiet-hours");
+      if (isQuietHours(contractorForTz.state)) {
+        const sendAt = nextSendWindow(contractorForTz.state);
+        console.log(`SMS blocked — quiet hours for ${contractorForTz.state}. Next window: ${sendAt.toISOString()}`);
+        return {
+          success: false,
+          error: "quiet_hours",
+          quietHours: true,
+          sendAt: sendAt.toISOString(),
+        };
+      }
+    }
+  }
+
+  // Daily send limit per contractor — prevents runaway costs and carrier flags.
+  // Sole prop 10DLC allows ~1K/day (T-Mobile). 200 is conservative + safe.
+  if (contractorId) {
+    const DAILY_LIMIT = 200;
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+
+    const { count } = await supabase
+      .from("sms_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("contractor_id", contractorId)
+      .eq("direction", "outbound")
+      .gte("sent_at", todayStart.toISOString());
+
+    if ((count || 0) >= DAILY_LIMIT) {
+      console.error(`SMS blocked — daily limit (${DAILY_LIMIT}) reached for contractor ${contractorId}`);
+      return { success: false, error: "Daily SMS limit reached" };
+    }
+  }
+
+  // Step 1: Send via Twilio
+  let message: any;
   try {
     const client = await getOrCreateTwilioClient();
 
     // statusCallback tells Twilio to POST delivery updates (sent/delivered/failed)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ruufpro.com";
-    const message = await client.messages.create({
+    message = await client.messages.create({
       to,
       from,
       body,
       statusCallback: `${siteUrl}/api/sms/status-callback`,
     });
+  } catch (err: any) {
+    console.error("Twilio sendSMS error:", err.message || err);
+    return { success: false, error: err.message || "Unknown Twilio error" };
+  }
 
-    // Log the message to our database for tracking
+  // Step 2: Log to database (separate try/catch — SMS was already sent)
+  try {
     await supabase.from("sms_messages").insert({
       twilio_sid: message.sid,
       contractor_id: contractorId || null,
@@ -163,13 +218,13 @@ export async function sendSMS(params: SendSMSParams): Promise<SendSMSResult> {
       status: message.status,
       sent_at: new Date().toISOString(),
     });
-
-    console.log(`SMS sent to ${to} — SID: ${message.sid}`);
-    return { success: true, messageSid: message.sid };
-  } catch (err: any) {
-    console.error("Twilio sendSMS error:", err.message || err);
-    return { success: false, error: err.message || "Unknown Twilio error" };
+  } catch (dbErr: any) {
+    // SMS was sent but DB log failed — this is a data loss event, not a send failure
+    console.error(`CRITICAL: SMS sent (SID: ${message.sid}) but DB log failed:`, dbErr.message || dbErr);
   }
+
+  console.log(`SMS sent to ${to} — SID: ${message.sid}`);
+  return { success: true, messageSid: message.sid };
 }
 
 // ---------------------------------------------------------------------------
@@ -206,65 +261,6 @@ export async function getContractorNumber(contractorId: string): Promise<string 
 
   // pending_registration or released — SMS not available yet
   return null;
-}
-
-// ---------------------------------------------------------------------------
-// provisionNumber — buy a local number for a contractor
-// ---------------------------------------------------------------------------
-
-/**
- * Search Twilio for an available local number in the given area code,
- * buy it, and save it to sms_numbers with status 'pending_registration'.
- */
-export async function provisionNumber(
-  contractorId: string,
-  areaCode: string
-): Promise<{ success: boolean; phoneNumber?: string; error?: string }> {
-  try {
-    const client = await getOrCreateTwilioClient();
-    const supabase = createServerSupabase();
-
-    // Search for available local numbers in the requested area code
-    const available = await client.availablePhoneNumbers("US").local.list({
-      areaCode,
-      smsEnabled: true,
-      limit: 1,
-    });
-
-    if (!available || available.length === 0) {
-      return { success: false, error: `No numbers available in area code ${areaCode}` };
-    }
-
-    const numberToBuy = available[0].phoneNumber;
-
-    // Purchase the number
-    const purchased = await client.incomingPhoneNumbers.create({
-      phoneNumber: numberToBuy,
-      smsMethod: "POST",
-      // The webhook URL will be configured once we build the inbound SMS handler
-      // smsUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/sms/inbound`,
-    });
-
-    // Save to our database
-    const { error: dbError } = await supabase.from("sms_numbers").insert({
-      contractor_id: contractorId,
-      phone_number: purchased.phoneNumber,
-      twilio_sid: purchased.sid,
-      status: "pending_registration",
-      provisioned_at: new Date().toISOString(),
-    });
-
-    if (dbError) {
-      console.error("Failed to save provisioned number to DB:", dbError);
-      // The number is bought but DB insert failed — log it so we can fix manually
-    }
-
-    console.log(`Provisioned ${purchased.phoneNumber} for contractor ${contractorId}`);
-    return { success: true, phoneNumber: purchased.phoneNumber };
-  } catch (err: any) {
-    console.error("provisionNumber error:", err.message || err);
-    return { success: false, error: err.message || "Failed to provision number" };
-  }
 }
 
 // ---------------------------------------------------------------------------

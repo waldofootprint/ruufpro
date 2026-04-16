@@ -13,6 +13,7 @@ import { FORGE } from "./theme-forge";
 import Link from "next/link";
 import type { CityPageContent } from "@/lib/city-page-content";
 import { cityToSlug } from "@/lib/city-page-content";
+import Nav from "./nav";
 
 interface Props {
   content: CityPageContent;
@@ -132,13 +133,23 @@ export default function CityPageComponent({
 }: Props) {
   const t = getTheme(template);
   const phoneClean = phone.replace(/\D/g, "");
+  const base = siteSlug === "demo" ? "/demo" : `/site/${siteSlug}`;
 
   return (
     <div style={{ background: t.bg, minHeight: "100vh", fontFamily: t.fontBody }}>
+      <Nav
+        businessName={businessName}
+        phone={phone}
+        hasEstimateWidget={hasEstimateWidget}
+        services={services}
+        serviceAreaCities={otherCities.length > 0 ? [content.cityName, ...otherCities] : [mainCity]}
+        city={mainCity}
+        basePath={base}
+      />
       {/* Breadcrumb */}
-      <div style={{ maxWidth: t.maxWidth, margin: "0 auto", padding: "24px 24px 0" }}>
+      <div style={{ maxWidth: t.maxWidth, margin: "0 auto", padding: "80px 24px 0" }}>
         <nav aria-label="Breadcrumb" style={{ fontSize: 13, color: t.textSecondary }}>
-          <Link href="/" style={{ color: t.accent, textDecoration: "none" }}>{businessName}</Link>
+          <Link href={base} style={{ color: t.accent, textDecoration: "none" }}>{businessName}</Link>
           <span style={{ margin: "0 8px" }}>/</span>
           <span>{content.cityName}</span>
         </nav>
@@ -237,7 +248,7 @@ export default function CityPageComponent({
             {otherCities.map((city) => (
               <Link
                 key={city}
-                href={`/${cityToSlug(city)}`}
+                href={`${base}/${cityToSlug(city)}`}
                 style={{ padding: "8px 16px", background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 9999, fontSize: 13, fontWeight: 500, color: t.accent, textDecoration: "none", transition: "all 0.2s" }}
               >
                 {city}, {state}

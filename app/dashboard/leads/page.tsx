@@ -43,7 +43,7 @@ type LeadTab = "all" | "address_only" | "outside_area";
 
 export default function LeadDashboard() {
   const { contractorId, businessName, tier, refreshLeadCount } = useDashboard();
-  const isPro = tier === "pro" || tier === "growth";
+  const isPro = tier === "pro";
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<LeadTab>("all");
@@ -166,7 +166,7 @@ export default function LeadDashboard() {
       if (res.ok && data.success) {
         setReviewRequests((prev) => ({
           ...prev,
-          [leadId]: { id: data.reviewRequestId, status: "sms_sent" },
+          [leadId]: { id: data.reviewRequestId, status: "email_sent" },
         }));
       } else if (!silent) {
         alert(data.error || "Failed to send review request");
@@ -766,7 +766,7 @@ export default function LeadDashboard() {
                 </div>
 
                 {/* Review request */}
-                {selectedLead.phone && (selectedLead.status === "completed" || selectedLead.status === "won") && (
+                {selectedLead.email && (selectedLead.status === "completed" || selectedLead.status === "won") && (
                   <div>
                     {reviewRequests[selectedLead.id] ? (
                       <div className="flex items-center justify-center gap-2 w-full p-3 rounded-xl text-[13px] font-semibold bg-violet-50 text-violet-700">
@@ -1151,7 +1151,7 @@ function LeadCard({
                 <CalendarCheck className="w-3.5 h-3.5 text-slate-400" />
                 Change Status
               </button>
-              {lead.phone && (lead.status === "completed" || lead.status === "won") && !reviewRequests[lead.id] && (
+              {lead.email && (lead.status === "completed" || lead.status === "won") && !reviewRequests[lead.id] && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onRequestReview(lead.id); }}
                   className="flex items-center gap-2.5 px-3 py-2.5 text-[12px] font-medium text-amber-700 hover:bg-amber-50 w-full border-t border-slate-100"

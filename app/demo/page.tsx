@@ -11,7 +11,7 @@ const mockData: ContractorSiteData = {
   heroHeadline: null,
   heroSubheadline: null,
   heroCta: null,
-  heroImage: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=80",
+  heroImage: "/images/stock-photos/hero-assembled-v1.png",
   aboutText:
     "We're a family-owned roofing company that's been serving Tampa Bay homeowners for over a decade. Every roof we install is backed by our 10-year workmanship warranty and built with premium materials from trusted manufacturers.",
   services: [
@@ -65,8 +65,11 @@ const mockData: ContractorSiteData = {
   zip: "33609",
   logoUrl: null,
   licenseNumber: "CCC1330456",
+  hasAiChatbot: true,
+  galleryImages: [],
+  businessHours: null,
 };
 
 export default function DemoPage() {
-  return <ModernCleanTemplate {...mockData} />;
+  return <ModernCleanTemplate {...mockData} basePath="/demo" />;
 }
