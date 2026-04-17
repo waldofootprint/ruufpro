@@ -84,6 +84,7 @@ This varies by feature type:
 - **Generation (what to say):** Add new guidance to `lib/chat-system-prompt.ts`. Use the `claude-api` skill for prompt caching best practices. Keep new additions concise — Riley uses Haiku, so token budget matters more than Copilot (Sonnet).
 - **Constraints (what NOT to say/do):** Add deterministic rules to `lib/riley-post-process.ts`. Every "never," "don't," or "avoid" behavior needs a regex or helper function here, not just a prompt instruction. Adding a rule = ~5 lines of regex + a helper function + a call from `postProcessRileyResponse()`.
 - **Regex replacement rule:** When replacing a phrase that starts a clause (e.g. "As an AI, I can't..."), match through the END of the clause (`[^.!?]*`) and replace the whole thing. If you only match the trigger phrase, the leftover clause fragment produces garbled output. Learned from Riley #16 (`fixRoboticDeflection`).
+- **Replacement collision rule:** Replacement text in one filter can trigger ANOTHER filter downstream. Before finalizing replacement strings, grep them against ALL existing pattern arrays (ESTIMATE_OVERPROMISE, FILLER_PATTERNS, etc.). Example: Riley #15 used "real numbers" in skepticism replacements, which the overpromise filter then mangled into "a ballpark range." Also capture preceding articles (`(?:an?\s+)?`) in patterns so replacements that start with "a" don't produce "an a ballpark." Learned from Riley #15.
 - Apply ALL tone rules from `workflows/riley_tone_checklist.md`
 - NEVER add information that isn't backed by contractor data or `chatbot_config`
 
