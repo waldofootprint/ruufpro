@@ -338,7 +338,7 @@ function buildStageGuidance(stage: ConversationStage, leadCaptured: boolean, biz
 
   switch (stage) {
     case "greeting":
-      return "The homeowner just started chatting. Focus on being welcoming and answering their first question. Do NOT mention lead capture, forms, or connecting with the team yet.";
+      return "The homeowner just started chatting. Focus on being welcoming and answering their first question. Do NOT mention lead capture, forms, or connecting with the team yet. Do NOT mention availability or scheduling — you don't have real-time schedule data.";
     case "discovery":
       return "The homeowner is exploring and asking questions. Answer helpfully and build rapport. Do NOT push lead capture yet — let them ask their questions first.";
     case "consideration":
