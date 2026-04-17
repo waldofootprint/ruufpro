@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { scoreLeadFromChat } from "@/lib/lead-scoring";
+import { detectIntent } from "@/lib/intent-detection";
 import { ESTIMATE_DISCLAIMER } from "@/lib/estimate";
 
 interface ChatWidgetProps {
@@ -99,11 +100,18 @@ export default function ChatWidget({
     onFinish: () => {
       setChatError("");
       const count = userMsgCountRef.current;
-      // Show lead form at message 3, and re-show at 7 if previously dismissed
+      // Stage-based lead form trigger — compute stage from conversation
+      const chatMsgs = messages.map((m) => ({
+        role: m.role,
+        content: typeof m.content === "string" ? m.content : "",
+        parts: m.parts as Array<{ type: string; text?: string }> | undefined,
+      }));
+      const { stage } = detectIntent(chatMsgs, { leadCaptured });
       if (!leadCaptured && !showLeadForm) {
-        if (count >= 3 && leadDismissedAt === 0) {
+        const showStages = ["consideration", "decision", "close"];
+        if (showStages.includes(stage) && leadDismissedAt === 0) {
           setShowLeadForm(true);
-        } else if (count >= 7 && leadDismissedAt > 0 && leadDismissedAt < 7) {
+        } else if (showStages.includes(stage) && leadDismissedAt > 0 && count > leadDismissedAt + 3) {
           setShowLeadForm(true);
         }
       }

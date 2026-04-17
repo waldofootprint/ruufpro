@@ -3,12 +3,12 @@
 
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 import type { ChatbotConfig } from "@/lib/types";
-import type { ConversationIntent } from "@/lib/intent-detection";
+import type { ConversationIntent, ConversationStage } from "@/lib/intent-detection";
 import { ESTIMATE_DISCLAIMER } from "@/lib/estimate";
 
 export function buildChatSystemPrompt(
   data: ContractorSiteData,
-  messageCount: number,
+  _messageCount: number,
   leadCaptured: boolean,
   config?: ChatbotConfig | null,
   hasEstimateWidget?: boolean,
@@ -182,12 +182,9 @@ You have a tool that generates satellite-measured roofing estimates for any addr
 - Don't mention technical errors. Say: "I wasn't able to look up that address — could you double-check it? If it's correct, the team can come out for a free inspection to get you exact numbers."
 ` : ""}## Lead Capture Instructions
 
-[CONTEXT: Message ${messageCount}. Lead captured: ${leadCaptured}.${intent ? ` Situation: ${intent.situation}. Stage: ${intent.topicProgression}. Latest: ${intent.latestQuestionType || "none"}.${intent.captureSignals.length > 0 ? ` Signals: ${intent.captureSignals.join(", ")}.` : ""}` : ""}]
+[CONTEXT: Stage: ${intent?.stage || "greeting"}. Situation: ${intent?.situation || "just_browsing"}. Latest: ${intent?.latestQuestionType || "none"}.${intent?.captureSignals.length ? ` Signals: ${intent.captureSignals.join(", ")}.` : ""} Lead captured: ${leadCaptured}.]
 
-${!leadCaptured && messageCount >= 3 ? `It's time to naturally offer to connect them with the team. Work it into your response: "By the way — want me to have ${biz} follow up with you? Let me pull up a quick form."` : ""}
-${!leadCaptured && messageCount >= 8 ? `You should strongly encourage connecting now: "The best next step would be to have the ${biz} team reach out directly. Let me pull up a quick form so they can get in touch."` : ""}
-${messageCount >= 10 ? `This conversation is reaching its limit. Let them know: "For anything more detailed, the ${biz} team can help — let me pull up a form so they can reach out!"` : ""}
-${leadCaptured ? "The homeowner has already shared their contact info. Continue being helpful but there's no need to ask for info again." : ""}`;
+${buildStageGuidance(intent?.stage || "greeting", leadCaptured, biz)}`;
 }
 
 // Builds additional knowledge sections from chatbot_config data.
@@ -270,4 +267,24 @@ function buildConfigSections(config?: ChatbotConfig | null): string {
   }
 
   return sections.join("\n\n");
+}
+
+// Stage-aware lead capture guidance — replaces message-count triggers.
+function buildStageGuidance(stage: ConversationStage, leadCaptured: boolean, biz: string): string {
+  if (leadCaptured) {
+    return "The homeowner has already shared their contact info. Continue being helpful but there's no need to ask for info again.";
+  }
+
+  switch (stage) {
+    case "greeting":
+      return "The homeowner just started chatting. Focus on being welcoming and answering their first question. Do NOT mention lead capture, forms, or connecting with the team yet.";
+    case "discovery":
+      return "The homeowner is exploring and asking questions. Answer helpfully and build rapport. Do NOT push lead capture yet — let them ask their questions first.";
+    case "consideration":
+      return `The homeowner is evaluating options — comparing, asking about price, or checking credentials. Answer thoroughly. You may naturally offer to connect them: "Want me to have ${biz} follow up with you? Let me pull up a quick form."`;
+    case "decision":
+      return `The homeowner is ready to act — they've provided an address, asked about scheduling, or used the estimate tool. Encourage connecting: "The best next step would be to have the ${biz} team reach out directly. Let me pull up a quick form so they can get in touch."`;
+    case "close":
+      return `This conversation is wrapping up. For anything more detailed, direct them to the team: "For anything more detailed, the ${biz} team can help — let me pull up a form so they can reach out!"`;
+  }
 }

@@ -47,9 +47,21 @@ const INSURANCE_BANNED: RegExp[] = [
 
 const MAX_CREDENTIALS = 2;
 
+// ── Lead capture push phrases (banned in early stages) ─────────────────────
+const LEAD_PUSH_PATTERNS: RegExp[] = [
+  /let me pull up a (?:quick )?form/i,
+  /want me to have .+ (?:follow up|reach out|get in touch)/i,
+  /let me (?:connect|get) you (?:with|to) the team/i,
+  /have (?:them|the team) reach out/i,
+  /pull up a form so they can/i,
+  /set (?:that|this) up for you/i,
+];
+
 export interface PostProcessOptions {
   isInsuranceQuery?: boolean;
   insuranceCannedResponse?: string;
+  /** Current conversation stage — used to block lead capture push in early stages */
+  stage?: string;
 }
 
 /**
@@ -74,16 +86,33 @@ export function postProcessRileyResponse(
     }
   }
 
-  // 2. Strip filler phrases from start of response
+  // 2. Strip lead capture push in greeting/discovery stages
+  if (options.stage === "greeting" || options.stage === "discovery") {
+    result = stripLeadPush(result);
+  }
+
+  // 3. Strip filler phrases from start of response
   result = stripFillers(result);
 
-  // 3. Cap credentials at 2 per response
+  // 4. Cap credentials at 2 per response
   result = capCredentials(result);
 
   return result.trim();
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+function stripLeadPush(text: string): string {
+  const sentences = splitSentences(text);
+  if (sentences.length === 0) return text;
+  // Drop any sentence that matches a lead capture push pattern
+  const kept = sentences.filter(
+    (s) => !LEAD_PUSH_PATTERNS.some((p) => p.test(s))
+  );
+  if (kept.length > 0) return kept.join(" ");
+  // All sentences were lead push — replace with neutral closer
+  return "What else can I help you with?";
+}
 
 function stripFillers(text: string): string {
   let result = text;

@@ -25,8 +25,16 @@ export type QuestionType =
   | "general_info"
   | "scheduling";
 
-/** Where the homeowner is in their buying journey */
+/** Where the homeowner is in their buying journey (legacy — use ConversationStage) */
 export type TopicProgression = "browsing" | "comparing" | "deciding";
+
+/** Conversation stage — drives lead form timing + prompt behavior */
+export type ConversationStage =
+  | "greeting"       // First 1-2 messages, no real question yet
+  | "discovery"      // Asking general questions, exploring
+  | "consideration"  // Comparing options, asking about price/materials/timeline
+  | "decision"       // Ready to act — scheduling, providing address, using estimate tool
+  | "close";         // Lead captured or conversation capped
 
 /** Detected situation for tone adaptation */
 export type Situation =
@@ -51,8 +59,10 @@ export interface ConversationIntent {
   questionTypes: QuestionType[];
   /** Dominant question type in the most recent user message */
   latestQuestionType: QuestionType | null;
-  /** Topic progression: browsing → comparing → deciding */
+  /** Topic progression: browsing → comparing → deciding (legacy) */
   topicProgression: TopicProgression;
+  /** Conversation stage — drives lead form timing + prompt behavior */
+  stage: ConversationStage;
   /** Detected homeowner situation (for tone adaptation) */
   situation: Situation;
   /** Engagement signals */
@@ -154,7 +164,12 @@ function hasEstimateToolCall(messages: ChatMessage[]): boolean {
 // Core detection
 // ---------------------------------------------------------------------------
 
-export function detectIntent(messages: ChatMessage[]): ConversationIntent {
+export interface DetectIntentOptions {
+  /** Whether the homeowner has already submitted the lead form */
+  leadCaptured?: boolean;
+}
+
+export function detectIntent(messages: ChatMessage[], options: DetectIntentOptions = {}): ConversationIntent {
   const userMessages = messages.filter((m) => m.role === "user");
   const allUserText = userMessages.map(getMessageText).join(" ").toLowerCase();
 
@@ -237,6 +252,20 @@ export function detectIntent(messages: ChatMessage[]): ConversationIntent {
     captureSignals.push("high_engagement");
   }
 
+  // --- Conversation stage ---
+  let stage: ConversationStage = "greeting";
+
+  if (options.leadCaptured || userMessages.length >= 12) {
+    stage = "close";
+  } else if (hasDecidingSignals) {
+    stage = "decision";
+  } else if (hasComparisonSignals || allTypes.has("price_seeking") || allTypes.has("trust_seeking")) {
+    stage = "consideration";
+  } else if (questionTypes.length > 0 || userMessages.length >= 2) {
+    stage = "discovery";
+  }
+  // else: greeting (first 1-2 messages with no real question)
+
   // --- Temperature derivation ---
   let temperature: LeadTemperature = "browsing";
 
@@ -258,6 +287,7 @@ export function detectIntent(messages: ChatMessage[]): ConversationIntent {
     questionTypes,
     latestQuestionType,
     topicProgression,
+    stage,
     situation,
     engagement,
     captureSignals,
