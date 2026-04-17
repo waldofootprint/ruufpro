@@ -8,6 +8,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
+import { detectIntent } from "@/lib/intent-detection";
 import { runChatEstimate } from "@/lib/chat-estimate";
 import { getTierFromContractor } from "@/lib/types";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
@@ -282,8 +283,11 @@ export async function POST(request: NextRequest) {
       ).length;
     }
 
-    // Build system prompt
-    const systemPrompt = buildChatSystemPrompt(templateData, messageCount, leadCaptured, chatbotConfig ?? null, hasEstimateWidget);
+    // Compute intent from conversation messages
+    const intent = detectIntent(messages);
+
+    // Build system prompt (with intent signals for context)
+    const systemPrompt = buildChatSystemPrompt(templateData, messageCount, leadCaptured, chatbotConfig ?? null, hasEstimateWidget, intent);
 
     // Stream response using Claude Haiku — with estimate tool when available
     const result = streamText({

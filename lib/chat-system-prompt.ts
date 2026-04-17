@@ -3,6 +3,7 @@
 
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 import type { ChatbotConfig } from "@/lib/types";
+import type { ConversationIntent } from "@/lib/intent-detection";
 import { ESTIMATE_DISCLAIMER } from "@/lib/estimate";
 
 export function buildChatSystemPrompt(
@@ -10,7 +11,8 @@ export function buildChatSystemPrompt(
   messageCount: number,
   leadCaptured: boolean,
   config?: ChatbotConfig | null,
-  hasEstimateWidget?: boolean
+  hasEstimateWidget?: boolean,
+  intent?: ConversationIntent | null,
 ): string {
   // Sanitize business name — strip characters that could confuse the model
   const biz = data.businessName.replace(/[`<>]/g, "").trim();
@@ -165,7 +167,7 @@ You have a tool that generates satellite-measured roofing estimates for any addr
 - Don't mention technical errors. Say: "I wasn't able to look up that address — could you double-check it? If it's correct, the team can come out for a free inspection to get you exact numbers."
 ` : ""}## Lead Capture Instructions
 
-[CONTEXT: This is message ${messageCount} of the conversation. Lead has been captured: ${leadCaptured}.]
+[CONTEXT: Message ${messageCount}. Lead captured: ${leadCaptured}.${intent ? ` Situation: ${intent.situation}. Stage: ${intent.topicProgression}. Latest: ${intent.latestQuestionType || "none"}.${intent.captureSignals.length > 0 ? ` Signals: ${intent.captureSignals.join(", ")}.` : ""}` : ""}]
 
 ${!leadCaptured && messageCount >= 3 ? `It's time to naturally offer to connect them with the team. Work it into your response: "By the way — want me to get ${biz} to follow up with you? I just need your name and phone number!"` : ""}
 ${!leadCaptured && messageCount >= 8 ? `You should strongly encourage leaving contact info now: "I'd love to keep helping — the best next step would be to have the ${biz} team reach out directly. Can I grab your name and number?"` : ""}
