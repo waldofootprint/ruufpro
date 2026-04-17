@@ -45,6 +45,15 @@ const INSURANCE_BANNED: RegExp[] = [
   /your\s+insurance\s+(?:will|should|might|can|could)/i,
 ];
 
+// ── Robotic deflection phrases (banned everywhere) ────────────────────────
+// Riley #16: Transparency Moments — catch scripted-sounding "I don't know" phrases
+const ROBOTIC_DEFLECTION: { pattern: RegExp; replacement: string }[] = [
+  { pattern: /would know best/gi, replacement: "would be the right ones to ask" },
+  { pattern: /I'm just an AI/gi, replacement: "that's outside what I have info on" },
+  { pattern: /I'm only an AI/gi, replacement: "that's beyond what I can pull up" },
+  { pattern: /as an AI,? I (?:can't|cannot|don't|do not) [^.!?]*/gi, replacement: "I don't have the details on that, but the team can help" },
+];
+
 // ── Estimate accuracy overpromise (banned everywhere) ──────────────────────
 // The satellite estimate is a BALLPARK RANGE, never "exact" or "precise" numbers.
 const ESTIMATE_OVERPROMISE: { pattern: RegExp; replacement: string }[] = [
@@ -116,16 +125,19 @@ export function postProcessRileyResponse(
     result = stripLeadPush(result);
   }
 
-  // 3. Replace estimate overpromise language
+  // 3. Fix robotic deflection phrases
+  result = fixRoboticDeflection(result);
+
+  // 4. Replace estimate overpromise language
   result = fixEstimateOverpromise(result);
 
-  // 4. Fix ALL CAPS words (except whitelisted acronyms)
+  // 5. Fix ALL CAPS words (except whitelisted acronyms)
   result = fixAllCaps(result);
 
-  // 5. Strip filler phrases from start of response
+  // 6. Strip filler phrases from start of response
   result = stripFillers(result);
 
-  // 6. Cap credentials at 2 per response
+  // 7. Cap credentials at 2 per response
   result = capCredentials(result);
 
   return result.trim();
@@ -194,6 +206,14 @@ function capCredentials(text: string): string {
   }
 
   return kept.join(" ");
+}
+
+function fixRoboticDeflection(text: string): string {
+  let result = text;
+  for (const { pattern, replacement } of ROBOTIC_DEFLECTION) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
 }
 
 function fixEstimateOverpromise(text: string): string {
