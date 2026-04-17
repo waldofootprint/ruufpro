@@ -26,6 +26,8 @@
 - **Reuse check:** Before adding new logic, check if the data is already computed but unused. `intent-detection.ts` computes signals, stages, engagement — the widget or prompt may just not be consuming them yet. Riley #10 shipped by wiring existing `captureSignals` into the widget, zero new detection logic needed.
 - Check the GUARDRAILS noted on the feature (some have specific safety rules)
 - **Constraint vs generation sort:** For each behavior, ask: "Is this what Riley SHOULD say, or what Riley must NEVER do?" Generation → prompt (Step 4). Constraints → post-processor (Step 4). Prompt-only constraints leak — proven across 23 fixes.
+- **Estimate accuracy check:** If the feature touches estimate presentation, pricing language, or comparison flows, check for overpromise risk. Haiku naturally drifts toward "exact numbers," "solid numbers," "numbers to compare against quotes" when discussing the estimate tool. The satellite estimate is a BALLPARK RANGE, never a quote. Post-processor has `fixEstimateOverpromise()` with 9 patterns — add new patterns if the feature introduces new ways to describe estimates. Learned from Riley #3 (price shopping scenario).
+- **Situation-overrides-stage check:** The post-processor gates some behaviors by conversation stage (e.g., no lead push in greeting/discovery). But some situations override stage — emergencies push to lead form regardless of stage. If your feature adds stage-gated behavior, ask: "Does any situation need to bypass this gate?" Learned from Riley #3 (emergency in greeting stage was getting lead push stripped).
 - List the files that will be touched
 - Share the plan with Hannah before writing code
 
