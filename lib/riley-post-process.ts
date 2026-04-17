@@ -4,20 +4,21 @@
 // Zero API cost — pure string logic.
 
 // ── Filler phrases (banned everywhere) ──────────────────────────────────────
+// Each pattern matches the filler phrase + rest of that sentence (up to .!? or —).
+// This prevents fragments like "That concern." when stripping "I totally understand".
 const FILLER_PATTERNS: RegExp[] = [
-  /^I'd love to help get you\b[^.!?]*[.!?]?\s*/i,
-  /^I'd love to help\b[^.!?]*[.!?]?\s*/i,
-  /^Great question!\s*/i,
-  /^Absolutely!\s*/i,
-  /^I totally get that[.!,]?\s*/i,
-  /^I totally understand[.!,]?\s*/i,
-  /^I hear you[.!,]?\s*/i,
-  /^I completely understand[.!,]?\s*/i,
-  /^Here's the thing[—:,.!]?\s*/i,
-  /^Here's the good news[—:,.!]?\s*/i,
-  /^That's a great point[.!,]?\s*/i,
-  /^That's a really good question[.!,]?\s*/i,
-  /^I appreciate you asking[.!,]?\s*/i,
+  /^I'd love to help get you\b[^.!?—]*[.!?—]?\s*/i,
+  /^I'd love to help\b[^.!?—]*[.!?—]?\s*/i,
+  /^Great question\b[^.!?—]*[.!?—]?\s*/i,
+  /^I totally get that\b[^.!?—]*[.!?—]?\s*/i,
+  /^I totally understand\b[^.!?—]*[.!?—]?\s*/i,
+  /^I hear you\b[^.!?—]*[.!?—]?\s*/i,
+  /^I completely understand\b[^.!?—]*[.!?—]?\s*/i,
+  /^Here's the thing\b[^.!?—]*[.!?—]?\s*/i,
+  /^Here's the good news\b[^.!?—]*[.!?—]?\s*/i,
+  /^That's a great point\b[^.!?—]*[.!?—]?\s*/i,
+  /^That's a really good question\b[^.!?—]*[.!?—]?\s*/i,
+  /^I appreciate you asking\b[^.!?—]*[.!?—]?\s*/i,
 ];
 
 // ── Credential types (each match = 1 credential) ───────────────────────────
