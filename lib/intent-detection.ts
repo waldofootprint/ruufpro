@@ -51,6 +51,7 @@ export type CaptureSignal =
   | "emergency_detected"
   | "repeated_price_question"
   | "used_estimate_tool"
+  | "estimate_complete"
   | "high_engagement"
   | "deciding_stage";
 
@@ -238,7 +239,19 @@ export function detectIntent(messages: ChatMessage[], options: DetectIntentOptio
   if (providedAddress) captureSignals.push("provided_address");
   if (allTypes.has("scheduling")) captureSignals.push("asked_scheduling");
   if (allTypes.has("emergency")) captureSignals.push("emergency_detected");
-  if (usedEstimateTool) captureSignals.push("used_estimate_tool");
+  if (usedEstimateTool) {
+    // estimate_complete: estimate tool ran AND homeowner sent a follow-up message after
+    // (don't interrupt mid-estimate flow — wait until they've seen results and keep chatting)
+    const toolIdx = messages.findIndex(
+      (m) => m.parts?.some((p) => p.type === "tool-getEstimate") ?? false
+    );
+    const hasFollowUp = toolIdx >= 0 && messages.slice(toolIdx + 1).some((m) => m.role === "user");
+    if (hasFollowUp) {
+      captureSignals.push("estimate_complete");
+    } else {
+      captureSignals.push("used_estimate_tool");
+    }
+  }
   if (topicProgression === "deciding") captureSignals.push("deciding_stage");
 
   // Repeated price question: price_seeking appeared in 2+ separate user messages

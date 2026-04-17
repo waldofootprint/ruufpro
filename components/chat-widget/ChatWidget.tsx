@@ -106,12 +106,29 @@ export default function ChatWidget({
         content: typeof m.content === "string" ? m.content : "",
         parts: m.parts as Array<{ type: string; text?: string }> | undefined,
       }));
-      const { stage } = detectIntent(chatMsgs, { leadCaptured });
+      const { stage, captureSignals } = detectIntent(chatMsgs, { leadCaptured });
       if (!leadCaptured && !showLeadForm) {
+        // Strong signals — show form immediately regardless of stage
+        const strongSignals: string[] = [
+          "provided_address", "asked_scheduling", "emergency_detected",
+          "estimate_complete", "deciding_stage",
+        ];
+        // Warm signals — show form only if past greeting stage
+        const warmSignals: string[] = [
+          "repeated_price_question", "high_engagement",
+        ];
+        const hasStrong = captureSignals.some((s) => strongSignals.includes(s));
+        const hasWarm = captureSignals.some((s) => warmSignals.includes(s));
+        const warmEligible = hasWarm && stage !== "greeting";
+        // Stage-based fallback (original logic)
         const showStages = ["consideration", "decision", "close"];
-        if (showStages.includes(stage) && leadDismissedAt === 0) {
+        const stageReady = showStages.includes(stage);
+
+        const shouldShow = hasStrong || warmEligible || stageReady;
+
+        if (shouldShow && leadDismissedAt === 0) {
           setShowLeadForm(true);
-        } else if (showStages.includes(stage) && leadDismissedAt > 0 && count > leadDismissedAt + 3) {
+        } else if (shouldShow && leadDismissedAt > 0 && count > leadDismissedAt + 3) {
           setShowLeadForm(true);
         }
       }
@@ -167,7 +184,16 @@ export default function ChatWidget({
           const userMsgCount = msgs.filter((m: { role: string }) => m.role === "user").length;
           userMsgCountRef.current = userMsgCount;
           if (userMsgCount >= 10) setCapped(true);
-          if (userMsgCount >= 3 && !leadCaptured) setShowLeadForm(true);
+          // Signal-based form restore: recompute intent from restored messages
+          if (!leadCaptured) {
+            const restored = msgs.map((m: { role: string; content?: string; parts?: Array<{ type: string; text?: string }> }) => ({
+              role: m.role,
+              content: typeof m.content === "string" ? m.content : "",
+              parts: m.parts,
+            }));
+            const { captureSignals: signals } = detectIntent(restored, { leadCaptured: false });
+            if (signals.length > 0) setShowLeadForm(true);
+          }
         }
       } catch {
         // Ignore corrupted localStorage
