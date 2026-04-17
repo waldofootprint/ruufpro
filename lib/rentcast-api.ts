@@ -142,6 +142,17 @@ export async function fetchPropertyData(address: string): Promise<PropertyData> 
     features: prop.features || {},
     rentcast_id: prop.id || null,
     fetched_at: new Date().toISOString(),
+    // Copilot #317: Derived roof age fields
+    estimated_roof_age_years: prop.yearBuilt
+      ? new Date().getFullYear() - prop.yearBuilt
+      : null,
+    roof_age_source: "year_built_derived",
+    likely_original_roof: prop.yearBuilt
+      ? (!prop.features?.roofType || prop.features.roofType === "")
+      : false,
+    in_replacement_window: prop.yearBuilt
+      ? (new Date().getFullYear() - prop.yearBuilt >= 18)
+      : false,
   };
 
   // 4. Upsert into cache (on conflict update)

@@ -944,6 +944,140 @@ function buildChatDepthMessage(d: ChatDepthData): string {
   return parts.join(" ");
 }
 
+// ── Property Intel Types ──────────────────────────────────────────────
+
+export interface PropertyIntelData {
+  lead_id: string;
+  lead_name: string;
+  address: string | null;
+  year_built: number | null;
+  estimated_roof_age: number | null;
+  roof_age_source: string;
+  likely_original_roof: boolean;
+  in_replacement_window: boolean;
+  roof_type: string | null;
+  property_type: string | null;
+  square_footage: number | null;
+  estimated_value: number | null;
+}
+
+// ── Property Intel Tool Functions ─────────────────────────────────────
+
+/**
+ * Get property intelligence for a specific lead — roof age, original roof flag,
+ * replacement window alert. Derived from RentCast cached data (year_built).
+ * "What do we know about Garcia's roof?" / "Property info on Wilson"
+ * "Is this an old roof?" / "How old is their roof?"
+ */
+export async function getPropertyIntelForCopilot(
+  supabase: SupabaseClient,
+  contractorId: string,
+  nameOrId: string
+): Promise<{ found: boolean; intel: PropertyIntelData | null; message: string }> {
+  const lead = await getLeadDetailsForCopilot(supabase, contractorId, nameOrId);
+  if (!lead) {
+    return { found: false, intel: null, message: "No lead found matching that name." };
+  }
+
+  // Try property_data_id FK first, then address lookup
+  let propertyData: any = null;
+
+  // Check if lead has a linked property record
+  const { data: leadRow } = await supabase
+    .from("leads")
+    .select("property_data_id, address")
+    .eq("id", lead.id)
+    .single();
+
+  if (leadRow?.property_data_id) {
+    const { data } = await supabase
+      .from("property_data_cache")
+      .select("*")
+      .eq("id", leadRow.property_data_id)
+      .single();
+    propertyData = data;
+  }
+
+  // Fallback: address lookup
+  if (!propertyData && leadRow?.address) {
+    const normalized = leadRow.address.toLowerCase().replace(/\s+/g, " ").trim();
+    const { data } = await supabase
+      .from("property_data_cache")
+      .select("*")
+      .eq("address", normalized)
+      .single();
+    propertyData = data;
+  }
+
+  if (!propertyData) {
+    return {
+      found: true,
+      intel: null,
+      message: `No property data on file for ${lead.name}. Property intel becomes available after a RentCast lookup on their address.`,
+    };
+  }
+
+  // Compute derived fields on the fly if not backfilled yet
+  const currentYear = new Date().getFullYear();
+  const yearBuilt: number | null = propertyData.year_built;
+  const roofAge = propertyData.estimated_roof_age_years
+    ?? (yearBuilt ? currentYear - yearBuilt : null);
+  const likelyOriginal = propertyData.likely_original_roof
+    ?? (yearBuilt != null && (!propertyData.roof_type || propertyData.roof_type === ""));
+  const inWindow = propertyData.in_replacement_window
+    ?? (roofAge != null && roofAge >= 18);
+
+  const intel: PropertyIntelData = {
+    lead_id: lead.id,
+    lead_name: lead.name,
+    address: lead.address,
+    year_built: yearBuilt,
+    estimated_roof_age: roofAge,
+    roof_age_source: propertyData.roof_age_source || "year_built_derived",
+    likely_original_roof: likelyOriginal,
+    in_replacement_window: inWindow,
+    roof_type: propertyData.roof_type,
+    property_type: propertyData.property_type,
+    square_footage: propertyData.square_footage,
+    estimated_value: propertyData.estimated_value,
+  };
+
+  const msg = buildPropertyIntelMessage(intel);
+  return { found: true, intel, message: msg };
+}
+
+function buildPropertyIntelMessage(d: PropertyIntelData): string {
+  const parts: string[] = [];
+
+  if (d.year_built && d.estimated_roof_age != null) {
+    if (d.likely_original_roof) {
+      parts.push(
+        `${d.lead_name}'s home was built in ${d.year_built}. No roofing activity on record — if it's the original roof, that's ${d.estimated_roof_age} years.`
+      );
+    } else if (d.roof_type) {
+      parts.push(
+        `${d.lead_name}'s home was built in ${d.year_built} with a ${d.roof_type} roof. Estimated age: ${d.estimated_roof_age} years.`
+      );
+    } else {
+      parts.push(
+        `${d.lead_name}'s home was built in ${d.year_built}. Estimated roof age: ${d.estimated_roof_age} years.`
+      );
+    }
+  } else {
+    parts.push(`Property data available for ${d.lead_name}, but no year built on record.`);
+  }
+
+  if (d.in_replacement_window) {
+    parts.push("That puts it in the typical replacement window for shingle roofs.");
+  }
+
+  if (d.estimated_value) {
+    parts.push(`Property valued around $${d.estimated_value.toLocaleString()}.`);
+  }
+
+  return parts.join(" ");
+}
+
 // ── Review Tool Types ─────────────────────────────────────────────────
 // (moved down to keep engagement tools grouped above)
 

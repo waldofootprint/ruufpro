@@ -25,6 +25,7 @@ import {
   getMaterialSwitchesForCopilot,
   getPriceAdjustmentsForCopilot,
   getChatDepthForCopilot,
+  getPropertyIntelForCopilot,
 } from "@/lib/copilot-tools";
 
 // ---------------------------------------------------------------------------
@@ -442,6 +443,24 @@ export async function POST(request: NextRequest) {
           }),
           execute: async ({ nameOrId }) => {
             return getChatDepthForCopilot(supabase, contractorId, nameOrId);
+          },
+        }),
+
+        // ── Property Intel ──────────────────────────────────────────
+
+        getPropertyIntel: tool({
+          description:
+            "Get property intelligence for a lead — roof age, original roof likelihood, " +
+            "replacement window status, roof type, and property value. Derived from cached " +
+            "property records. Call for 'what do we know about [name]'s roof', 'property info', " +
+            "'how old is their roof', 'is this an old roof', or property/roof age questions.",
+          inputSchema: z.object({
+            nameOrId: z
+              .string()
+              .describe("The lead's name (partial match OK) or UUID"),
+          }),
+          execute: async ({ nameOrId }) => {
+            return getPropertyIntelForCopilot(supabase, contractorId, nameOrId);
           },
         }),
       },
