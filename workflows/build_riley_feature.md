@@ -21,7 +21,7 @@
 ## Build Steps
 
 ### Step 1: Spec Review
-- Re-read the specific feature's entry in `decisions/riley-feature-brainstorm.md`
+- Re-read the specific feature's entry in the vault: `~/RuufPro-Vault/RuufPro-Vault/decisions/riley-feature-brainstorm.md`
 - Identify: what data is needed, where it comes from, how Riley uses it
 - **Reuse check:** Before adding new logic, check if the data is already computed but unused. `intent-detection.ts` computes signals, stages, engagement — the widget or prompt may just not be consuming them yet. Riley #10 shipped by wiring existing `captureSignals` into the widget, zero new detection logic needed.
 - Check the GUARDRAILS noted on the feature (some have specific safety rules)
@@ -83,6 +83,7 @@ This varies by feature type:
 ### Step 4: System Prompt + Post-Processor Update
 - **Generation (what to say):** Add new guidance to `lib/chat-system-prompt.ts`. Use the `claude-api` skill for prompt caching best practices. Keep new additions concise — Riley uses Haiku, so token budget matters more than Copilot (Sonnet).
 - **Constraints (what NOT to say/do):** Add deterministic rules to `lib/riley-post-process.ts`. Every "never," "don't," or "avoid" behavior needs a regex or helper function here, not just a prompt instruction. Adding a rule = ~5 lines of regex + a helper function + a call from `postProcessRileyResponse()`.
+- **Regex replacement rule:** When replacing a phrase that starts a clause (e.g. "As an AI, I can't..."), match through the END of the clause (`[^.!?]*`) and replace the whole thing. If you only match the trigger phrase, the leftover clause fragment produces garbled output. Learned from Riley #16 (`fixRoboticDeflection`).
 - Apply ALL tone rules from `workflows/riley_tone_checklist.md`
 - NEVER add information that isn't backed by contractor data or `chatbot_config`
 
