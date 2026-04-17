@@ -23,6 +23,7 @@
 ### Step 1: Spec Review
 - Re-read the specific feature's entry in `decisions/riley-feature-brainstorm.md`
 - Identify: what data is needed, where it comes from, how Riley uses it
+- **Reuse check:** Before adding new logic, check if the data is already computed but unused. `intent-detection.ts` computes signals, stages, engagement — the widget or prompt may just not be consuming them yet. Riley #10 shipped by wiring existing `captureSignals` into the widget, zero new detection logic needed.
 - Check the GUARDRAILS noted on the feature (some have specific safety rules)
 - **Constraint vs generation sort:** For each behavior, ask: "Is this what Riley SHOULD say, or what Riley must NEVER do?" Generation → prompt (Step 4). Constraints → post-processor (Step 4). Prompt-only constraints leak — proven across 23 fixes.
 - List the files that will be touched
