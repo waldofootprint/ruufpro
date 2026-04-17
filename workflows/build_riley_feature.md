@@ -24,6 +24,7 @@
 - Re-read the specific feature's entry in `decisions/riley-feature-brainstorm.md`
 - Identify: what data is needed, where it comes from, how Riley uses it
 - Check the GUARDRAILS noted on the feature (some have specific safety rules)
+- **Constraint vs generation sort:** For each behavior, ask: "Is this what Riley SHOULD say, or what Riley must NEVER do?" Generation → prompt (Step 4). Constraints → post-processor (Step 4). Prompt-only constraints leak — proven across 23 fixes.
 - List the files that will be touched
 - Share the plan with Hannah before writing code
 
@@ -76,14 +77,13 @@ This varies by feature type:
 - May touch Inngest functions, Resend integration, Copilot tools
 - Announce complexity to Hannah before starting
 
-### Step 4: System Prompt Update
-- Use the `claude-api` skill for prompt caching best practices
-- Add new guidance to `lib/chat-system-prompt.ts`
-- Keep new additions concise — Riley uses Haiku, so token budget matters more than Copilot (Sonnet)
+### Step 4: System Prompt + Post-Processor Update
+- **Generation (what to say):** Add new guidance to `lib/chat-system-prompt.ts`. Use the `claude-api` skill for prompt caching best practices. Keep new additions concise — Riley uses Haiku, so token budget matters more than Copilot (Sonnet).
+- **Constraints (what NOT to say/do):** Add deterministic rules to `lib/riley-post-process.ts`. Every "never," "don't," or "avoid" behavior needs a regex or helper function here, not just a prompt instruction. Adding a rule = ~5 lines of regex + a helper function + a call from `postProcessRileyResponse()`.
 - Apply ALL tone rules from `workflows/riley_tone_checklist.md`
 - NEVER add information that isn't backed by contractor data or `chatbot_config`
 
-**Key file:** `lib/chat-system-prompt.ts`
+**Key files:** `lib/chat-system-prompt.ts`, `lib/riley-post-process.ts`
 
 ### Step 5: Chat API Wiring (if needed)
 - Register new tools or modify existing ones in `app/api/chat/route.ts`
@@ -113,6 +113,7 @@ This varies by feature type:
 - Run every new UI string through the checklist too
 - Fix any violations before committing
 - This is not optional — tone issues are bugs
+- **Constraint check:** For every "never" or "don't" in new prompt text, confirm a matching rule exists in `lib/riley-post-process.ts`. Prompt-only constraint = bug.
 - Remember: Riley talks to homeowners, not roofers. Different audience = different tone.
 
 ### Step 9: Test
@@ -125,6 +126,7 @@ This varies by feature type:
 - Verify estimate tool still works
 - Check rate limits still function
 - No regressions on existing 21 behavior rules
+- **Adversarial constraint test:** For each new post-processor rule, craft 3 inputs designed to trigger the banned behavior and verify the post-processor catches them
 
 ### Step 10: Ship
 - Commit with descriptive message
@@ -140,6 +142,7 @@ This varies by feature type:
 | Feature specs & priorities | `decisions/riley-feature-brainstorm.md` |
 | Tone checklist | `workflows/riley_tone_checklist.md` |
 | System prompt builder | `lib/chat-system-prompt.ts` |
+| Response post-processor | `lib/riley-post-process.ts` |
 | Chat API (streaming) | `app/api/chat/route.ts` |
 | Chat widget UI | `components/chat-widget/ChatWidget.tsx` |
 | Estimate tool | `lib/chat-estimate.ts` |

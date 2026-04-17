@@ -111,5 +111,6 @@ Run through these yes/no questions for every new Riley message:
 - [ ] Is the message 3 sentences or fewer?
 - [ ] Is there only one call-to-action (or zero)?
 - [ ] Would this response build trust, or erode it?
+- [ ] Is every "never" / "don't" constraint enforced in `lib/riley-post-process.ts`, not just the prompt?
 
 **All boxes checked = ship it. Any unchecked = fix first.**
