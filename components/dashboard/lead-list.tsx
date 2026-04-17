@@ -343,23 +343,26 @@ export function LeadList({ leads }: LeadListProps) {
         <h2 className="text-lg font-bold text-foreground">Leads</h2>
         <div className="flex gap-1.5">
           {(["heat", "newest", "value"] as SortKey[]).map((key) => (
-            <Button
+            <button
               key={key}
-              variant={sortKey === key ? "default" : "outline"}
-              size="sm"
-              className={cn("text-xs h-8", sortKey === key && "bg-primary")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                sortKey === key
+                  ? "bg-orange-500 text-white shadow-sm"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
+              )}
               onClick={() => setSortKey(key)}
             >
               {key === "heat" && "🔥 Heat Score"}
               {key === "newest" && "Newest"}
               {key === "value" && "Value"}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
 
       {/* Lead Table */}
-      <Card className="overflow-hidden">
+      <div className="rounded-2xl bg-card border border-border shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
         {/* Header */}
         <div className="hidden lg:grid grid-cols-[48px_1.5fr_100px_120px_100px_100px_90px] gap-2 px-4 py-2.5 bg-muted/50 border-b border-border">
           {["", "Lead", "Score", "Estimate", "Material", "Status", "Activity"].map((h) => (
@@ -428,7 +431,7 @@ export function LeadList({ leads }: LeadListProps) {
             );
           })
         )}
-      </Card>
+      </div>
     </div>
   );
 }

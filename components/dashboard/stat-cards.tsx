@@ -1,6 +1,5 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -9,45 +8,25 @@ interface StatCardProps {
   value: string | number;
   subtitle?: string;
   icon: LucideIcon;
+  iconColor?: string;
   trend?: { value: string; positive: boolean };
-  variant?: "default" | "highlight";
 }
 
-export function StatCard({ label, value, subtitle, icon: Icon, trend, variant = "default" }: StatCardProps) {
+export function StatCard({ label, value, subtitle, icon: Icon, iconColor, trend }: StatCardProps) {
   return (
-    <Card
-      className={cn(
-        "p-5 border shadow-sm transition-shadow hover:shadow-md",
-        variant === "highlight" && "bg-primary text-primary-foreground border-primary"
-      )}
-    >
+    <div className="rounded-2xl bg-card border border-border p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p
-            className={cn(
-              "text-[11px] font-semibold uppercase tracking-wide mb-2",
-              variant === "highlight" ? "text-primary-foreground/60" : "text-muted-foreground"
-            )}
-          >
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
             {label}
           </p>
-          <p
-            className={cn(
-              "text-3xl font-extrabold tracking-tight",
-              variant === "highlight" ? "text-primary-foreground" : "text-foreground"
-            )}
-          >
+          <p className="text-3xl font-bold tracking-tight text-foreground">
             {value}
           </p>
           {(subtitle || trend) && (
-            <p
-              className={cn(
-                "text-xs mt-1",
-                variant === "highlight" ? "text-primary-foreground/50" : "text-muted-foreground"
-              )}
-            >
+            <p className="text-xs mt-1.5 text-muted-foreground">
               {trend && (
-                <span className={cn("font-semibold mr-1", trend.positive ? "text-emerald-500" : "text-red-500")}>
+                <span className={cn("font-semibold mr-1", trend.positive ? "text-emerald-600" : "text-red-500")}>
                   {trend.positive ? "↑" : "↓"} {trend.value}
                 </span>
               )}
@@ -57,19 +36,14 @@ export function StatCard({ label, value, subtitle, icon: Icon, trend, variant = 
         </div>
         <div
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-xl",
-            variant === "highlight" ? "bg-primary-foreground/10" : "bg-muted"
+            "flex h-11 w-11 items-center justify-center rounded-xl",
+            iconColor || "bg-orange-50 text-orange-500"
           )}
         >
-          <Icon
-            className={cn(
-              "h-5 w-5",
-              variant === "highlight" ? "text-primary-foreground/70" : "text-muted-foreground"
-            )}
-          />
+          <Icon className="h-5 w-5" />
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 

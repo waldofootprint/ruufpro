@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useDashboard } from "./DashboardContext";
 import { supabase } from "@/lib/supabase";
 import { calculateHeatScore } from "@/lib/heat-score";
-import { Card } from "@/components/ui/card";
-import { Gauge } from "@/components/ui/gauge";
 import { StatCard, StatCardGrid } from "@/components/dashboard/stat-cards";
 import { LeadList, type LeadWithDetails } from "@/components/dashboard/lead-list";
 import StormAlertBanner from "@/components/dashboard/StormAlertBanner";
@@ -189,66 +187,47 @@ export default function DashboardHome() {
 
   return (
     <div className="max-w-[1200px] mx-auto space-y-6">
-      {/* Greeting + Gauge Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground mb-1">
-            Hello, {firstName} 👋
-          </h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            {leads.length > 0
-              ? `You have ${leads.length} lead${leads.length !== 1 ? "s" : ""} · ${hotLeads} hot · $${(pipelineValue / 1000).toFixed(0)}K pipeline`
-              : "Your pipeline is empty — leads will show up here as homeowners engage."}
-          </p>
-
-          {/* Stat Cards */}
-          <StatCardGrid>
-            <StatCard
-              label="Pipeline"
-              value={`$${(pipelineValue / 1000).toFixed(0)}K`}
-              icon={DollarSign}
-              variant="highlight"
-            />
-            <StatCard
-              label="Hot Leads"
-              value={hotLeads}
-              subtitle="Scored 70+"
-              icon={Flame}
-            />
-            <StatCard
-              label="Avg Response"
-              value={avgResponse}
-              icon={Clock}
-            />
-            <StatCard
-              label="Stale"
-              value={staleLeads}
-              subtitle="48h+ no contact"
-              icon={AlertTriangle}
-            />
-          </StatCardGrid>
-        </div>
-
-        {/* Gauge Card */}
-        <Card className="flex flex-col items-center justify-center p-6 border shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">
-            Pipeline Health
-          </p>
-          <Gauge
-            value={pipelineHealth}
-            size={140}
-            strokeWidth={12}
-            primary={{
-              0: "danger",
-              30: "warning",
-              60: "info",
-              80: "success",
-            }}
-            secondary="#f0f0f0"
-          />
-          <p className="text-xs text-muted-foreground mt-3">out of 100</p>
-        </Card>
+      {/* Greeting */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-1">
+          Hello, {firstName} 👋
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {leads.length > 0
+            ? `You have ${leads.length} lead${leads.length !== 1 ? "s" : ""} · ${hotLeads} hot · $${(pipelineValue / 1000).toFixed(0)}K pipeline`
+            : "Your pipeline is empty — leads will show up here as homeowners engage."}
+        </p>
       </div>
+
+      {/* Stat Cards */}
+      <StatCardGrid>
+        <StatCard
+          label="Pipeline"
+          value={`$${(pipelineValue / 1000).toFixed(0)}K`}
+          icon={DollarSign}
+          iconColor="bg-emerald-50 text-emerald-600"
+        />
+        <StatCard
+          label="Hot Leads"
+          value={hotLeads}
+          subtitle="Scored 70+"
+          icon={Flame}
+          iconColor="bg-orange-50 text-orange-500"
+        />
+        <StatCard
+          label="Avg Response"
+          value={avgResponse}
+          icon={Clock}
+          iconColor="bg-blue-50 text-blue-500"
+        />
+        <StatCard
+          label="Stale"
+          value={staleLeads}
+          subtitle="48h+ no contact"
+          icon={AlertTriangle}
+          iconColor={staleLeads > 0 ? "bg-red-50 text-red-500" : "bg-muted text-muted-foreground"}
+        />
+      </StatCardGrid>
 
       {/* Storm Banner */}
       <StormAlertBanner contractorId={contractorId} />

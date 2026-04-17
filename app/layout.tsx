@@ -82,7 +82,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn(dmSans.variable, sora.variable, plusJakarta.variable, inter.variable, outfit.variable, lora.variable, robotoSlab.variable, barlow.variable, barlowCondensed.variable, "font-sans", GeistSans.variable)}>
+    <html lang="en" className={cn(dmSans.variable, sora.variable, plusJakarta.variable, inter.variable, outfit.variable, lora.variable, robotoSlab.variable, barlow.variable, barlowCondensed.variable, "font-sans", inter.variable)}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
