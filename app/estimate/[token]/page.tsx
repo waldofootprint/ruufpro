@@ -180,9 +180,48 @@ export default function LivingEstimatePage() {
   }
 
   function handleAddonToggle(addonId: string) {
-    const updated = selectedAddons.includes(addonId)
+    const isRemoving = selectedAddons.includes(addonId);
+    const updated = isRemoving
       ? selectedAddons.filter((a) => a !== addonId)
       : [...selectedAddons, addonId];
+
+    // Track price adjustment event
+    if (data?.contractor_id) {
+      const KEY = "rr_widget_fp";
+      const fp = localStorage.getItem(KEY) || "";
+      const addon = data.available_addons.find((a) => a.id === addonId);
+      const prevAddonsTotal = data.available_addons
+        .filter((a) => selectedAddons.includes(a.id))
+        .reduce((sum, a) => sum + a.price, 0);
+      const newAddonsTotal = data.available_addons
+        .filter((a) => updated.includes(a.id))
+        .reduce((sum, a) => sum + a.price, 0);
+      const currentEst = data.estimates.find((e) => e.material === selectedMaterial) || data.estimates[0];
+      fetch("/api/widget-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contractor_id: data.contractor_id,
+          session_fp: fp,
+          event_type: "price_adjustment",
+          page: "living_estimate",
+          lead_id: data.lead_id || null,
+          metadata: {
+            trigger: "addon",
+            action: isRemoving ? "removed" : "added",
+            addon_id: addonId,
+            addon_name: addon?.name || null,
+            addon_price: addon?.price || 0,
+            previous_total_low: currentEst.price_low + prevAddonsTotal,
+            previous_total_high: currentEst.price_high + prevAddonsTotal,
+            new_total_low: currentEst.price_low + newAddonsTotal,
+            new_total_high: currentEst.price_high + newAddonsTotal,
+            material: selectedMaterial,
+          },
+        }),
+      }).catch(() => {});
+    }
+
     setSelectedAddons(updated);
     syncSelections(selectedMaterial, updated);
   }

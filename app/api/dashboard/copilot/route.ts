@@ -23,6 +23,7 @@ import {
   draftReviewResponseForCopilot,
   getLeadEngagementForCopilot,
   getMaterialSwitchesForCopilot,
+  getPriceAdjustmentsForCopilot,
 } from "@/lib/copilot-tools";
 
 // ---------------------------------------------------------------------------
@@ -407,6 +408,21 @@ export async function POST(request: NextRequest) {
           }),
           execute: async ({ nameOrId }) => {
             return getMaterialSwitchesForCopilot(supabase, contractorId, nameOrId);
+          },
+        }),
+
+        getPriceAdjustments: tool({
+          description:
+            "Get all price-affecting changes for a lead — material switches + addon toggles " +
+            "combined into a timeline. Call for 'how did their estimate change', 'did they adjust " +
+            "their price', 'what happened with their estimate', or price movement questions.",
+          inputSchema: z.object({
+            nameOrId: z
+              .string()
+              .describe("The lead's name (partial match OK) or UUID"),
+          }),
+          execute: async ({ nameOrId }) => {
+            return getPriceAdjustmentsForCopilot(supabase, contractorId, nameOrId);
           },
         }),
       },

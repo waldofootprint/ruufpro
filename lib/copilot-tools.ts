@@ -631,6 +631,145 @@ export async function getMaterialSwitchesForCopilot(
   return { found: true, switches, message: msg };
 }
 
+// ── Price Adjustment Types ──────────────────────────────────────────
+
+export interface PriceAdjustmentData {
+  lead_id: string;
+  lead_name: string;
+  adjustment_count: number;
+  material_switches: number;
+  addon_changes: number;
+  first_estimate_material: string | null;
+  last_estimate_material: string | null;
+  last_price_low: number | null;
+  last_price_high: number | null;
+  materials_compared: string[];
+  addons_added: string[];
+  addons_removed: string[];
+  timeline: Array<{
+    type: "material_switch" | "addon";
+    detail: string;
+    at: string;
+  }>;
+}
+
+// ── Price Adjustment Tool Functions ────────────────────────────────
+
+/**
+ * Get all price-affecting changes for a lead — material switches + addon toggles.
+ * "How has Garcia's estimate changed?" / "Did they adjust their price?"
+ * "What happened with the Smith estimate?"
+ */
+export async function getPriceAdjustmentsForCopilot(
+  supabase: SupabaseClient,
+  contractorId: string,
+  nameOrId: string
+): Promise<{ found: boolean; adjustments: PriceAdjustmentData | null; message: string }> {
+  const lead = await getLeadDetailsForCopilot(supabase, contractorId, nameOrId);
+  if (!lead) {
+    return { found: false, adjustments: null, message: "No lead found matching that name." };
+  }
+
+  const { data: events } = await supabase
+    .from("widget_events")
+    .select("event_type, metadata, created_at")
+    .eq("lead_id", lead.id)
+    .in("event_type", ["material_switch", "price_adjustment"])
+    .order("created_at", { ascending: true });
+
+  const rows = events || [];
+
+  if (rows.length === 0) {
+    return {
+      found: true,
+      adjustments: null,
+      message: `${lead.name} hasn't made any changes to their estimate.`,
+    };
+  }
+
+  const materialSwitches = rows.filter((e: any) => e.event_type === "material_switch");
+  const addonChanges = rows.filter((e: any) => e.event_type === "price_adjustment");
+
+  // Track materials compared
+  const allMaterials = new Set<string>();
+  const addonsAdded = new Set<string>();
+  const addonsRemoved = new Set<string>();
+
+  let firstMaterial: string | null = null;
+  let lastMaterial: string | null = null;
+  let lastPriceLow: number | null = null;
+  let lastPriceHigh: number | null = null;
+
+  const timeline: PriceAdjustmentData["timeline"] = [];
+
+  for (const row of materialSwitches) {
+    const m = (row as any).metadata || {};
+    if (m.previous_material) allMaterials.add(m.previous_material);
+    if (m.new_material) {
+      allMaterials.add(m.new_material);
+      lastMaterial = m.new_material;
+      if (!firstMaterial && m.previous_material) firstMaterial = m.previous_material;
+    }
+    if (m.new_price_low) lastPriceLow = m.new_price_low;
+    if (m.new_price_high) lastPriceHigh = m.new_price_high;
+    timeline.push({
+      type: "material_switch",
+      detail: `${m.previous_material || "unknown"} → ${m.new_material || "unknown"}`,
+      at: (row as any).created_at,
+    });
+  }
+
+  for (const row of addonChanges) {
+    const m = (row as any).metadata || {};
+    const addonName = m.addon_name || m.addon_id || "unknown";
+    if (m.action === "added") addonsAdded.add(addonName);
+    if (m.action === "removed") addonsRemoved.add(addonName);
+    if (m.new_total_low) lastPriceLow = m.new_total_low;
+    if (m.new_total_high) lastPriceHigh = m.new_total_high;
+    timeline.push({
+      type: "addon",
+      detail: `${m.action === "removed" ? "Removed" : "Added"} ${addonName}`,
+      at: (row as any).created_at,
+    });
+  }
+
+  if (!firstMaterial && allMaterials.size > 0) {
+    firstMaterial = Array.from(allMaterials)[0];
+  }
+
+  const adjustments: PriceAdjustmentData = {
+    lead_id: lead.id,
+    lead_name: lead.name,
+    adjustment_count: rows.length,
+    material_switches: materialSwitches.length,
+    addon_changes: addonChanges.length,
+    first_estimate_material: firstMaterial,
+    last_estimate_material: lastMaterial,
+    last_price_low: lastPriceLow,
+    last_price_high: lastPriceHigh,
+    materials_compared: Array.from(allMaterials),
+    addons_added: Array.from(addonsAdded),
+    addons_removed: Array.from(addonsRemoved),
+    timeline,
+  };
+
+  // Build concise message
+  const parts: string[] = [];
+  parts.push(`${lead.name} made ${rows.length} change${rows.length === 1 ? "" : "s"} to their estimate.`);
+
+  if (materialSwitches.length > 0 && allMaterials.size > 1) {
+    parts.push(`Compared ${Array.from(allMaterials).join(" and ")}.`);
+  }
+  if (addonsAdded.size > 0) {
+    parts.push(`Added: ${Array.from(addonsAdded).join(", ")}.`);
+  }
+  if (lastMaterial) {
+    parts.push(`Last selection: ${lastMaterial}.`);
+  }
+
+  return { found: true, adjustments, message: parts.join(" ") };
+}
+
 // ── Review Tool Types ─────────────────────────────────────────────────
 // (moved down to keep engagement tools grouped above)
 
