@@ -11,6 +11,7 @@ import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
 import { detectIntent } from "@/lib/intent-detection";
 import { runChatEstimate } from "@/lib/chat-estimate";
 import { getTierFromContractor } from "@/lib/types";
+import { createPostProcessTransform, type PostProcessOptions } from "@/lib/riley-post-process";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 // ---------------------------------------------------------------------------
@@ -230,6 +231,9 @@ export async function POST(request: NextRequest) {
       chatbotConfig = data;
     }
 
+    // Business name (sanitized) — used in system prompt + post-processor
+    const biz = contractor.business_name.replace(/[`<>]/g, "").trim();
+
     // Build ContractorSiteData for the system prompt
     const site = Array.isArray(contractor.sites) ? contractor.sites[0] : contractor.sites;
     const templateData: ContractorSiteData = {
@@ -346,7 +350,28 @@ export async function POST(request: NextRequest) {
         if (saveErr) console.error("Failed to save chat conversation:", saveErr);
       });
 
-    const response = result.toUIMessageStreamResponse();
+    // Post-process Riley's response — deterministic enforcement of filler ban,
+    // credential cap (2 max), and insurance compliance. Zero API cost.
+    const lastUserContent = lastContent.toLowerCase();
+    const isInsuranceQuery =
+      intent?.situation === "insurance_claim" ||
+      /insurance|adjuster|claim|deductible/.test(lastUserContent);
+
+    const postProcessOpts: PostProcessOptions = {
+      isInsuranceQuery,
+      insuranceCannedResponse: isInsuranceQuery
+        ? `${chatbotConfig?.does_insurance_work ? `${biz} has experience working with insurance companies and can help you understand the process. Every claim is different though — the` : "The"} best next step is a free inspection — ${biz} can assess the damage and help you figure out your options from there.`
+        : undefined,
+    };
+
+    const originalResponse = result.toUIMessageStreamResponse();
+    const transformedBody = originalResponse.body!.pipeThrough(
+      createPostProcessTransform(postProcessOpts),
+    );
+
+    const response = new Response(transformedBody, {
+      headers: originalResponse.headers,
+    });
     // Add CORS headers to streaming response for external embeds
     Object.entries(CORS_HEADERS).forEach(([key, value]) => {
       response.headers.set(key, value);
