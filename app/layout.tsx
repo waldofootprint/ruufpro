@@ -1,7 +1,11 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { DM_Sans, Sora, Plus_Jakarta_Sans, Inter, Outfit, Lora, Roboto_Slab, Barlow, Barlow_Condensed } from "next/font/google";
+import { DM_Sans, Sora, Plus_Jakarta_Sans, Inter, Outfit, Lora, Roboto_Slab, Barlow, Barlow_Condensed, Geist } from "next/font/google";
 import CookieBanner from "@/components/cookie-banner";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
 
 // Contractor template fonts — self-hosted by Next.js for performance.
 // Modern Clean: DM Sans (body) + Sora (headings)
@@ -79,7 +83,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${sora.variable} ${plusJakarta.variable} ${inter.variable} ${outfit.variable} ${lora.variable} ${robotoSlab.variable} ${barlow.variable} ${barlowCondensed.variable}`}>
+    <html lang="en" className={cn(dmSans.variable, sora.variable, plusJakarta.variable, inter.variable, outfit.variable, lora.variable, robotoSlab.variable, barlow.variable, barlowCondensed.variable, "font-sans", geist.variable)}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

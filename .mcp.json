@@ -41,7 +41,7 @@
       "command": "npx",
       "args": ["-y", "@supabase/mcp-server-supabase@latest", "--project-ref", "comcpamnxjtldlnnudqc"],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_4dc4b3b733b40bc44edc10373f1d692b94007a59"
+        "SUPABASE_ACCESS_TOKEN": "sbp_36bf863de866ddcc72056eb4bcc9b798f2ff7256"
       }
     }
   }

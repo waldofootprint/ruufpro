@@ -14,7 +14,7 @@
 | 314 | Price Bracket / Adjustment Detection | **SHIPPED** `932bf85` | `widget_events` (material_switch + price_adjustment) | "Garcia made 5 changes. Compared asphalt ($8K–$12K) and metal ($14K–$20K). Last selection: metal." |
 | 315 | Riley Chat Depth Score | Not started | `chat_conversations` (Riley messages) | "Garcia sent 15 messages — asked about warranties, timeline, and financing. High intent." |
 | 316 | Storm Surge Detector | Not started | NWS alerts API + Inngest cron | "Hailstorm in 33609 two days ago. 4 of your leads are in that area." |
-| 317 | Permit Data Intelligence (8a-e) | Not started | FL public records (5 sub-features) | "Last permit: 2003. That's a 23-year-old roof." |
+| 317 | Permit Data Intelligence (8a-c) | **SHIPPED** `e566a5c` | property_data_cache (year_built derived) | "Garcia's home was built in 1998. If original roof, that's 28 years." |
 | 318 | Referral Chain Mapping | Not started | `leads` table (address proximity) | "Two leads from Maple Drive this week." |
 | 319 | Win Pattern Recognition | Not started | `leads` table (needs ~50+ leads) | "Leads who asked about warranties AND financing closed higher for you." |
 
