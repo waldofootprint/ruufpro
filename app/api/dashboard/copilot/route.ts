@@ -22,6 +22,7 @@ import {
   sendBatchReviewRequestsForCopilot,
   draftReviewResponseForCopilot,
   getLeadEngagementForCopilot,
+  getMaterialSwitchesForCopilot,
 } from "@/lib/copilot-tools";
 
 // ---------------------------------------------------------------------------
@@ -391,6 +392,21 @@ export async function POST(request: NextRequest) {
           }),
           execute: async ({ nameOrId }) => {
             return getLeadEngagementForCopilot(supabase, contractorId, nameOrId);
+          },
+        }),
+
+        getMaterialSwitches: tool({
+          description:
+            "Check if a lead compared different material options (asphalt, metal, tile, cedar) " +
+            "in the estimate widget or living estimate. Call for material comparison, preference, " +
+            "'what materials did they look at', or 'did they compare options'.",
+          inputSchema: z.object({
+            nameOrId: z
+              .string()
+              .describe("The lead's name (partial match OK) or UUID"),
+          }),
+          execute: async ({ nameOrId }) => {
+            return getMaterialSwitchesForCopilot(supabase, contractorId, nameOrId);
           },
         }),
       },

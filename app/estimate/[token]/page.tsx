@@ -148,6 +148,33 @@ export default function LivingEstimatePage() {
   }, [token]);
 
   function handleMaterialSelect(material: string) {
+    if (material === selectedMaterial) return;
+    // Track material switch event
+    if (data?.contractor_id) {
+      const KEY = "rr_widget_fp";
+      const fp = localStorage.getItem(KEY) || "";
+      const prevEst = data.estimates.find((e: MaterialEstimate) => e.material === selectedMaterial);
+      const newEst = data.estimates.find((e: MaterialEstimate) => e.material === material);
+      fetch("/api/widget-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contractor_id: data.contractor_id,
+          session_fp: fp,
+          event_type: "material_switch",
+          page: "living_estimate",
+          lead_id: data.lead_id || null,
+          metadata: {
+            previous_material: selectedMaterial,
+            new_material: material,
+            previous_tier: prevEst?.tier || null,
+            new_tier: newEst?.tier || null,
+            new_price_low: newEst?.price_low || null,
+            new_price_high: newEst?.price_high || null,
+          },
+        }),
+      }).catch(() => {});
+    }
     setSelectedMaterial(material);
     syncSelections(material, selectedAddons);
   }

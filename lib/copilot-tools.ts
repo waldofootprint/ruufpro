@@ -540,6 +540,97 @@ export async function getLeadEngagementForCopilot(
   return { found: true, engagement, message: msg };
 }
 
+// ── Material Switcher Types ──────────────────────────────────────────
+
+export interface MaterialSwitchData {
+  lead_id: string;
+  lead_name: string;
+  switch_count: number;
+  materials_compared: string[];
+  most_viewed_material: string | null;
+  switch_timeline: Array<{
+    from: string;
+    to: string;
+    from_tier: string | null;
+    to_tier: string | null;
+    at: string;
+  }>;
+}
+
+// ── Material Switcher Tool Functions ────────────────────────────────
+
+/**
+ * Get material switch events for a specific lead — how many times they toggled
+ * between material options in the estimate widget or living estimate page.
+ * "What materials is Garcia looking at?" / "Did they compare options?"
+ */
+export async function getMaterialSwitchesForCopilot(
+  supabase: SupabaseClient,
+  contractorId: string,
+  nameOrId: string
+): Promise<{ found: boolean; switches: MaterialSwitchData | null; message: string }> {
+  const lead = await getLeadDetailsForCopilot(supabase, contractorId, nameOrId);
+  if (!lead) {
+    return { found: false, switches: null, message: "No lead found matching that name." };
+  }
+
+  const { data: events } = await supabase
+    .from("widget_events")
+    .select("metadata, created_at")
+    .eq("lead_id", lead.id)
+    .eq("event_type", "material_switch")
+    .order("created_at", { ascending: true });
+
+  const rows = events || [];
+
+  if (rows.length === 0) {
+    return {
+      found: true,
+      switches: null,
+      message: `${lead.name} hasn't compared material options yet.`,
+    };
+  }
+
+  // Build unique materials list and find most-switched-to
+  const toCounts: Record<string, number> = {};
+  const allMaterials = new Set<string>();
+  const timeline = rows.map((e: any) => {
+    const m = e.metadata || {};
+    if (m.previous_material) allMaterials.add(m.previous_material);
+    if (m.new_material) {
+      allMaterials.add(m.new_material);
+      toCounts[m.new_material] = (toCounts[m.new_material] || 0) + 1;
+    }
+    return {
+      from: m.previous_material || "unknown",
+      to: m.new_material || "unknown",
+      from_tier: m.previous_tier || null,
+      to_tier: m.new_tier || null,
+      at: e.created_at,
+    };
+  });
+
+  const mostViewed = Object.entries(toCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+  const materials = Array.from(allMaterials);
+  const count = rows.length;
+
+  const switches: MaterialSwitchData = {
+    lead_id: lead.id,
+    lead_name: lead.name,
+    switch_count: count,
+    materials_compared: materials,
+    most_viewed_material: mostViewed,
+    switch_timeline: timeline,
+  };
+
+  const materialList = materials.join(" and ");
+  const msg = count <= 2
+    ? `${lead.name} looked at ${materialList} — just browsing so far.`
+    : `${lead.name} toggled between ${materialList} ${count} times. They might appreciate a breakdown of the differences.`;
+
+  return { found: true, switches, message: msg };
+}
+
 // ── Review Tool Types ─────────────────────────────────────────────────
 // (moved down to keep engagement tools grouped above)
 

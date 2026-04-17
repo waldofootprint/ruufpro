@@ -361,6 +361,31 @@ export default function EstimateWidgetV4({
     }).catch(() => {});
   }, [contractorId, sessionFp]);
 
+  // Track material switch events — fire-and-forget to widget-events API
+  const handleMaterialSwitch = (newMaterial: string, est: { tier: string; price_low: number; price_high: number }) => {
+    if (newMaterial === selectedMaterial || !sessionFp || !contractorId) return;
+    const prevEst = estimateData?.estimates.find((e) => e.material === selectedMaterial);
+    fetch("/api/widget-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contractor_id: contractorId,
+        session_fp: sessionFp,
+        event_type: "material_switch",
+        page: "widget",
+        metadata: {
+          previous_material: selectedMaterial,
+          new_material: newMaterial,
+          previous_tier: prevEst?.tier || null,
+          new_tier: est.tier,
+          new_price_low: est.price_low,
+          new_price_high: est.price_high,
+        },
+      }),
+    }).catch(() => {});
+    setSelectedMaterial(newMaterial);
+  };
+
   const nextStep = () => { setDirection(1); setStep((s) => s + 1); setError(""); };
   const prevStep = () => { setDirection(-1); setStep((s) => Math.max(1, s - 1)); setError(""); };
 
@@ -1064,7 +1089,7 @@ export default function EstimateWidgetV4({
                 return (
                   <button
                     key={est.material}
-                    onClick={() => setSelectedMaterial(est.material)}
+                    onClick={() => handleMaterialSwitch(est.material, est)}
                     className="w-full text-left rounded-xl p-4 transition-all duration-300"
                     style={{
                       background: isSelected ? C.cardSelectedBg : C.cardBg,
