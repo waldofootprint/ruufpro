@@ -3,7 +3,7 @@
 
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 import type { ChatbotConfig } from "@/lib/types";
-import type { ConversationIntent, ConversationStage } from "@/lib/intent-detection";
+import type { ConversationIntent, ConversationStage, Situation } from "@/lib/intent-detection";
 import { ESTIMATE_DISCLAIMER } from "@/lib/estimate";
 
 export function buildChatSystemPrompt(
@@ -180,7 +180,9 @@ You have a tool that generates satellite-measured roofing estimates for any addr
 
 **If the tool fails:**
 - Don't mention technical errors. Say: "I wasn't able to look up that address — could you double-check it? If it's correct, the team can come out for a free inspection to get you exact numbers."
-` : ""}## Lead Capture Instructions
+` : ""}${buildSituationTone(intent?.situation || "just_browsing", biz)}
+
+## Lead Capture Instructions
 
 [CONTEXT: Stage: ${intent?.stage || "greeting"}. Situation: ${intent?.situation || "just_browsing"}. Latest: ${intent?.latestQuestionType || "none"}.${intent?.captureSignals.length ? ` Signals: ${intent.captureSignals.join(", ")}.` : ""} Lead captured: ${leadCaptured}.]
 
@@ -267,6 +269,57 @@ function buildConfigSections(config?: ChatbotConfig | null): string {
   }
 
   return sections.join("\n\n");
+}
+
+// Situation-adaptive tone — changes Riley's voice based on detected homeowner situation.
+// Kept short (~50-70 tokens each) to protect Haiku's token budget.
+function buildSituationTone(situation: Situation, biz: string): string {
+  switch (situation) {
+    case "emergency":
+      return `## Current Situation: Emergency
+
+Tone: fast, calm, action-oriented. Skip small talk. Get to the point immediately.
+- Acknowledge urgency without dramatizing: "That needs attention right away."
+- Move straight to lead capture — no educational detours.
+- Do NOT give DIY advice (no tarps, buckets, or temporary fixes — liability risk).
+- Do NOT say "Don't panic" or "Stay calm" — that projects emotions onto them.`;
+
+    case "insurance_claim":
+      return `## Current Situation: Insurance Claim
+
+Tone: knowledgeable, reassuring, process-oriented. They're navigating something unfamiliar.
+- Acknowledge that insurance can feel complicated without assuming stress.
+- Position ${biz} as experienced with the process — but NEVER discuss coverage, deductibles, or claim outcomes.
+- Guide toward a free inspection as the logical next step.
+- Keep it factual: what the team can do, not what insurance will do.`;
+
+    case "price_shopping":
+      return `## Current Situation: Price Shopping
+
+Tone: confident, value-focused, zero pressure. They're comparing — help them compare fairly.
+- Lead with what makes ${biz} worth it, not why others are worse.
+- If the estimate tool is available, offer it — but it gives a satellite-based BALLPARK, not a quote. NEVER frame it as numbers they can "compare against other quotes" or "use to compare." It's a rough starting point only. A free inspection gives real numbers.
+- Don't be defensive about pricing. Don't say "you get what you pay for."
+- A free inspection is the only way to get numbers they can actually compare against other quotes.`;
+
+    case "planning_ahead":
+      return `## Current Situation: Planning Ahead
+
+Tone: educational, patient, no urgency. They have time and they're doing research.
+- Be a helpful resource, not a closer. Answer thoroughly.
+- It's fine if they don't convert today — a good experience now means they come back.
+- Don't manufacture urgency ("prices are going up", "book before spots fill").
+- Offer the estimate tool or free inspection as optional next steps, not must-dos.`;
+
+    case "just_browsing":
+    default:
+      return `## Current Situation: Browsing
+
+Tone: friendly, brief, low-key. Match their energy — they're just looking around.
+- Keep responses short. Don't over-explain unless they ask follow-ups.
+- Answer what they ask, nothing more. No unsolicited pitches.
+- If they seem curious, gently surface what ${biz} offers. If not, let them browse.`;
+  }
 }
 
 // Stage-aware lead capture guidance — replaces message-count triggers.

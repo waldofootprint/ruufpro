@@ -360,6 +360,7 @@ export async function POST(request: NextRequest) {
     const postProcessOpts: PostProcessOptions = {
       isInsuranceQuery,
       stage: intent.stage,
+      situation: intent.situation,
       insuranceCannedResponse: isInsuranceQuery
         ? `${chatbotConfig?.does_insurance_work ? `${biz} has experience working with insurance companies and can help you understand the process. Every claim is different though — the` : "The"} best next step is a free inspection — ${biz} can assess the damage and help you figure out your options from there.`
         : undefined,

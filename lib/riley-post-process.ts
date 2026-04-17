@@ -45,6 +45,28 @@ const INSURANCE_BANNED: RegExp[] = [
   /your\s+insurance\s+(?:will|should|might|can|could)/i,
 ];
 
+// ── Estimate accuracy overpromise (banned everywhere) ──────────────────────
+// The satellite estimate is a BALLPARK RANGE, never "exact" or "precise" numbers.
+const ESTIMATE_OVERPROMISE: { pattern: RegExp; replacement: string }[] = [
+  { pattern: /exact\s+numbers?/gi, replacement: "a ballpark estimate" },
+  { pattern: /exact\s+estimate/gi, replacement: "a ballpark estimate" },
+  { pattern: /precise\s+(?:numbers?|estimate|quote)/gi, replacement: "a ballpark estimate" },
+  { pattern: /accurate\s+(?:numbers?|estimate|quote)/gi, replacement: "a ballpark estimate" },
+  { pattern: /real\s+numbers?/gi, replacement: "a ballpark range" },
+  { pattern: /solid\s+numbers?/gi, replacement: "a rough idea" },
+  { pattern: /exact\s+(?:cost|price|pricing|quote)/gi, replacement: "a ballpark range" },
+  // "numbers/estimate to compare" implies quote-equivalent — reframe as starting point
+  { pattern: /(?:numbers?|estimate|pricing|figures?)\s+to\s+compare\b/gi, replacement: "a starting point" },
+  { pattern: /compare\s+against\s+(?:other\s+)?quotes?\b/gi, replacement: "get a rough idea of cost" },
+];
+
+// ── ALL CAPS words (banned in responses to homeowners) ─────────────────────
+const ALL_CAPS_WORD = /\b[A-Z]{2,}\b/g;
+// Whitelist: abbreviations and acronyms that are legitimately uppercase
+const CAPS_WHITELIST = new Set([
+  "AI", "BBB", "GAF", "TPO", "EPDM", "LLC", "OK", "FL", "PM", "AM",
+]);
+
 const MAX_CREDENTIALS = 2;
 
 // ── Lead capture push phrases (banned in early stages) ─────────────────────
@@ -62,6 +84,8 @@ export interface PostProcessOptions {
   insuranceCannedResponse?: string;
   /** Current conversation stage — used to block lead capture push in early stages */
   stage?: string;
+  /** Current detected situation — emergencies override stage-based lead push blocking */
+  situation?: string;
 }
 
 /**
@@ -87,14 +111,21 @@ export function postProcessRileyResponse(
   }
 
   // 2. Strip lead capture push in greeting/discovery stages
-  if (options.stage === "greeting" || options.stage === "discovery") {
+  //    Exception: emergencies should ALWAYS push to lead form regardless of stage
+  if ((options.stage === "greeting" || options.stage === "discovery") && options.situation !== "emergency") {
     result = stripLeadPush(result);
   }
 
-  // 3. Strip filler phrases from start of response
+  // 3. Replace estimate overpromise language
+  result = fixEstimateOverpromise(result);
+
+  // 4. Fix ALL CAPS words (except whitelisted acronyms)
+  result = fixAllCaps(result);
+
+  // 5. Strip filler phrases from start of response
   result = stripFillers(result);
 
-  // 4. Cap credentials at 2 per response
+  // 6. Cap credentials at 2 per response
   result = capCredentials(result);
 
   return result.trim();
@@ -163,6 +194,22 @@ function capCredentials(text: string): string {
   }
 
   return kept.join(" ");
+}
+
+function fixEstimateOverpromise(text: string): string {
+  let result = text;
+  for (const { pattern, replacement } of ESTIMATE_OVERPROMISE) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+}
+
+function fixAllCaps(text: string): string {
+  return text.replace(ALL_CAPS_WORD, (match) => {
+    if (CAPS_WHITELIST.has(match)) return match;
+    // Title-case the word instead
+    return match.charAt(0) + match.slice(1).toLowerCase();
+  });
 }
 
 function splitSentences(text: string): string[] {
