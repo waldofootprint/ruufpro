@@ -49,7 +49,16 @@ export default function ChatWidget({
 }: ChatWidgetProps) {
   const accentColor = sanitizeColor(rawAccentColor);
   const [isOpen, setIsOpen] = useState(isStandalone);
-  const [sessionId, setSessionId] = useState("");
+  const [sessionId, setSessionId] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const storageKey = `riley-session-${contractorId}`;
+    let id = localStorage.getItem(storageKey);
+    if (!id) {
+      id = `${contractorId}-${crypto.randomUUID()}`;
+      localStorage.setItem(storageKey, id);
+    }
+    return id;
+  });
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadDismissedAt, setLeadDismissedAt] = useState(0);
   const [leadCaptured, setLeadCaptured] = useState(false);
@@ -62,17 +71,8 @@ export default function ChatWidget({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize session ID from localStorage
+  // Restore lead captured state
   useEffect(() => {
-    const storageKey = `riley-session-${contractorId}`;
-    let id = localStorage.getItem(storageKey);
-    if (!id) {
-      id = `${contractorId}-${crypto.randomUUID()}`;
-      localStorage.setItem(storageKey, id);
-    }
-    setSessionId(id);
-
-    // Restore lead captured state
     if (localStorage.getItem(`riley-captured-${contractorId}`) === "true") {
       setLeadCaptured(true);
     }
