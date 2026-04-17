@@ -3,7 +3,7 @@
 // Supports tool calls: getEstimate (satellite roof measurement + pricing).
 
 import { NextRequest, NextResponse } from "next/server";
-import { streamText, tool, stepCountIs, convertToModelMessages } from "ai";
+import { streamText, tool, stepCountIs, convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -11,7 +11,7 @@ import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
 import { detectIntent } from "@/lib/intent-detection";
 import { runChatEstimate } from "@/lib/chat-estimate";
 import { getTierFromContractor } from "@/lib/types";
-import { createPostProcessTransform, type PostProcessOptions } from "@/lib/riley-post-process";
+import { postProcessRileyResponse, type PostProcessOptions } from "@/lib/riley-post-process";
 import type { ContractorSiteData } from "@/components/contractor-sections/types";
 
 // ---------------------------------------------------------------------------
@@ -364,17 +364,44 @@ export async function POST(request: NextRequest) {
         : undefined,
     };
 
-    const originalResponse = result.toUIMessageStreamResponse();
-    const transformedBody = originalResponse.body!.pipeThrough(
-      createPostProcessTransform(postProcessOpts),
-    );
+    // Consume UI message stream, collect text, post-process, rebuild stream.
+    // This buffers the full response (~1-2s for Riley's short replies) to ensure
+    // deterministic enforcement of filler ban, credential cap, and insurance guard.
+    const uiStream = result.toUIMessageStream();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chunks: any[] = [];
+    let rawText = "";
 
-    const response = new Response(transformedBody, {
-      headers: originalResponse.headers,
+    for await (const chunk of uiStream) {
+      chunks.push(chunk);
+      if (chunk.type === "text-delta") {
+        rawText += chunk.delta;
+      }
+    }
+
+    const processed = postProcessRileyResponse(rawText, postProcessOpts);
+
+    // Rebuild stream with processed text
+    const outputStream = createUIMessageStream({
+      execute: async ({ writer }) => {
+        let textReplaced = false;
+        for (const chunk of chunks) {
+          if (chunk.type === "text-delta") {
+            if (!textReplaced) {
+              writer.write({ ...chunk, delta: processed });
+              textReplaced = true;
+            }
+            // Skip subsequent text deltas (merged into single processed chunk)
+          } else {
+            writer.write(chunk);
+          }
+        }
+      },
     });
-    // Add CORS headers to streaming response for external embeds
-    Object.entries(CORS_HEADERS).forEach(([key, value]) => {
-      response.headers.set(key, value);
+
+    const response = createUIMessageStreamResponse({
+      stream: outputStream,
+      headers: CORS_HEADERS,
     });
     return response;
   } catch (err: unknown) {
