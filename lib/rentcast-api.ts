@@ -4,6 +4,7 @@
 // Free tier: 50 calls/month = 25 property lookups.
 
 import { createClient } from "@supabase/supabase-js";
+import { getGeoAndFips } from "./fema-api";
 
 const RENTCAST_BASE = "https://api.rentcast.io/v1";
 
@@ -153,7 +154,19 @@ export async function fetchPropertyData(address: string): Promise<PropertyData> 
     in_replacement_window: prop.yearBuilt
       ? (new Date().getFullYear() - prop.yearBuilt >= 18)
       : false,
-  };
+  } as Record<string, any>;
+
+  // Copilot #317b: Geocode + cache county FIPS for disaster lookups
+  try {
+    const geo = await getGeoAndFips(address);
+    if (geo) {
+      cacheRecord.county_fips = geo.countyFips;
+      cacheRecord.latitude = geo.lat;
+      cacheRecord.longitude = geo.lng;
+    }
+  } catch (err) {
+    console.error("Geocoding failed during RentCast fetch:", err);
+  }
 
   // 4. Upsert into cache (on conflict update)
   const { data: cached, error } = await supabase

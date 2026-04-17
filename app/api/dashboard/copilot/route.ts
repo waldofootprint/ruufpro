@@ -451,9 +451,10 @@ export async function POST(request: NextRequest) {
         getPropertyIntel: tool({
           description:
             "Get property intelligence for a lead — roof age, original roof likelihood, " +
-            "replacement window status, roof type, and property value. Derived from cached " +
-            "property records. Call for 'what do we know about [name]'s roof', 'property info', " +
-            "'how old is their roof', 'is this an old roof', or property/roof age questions.",
+            "replacement window status, FEMA disaster exposure timeline, and property value. " +
+            "Includes disaster declarations that hit the area during the roof's lifetime. " +
+            "Call for 'what do we know about [name]'s roof', 'property info', 'how old is their roof', " +
+            "'disaster history', 'storm exposure', 'what storms hit this area', or property/roof age questions.",
           inputSchema: z.object({
             nameOrId: z
               .string()

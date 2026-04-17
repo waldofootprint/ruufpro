@@ -12,6 +12,11 @@ import {
 } from "./dashboard-utils";
 import { detectIntent } from "./intent-detection";
 import type { ChatMessage } from "./intent-detection";
+import {
+  getGeoAndFips,
+  fetchFemaDisasters,
+  type FemaDisaster,
+} from "./fema-api";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -959,6 +964,11 @@ export interface PropertyIntelData {
   property_type: string | null;
   square_footage: number | null;
   estimated_value: number | null;
+  // #317b: Disaster Exposure Intel
+  fema_disasters: FemaDisaster[];
+  disaster_exposure_count: number;
+  disaster_exposure_level: "low" | "moderate" | "high" | "unknown";
+  county_fips: string | null;
 }
 
 // ── Property Intel Tool Functions ─────────────────────────────────────
@@ -1027,6 +1037,65 @@ export async function getPropertyIntelForCopilot(
   const inWindow = propertyData.in_replacement_window
     ?? (roofAge != null && roofAge >= 18);
 
+  // ── Disaster Exposure Intel (#317b) ──────────────────────────────
+  let femaDisasters: FemaDisaster[] = propertyData.fema_disasters || [];
+  let exposureCount: number = propertyData.disaster_exposure_count || 0;
+  let exposureLevel: PropertyIntelData["disaster_exposure_level"] =
+    propertyData.disaster_exposure_level || "unknown";
+  let countyFips: string | null = propertyData.county_fips || null;
+
+  // If no cached disaster data yet, try to fetch it
+  if (exposureLevel === "unknown" && lead.address) {
+    try {
+      // Step 1: Geocode + get FIPS (costs 1 Google Geocoding call)
+      if (!countyFips) {
+        const geo = await getGeoAndFips(lead.address);
+        if (geo) {
+          countyFips = geo.countyFips;
+          // Cache geocoding results on the property record
+          await supabase
+            .from("property_data_cache")
+            .update({
+              county_fips: geo.countyFips,
+              latitude: geo.lat,
+              longitude: geo.lng,
+            })
+            .eq("id", propertyData.id);
+        }
+      }
+
+      // Step 2: Fetch FEMA disasters for this county
+      if (countyFips) {
+        const stateCode = countyFips.slice(0, 2);
+        // Map state FIPS to abbreviation for FEMA API
+        const stateAbbrev = getStateFromFips(stateCode);
+        if (stateAbbrev) {
+          const exposure = await fetchFemaDisasters(
+            stateAbbrev,
+            countyFips,
+            yearBuilt ?? undefined
+          );
+          femaDisasters = exposure.disasters;
+          exposureCount = exposure.exposure_count;
+          exposureLevel = exposure.exposure_level;
+
+          // Cache disaster data on the property record
+          await supabase
+            .from("property_data_cache")
+            .update({
+              fema_disasters: femaDisasters,
+              disaster_exposure_count: exposureCount,
+              disaster_exposure_level: exposureLevel,
+            })
+            .eq("id", propertyData.id);
+        }
+      }
+    } catch (err) {
+      console.error("Disaster exposure lookup failed:", err);
+      // Non-fatal — return property intel without disaster data
+    }
+  }
+
   const intel: PropertyIntelData = {
     lead_id: lead.id,
     lead_name: lead.name,
@@ -1040,15 +1109,39 @@ export async function getPropertyIntelForCopilot(
     property_type: propertyData.property_type,
     square_footage: propertyData.square_footage,
     estimated_value: propertyData.estimated_value,
+    fema_disasters: femaDisasters,
+    disaster_exposure_count: exposureCount,
+    disaster_exposure_level: exposureLevel,
+    county_fips: countyFips,
   };
 
   const msg = buildPropertyIntelMessage(intel);
   return { found: true, intel, message: msg };
 }
 
+// State FIPS code → abbreviation mapping (common states, extend as needed)
+const STATE_FIPS_MAP: Record<string, string> = {
+  "01": "AL", "02": "AK", "04": "AZ", "05": "AR", "06": "CA",
+  "08": "CO", "09": "CT", "10": "DE", "11": "DC", "12": "FL",
+  "13": "GA", "15": "HI", "16": "ID", "17": "IL", "18": "IN",
+  "19": "IA", "20": "KS", "21": "KY", "22": "LA", "23": "ME",
+  "24": "MD", "25": "MA", "26": "MI", "27": "MN", "28": "MS",
+  "29": "MO", "30": "MT", "31": "NE", "32": "NV", "33": "NH",
+  "34": "NJ", "35": "NM", "36": "NY", "37": "NC", "38": "ND",
+  "39": "OH", "40": "OK", "41": "OR", "42": "PA", "44": "RI",
+  "45": "SC", "46": "SD", "47": "TN", "48": "TX", "49": "UT",
+  "50": "VT", "51": "VA", "53": "WA", "54": "WV", "55": "WI",
+  "56": "WY", "72": "PR", "78": "VI",
+};
+
+function getStateFromFips(fipsCode: string): string | null {
+  return STATE_FIPS_MAP[fipsCode] || null;
+}
+
 function buildPropertyIntelMessage(d: PropertyIntelData): string {
   const parts: string[] = [];
 
+  // Roof age section (existing)
   if (d.year_built && d.estimated_roof_age != null) {
     if (d.likely_original_roof) {
       parts.push(
@@ -1069,6 +1162,44 @@ function buildPropertyIntelMessage(d: PropertyIntelData): string {
 
   if (d.in_replacement_window) {
     parts.push("That puts it in the typical replacement window for shingle roofs.");
+  }
+
+  // Disaster exposure section (#317b)
+  if (d.disaster_exposure_count > 0 && d.fema_disasters.length > 0) {
+    const disasterNames = d.fema_disasters
+      .slice(0, 5) // Show max 5 most recent
+      .map((dis) => {
+        const year = dis.date ? dis.date.split("-")[0] : "";
+        return `${dis.title}${year ? ` (${year})` : ""}`;
+      });
+
+    if (d.fema_disasters.length === 1) {
+      parts.push(
+        `This area had 1 major disaster declaration${d.year_built ? " during this roof's lifetime" : ""} — ${disasterNames[0]}.`
+      );
+    } else {
+      parts.push(
+        `This area has had ${d.disaster_exposure_count} major disaster declarations${d.year_built ? " during this roof's lifetime" : ""} — ${disasterNames.join(", ")}.`
+      );
+    }
+
+    // Unrepaired disaster flag: most recent disaster within last 3 years
+    const recentDisaster = d.fema_disasters[0]; // Already sorted desc by date
+    if (recentDisaster?.date) {
+      const disasterYear = parseInt(recentDisaster.date.split("-")[0], 10);
+      const currentYear = new Date().getFullYear();
+      if (currentYear - disasterYear <= 3 && d.likely_original_roof) {
+        parts.push(
+          `${recentDisaster.title} hit this area in ${recentDisaster.date.split("-")[0]}. If the roof hasn't been replaced since, there may be accumulated damage.`
+        );
+      }
+    }
+
+    if (d.disaster_exposure_level === "high") {
+      parts.push("High storm exposure overall.");
+    }
+  } else if (d.disaster_exposure_level === "low" && d.year_built) {
+    parts.push("No major disaster declarations for this county during this roof's lifetime. Low storm exposure.");
   }
 
   if (d.estimated_value) {
