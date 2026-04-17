@@ -54,16 +54,26 @@ const ROBOTIC_DEFLECTION: { pattern: RegExp; replacement: string }[] = [
   { pattern: /as an AI,? I (?:can't|cannot|don't|do not) [^.!?]*/gi, replacement: "I don't have the details on that, but the team can help" },
 ];
 
+// ── Projected skepticism (banned everywhere) ─────────────────────────────────
+// Riley #15: Proactive Skepticism Handling — never project emotions about accuracy.
+// Catch "I know you might be worried/uncertain/skeptical" and replace with factual framing.
+const PROJECTED_SKEPTICISM: { pattern: RegExp; replacement: string }[] = [
+  { pattern: /I know you might be (?:worried|uncertain|skeptical|concerned|wondering)[^.!?]*/gi, replacement: "This is a satellite-based ballpark — a free in-person inspection pins down the final cost" },
+  { pattern: /you(?:'re| are) probably (?:wondering|thinking|worried|concerned|skeptical)[^.!?]*/gi, replacement: "This is a satellite-based ballpark to give you a starting point" },
+  { pattern: /I understand (?:the|your|any) (?:uncertainty|skepticism|concern|hesitation)[^.!?]*/gi, replacement: "A free inspection pins down the final cost, no strings attached" },
+  { pattern: /you might be (?:asking yourself|thinking|wondering)[^.!?]*/gi, replacement: "The estimate is satellite-based — a free inspection gets the final cost dialed in" },
+];
+
 // ── Estimate accuracy overpromise (banned everywhere) ──────────────────────
 // The satellite estimate is a BALLPARK RANGE, never "exact" or "precise" numbers.
 const ESTIMATE_OVERPROMISE: { pattern: RegExp; replacement: string }[] = [
-  { pattern: /exact\s+numbers?/gi, replacement: "a ballpark estimate" },
-  { pattern: /exact\s+estimate/gi, replacement: "a ballpark estimate" },
-  { pattern: /precise\s+(?:numbers?|estimate|quote)/gi, replacement: "a ballpark estimate" },
-  { pattern: /accurate\s+(?:numbers?|estimate|quote)/gi, replacement: "a ballpark estimate" },
-  { pattern: /real\s+numbers?/gi, replacement: "a ballpark range" },
-  { pattern: /solid\s+numbers?/gi, replacement: "a rough idea" },
-  { pattern: /exact\s+(?:cost|price|pricing|quote)/gi, replacement: "a ballpark range" },
+  { pattern: /(?:an?\s+)?exact\s+numbers?/gi, replacement: "a ballpark estimate" },
+  { pattern: /(?:an?\s+)?exact\s+estimate/gi, replacement: "a ballpark estimate" },
+  { pattern: /(?:an?\s+)?precise\s+(?:numbers?|estimate|quote)/gi, replacement: "a ballpark estimate" },
+  { pattern: /(?:an?\s+)?accurate\s+(?:numbers?|estimate|quote)/gi, replacement: "a ballpark estimate" },
+  { pattern: /(?:an?\s+)?real\s+numbers?/gi, replacement: "a ballpark range" },
+  { pattern: /(?:an?\s+)?solid\s+numbers?/gi, replacement: "a rough idea" },
+  { pattern: /(?:an?\s+)?exact\s+(?:cost|price|pricing|quote)/gi, replacement: "a ballpark range" },
   // "numbers/estimate to compare" implies quote-equivalent — reframe as starting point
   { pattern: /(?:numbers?|estimate|pricing|figures?)\s+to\s+compare\b/gi, replacement: "a starting point" },
   { pattern: /compare\s+against\s+(?:other\s+)?quotes?\b/gi, replacement: "get a rough idea of cost" },
@@ -128,16 +138,19 @@ export function postProcessRileyResponse(
   // 3. Fix robotic deflection phrases
   result = fixRoboticDeflection(result);
 
-  // 4. Replace estimate overpromise language
+  // 4. Strip projected skepticism (emotion-projecting accuracy disclaimers)
+  result = fixProjectedSkepticism(result);
+
+  // 5. Replace estimate overpromise language
   result = fixEstimateOverpromise(result);
 
-  // 5. Fix ALL CAPS words (except whitelisted acronyms)
+  // 6. Fix ALL CAPS words (except whitelisted acronyms)
   result = fixAllCaps(result);
 
-  // 6. Strip filler phrases from start of response
+  // 7. Strip filler phrases from start of response
   result = stripFillers(result);
 
-  // 7. Cap credentials at 2 per response
+  // 8. Cap credentials at 2 per response
   result = capCredentials(result);
 
   return result.trim();
@@ -211,6 +224,14 @@ function capCredentials(text: string): string {
 function fixRoboticDeflection(text: string): string {
   let result = text;
   for (const { pattern, replacement } of ROBOTIC_DEFLECTION) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+}
+
+function fixProjectedSkepticism(text: string): string {
+  let result = text;
+  for (const { pattern, replacement } of PROJECTED_SKEPTICISM) {
     result = result.replace(pattern, replacement);
   }
   return result;
