@@ -10,6 +10,8 @@ import {
   getAvgResponseTime,
   formatTimeAgo,
 } from "./dashboard-utils";
+import { detectIntent } from "./intent-detection";
+import type { ChatMessage } from "./intent-detection";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -768,6 +770,178 @@ export async function getPriceAdjustmentsForCopilot(
   }
 
   return { found: true, adjustments, message: parts.join(" ") };
+}
+
+// ── Chat Depth Score Types ───────────────────────────────────────────
+
+export interface ChatDepthData {
+  lead_id: string;
+  lead_name: string;
+  tier: "high_intent" | "engaged" | "browsing";
+  message_count: number;
+  question_types: string[];
+  stage: string;
+  situation: string;
+  used_estimate_tool: boolean;
+  provided_address: boolean;
+  mentioned_specifics: boolean;
+  high_intent_topics: string[];
+  first_message_at: string | null;
+  last_message_at: string | null;
+  conversation_count: number;
+}
+
+const TOPIC_LABELS: Record<string, string> = {
+  trust_seeking: "warranties & credentials",
+  price_seeking: "pricing & financing",
+  timeline_seeking: "timeline",
+  scheduling: "scheduling",
+  comparison: "comparing options",
+  insurance: "insurance claim",
+  emergency: "emergency",
+};
+
+// ── Chat Depth Score Tool Functions ──────────────────────────────────
+
+/**
+ * Analyze a lead's Riley chat conversations — message count, topics discussed,
+ * and intent tier (browsing / engaged / high-intent).
+ * "How serious is Garcia?" / "What did Wilson ask about?" / "Is Johnson interested?"
+ */
+export async function getChatDepthForCopilot(
+  supabase: SupabaseClient,
+  contractorId: string,
+  nameOrId: string
+): Promise<{ found: boolean; depth: ChatDepthData | null; message: string }> {
+  const lead = await getLeadDetailsForCopilot(supabase, contractorId, nameOrId);
+  if (!lead) {
+    return { found: false, depth: null, message: "No lead found matching that name." };
+  }
+
+  // Query all Riley conversations for this lead
+  const { data: conversations } = await supabase
+    .from("chat_conversations")
+    .select("messages, created_at, updated_at")
+    .eq("lead_id", lead.id)
+    .eq("type", "riley")
+    .order("created_at", { ascending: true });
+
+  const convos = conversations || [];
+
+  if (convos.length === 0) {
+    return {
+      found: true,
+      depth: null,
+      message: `No Riley conversation on file for ${lead.name}. They may have come in through the estimate widget or contact form.`,
+    };
+  }
+
+  // Combine all messages across sessions
+  const allMessages: ChatMessage[] = [];
+  let firstMessageAt: string | null = null;
+  let lastMessageAt: string | null = null;
+
+  for (const convo of convos) {
+    const msgs = (convo.messages || []) as ChatMessage[];
+    allMessages.push(...msgs);
+    if (!firstMessageAt) firstMessageAt = convo.created_at;
+    lastMessageAt = convo.updated_at || convo.created_at;
+  }
+
+  if (allMessages.length === 0) {
+    return {
+      found: true,
+      depth: null,
+      message: `${lead.name} has a Riley session on file but no messages recorded.`,
+    };
+  }
+
+  // Run intent detection on combined messages
+  const intent = detectIntent(allMessages);
+
+  // Determine tier
+  let tier: ChatDepthData["tier"] = "browsing";
+
+  const isHighIntent =
+    intent.stage === "decision" ||
+    intent.stage === "close" ||
+    intent.situation === "emergency" ||
+    intent.situation === "insurance_claim" ||
+    (intent.engagement.questionBreadth >= 3 && intent.engagement.messageCount >= 5) ||
+    intent.engagement.usedEstimateTool;
+
+  const isEngaged =
+    intent.stage === "consideration" ||
+    (intent.engagement.messageCount >= 4 && intent.engagement.questionBreadth >= 1) ||
+    intent.engagement.mentionedSpecifics;
+
+  if (isHighIntent) {
+    tier = "high_intent";
+  } else if (isEngaged) {
+    tier = "engaged";
+  }
+
+  // Extract human-readable topic list
+  const highIntentTopics = intent.questionTypes
+    .filter((qt) => TOPIC_LABELS[qt])
+    .map((qt) => TOPIC_LABELS[qt]);
+
+  const depth: ChatDepthData = {
+    lead_id: lead.id,
+    lead_name: lead.name,
+    tier,
+    message_count: intent.engagement.messageCount,
+    question_types: intent.questionTypes,
+    stage: intent.stage,
+    situation: intent.situation,
+    used_estimate_tool: intent.engagement.usedEstimateTool,
+    provided_address: intent.engagement.providedAddress,
+    mentioned_specifics: intent.engagement.mentionedSpecifics,
+    high_intent_topics: highIntentTopics,
+    first_message_at: firstMessageAt,
+    last_message_at: lastMessageAt,
+    conversation_count: convos.length,
+  };
+
+  // Build message
+  const msg = buildChatDepthMessage(depth);
+
+  return { found: true, depth, message: msg };
+}
+
+function buildChatDepthMessage(d: ChatDepthData): string {
+  const parts: string[] = [];
+  const tierLabel = d.tier === "high_intent" ? "high-intent" : d.tier;
+
+  // Tier + topic summary
+  if (d.high_intent_topics.length > 0) {
+    parts.push(
+      `${d.lead_name} is ${tierLabel} — asked about ${d.high_intent_topics.join(", ")} across ${d.message_count} messages.`
+    );
+  } else {
+    parts.push(
+      `${d.lead_name} is ${tierLabel} — ${d.message_count} message${d.message_count === 1 ? "" : "s"}.`
+    );
+  }
+
+  // Notable signals
+  const signals: string[] = [];
+  if (d.used_estimate_tool) signals.push("used the estimate tool");
+  if (d.provided_address) signals.push("provided their address");
+  if (d.mentioned_specifics) signals.push("mentioned specific materials");
+
+  if (signals.length > 0) {
+    // Capitalize first signal
+    const joined = signals.join(", ");
+    parts.push(joined.charAt(0).toUpperCase() + joined.slice(1) + ".");
+  }
+
+  // Multi-session note
+  if (d.conversation_count > 1) {
+    parts.push(`Came back ${d.conversation_count} separate times.`);
+  }
+
+  return parts.join(" ");
 }
 
 // ── Review Tool Types ─────────────────────────────────────────────────

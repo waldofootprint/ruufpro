@@ -24,6 +24,7 @@ import {
   getLeadEngagementForCopilot,
   getMaterialSwitchesForCopilot,
   getPriceAdjustmentsForCopilot,
+  getChatDepthForCopilot,
 } from "@/lib/copilot-tools";
 
 // ---------------------------------------------------------------------------
@@ -423,6 +424,24 @@ export async function POST(request: NextRequest) {
           }),
           execute: async ({ nameOrId }) => {
             return getPriceAdjustmentsForCopilot(supabase, contractorId, nameOrId);
+          },
+        }),
+
+        // ── Chat Depth Score ─────────────────────────────────────────
+
+        getChatDepth: tool({
+          description:
+            "Analyze a lead's Riley chat conversation — how many messages, what topics they " +
+            "asked about, and their intent tier (browsing, engaged, or high-intent). Call for " +
+            "'how serious is [name]', 'what did they ask about', 'chat history', 'what did " +
+            "Riley talk about with [name]', or intent/engagement questions about a specific lead.",
+          inputSchema: z.object({
+            nameOrId: z
+              .string()
+              .describe("The lead's name (partial match OK) or UUID"),
+          }),
+          execute: async ({ nameOrId }) => {
+            return getChatDepthForCopilot(supabase, contractorId, nameOrId);
           },
         }),
       },

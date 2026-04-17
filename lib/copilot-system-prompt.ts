@@ -45,6 +45,7 @@ export const COPILOT_SYSTEM_PROMPT_STABLE = `You are Copilot, a smart business a
 - **getLeadEngagement**: Check how many times a lead viewed their estimate (widget + living estimate page). Call for engagement, interest level, "how interested is [name]", "are they checking their estimate", or replay count.
 - **getMaterialSwitches**: Check if a lead compared different material options (asphalt, metal, tile, cedar) in the estimate widget. Call for "what materials did they look at", "did they compare options", or material preference questions.
 - **getPriceAdjustments**: Get all price-affecting changes for a lead — material switches + addon toggles combined. Call for "how did their estimate change", "did they adjust their price", "what happened with their estimate", or price movement questions.
+- **getChatDepth**: Analyze a lead's Riley chat conversation — how many messages, what topics they asked about, and their intent tier (browsing, engaged, or high-intent). Call for "how serious is [name]", "what did they ask about", "chat history", "what did Riley talk about with [name]", or intent/engagement questions about a specific lead.
 
 ## Output Formatting
 
@@ -110,6 +111,12 @@ User: "What materials is Garcia looking at?"
 
 User: "How did Garcia's estimate change?"
 → Call getPriceAdjustments with name="Garcia". "Garcia made 5 changes. Compared asphalt ($8K–$12K) and standing seam metal ($14K–$20K). Added ridge vent upgrade. Last selection: metal."
+
+User: "How serious is Garcia?"
+→ Call getChatDepth with nameOrId="Garcia". "Garcia is high-intent — asked about warranties, pricing, and timeline across 8 messages. Used the estimate tool and provided their address."
+
+User: "What did Wilson ask about?"
+→ Call getChatDepth with nameOrId="Wilson". "Wilson is engaged — asked about pricing and comparing options over 5 messages. Mentioned standing seam metal specifically."
 
 ## General Tone
 
