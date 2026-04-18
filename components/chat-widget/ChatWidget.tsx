@@ -79,8 +79,11 @@ export default function ChatWidget({
     }
   }, [contractorId]);
 
-  // Strip trailing period from business name to avoid double period ("Roofing Co..")
-  const cleanName = businessName.replace(/\.\s*$/, "");
+  // Strip legal suffixes + trailing period from business name
+  const cleanName = businessName
+    .replace(/\s*(LLC|Inc\.?|Corp\.?|L\.?L\.?C\.?|PLLC)\s*$/i, "")
+    .replace(/\.\s*$/, "")
+    .trim();
   const greeting = customGreeting || `Hi! I'm Riley, an AI assistant for ${cleanName}. I can answer questions about our roofing services, pricing, and availability. What can I help you with?`;
 
   const { messages, sendMessage, status, setMessages } = useChat({

@@ -80,7 +80,9 @@ export default async function DemoPage({
 
   const prospectData = {
     id: prospect.id,
-    businessName: prospect.business_name || "Roofing Company",
+    businessName: (prospect.business_name || "Roofing Company")
+      .replace(/\s*(LLC|Inc\.?|Corp\.?|L\.?L\.?C\.?|PLLC)\s*$/i, "")
+      .trim(),
     city: prospect.city || "Florida",
     state: prospect.state || "FL",
     phone: prospect.phone || "",

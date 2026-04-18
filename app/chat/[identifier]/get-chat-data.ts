@@ -45,7 +45,9 @@ export async function getChatData(identifier: string): Promise<ChatPageData | nu
 
   return {
     contractorId: contractor.id,
-    businessName: contractor.business_name,
+    businessName: contractor.business_name
+      .replace(/\s*(LLC|Inc\.?|Corp\.?|L\.?L\.?C\.?|PLLC)\s*$/i, "")
+      .trim(),
     phone: contractor.phone || null,
     logoUrl: contractor.logo_url || null,
     city: contractor.city,
