@@ -168,7 +168,7 @@ export async function sendLeadNotificationEmail(data: LeadNotificationData) {
         ${estimateSection}
 
         <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #f3f4f6;">
-          <a href="https://ruufpro.com/dashboard/leads" style="display: inline-block; background: #111827; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
+          <a href="https://ruufpro.com/dashboard" style="display: inline-block; background: #111827; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
             View in Dashboard →
           </a>
         </div>

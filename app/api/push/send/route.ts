@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const payload = JSON.stringify({
       title: title || "New Lead — RuufPro",
       body: body || "You have a new lead. Tap to view.",
-      url: url || "/dashboard/leads",
+      url: url || "/dashboard",
     });
 
     let sent = 0;

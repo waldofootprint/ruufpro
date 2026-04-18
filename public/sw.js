@@ -13,7 +13,7 @@ self.addEventListener("push", function (event) {
     tag: "ruufpro-lead",
     renotify: true,
     data: {
-      url: data.url || "/dashboard/leads",
+      url: data.url || "/dashboard",
     },
   };
 
@@ -24,7 +24,7 @@ self.addEventListener("push", function (event) {
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
 
-  const url = event.notification.data?.url || "/dashboard/leads";
+  const url = event.notification.data?.url || "/dashboard";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (clientList) {
