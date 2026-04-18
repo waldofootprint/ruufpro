@@ -62,7 +62,7 @@ node tools/scrape-prospect-site.mjs --url "https://example-roofing.com"
 
 **Minimum threshold to proceed** — must have at least 2 of these 3:
 - FAQ entries (any number)
-- Owner name OR substantive about page content (not just "we are a roofing company")
+- Substantive about page content (not just "we are a roofing company")
 - Detailed services with brands or specialties mentioned
 
 **Auto-SKIP if:**
@@ -108,29 +108,34 @@ Look for these details when mapping. If they're in the scraped data, make sure t
 
 ### Step 5: Show Hannah for Approval
 
-Present the planned chatbot_config in a clear format:
+Present the planned chatbot_config in a clear format. **Include source URLs for every field** so Hannah can verify against the actual website:
 
 ```
 ## [Business Name] — Demo Page Build
 
 **Data richness:** [HIGH/MEDIUM/LOW]
 - FAQs found: [count]
-- Owner name: [name or "not found"]
 - About page: [summary or "thin/missing"]
+- Services detail: [summary]
 
 **Planned chatbot_config:**
-- custom_faqs: [count] entries
-  - Q: [first question]
-  - Q: [second question]
-  - ...
-- differentiators: [value or null]
-- typical_timeline_days: [value or null]
-- materials_brands: [list or null]
-- team_description: [value or null]
-- insurance: [yes/no + description or null]
-- emergency: [yes/no]
-- offers_free_inspection: [yes/no]
-- [any other non-null fields]
+
+| Field | Value | Source |
+|-------|-------|--------|
+| custom_faqs | [count] entries | [URL of FAQ page] |
+| differentiators | [value or null] | [URL of about page] |
+| typical_timeline_days | [value or null] | [URL where found] |
+| materials_brands | [list or null] | [URL of services/metal page] |
+| team_description | [value or null] | [URL of about page] |
+| insurance | [yes/no + description] | [URL or "not on site"] |
+| emergency | [yes/no] | [URL or "not on site"] |
+| offers_free_inspection | [yes/no] | [URL where mentioned] |
+| financing_provider | [value or null] | [URL or "not on site"] |
+
+**FAQ entries:**
+1. Q: [question] — A: [first ~50 chars]...
+2. Q: [question] — A: [first ~50 chars]...
+...
 
 **Fields left null:** [list]
 
