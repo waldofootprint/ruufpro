@@ -54,27 +54,29 @@ export default function DashboardHome() {
       return;
     }
 
-    // Fetch chat conversations for these leads
+    // Fetch chat conversations + widget events in parallel
     const leadIds = rawLeads.map((l) => l.id);
-    const { data: chats } = await supabase
-      .from("chat_conversations")
-      .select("lead_id, messages, updated_at")
-      .in("lead_id", leadIds.length > 0 ? leadIds : ["__none__"])
-      .order("updated_at", { ascending: false });
+    const safeLeadIds = leadIds.length > 0 ? leadIds : ["__none__"];
+
+    const [{ data: chats }, { data: widgetEvents }] = await Promise.all([
+      supabase
+        .from("chat_conversations")
+        .select("lead_id, messages, updated_at")
+        .in("lead_id", safeLeadIds)
+        .order("updated_at", { ascending: false }),
+      supabase
+        .from("widget_events")
+        .select("lead_id, event_type, metadata, created_at")
+        .eq("contractor_id", contractorId)
+        .in("lead_id", safeLeadIds)
+        .order("created_at", { ascending: false }),
+    ]);
 
     const chatByLead = new Map<string, typeof chats>();
     chats?.forEach((c) => {
       if (!chatByLead.has(c.lead_id)) chatByLead.set(c.lead_id, []);
       chatByLead.get(c.lead_id)!.push(c);
     });
-
-    // Fetch widget events for all leads in one query
-    const { data: widgetEvents } = await supabase
-      .from("widget_events")
-      .select("lead_id, event_type, metadata, created_at")
-      .eq("contractor_id", contractorId)
-      .in("lead_id", leadIds.length > 0 ? leadIds : ["__none__"])
-      .order("created_at", { ascending: false });
 
     // Group widget events by lead
     const eventsByLead = new Map<string, typeof widgetEvents>();

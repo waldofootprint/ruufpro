@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 function getAdminSupabase() {
   return createClient(
@@ -9,9 +11,42 @@ function getAdminSupabase() {
   );
 }
 
+async function getAuthedContractor(cookieStore: ReturnType<typeof cookies>) {
+  const authSupabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch { /* read-only */ }
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await authSupabase.auth.getUser();
+  if (!user) return null;
+
+  const supabase = getAdminSupabase();
+  const { data: contractor } = await supabase
+    .from("contractors")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  return contractor ? { supabase, contractorId: contractor.id } : null;
+}
+
 // POST — upload a project photo
 export async function POST(req: NextRequest) {
-  const supabase = getAdminSupabase();
+  const cookieStore = cookies();
+  const auth = await getAuthedContractor(cookieStore);
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = auth.supabase;
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
@@ -19,6 +54,17 @@ export async function POST(req: NextRequest) {
 
   if (!file || !siteId) {
     return NextResponse.json({ error: "Missing file or siteId" }, { status: 400 });
+  }
+
+  // Verify this site belongs to the authed contractor
+  const { data: site } = await supabase
+    .from("sites")
+    .select("id")
+    .eq("id", siteId)
+    .eq("contractor_id", auth.contractorId)
+    .single();
+  if (!site) {
+    return NextResponse.json({ error: "Site not found or not yours" }, { status: 403 });
   }
 
   const allowed = ["image/png", "image/jpeg", "image/webp"];
@@ -44,14 +90,15 @@ export async function POST(req: NextRequest) {
   const { data: urlData } = supabase.storage.from("photos").getPublicUrl(path);
   const photoUrl = urlData.publicUrl;
 
-  // Append to gallery_images array
-  const { data: site } = await supabase
+  // Append to gallery_images array (ownership already verified above)
+  const { data: siteGallery } = await supabase
     .from("sites")
     .select("gallery_images")
     .eq("id", siteId)
+    .eq("contractor_id", auth.contractorId)
     .single();
 
-  const existing: string[] = site?.gallery_images || [];
+  const existing: string[] = siteGallery?.gallery_images || [];
   const { error: dbErr } = await supabase
     .from("sites")
     .update({ gallery_images: [...existing, photoUrl] })
@@ -66,19 +113,28 @@ export async function POST(req: NextRequest) {
 
 // DELETE — remove a photo from gallery
 export async function DELETE(req: NextRequest) {
-  const supabase = getAdminSupabase();
+  const cookieStore = cookies();
+  const auth = await getAuthedContractor(cookieStore);
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = auth.supabase;
   const { siteId, photoUrl } = await req.json();
 
   if (!siteId || !photoUrl) {
     return NextResponse.json({ error: "Missing siteId or photoUrl" }, { status: 400 });
   }
 
-  // Remove from gallery array
+  // Verify ownership + get gallery
   const { data: site } = await supabase
     .from("sites")
     .select("gallery_images")
     .eq("id", siteId)
+    .eq("contractor_id", auth.contractorId)
     .single();
+
+  if (!site) {
+    return NextResponse.json({ error: "Site not found or not yours" }, { status: 403 });
+  }
 
   const updated = (site?.gallery_images || []).filter((url: string) => url !== photoUrl);
   const { error: dbErr } = await supabase

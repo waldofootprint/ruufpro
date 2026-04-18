@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
   ChevronDown,
@@ -23,8 +23,14 @@ import {
   Shield,
   AlertTriangle,
   Star,
+  Send,
+  Mail,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import type { Lead } from "@/lib/types";
+import { useDemoMode } from "@/lib/use-demo-mode";
+import { DEMO_AI_DRAFTS } from "@/lib/demo-data";
 
 // Lead with joined property data
 export interface LeadWithDetails extends Lead {
@@ -196,6 +202,260 @@ const TOPIC_LABELS: Record<string, string> = {
   scheduling: "Scheduling",
 };
 
+// --- Copilot Strip (AI Draft + Send + Chat) ---
+const QUICK_CHIPS = [
+  "What should I do next?",
+  "Property intel",
+  "How serious is this lead?",
+];
+
+function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
+  const isDemo = useDemoMode();
+  const [draft, setDraft] = useState("");
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [copilotInput, setCopilotInput] = useState("");
+  const [copilotMessages, setCopilotMessages] = useState<
+    { role: "user" | "assistant"; content: string }[]
+  >([]);
+  const [copilotLoading, setCopilotLoading] = useState(false);
+
+  const generateDraft = useCallback(async () => {
+    if (draftLoaded) return;
+    setDraftLoading(true);
+
+    if (isDemo) {
+      const demoDraft = DEMO_AI_DRAFTS[lead.id];
+      setDraft(demoDraft?.direct || "Hey, thanks for reaching out! I'd love to help with your roofing project. When's a good time for a free inspection?");
+      setDraftLoading(false);
+      setDraftLoaded(true);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/dashboard/copilot/drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId: lead.id, channel: "text" }),
+      });
+      const data = await res.json();
+      if (data.drafts?.direct) {
+        setDraft(data.drafts.direct);
+      } else {
+        setDraft("Could not generate draft — try again.");
+      }
+    } catch {
+      setDraft("Could not generate draft — try again.");
+    }
+    setDraftLoading(false);
+    setDraftLoaded(true);
+  }, [lead.id, isDemo, draftLoaded]);
+
+  const sendCopilotMessage = useCallback(async (message: string) => {
+    if (!message.trim()) return;
+    const userMsg = { role: "user" as const, content: message };
+    setCopilotMessages((prev) => [...prev, userMsg]);
+    setCopilotInput("");
+    setCopilotLoading(true);
+
+    if (isDemo) {
+      // Demo: static response
+      setTimeout(() => {
+        setCopilotMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "This lead looks solid. They've viewed their estimate multiple times and asked about scheduling — I'd reach out today." },
+        ]);
+        setCopilotLoading(false);
+      }, 800);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/dashboard/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...copilotMessages, userMsg].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+
+      if (!res.ok) throw new Error("Copilot request failed");
+
+      // Read streaming response
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No reader");
+
+      let fullText = "";
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        // Parse SSE data lines
+        for (const line of chunk.split("\n")) {
+          if (line.startsWith("0:")) {
+            try {
+              fullText += JSON.parse(line.slice(2));
+            } catch { /* skip non-text chunks */ }
+          }
+        }
+      }
+
+      setCopilotMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: fullText || "No response — try again." },
+      ]);
+    } catch {
+      setCopilotMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Copilot is unavailable right now." },
+      ]);
+    }
+    setCopilotLoading(false);
+  }, [copilotMessages, isDemo]);
+
+  const smsBody = encodeURIComponent(draft);
+  const smsHref = lead.phone ? `sms:${lead.phone}${draft ? `&body=${smsBody}` : ""}` : undefined;
+
+  return (
+    <div className="mt-4 space-y-4">
+      {/* AI Draft Section */}
+      <div className="neu-inset p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide neu-muted">
+            <Sparkles className="h-3.5 w-3.5" /> AI Draft Follow-Up
+          </h4>
+          {!draftLoaded && (
+            <button
+              className="neu-accent-btn flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold"
+              onClick={generateDraft}
+              disabled={draftLoading}
+            >
+              {draftLoading ? (
+                <><Loader2 className="h-3 w-3 animate-spin" /> Drafting...</>
+              ) : (
+                <><Pencil className="h-3 w-3" /> Generate Draft</>
+              )}
+            </button>
+          )}
+        </div>
+
+        {draftLoaded && (
+          <>
+            <textarea
+              className="w-full neu-inset-deep p-3 text-sm leading-relaxed resize-none focus:outline-none"
+              style={{ color: "var(--neu-text)", minHeight: "80px" }}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={3}
+            />
+            <div className="flex gap-2 mt-3">
+              {smsHref && (
+                <a href={smsHref}>
+                  <button className="neu-accent-btn flex items-center gap-1.5 px-4 py-2 text-xs font-semibold">
+                    <Send className="h-3.5 w-3.5" /> Send Text
+                  </button>
+                </a>
+              )}
+              <button className="neu-flat flex items-center gap-1.5 px-4 py-2 text-xs font-medium" style={{ color: "var(--neu-text)" }}>
+                <Mail className="h-3.5 w-3.5" /> Send Email
+              </button>
+              <button
+                className="neu-flat px-3 py-2 text-xs font-medium neu-muted ml-auto"
+                onClick={() => { setDraftLoaded(false); setDraft(""); }}
+              >
+                Regenerate
+              </button>
+            </div>
+          </>
+        )}
+
+        {!draftLoaded && !draftLoading && (
+          <p className="text-xs neu-muted">Click "Generate Draft" to create a personalized follow-up based on this lead&apos;s activity.</p>
+        )}
+      </div>
+
+      {/* Ask Copilot Section */}
+      <div className="neu-inset p-4">
+        <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide neu-muted mb-3">
+          <MessageSquare className="h-3.5 w-3.5" /> Ask Copilot
+        </h4>
+
+        {/* Chat history */}
+        {copilotMessages.length > 0 && (
+          <div className="space-y-2 mb-3 max-h-[200px] overflow-y-auto">
+            {copilotMessages.map((msg, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "px-3 py-2 rounded-xl text-sm leading-relaxed max-w-[85%]",
+                  msg.role === "user" ? "neu-flat" : "ml-auto"
+                )}
+                style={
+                  msg.role === "assistant"
+                    ? { background: "var(--neu-accent)", color: "var(--neu-accent-fg)" }
+                    : { color: "var(--neu-text)" }
+                }
+              >
+                {msg.content}
+              </div>
+            ))}
+            {copilotLoading && (
+              <div className="ml-auto px-3 py-2 rounded-xl text-sm" style={{ background: "var(--neu-accent)", color: "var(--neu-accent-fg)" }}>
+                <Loader2 className="h-4 w-4 animate-spin inline" />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Quick action chips */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {QUICK_CHIPS.map((chip) => (
+            <button
+              key={chip}
+              className="neu-flat px-3 py-1.5 text-xs font-medium"
+              style={{ color: "var(--neu-accent)" }}
+              onClick={() => sendCopilotMessage(chip)}
+              disabled={copilotLoading}
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+
+        {/* Input */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className="flex-1 neu-inset-deep px-3 py-2 text-sm focus:outline-none"
+            style={{ color: "var(--neu-text)" }}
+            placeholder="Ask about this lead..."
+            value={copilotInput}
+            onChange={(e) => setCopilotInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendCopilotMessage(copilotInput);
+              }
+            }}
+            disabled={copilotLoading}
+          />
+          <button
+            className="neu-accent-btn px-3 py-2"
+            onClick={() => sendCopilotMessage(copilotInput)}
+            disabled={copilotLoading || !copilotInput.trim()}
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Lead Accordion Detail ---
 function LeadAccordion({
   lead,
@@ -340,11 +600,11 @@ function LeadAccordion({
         </div>
       </div>
 
+      {/* Copilot Strip — AI Draft + Send + Chat */}
+      <CopilotStrip lead={lead} />
+
       {/* Action Buttons + Status */}
-      <div className="flex flex-wrap items-center gap-3">
-        <button className="neu-accent-btn flex items-center gap-2 px-4 py-2.5 text-sm font-semibold">
-          <Pencil className="h-4 w-4" /> Draft Follow-Up
-        </button>
+      <div className="flex flex-wrap items-center gap-3 mt-4">
         {lead.phone && (
           <a href={`sms:${lead.phone}`}>
             <button className="neu-flat flex items-center gap-2 px-4 py-2.5 text-sm font-medium" style={{ color: "var(--neu-text)" }}>

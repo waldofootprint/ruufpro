@@ -85,17 +85,37 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setUnreadSmsCount(count || 0);
   };
 
-  // Fetch onboarding completion state
+  // Fetch onboarding completion state — all 4 queries in parallel
   const refreshOnboarding = async () => {
     if (isDemo) return;
     if (!contractorId) return;
 
-    // Check estimate settings for rates + service zips
-    const { data: settings } = await supabase
-      .from("estimate_settings")
-      .select("asphalt_low, asphalt_high, metal_low, metal_high, tile_low, tile_high, flat_low, flat_high, service_zips")
-      .eq("contractor_id", contractorId)
-      .single();
+    const [
+      { data: settings },
+      { count: addonCount },
+      { data: contractor },
+      { data: chatConfig },
+    ] = await Promise.all([
+      supabase
+        .from("estimate_settings")
+        .select("asphalt_low, asphalt_high, metal_low, metal_high, tile_low, tile_high, flat_low, flat_high, service_zips")
+        .eq("contractor_id", contractorId)
+        .single(),
+      supabase
+        .from("estimate_addons")
+        .select("id", { count: "exact", head: true })
+        .eq("contractor_id", contractorId),
+      supabase
+        .from("contractors")
+        .select("webhook_enabled, webhook_url, has_ai_chatbot")
+        .eq("id", contractorId)
+        .single(),
+      supabase
+        .from("chatbot_config")
+        .select("price_range_low")
+        .eq("contractor_id", contractorId)
+        .maybeSingle(),
+    ]);
 
     const hasRates = !!(settings && (
       settings.asphalt_low || settings.asphalt_high ||
@@ -104,28 +124,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       settings.flat_low || settings.flat_high
     ));
     const hasZips = !!(settings?.service_zips && settings.service_zips.length > 0);
-
-    // Check addons
-    const { count: addonCount } = await supabase
-      .from("estimate_addons")
-      .select("*", { count: "exact", head: true })
-      .eq("contractor_id", contractorId);
     const hasAddons = (addonCount || 0) > 0;
-
-    // Check webhook from contractor record + chatbot status
-    const { data: contractor } = await supabase
-      .from("contractors")
-      .select("webhook_enabled, webhook_url, has_ai_chatbot")
-      .eq("id", contractorId)
-      .single();
     const hasWebhook = !!(contractor?.webhook_enabled && contractor?.webhook_url);
-
-    // Check if chatbot has been trained (has at least 1 config field)
-    const { data: chatConfig } = await supabase
-      .from("chatbot_config")
-      .select("price_range_low")
-      .eq("contractor_id", contractorId)
-      .maybeSingle();
     const hasChatbot = !!(contractor?.has_ai_chatbot && chatConfig);
 
     const steps: OnboardingSteps = { hasRates, hasAddons, hasZips, hasWebhook, hasChatbot };
@@ -193,9 +193,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isDemo) return;
     if (contractorId) {
-      refreshLeadCount();
-      refreshSmsCount();
-      refreshOnboarding();
+      Promise.all([refreshLeadCount(), refreshSmsCount(), refreshOnboarding()]);
     }
   }, [contractorId, isDemo]);
 

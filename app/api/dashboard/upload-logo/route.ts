@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 function getAdminSupabase() {
   return createClient(
@@ -9,15 +11,48 @@ function getAdminSupabase() {
   );
 }
 
-export async function POST(req: NextRequest) {
+async function getAuthedContractor(cookieStore: ReturnType<typeof cookies>) {
+  const authSupabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch { /* read-only */ }
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await authSupabase.auth.getUser();
+  if (!user) return null;
+
   const supabase = getAdminSupabase();
+  const { data: contractor } = await supabase
+    .from("contractors")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  return contractor ? { supabase, contractorId: contractor.id } : null;
+}
+
+export async function POST(req: NextRequest) {
+  const cookieStore = cookies();
+  const auth = await getAuthedContractor(cookieStore);
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = auth.supabase;
+  const contractorId = auth.contractorId;
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
-  const contractorId = formData.get("contractorId") as string | null;
 
-  if (!file || !contractorId) {
-    return NextResponse.json({ error: "Missing file or contractorId" }, { status: 400 });
+  if (!file) {
+    return NextResponse.json({ error: "Missing file" }, { status: 400 });
   }
 
   // Validate file type
