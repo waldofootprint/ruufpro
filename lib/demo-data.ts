@@ -1031,6 +1031,80 @@ export const DEMO_CHATBOT_CONFIG = {
   completionPct: 100,
 };
 
+// ── Insights Page Fixtures ─────────────────────────────────────────────
+
+export const DEMO_INSIGHTS = {
+  scoreboard: {
+    closedThisWeekCount: 2,
+    closedThisWeekRevenue: 34000,
+    pipelineCount: 4,
+    pipelineValue: 68000,
+    closeRatePct: 38,
+    forecastRevenue: 25840,
+  },
+  moneyLeft: {
+    totalEstimatedValue: 23000,
+    leads: [
+      { id: "demo-lead-001", name: "Marcus Johnson", estimateLow: 14000, estimateHigh: 18000, estimateMaterial: "Standing Seam Metal", heatScore: 82, hoursSinceCreated: 3, widgetViews: 6, reason: "Heat 82 · viewed 6× · not contacted" },
+      { id: "demo-lead-008", name: "Karen White", estimateLow: 6000, estimateHigh: 9000, estimateMaterial: null, heatScore: 28, hoursSinceCreated: 72, widgetViews: 0, reason: "3d+ no contact" },
+    ],
+  },
+  homeownersWant: {
+    totalConvos: 47,
+    questions: [
+      { type: "price_seeking", label: "Pricing", count: 16, pct: 34 },
+      { type: "general_info", label: "General Info", count: 10, pct: 22 },
+      { type: "timeline_seeking", label: "Timeline", count: 8, pct: 18 },
+      { type: "insurance", label: "Insurance", count: 6, pct: 12 },
+      { type: "trust_seeking", label: "Warranty & Trust", count: 4, pct: 8 },
+      { type: "scheduling", label: "Scheduling", count: 3, pct: 6 },
+    ],
+    topMaterial: { name: "Architectural Shingle", pct: 46 },
+    financingInterestPct: 64,
+  },
+  speedGame: {
+    avgReplyMinutes: 124,
+    fastestCloses: { minutes: 22, count: 2 },
+    buckets: [
+      { label: "fast", range: "< 30 min", leadCount: 5, closedCount: 3, closeRatePct: 60 },
+      { label: "mid", range: "30m – 2h", leadCount: 4, closedCount: 1, closeRatePct: 25 },
+      { label: "slow", range: "2h+", leadCount: 6, closedCount: 1, closeRatePct: 17 },
+    ],
+    totalContacted: 15,
+  },
+  rileyROI: {
+    state: "first_close" as const,
+    convoCount: 47,
+    leadsCaptured: 13,
+    pipelineValue: 48000,
+    wonCount: 1,
+    wonRevenue: 21000,
+    roiMultiplier: 141,
+  },
+  reviewMomentum: {
+    newThisMonth: 4,
+    totalReviewed: 5,
+    totalSent: 12,
+    clickRatePct: 67,
+    reviewRatePct: 42,
+    unrequestedCompleted: 1,
+    recentReviewed: [
+      { leadName: "Tom Henderson", sentAgo: "2w ago" },
+      { leadName: "Kevin Nguyen", sentAgo: "3w ago" },
+    ],
+  },
+  customerDNA: {
+    wonCount: 3,
+    unlocked: false,
+    avgRoofAge: null,
+    topMaterial: null,
+    avgHomeValue: null,
+    avgWidgetViews: null,
+    newHomeownerPct: null,
+    financingPct: null,
+  },
+};
+
 // ── Estimate Settings (pre-filled pricing) ─────────────────────────────
 
 export const DEMO_ESTIMATE_SETTINGS = {

@@ -9,7 +9,7 @@
 |---|---|---|---|
 | `/dashboard` | `app/dashboard/page.tsx` | ✅ LIVE | **Polished Leads page (home).** Neumorphic list + lead-row accordion with Copilot AI draft + Ask Copilot chat. |
 | `/dashboard/settings` | `app/dashboard/settings/page.tsx` | ✅ LIVE | 6-tab settings: Profile, Riley, Estimates, Reviews, Integrations, Billing. Deep-linked via `?tab=X`. |
-| `/dashboard/insights` | — | 🚧 NOT BUILT | Riley analytics + review stats. Sidebar shows "Soon" pill. |
+| `/dashboard/insights` | `app/dashboard/insights/page.tsx` | ✅ LIVE | Weekly briefing: Scoreboard, Money Left on Table, Homeowners Want, Speed Game, Riley ROI, Review Momentum, Customer DNA (10+ won). |
 
 **Dashboard internals (not routes):**
 - `app/dashboard/layout.tsx` — sidebar + theme shell

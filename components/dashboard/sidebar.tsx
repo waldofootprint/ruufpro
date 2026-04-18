@@ -28,7 +28,7 @@ interface SidebarProps {
 
 const MAIN_NAV = [
   { href: "/dashboard", label: "Leads", icon: Users, showBadge: true },
-  { href: "/dashboard/insights", label: "Insights", icon: TrendingUp, comingSoon: true },
+  { href: "/dashboard/insights", label: "Insights", icon: TrendingUp },
 ];
 
 const ACCOUNT_NAV = [
