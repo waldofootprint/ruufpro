@@ -86,7 +86,14 @@ function NavSection({
               <item.icon className="w-[18px] h-[18px]" />
               <span>{item.label}</span>
               {item.showBadge && newLeadCount > 0 && (
-                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1.5">
+                <span
+                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold text-white px-1.5"
+                  style={{
+                    background: "var(--neu-accent)",
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.18)",
+                  }}
+                >
                   {newLeadCount}
                 </span>
               )}
