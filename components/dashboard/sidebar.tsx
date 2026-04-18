@@ -4,13 +4,8 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
   Users,
-  Sparkles,
-  BarChart3,
-  MessageSquare,
-  Calculator,
-  Star,
+  TrendingUp,
   Settings,
   LogOut,
   Menu,
@@ -32,21 +27,21 @@ interface SidebarProps {
 }
 
 const MAIN_NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/leads", label: "Leads", icon: Users, showBadge: true },
-  { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles },
-  { href: "/dashboard/weekly", label: "Your Week", icon: BarChart3 },
-];
-
-const TOOL_NAV = [
-  { href: "/dashboard/settings?tab=riley", label: "Riley Chat", icon: MessageSquare },
-  { href: "/dashboard/settings?tab=estimates", label: "Estimates", icon: Calculator },
-  { href: "/dashboard/settings?tab=reviews", label: "Reviews", icon: Star },
+  { href: "/dashboard", label: "Leads", icon: Users, showBadge: true },
+  { href: "/dashboard/insights", label: "Insights", icon: TrendingUp, comingSoon: true },
 ];
 
 const ACCOUNT_NAV = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  showBadge?: boolean;
+  comingSoon?: boolean;
+};
 
 function NavSection({
   label,
@@ -55,7 +50,7 @@ function NavSection({
   newLeadCount,
 }: {
   label: string;
-  items: typeof MAIN_NAV;
+  items: readonly NavItem[];
   pathname: string;
   newLeadCount: number;
 }) {
@@ -70,19 +65,10 @@ function NavSection({
             item.href === "/dashboard"
               ? pathname === "/dashboard"
               : pathname.startsWith(item.href);
+          const disabled = item.comingSoon;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150",
-                active
-                  ? "neu-inset-deep font-semibold"
-                  : "neu-muted hover:neu-flat hover:opacity-90"
-              )}
-              style={active ? { color: "var(--neu-accent)" } : undefined}
-            >
+          const content = (
+            <>
               <item.icon className="w-[18px] h-[18px]" />
               <span>{item.label}</span>
               {item.showBadge && newLeadCount > 0 && (
@@ -97,6 +83,45 @@ function NavSection({
                   {newLeadCount}
                 </span>
               )}
+              {disabled && (
+                <span
+                  className="ml-auto rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider neu-muted"
+                  style={{
+                    boxShadow:
+                      "inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light)",
+                  }}
+                >
+                  Soon
+                </span>
+              )}
+            </>
+          );
+
+          const className = cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150",
+            disabled
+              ? "neu-muted opacity-60 cursor-not-allowed"
+              : active
+                ? "neu-inset-deep font-semibold"
+                : "neu-muted hover:neu-flat hover:opacity-90"
+          );
+
+          if (disabled) {
+            return (
+              <div key={item.href} className={className} aria-disabled>
+                {content}
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={className}
+              style={active ? { color: "var(--neu-accent)" } : undefined}
+            >
+              {content}
             </Link>
           );
         })}
@@ -144,7 +169,6 @@ function SidebarContent({
       {/* Nav Sections */}
       <nav className="flex-1 px-3 overflow-y-auto">
         <NavSection label="Main" items={MAIN_NAV} pathname={pathname} newLeadCount={newLeadCount} />
-        <NavSection label="Tools" items={TOOL_NAV} pathname={pathname} newLeadCount={0} />
         <NavSection label="Account" items={ACCOUNT_NAV} pathname={pathname} newLeadCount={0} />
       </nav>
 
