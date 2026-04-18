@@ -64,7 +64,7 @@ const SETUP_STEPS = [
   {
     title: "Configure your widget",
     description: "Set your pricing, add-ons, and service area — this powers your estimates",
-    href: "/dashboard/estimate-settings",
+    href: "/dashboard/settings?tab=estimates",
     cta: "Configure",
   },
   {
@@ -323,12 +323,6 @@ export default function WelcomePage() {
             className="px-6 py-3 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors"
           >
             Go to Dashboard
-          </Link>
-          <Link
-            href="/dashboard/my-site"
-            className="px-6 py-3 bg-white text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
-          >
-            Edit My Site
           </Link>
         </div>
       </div>

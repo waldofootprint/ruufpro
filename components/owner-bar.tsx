@@ -43,20 +43,6 @@ export default function OwnerBar({ contractorUserId }: { contractorUserId: strin
       </span>
       <div style={{ display: "flex", gap: "12px" }}>
         <a
-          href="/dashboard/my-site"
-          style={{
-            color: "#fff",
-            background: "rgba(255,255,255,0.15)",
-            padding: "5px 14px",
-            borderRadius: "6px",
-            textDecoration: "none",
-            fontWeight: 600,
-            fontSize: "12px",
-          }}
-        >
-          Edit Site
-        </a>
-        <a
           href="/dashboard"
           style={{
             color: "#E8722A",

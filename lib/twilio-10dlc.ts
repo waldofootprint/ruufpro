@@ -834,9 +834,9 @@ export async function activateSMS(contractorId: string): Promise<void> {
             <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 20px;">
               No setup needed — everything runs automatically. You can manage settings in your dashboard.
             </p>
-            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/sms"
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard"
                style="display:inline-block;background:#1D1D1F;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">
-              View SMS Dashboard →
+              View Dashboard →
             </a>
             <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:24px;">RuufPro · Your leads, faster.</p>
           </div>

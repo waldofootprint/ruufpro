@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
           <p style="color:#555;font-size:14px;line-height:1.6;">
             Ready to start getting leads from your website? Upgrade to Pro for $149/mo.
           </p>
-          <a href="https://ruufpro.com/dashboard/billing" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-top:8px;">
+          <a href="https://ruufpro.com/dashboard/settings?tab=billing" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-top:8px;">
             Upgrade to Pro — $149/mo
           </a>
           <p style="color:#999;font-size:12px;margin-top:24px;">

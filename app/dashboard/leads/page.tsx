@@ -386,9 +386,9 @@ export default function LeadDashboard() {
               <div className="text-left space-y-3">
                 {[
                   { label: "Create your account", done: true, href: "#" },
-                  { label: "Set your pricing rates", done: false, href: "/dashboard/estimate-settings" },
-                  { label: "Customize your website", done: false, href: "/dashboard/my-site" },
-                  { label: "Share your widget link", done: false, href: "/dashboard/estimate-settings" },
+                  { label: "Set your pricing rates", done: false, href: "/dashboard/settings?tab=estimates" },
+                  { label: "Train Riley", done: false, href: "/dashboard/settings?tab=riley" },
+                  { label: "Share your widget link", done: false, href: "/dashboard/settings?tab=estimates" },
                 ].map((step, i) => (
                   <a
                     key={i}

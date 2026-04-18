@@ -63,7 +63,7 @@ export async function sendWeatherAlertEmail(data: WeatherAlertNotificationData) 
         <ul style="margin: 0 0 16px; padding-left: 20px;">${alertList}</ul>
 
         <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #f3f4f6;">
-          <a href="https://ruufpro.com/dashboard/estimate-settings" style="display: inline-block; background: #111827; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
+          <a href="https://ruufpro.com/dashboard/settings?tab=estimates" style="display: inline-block; background: #111827; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
             Enable Surge Pricing →
           </a>
           <p style="margin: 8px 0 0; font-size: 12px; color: #9ca3af;">

@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
               <p style="color:#555;font-size:14px;line-height:1.6;">
                 Want to cancel? No hard feelings — manage your subscription from your dashboard.
               </p>
-              <a href="https://ruufpro.com/dashboard/billing" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-top:8px;">
+              <a href="https://ruufpro.com/dashboard/settings?tab=billing" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-top:8px;">
                 Manage Subscription
               </a>
             </div>

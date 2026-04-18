@@ -185,7 +185,7 @@ export default function CopilotPanel({
                 Your AI business assistant. Ask about leads, get follow-up drafts, track your pipeline — all by talking.
               </p>
               <a
-                href="/dashboard/billing"
+                href="/dashboard/settings?tab=billing"
                 className="inline-block px-6 py-2.5 bg-slate-800 text-white rounded-lg text-[14px] font-semibold hover:bg-slate-700 transition"
               >
                 Upgrade to Pro — $149/mo

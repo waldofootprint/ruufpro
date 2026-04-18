@@ -480,7 +480,7 @@ export default function CopilotPage() {
             AI-powered lead management that drafts responses, scores leads, and tells you exactly what to do next.
           </p>
           <a
-            href="/dashboard/billing"
+            href="/dashboard/settings?tab=billing"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors"
           >
             Upgrade to Pro — $149/mo

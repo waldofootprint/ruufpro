@@ -97,7 +97,7 @@ export default function StormAlertBanner({
             real market conditions. You choose the exact amount and duration.
           </p>
           <Link
-            href="/dashboard/estimate-settings#storm-surge"
+            href="/dashboard/settings?tab=estimates#storm-surge"
             className="inline-flex items-center gap-1 mt-3 px-4 py-2 rounded-lg bg-[#1B3A4B] text-white text-xs font-bold hover:bg-[#162f3d] transition-colors"
           >
             Review Surge Settings

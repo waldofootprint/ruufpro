@@ -201,7 +201,7 @@ export const reviewRequest = inngest.createFunction(
   async ({ event, step }) => {
     const { contractorId, leadId, delay } = event.data;
 
-    // Respect contractor's timing preference (configured in /dashboard/reviews)
+    // Respect contractor's timing preference (configured in /dashboard/settings?tab=reviews)
     if (delay && delay !== "immediate") {
       const delayMap: Record<string, string> = { "1_hour": "1h", "1_day": "1d", "3_days": "3d" };
       const sleepDuration = delayMap[delay];
@@ -411,7 +411,7 @@ export const inboundSmsNotification = inngest.createFunction(
             <a href="tel:${fromNumber.replace(/\D/g, "")}" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; margin-right: 8px;">
               📞 Call Back
             </a>
-            <a href="https://ruufpro.com/dashboard/sms" style="display: inline-block; background: #111827; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
+            <a href="https://ruufpro.com/dashboard" style="display: inline-block; background: #111827; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
               View in Dashboard →
             </a>
           </div>
@@ -444,7 +444,7 @@ export const inboundSmsNotification = inngest.createFunction(
             contractor_id: contractorId,
             title: `💬 ${senderName}`,
             body: preview,
-            url: "/dashboard/sms",
+            url: "/dashboard",
           }),
         });
 
