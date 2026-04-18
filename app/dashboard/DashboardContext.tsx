@@ -44,16 +44,25 @@ export function useDashboard() {
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [contractorId, setContractorId] = useState("");
-  const [businessName, setBusinessName] = useState("");
-  const [tier, setTier] = useState<ContractorTier>("free");
-  const [newLeadCount, setNewLeadCount] = useState(0);
-  const [unreadSmsCount, setUnreadSmsCount] = useState(0);
-  const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
+  const isDemo = searchParams.get("demo") === "true";
+  const [loading, setLoading] = useState(!isDemo);
+  const [contractorId, setContractorId] = useState(isDemo ? "demo-contractor" : "");
+  const [businessName, setBusinessName] = useState(isDemo ? "Summit Roofing" : "");
+  const [tier, setTier] = useState<ContractorTier>(isDemo ? "pro" : "free");
+  const [newLeadCount, setNewLeadCount] = useState(isDemo ? 3 : 0);
+  const [unreadSmsCount, setUnreadSmsCount] = useState(isDemo ? 0 : 0);
+  const [onboarding, setOnboarding] = useState<OnboardingState | null>(
+    isDemo
+      ? { steps: { hasRates: true, hasAddons: true, hasZips: true, hasWebhook: true, hasChatbot: true }, complete: true }
+      : null
+  );
+
+  // Demo mode — no-op refreshes, skip auth
+  const noop = async () => {};
 
   // Fetch new lead count
   const refreshLeadCount = async () => {
+    if (isDemo) return;
     if (!contractorId) return;
     const { count } = await supabase
       .from("leads")
@@ -65,6 +74,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // Fetch unread SMS count
   const refreshSmsCount = async () => {
+    if (isDemo) return;
     if (!contractorId) return;
     const { count } = await supabase
       .from("sms_messages")
@@ -77,6 +87,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // Fetch onboarding completion state
   const refreshOnboarding = async () => {
+    if (isDemo) return;
     if (!contractorId) return;
 
     // Check estimate settings for rates + service zips
@@ -124,6 +135,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // Re-fetch contractor data (tier, flags) from DB
   const refreshContractor = async () => {
+    if (isDemo) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data: contractor } = await supabase
@@ -138,8 +150,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Auth check + contractor fetch (runs once)
+  // Auth check + contractor fetch (runs once) — skipped in demo mode
   useEffect(() => {
+    if (isDemo) return; // Demo mode: state already set via useState defaults
     async function init() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -167,7 +180,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
     }
     init();
-  }, [router]);
+  }, [router, isDemo]);
 
   // After Stripe checkout redirect, re-fetch contractor to pick up new tier
   useEffect(() => {
@@ -176,14 +189,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
   }, [searchParams, contractorId]);
 
-  // Fetch counts + onboarding once we have contractorId
+  // Fetch counts + onboarding once we have contractorId (skip in demo)
   useEffect(() => {
+    if (isDemo) return;
     if (contractorId) {
       refreshLeadCount();
       refreshSmsCount();
       refreshOnboarding();
     }
-  }, [contractorId]);
+  }, [contractorId, isDemo]);
 
   return (
     <DashboardContext.Provider

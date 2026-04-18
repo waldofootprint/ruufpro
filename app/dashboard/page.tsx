@@ -10,18 +10,22 @@ import { LeadList, type LeadWithDetails } from "@/components/dashboard/lead-list
 import StormAlertBanner from "@/components/dashboard/StormAlertBanner";
 import { Flame, Clock, MessageSquare, AlertTriangle, DollarSign } from "lucide-react";
 import type { Lead, LeadStatus } from "@/lib/types";
+import { useDemoMode } from "@/lib/use-demo-mode";
+import { DEMO_LEADS, DEMO_STATS } from "@/lib/demo-data";
 
 export default function DashboardHome() {
   const { contractorId, businessName, tier } = useDashboard();
-  const [leads, setLeads] = useState<LeadWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
+  const isDemo = useDemoMode();
+  const [leads, setLeads] = useState<LeadWithDetails[]>(isDemo ? DEMO_LEADS : []);
+  const [loading, setLoading] = useState(!isDemo);
 
   const firstName = businessName.split("'")[0].split(" ")[0];
 
   useEffect(() => {
+    if (isDemo) return; // Demo data already loaded via useState default
     if (!contractorId) return;
     loadLeads();
-  }, [contractorId]);
+  }, [contractorId, isDemo]);
 
   async function loadLeads() {
     setLoading(true);
@@ -222,6 +226,8 @@ export default function DashboardHome() {
     setLeads((prev) =>
       prev.map((l) => (l.id === leadId ? { ...l, status: newStatus as any } : l))
     );
+
+    if (isDemo) return; // Demo mode: local state only, no DB write
 
     const { error } = await supabase
       .from("leads")
