@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { streamText, tool, stepCountIs, convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
 import { detectIntent } from "@/lib/intent-detection";
@@ -159,7 +161,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { messages, contractorId, sessionId } = body;
+    const { messages, contractorId, sessionId, testMode } = body;
 
     // Validate inputs
     if (!contractorId || !UUID_REGEX.test(contractorId)) {
@@ -197,13 +199,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Daily chat limit reached" }, { status: 429, headers: CORS_HEADERS });
     }
 
-    // Fetch contractor — must exist and have chatbot enabled
-    const { data: contractor } = await supabase
+    // testMode: preview from Settings before turning Riley on — requires session auth
+    // that proves the caller owns this contractor.
+    let bypassEnabledCheck = false;
+    if (testMode === true) {
+      const cookieStore = cookies();
+      const authed = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() { return cookieStore.getAll(); },
+            setAll() { /* read-only */ },
+          },
+        }
+      );
+      const { data: { user } } = await authed.auth.getUser();
+      if (user) {
+        const { data: owned } = await supabase
+          .from("contractors")
+          .select("id")
+          .eq("id", contractorId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (owned) bypassEnabledCheck = true;
+      }
+      if (!bypassEnabledCheck) {
+        return NextResponse.json({ error: "Unauthorized test" }, { status: 401, headers: CORS_HEADERS });
+      }
+    }
+
+    // Fetch contractor — must exist and have chatbot enabled (unless in authenticated testMode)
+    const contractorQuery = supabase
       .from("contractors")
       .select("*, sites(services, reviews, hero_headline, about_text)")
-      .eq("id", contractorId)
-      .eq("has_ai_chatbot", true)
-      .single();
+      .eq("id", contractorId);
+    if (!bypassEnabledCheck) contractorQuery.eq("has_ai_chatbot", true);
+    const { data: contractor } = await contractorQuery.single();
 
     if (!contractor) {
       return NextResponse.json({ error: "Not found" }, { status: 403, headers: CORS_HEADERS });

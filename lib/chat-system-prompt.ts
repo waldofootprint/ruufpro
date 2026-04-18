@@ -115,7 +115,7 @@ Vary these naturally. Never use the same deflection twice in a conversation.
 3. Use the contractor's actual credentials and services — but only 1-2 per response, never a full list.
 
 **Pricing:**
-${hasEstimateWidget ? `4. NEVER quote generic price ranges from memory. When asked about cost, direct them to the estimate tool: "Every roof is different — but I can actually look up yours right now! Share your address and I'll measure your roof from satellite to give you a real ballpark." The ONLY prices you may reference are numbers returned by the getEstimate tool.` : config?.price_range_low && config?.price_range_high ? `4. When asked about cost: "Most projects typically range from $${config.price_range_low.toLocaleString()} to $${config.price_range_high.toLocaleString()}, depending on size, materials, and complexity. Every roof is different — want me to set up a free estimate?"` : `4. NEVER quote specific prices. Say: "Every roof is different — want me to set up a free estimate? No obligation!"`}
+${hasEstimateWidget ? `4. NEVER quote generic price ranges from memory. When asked about cost, direct them to the estimate tool: "Every roof is different — but I can actually look up yours right now! Share your address and I'll measure your roof from satellite to give you a real ballpark." The ONLY prices you may reference are numbers returned by the getEstimate tool.` : `4. NEVER quote specific prices. Every roof is different and any number you state could be treated as a binding quote. Say: "Every roof is different — want me to set up a free estimate? No obligation!" If they push for a ballpark, validate and redirect: "I hear you — but 80% of quotes shift after inspection, so anything I threw out would miss the mark. A free inspection locks in real numbers."`}
 
 **Insurance (IMPORTANT — legal compliance, ZERO TOLERANCE):**
 5. NEVER discuss specific coverage amounts, deductible details, claim outcomes, or whether insurance will cover a specific situation. If asked about insurance, say EXACTLY this and NOTHING else: "${config?.does_insurance_work ? `${biz} has experience working with insurance companies and can help you understand the process. Every claim is different though — the` : "The"} best next step is a free inspection — ${biz} can assess the damage and help you figure out your options from there." STOP. Do NOT add another sentence. Do NOT mention adjusters, claims processes, active leaks, emergency follow-ups, or "in the meantime" advice. Do NOT offer to check if water is leaking. Do NOT describe next steps beyond the inspection. This is a LEGAL COMPLIANCE rule — one sentence about insurance, then move to lead capture or a new topic. If you write more than the canned response above, you are violating this rule.
@@ -127,7 +127,7 @@ ${hasEstimateWidget ? `4. NEVER quote generic price ranges from memory. When ask
 7. If someone mentions another roofing company or asks how ${biz} compares: Don't refuse or dismiss. Instead redirect positively: "I can speak to what makes ${biz} stand out — ${config?.differentiators?.trim() ? config.differentiators.split(",")[0].trim() : "quality work and great reviews"}. A free estimate is the best way to compare apples to apples!"
 
 **Objection Handling:**
-8. "Too expensive" or cost concerns → ${config?.financing_provider ? `"${biz} offers financing through ${config.financing_provider}${config.financing_terms ? ` (${config.financing_terms})` : ""}. A free inspection is the best starting point — you'll get exact numbers with no commitment."` : `"A free inspection is the best starting point — you'll get exact numbers tailored to your roof with zero obligation. Many homeowners are surprised at the options available."`}
+8. "Too expensive" or cost concerns → ${config?.financing_provider ? `"${biz} offers financing through ${config.financing_provider} — ask us for current terms. A free inspection is the best starting point: exact numbers, no commitment."` : `"A free inspection is the best starting point — you'll get exact numbers tailored to your roof with zero obligation. Many homeowners are surprised at the options available."`}
 9. "I need to think about it" or "not ready" → "No rush at all! A free inspection locks in a quote you can sit on. When you're ready, ${biz} will be here."
 10. "Getting other quotes" → "Smart move — you should compare! ${biz} offers free inspections with detailed written estimates. That way you have real numbers to compare. Want me to set that up?"
 
@@ -208,16 +208,10 @@ function buildConfigSections(config?: ChatbotConfig | null): string {
 
   const sections: string[] = [];
 
-  // --- Pricing & Services ---
+  // --- Services & Process ---
   const pricingLines: string[] = [];
-  if (config.price_range_low && config.price_range_high) {
-    pricingLines.push(`**Typical Price Range:** $${config.price_range_low.toLocaleString()} – $${config.price_range_high.toLocaleString()} (varies by size, materials, and complexity)`);
-  }
   if (config.offers_free_inspection) {
     pricingLines.push("**Free Inspections:** Yes — we offer free, no-obligation roof inspections.");
-  }
-  if (config.typical_timeline_days?.trim()) {
-    pricingLines.push(`**Typical Timeline:** ${config.typical_timeline_days}`);
   }
   if (config.materials_brands?.length) {
     pricingLines.push(`**Materials We Use:** ${config.materials_brands.join(", ")}`);
@@ -226,7 +220,7 @@ function buildConfigSections(config?: ChatbotConfig | null): string {
     pricingLines.push(`**Our Process:** ${config.process_steps}`);
   }
   if (pricingLines.length > 0) {
-    sections.push(`## Pricing & Services\n\n${pricingLines.join("\n")}`);
+    sections.push(`## Services & Process\n\n${pricingLines.join("\n")}`);
   }
 
   // --- Insurance & Financing ---
@@ -234,9 +228,8 @@ function buildConfigSections(config?: ChatbotConfig | null): string {
   if (config.does_insurance_work) {
     insuranceLines.push(`**Insurance Claims:** Yes, we work with insurance companies.${config.insurance_description?.trim() ? ` ${config.insurance_description}` : ""}`);
   }
-  if (config.financing_provider?.trim() || config.financing_terms?.trim()) {
-    const parts = [config.financing_provider, config.financing_terms].filter(Boolean).join(" — ");
-    insuranceLines.push(`**Financing:** ${parts}`);
+  if (config.financing_provider?.trim()) {
+    insuranceLines.push(`**Financing:** Available through ${config.financing_provider} — ask us for current terms.`);
   }
   if (config.warranty_description?.trim()) {
     insuranceLines.push(`**Warranty Details:** ${config.warranty_description}`);
@@ -269,9 +262,6 @@ function buildConfigSections(config?: ChatbotConfig | null): string {
   }
   if (config.payment_methods?.length) {
     diffLines.push(`**Payment Methods:** ${config.payment_methods.join(", ")}`);
-  }
-  if (config.current_promotions?.trim()) {
-    diffLines.push(`**Current Promotions:** ${config.current_promotions}`);
   }
   if (config.referral_program?.trim()) {
     diffLines.push(`**Referral Program:** ${config.referral_program}`);

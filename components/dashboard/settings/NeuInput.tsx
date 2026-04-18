@@ -43,7 +43,7 @@ export const NeuInput = forwardRef<HTMLInputElement, NeuInputProps>(function Neu
     <input
       ref={ref}
       {...rest}
-      className={`neu-inset-deep w-full bg-transparent px-3.5 py-2.5 text-[14px] outline-none transition focus:ring-2 focus:ring-offset-0 ${className}`}
+      className={`neu-inset-deep w-full bg-transparent px-3.5 py-2.5 text-[14px] outline-none transition focus:ring-2 focus:ring-offset-0 placeholder:italic placeholder:text-neutral-400/80 dark:placeholder:text-neutral-500/70 ${className}`}
       style={{ color: "var(--neu-text)" }}
     />
   );
@@ -74,7 +74,7 @@ export const NeuTextarea = forwardRef<HTMLTextAreaElement, NeuTextareaProps>(fun
       ref={ref}
       rows={rows}
       {...rest}
-      className={`neu-inset-deep w-full bg-transparent px-3.5 py-2.5 text-[14px] leading-relaxed outline-none transition ${className}`}
+      className={`neu-inset-deep w-full bg-transparent px-3.5 py-2.5 text-[14px] leading-relaxed outline-none transition placeholder:italic placeholder:text-neutral-400/80 dark:placeholder:text-neutral-500/70 ${className}`}
       style={{ color: "var(--neu-text)" }}
     />
   );

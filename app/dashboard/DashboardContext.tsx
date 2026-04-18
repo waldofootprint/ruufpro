@@ -112,7 +112,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         .single(),
       supabase
         .from("chatbot_config")
-        .select("price_range_low")
+        .select("contractor_id")
         .eq("contractor_id", contractorId)
         .maybeSingle(),
     ]);

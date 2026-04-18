@@ -197,60 +197,37 @@ export function ReviewsTab() {
 
   return (
     <div className="space-y-5">
-      {/* Stats */}
-      {!statsLoading && stats && (
+      {/* Batch send (kept — actionable, not just stats) */}
+      {!statsLoading && stats && stats.unrequested_completed > 0 && (
         <>
-          <div className="grid grid-cols-3 gap-3">
-            <StatCard
-              label="Sent"
-              value={stats.total_sent}
-              sub={`${stats.this_month.sent} this month`}
-              icon={<Send className="h-3.5 w-3.5" />}
-            />
-            <StatCard
-              label="Clicked"
-              value={stats.total_clicked}
-              sub={`${stats.click_rate}% click rate`}
-              icon={<MousePointerClick className="h-3.5 w-3.5" />}
-            />
-            <StatCard
-              label="Reviewed"
-              value={stats.total_reviewed}
-              sub={`${stats.review_rate}% review rate`}
-              icon={<Star className="h-3.5 w-3.5" />}
-            />
-          </div>
-
-          {stats.unrequested_completed > 0 && (
-            <div
-              className="neu-raised p-4 flex items-center justify-between gap-3"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className="neu-flat h-9 w-9 flex-shrink-0 flex items-center justify-center"
-                  style={{ borderRadius: 12, color: "var(--neu-accent)" }}
-                >
-                  <Users className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-bold" style={{ color: "var(--neu-text)" }}>
-                    {stats.unrequested_completed} completed job
-                    {stats.unrequested_completed === 1 ? "" : "s"} with no request
-                  </p>
-                  <p className="text-[11px] neu-muted">Send review requests to boost your Google rating</p>
-                </div>
+          <div className="neu-raised p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="neu-flat h-9 w-9 flex-shrink-0 flex items-center justify-center"
+                style={{ borderRadius: 12, color: "var(--neu-accent)" }}
+              >
+                <Users className="h-4 w-4" />
               </div>
-              <NeuButton variant="accent" onClick={handleBatchSend} disabled={batchSending}>
-                {batchSending ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Sending…
-                  </>
-                ) : (
-                  "Send to All"
-                )}
-              </NeuButton>
+              <div className="min-w-0">
+                <p className="text-[13px] font-bold" style={{ color: "var(--neu-text)" }}>
+                  {stats.unrequested_completed} completed job
+                  {stats.unrequested_completed === 1 ? "" : "s"} with no request
+                </p>
+                <p className="text-[11px] neu-muted">
+                  Review stats live on Insights. Send requests to boost your rating.
+                </p>
+              </div>
             </div>
-          )}
+            <NeuButton variant="accent" onClick={handleBatchSend} disabled={batchSending}>
+              {batchSending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Sending…
+                </>
+              ) : (
+                "Send to All"
+              )}
+            </NeuButton>
+          </div>
           {batchResult && (
             <p
               className={`text-[12px] font-medium ${
@@ -260,30 +237,6 @@ export function ReviewsTab() {
             >
               {batchResult}
             </p>
-          )}
-
-          {stats.recent_requests.length > 0 && (
-            <SettingsSection title="Recent Requests" description="Last 5 review emails sent.">
-              <div className="space-y-1">
-                {stats.recent_requests.slice(0, 5).map((req: any, i: number) => (
-                  <div
-                    key={req.id || i}
-                    className="flex items-center justify-between py-2"
-                    style={{ borderBottom: i < 4 ? "1px solid var(--neu-border)" : "none" }}
-                  >
-                    <div>
-                      <p className="text-[13px] font-medium" style={{ color: "var(--neu-text)" }}>
-                        {req.lead_name}
-                      </p>
-                      <p className="text-[10px] neu-muted">
-                        {req.sent_at ? new Date(req.sent_at).toLocaleDateString() : "Pending"}
-                      </p>
-                    </div>
-                    <StatusBadge status={req.status} />
-                  </div>
-                ))}
-              </div>
-            </SettingsSection>
           )}
         </>
       )}

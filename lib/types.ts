@@ -182,11 +182,8 @@ export interface ChatbotConfig {
   // Customization
   greeting_message: string | null;
 
-  // Tier 1: Top 5 homeowner questions
-  price_range_low: number | null;
-  price_range_high: number | null;
+  // Tier 1: Services & process
   offers_free_inspection: boolean;
-  typical_timeline_days: string | null;
   materials_brands: string[] | null;
   process_steps: string | null;
 
@@ -194,7 +191,6 @@ export interface ChatbotConfig {
   does_insurance_work: boolean;
   insurance_description: string | null;
   financing_provider: string | null;
-  financing_terms: string | null;
   warranty_description: string | null;
   emergency_available: boolean;
   emergency_description: string | null;
@@ -204,7 +200,6 @@ export interface ChatbotConfig {
   differentiators: string | null;
   team_description: string | null;
   payment_methods: string[] | null;
-  current_promotions: string | null;
   referral_program: string | null;
 }
 

@@ -31,51 +31,51 @@ import { NeuButton } from "@/components/dashboard/settings/NeuButton";
 
 interface ChatbotConfigState {
   greeting_message: string;
-  price_range_low: string;
-  price_range_high: string;
   offers_free_inspection: boolean;
-  typical_timeline_days: string;
   materials_brands: string;
   process_steps: string;
   does_insurance_work: boolean;
   insurance_description: string;
   financing_provider: string;
-  financing_terms: string;
   warranty_description: string;
   emergency_available: boolean;
   emergency_description: string;
   custom_faqs: Array<{ q: string; a: string }>;
   differentiators: string;
   team_description: string;
-  payment_methods: string;
-  current_promotions: string;
+  payment_methods: string[];
   referral_program: string;
 }
 
 const EMPTY_CONFIG: ChatbotConfigState = {
   greeting_message: "",
-  price_range_low: "",
-  price_range_high: "",
   offers_free_inspection: false,
-  typical_timeline_days: "",
   materials_brands: "",
   process_steps: "",
   does_insurance_work: false,
   insurance_description: "",
   financing_provider: "",
-  financing_terms: "",
   warranty_description: "",
   emergency_available: false,
   emergency_description: "",
   custom_faqs: [],
   differentiators: "",
   team_description: "",
-  payment_methods: "",
-  current_promotions: "",
+  payment_methods: [],
   referral_program: "",
 };
 
-const MIN_CORE_FIELDS_TO_ENABLE = 3;
+const PAYMENT_OPTIONS = [
+  "Cash",
+  "Check",
+  "Credit Card",
+  "Financing",
+  "ACH / Bank Transfer",
+  "Zelle",
+  "Venmo",
+] as const;
+
+const MIN_CORE_FIELDS_TO_ENABLE = 2;
 const MAX_TEXT_LENGTH = 500;
 const MAX_FAQ_COUNT = 25;
 
@@ -83,8 +83,6 @@ const MAX_FAQ_COUNT = 25;
 
 function countCoreFields(c: ChatbotConfigState): number {
   let n = 0;
-  if (c.price_range_low && c.price_range_high) n++;
-  if (c.typical_timeline_days.trim()) n++;
   if (c.materials_brands.trim()) n++;
   if (c.process_steps.trim()) n++;
   return n;
@@ -94,66 +92,52 @@ function countFilledFields(c: ChatbotConfigState): number {
   let n = countCoreFields(c);
   if (c.offers_free_inspection) n++;
   if (c.does_insurance_work && c.insurance_description.trim()) n++;
-  if (c.financing_provider.trim() || c.financing_terms.trim()) n++;
+  if (c.financing_provider.trim()) n++;
   if (c.warranty_description.trim()) n++;
   if (c.emergency_available && c.emergency_description.trim()) n++;
   if (c.custom_faqs.some((f) => f.q.trim() && f.a.trim())) n++;
   if (c.differentiators.trim()) n++;
   if (c.team_description.trim()) n++;
-  if (c.payment_methods.trim()) n++;
-  if (c.current_promotions.trim()) n++;
+  if (c.payment_methods.length > 0) n++;
   if (c.referral_program.trim()) n++;
   return n;
 }
 
 function getRelevantFieldCount(c: ChatbotConfigState): number {
-  let total = 4;
-  total++;
+  let total = 2; // core: materials + process
+  total++; // free inspection
   if (c.does_insurance_work) total++;
-  total++;
-  total++;
+  total++; // financing
+  total++; // warranty
   if (c.emergency_available) total++;
-  total += 5;
+  total += 5; // FAQs, differentiators, team, payment, referral
   return total;
 }
 
 function normalizeFromDb(data: Record<string, unknown>): ChatbotConfigState {
   return {
     greeting_message: (data.greeting_message as string) ?? "",
-    price_range_low: data.price_range_low != null ? String(data.price_range_low) : "",
-    price_range_high: data.price_range_high != null ? String(data.price_range_high) : "",
     offers_free_inspection: (data.offers_free_inspection as boolean) ?? false,
-    typical_timeline_days: (data.typical_timeline_days as string) ?? "",
     materials_brands: Array.isArray(data.materials_brands) ? (data.materials_brands as string[]).join(", ") : "",
     process_steps: (data.process_steps as string) ?? "",
     does_insurance_work: (data.does_insurance_work as boolean) ?? false,
     insurance_description: (data.insurance_description as string) ?? "",
     financing_provider: (data.financing_provider as string) ?? "",
-    financing_terms: (data.financing_terms as string) ?? "",
     warranty_description: (data.warranty_description as string) ?? "",
     emergency_available: (data.emergency_available as boolean) ?? false,
     emergency_description: (data.emergency_description as string) ?? "",
     custom_faqs: Array.isArray(data.custom_faqs) ? (data.custom_faqs as Array<{ q: string; a: string }>) : [],
     differentiators: (data.differentiators as string) ?? "",
     team_description: (data.team_description as string) ?? "",
-    payment_methods: Array.isArray(data.payment_methods) ? (data.payment_methods as string[]).join(", ") : "",
-    current_promotions: (data.current_promotions as string) ?? "",
+    payment_methods: Array.isArray(data.payment_methods) ? (data.payment_methods as string[]) : [],
     referral_program: (data.referral_program as string) ?? "",
   };
 }
 
 function prepareForDb(c: ChatbotConfigState) {
-  const rawLow = c.price_range_low.replace(/[^0-9]/g, "");
-  const rawHigh = c.price_range_high.replace(/[^0-9]/g, "");
-  let priceLow = rawLow ? Math.max(0, Math.min(parseInt(rawLow, 10) || 0, 999999)) : null;
-  let priceHigh = rawHigh ? Math.max(0, Math.min(parseInt(rawHigh, 10) || 0, 999999)) : null;
-  if (priceLow && priceHigh && priceLow > priceHigh) [priceLow, priceHigh] = [priceHigh, priceLow];
   return {
     greeting_message: c.greeting_message.trim() || null,
-    price_range_low: priceLow || null,
-    price_range_high: priceHigh || null,
     offers_free_inspection: c.offers_free_inspection,
-    typical_timeline_days: c.typical_timeline_days.trim() || null,
     materials_brands: c.materials_brands.trim()
       ? c.materials_brands.split(",").map((s) => s.trim()).filter(Boolean)
       : null,
@@ -161,25 +145,15 @@ function prepareForDb(c: ChatbotConfigState) {
     does_insurance_work: c.does_insurance_work,
     insurance_description: c.insurance_description.trim() || null,
     financing_provider: c.financing_provider.trim() || null,
-    financing_terms: c.financing_terms.trim() || null,
     warranty_description: c.warranty_description.trim() || null,
     emergency_available: c.emergency_available,
     emergency_description: c.emergency_description.trim() || null,
     custom_faqs: c.custom_faqs.filter((f) => f.q.trim() || f.a.trim()),
     differentiators: c.differentiators.trim() || null,
     team_description: c.team_description.trim() || null,
-    payment_methods: c.payment_methods.trim()
-      ? c.payment_methods.split(",").map((s) => s.trim()).filter(Boolean)
-      : null,
-    current_promotions: c.current_promotions.trim() || null,
+    payment_methods: c.payment_methods.length > 0 ? c.payment_methods : null,
     referral_program: c.referral_program.trim() || null,
   };
-}
-
-function formatPrice(val: string): string {
-  const digits = val.replace(/[^0-9]/g, "");
-  if (!digits) return "";
-  return parseInt(digits, 10).toLocaleString();
 }
 
 // ------- Main Tab -------
@@ -239,7 +213,7 @@ export function RileyTab() {
   async function handleToggleEnabled(next: boolean) {
     if (!contractorId) return;
     if (next && countCoreFields(config) < MIN_CORE_FIELDS_TO_ENABLE) {
-      setErr(`Fill ${MIN_CORE_FIELDS_TO_ENABLE} of 4 core fields before turning Riley on.`);
+      setErr(`Fill ${MIN_CORE_FIELDS_TO_ENABLE} core fields before turning Riley on.`);
       setTimeout(() => setErr(""), 4000);
       return;
     }
@@ -293,7 +267,7 @@ export function RileyTab() {
 
   const progressMessage =
     coreCount === 0
-      ? "Start with pricing and timeline — Riley needs the basics."
+      ? "Start with materials and your process — Riley needs the basics."
       : coreCount < MIN_CORE_FIELDS_TO_ENABLE
       ? `${MIN_CORE_FIELDS_TO_ENABLE - coreCount} more core field${MIN_CORE_FIELDS_TO_ENABLE - coreCount > 1 ? "s" : ""} needed before turning Riley on.`
       : completionPct < 60
@@ -301,6 +275,8 @@ export function RileyTab() {
       : completionPct < 100
       ? "Almost there — custom FAQs make Riley unbeatable."
       : "Riley is fully trained.";
+
+  const progressGradient = "linear-gradient(90deg, #ef4444 0%, #f97316 50%, #f59e0b 100%)";
 
   const embedCode = `<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}"></script>`;
   const chatPageUrl = `https://ruufpro.com/chat/${contractorId}`;
@@ -354,7 +330,7 @@ export function RileyTab() {
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-wide neu-muted">Training Progress</span>
             <div className="flex items-center gap-3 text-[11px]">
-              <span className="neu-muted">Core {coreCount}/4</span>
+              <span className="neu-muted">Core {coreCount}/2</span>
               <span className="font-bold" style={{ color: "var(--neu-accent)" }}>{completionPct}%</span>
             </div>
           </div>
@@ -363,7 +339,7 @@ export function RileyTab() {
               className="h-full transition-all duration-500"
               style={{
                 width: `${completionPct}%`,
-                background: "var(--neu-accent)",
+                background: progressGradient,
                 borderRadius: 999,
               }}
             />
@@ -389,26 +365,14 @@ export function RileyTab() {
       {/* Collapsibles */}
       <CollapsibleNeu
         number={1}
-        title="Pricing & Services"
+        title="Services & Process"
         subtitle="Core fields — Riley needs these"
         icon={<DollarSign className="h-4 w-4" />}
         open={openSection === 1}
         onToggle={() => setOpenSection(openSection === 1 ? null : 1)}
-        badge={coreCount >= 2 ? "ready" : "needs-work"}
+        badge={coreCount >= MIN_CORE_FIELDS_TO_ENABLE ? "ready" : "needs-work"}
       >
         <div className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
-              Typical project price range
-            </label>
-            <div className="flex items-center gap-2">
-              <PriceInput value={config.price_range_low} onChange={(v) => update("price_range_low", v)} placeholder="5,000" />
-              <span className="text-[12px] neu-muted">to</span>
-              <PriceInput value={config.price_range_high} onChange={(v) => update("price_range_high", v)} placeholder="25,000" />
-            </div>
-            <p className="mt-1 text-[11px] neu-muted">Riley will say &quot;projects typically range from $X to $Y&quot;</p>
-          </div>
-
           <NeuToggle
             checked={config.offers_free_inspection}
             onChange={(v) => update("offers_free_inspection", v)}
@@ -416,15 +380,8 @@ export function RileyTab() {
           />
 
           <NeuInput
-            label="Typical project timeline"
-            placeholder="Most jobs done in 1-3 days, repairs same-day"
-            value={config.typical_timeline_days}
-            onChange={(e) => update("typical_timeline_days", e.target.value)}
-          />
-
-          <NeuInput
-            label="Materials & brands"
-            hint="Separate with commas"
+            label="Brands you install or are certified in"
+            hint="Separate with commas. Riley references these when homeowners ask about materials."
             placeholder="GAF Timberline HDZ, Owens Corning Duration"
             value={config.materials_brands}
             onChange={(e) => update("materials_brands", e.target.value)}
@@ -434,11 +391,19 @@ export function RileyTab() {
             label="Your roofing process"
             rows={3}
             maxLength={MAX_TEXT_LENGTH}
-            placeholder="1. Free inspection  2. Written estimate  3. Schedule install  4. Roof day  5. Walkthrough"
+            placeholder="1. Free on-site inspection  2. Detailed written estimate  3. Material selection & scheduling  4. Tear-off and installation  5. Full-site cleanup & magnet sweep  6. Final walkthrough with the owner"
             value={config.process_steps}
             onChange={(e) => update("process_steps", e.target.value)}
             hint={`${config.process_steps.length}/${MAX_TEXT_LENGTH}`}
           />
+
+          <div
+            className="neu-inset px-3.5 py-3 text-[11px] leading-relaxed"
+            style={{ color: "var(--neu-text-muted)", borderRadius: 10 }}
+          >
+            <strong style={{ color: "var(--neu-text)" }}>Why no pricing or timeline fields?</strong>
+            {" "}Any specific number Riley states can legally bind us as a quote. Riley is trained to always redirect pricing and timeline questions to a free inspection — which protects you and wins more jobs.
+          </div>
         </div>
       </CollapsibleNeu>
 
@@ -470,15 +435,10 @@ export function RileyTab() {
 
           <NeuInput
             label="Financing provider"
+            hint="Riley will mention the provider and direct homeowners to your team for current rates and terms."
             placeholder="Acorn Finance, GreenSky, Hearth"
             value={config.financing_provider}
             onChange={(e) => update("financing_provider", e.target.value)}
-          />
-          <NeuInput
-            label="Financing terms"
-            placeholder="0% APR for 18 months, loans up to $100K"
-            value={config.financing_terms}
-            onChange={(e) => update("financing_terms", e.target.value)}
           />
           <NeuTextarea
             label="Warranty details"
@@ -580,24 +540,46 @@ export function RileyTab() {
             label="About your team"
             rows={2}
             maxLength={MAX_TEXT_LENGTH}
-            placeholder="Owner-operated by Mike (25 years), 5 W-2 crews, OSHA-10 certified"
+            placeholder="Locally owned. Same crew on every job — no subs, no surprises. You'll meet the owner at your inspection."
             value={config.team_description}
             onChange={(e) => update("team_description", e.target.value)}
             hint={`${config.team_description.length}/${MAX_TEXT_LENGTH}`}
           />
-          <NeuInput
-            label="Payment methods"
-            hint="Separate with commas"
-            placeholder="Cash, Check, Credit Card, Financing, Zelle"
-            value={config.payment_methods}
-            onChange={(e) => update("payment_methods", e.target.value)}
-          />
-          <NeuInput
-            label="Current promotions"
-            placeholder="10% off for first responders through Dec 2026"
-            value={config.current_promotions}
-            onChange={(e) => update("current_promotions", e.target.value)}
-          />
+
+          <div>
+            <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
+              Payment methods you accept
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {PAYMENT_OPTIONS.map((opt) => {
+                const active = config.payment_methods.includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() =>
+                      update(
+                        "payment_methods",
+                        active
+                          ? config.payment_methods.filter((m) => m !== opt)
+                          : [...config.payment_methods, opt]
+                      )
+                    }
+                    className={`px-3 py-1.5 text-[12px] font-semibold transition ${
+                      active ? "neu-inset-deep" : "neu-flat hover:opacity-90"
+                    }`}
+                    style={{
+                      borderRadius: 999,
+                      color: active ? "var(--neu-accent)" : "var(--neu-text-muted)",
+                    }}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <NeuInput
             label="Referral program"
             placeholder="$250 gift card for every neighbor referral that signs"
@@ -731,33 +713,6 @@ export function RileyTab() {
   );
 }
 
-// ------- Price input -------
-
-function PriceInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div className="relative flex-1">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] neu-muted">$</span>
-      <input
-        type="text"
-        inputMode="numeric"
-        placeholder={placeholder}
-        value={formatPrice(value)}
-        onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
-        className="neu-inset-deep w-full bg-transparent pl-7 pr-3 py-2.5 text-[14px] outline-none"
-        style={{ color: "var(--neu-text)" }}
-      />
-    </div>
-  );
-}
-
 // ------- Collapsible (neu-styled) -------
 
 function CollapsibleNeu({
@@ -860,15 +815,15 @@ function TestRileyModal({
     setLoading(true);
 
     try {
-      const sessionId = `${contractorId}-test-${crypto.randomUUID()}`;
+      const sessionId = `${contractorId}-${crypto.randomUUID()}`;
       const apiMessages = [
-        ...messages.map((m) => ({ role: m.role, content: m.text })),
-        { role: "user" as const, content: text },
+        ...messages.map((m) => ({ role: m.role, parts: [{ type: "text", text: m.text }] })),
+        { role: "user" as const, parts: [{ type: "text", text }] },
       ];
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages, contractorId, sessionId }),
+        body: JSON.stringify({ messages: apiMessages, contractorId, sessionId, testMode: true }),
       });
       if (!res.ok) {
         setMessages((p) => [...p, { role: "assistant", text: "Connection error — Riley will work fine in production." }]);
@@ -876,26 +831,31 @@ function TestRileyModal({
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();
         let full = "";
+        let buffer = "";
         setMessages((p) => [...p, { role: "assistant", text: "" }]);
         if (reader) {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            for (const line of chunk.split("\n")) {
-              if (line.startsWith("0:")) {
-                try {
-                  const t = JSON.parse(line.slice(2));
-                  if (typeof t === "string") {
-                    full += t;
-                    setMessages((p) => {
-                      const next = [...p];
-                      next[next.length - 1] = { role: "assistant", text: full };
-                      return next;
-                    });
-                  }
-                } catch {}
-              }
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split("\n\n");
+            buffer = events.pop() || "";
+            for (const event of events) {
+              const line = event.split("\n").find((l) => l.startsWith("data: "));
+              if (!line) continue;
+              const payload = line.slice(6).trim();
+              if (!payload || payload === "[DONE]") continue;
+              try {
+                const obj = JSON.parse(payload);
+                if (obj.type === "text-delta" && typeof obj.delta === "string") {
+                  full += obj.delta;
+                  setMessages((p) => {
+                    const next = [...p];
+                    next[next.length - 1] = { role: "assistant", text: full };
+                    return next;
+                  });
+                }
+              } catch {}
             }
           }
         }
@@ -908,10 +868,14 @@ function TestRileyModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div
-        className="relative neu-raised flex h-[560px] w-[400px] max-h-[85vh] max-w-[95vw] flex-col overflow-hidden"
-        style={{ borderRadius: 18 }}
+        className="relative flex h-[560px] w-[400px] max-h-[85vh] max-w-[95vw] flex-col overflow-hidden"
+        style={{
+          borderRadius: 18,
+          background: "var(--neu-bg)",
+          boxShadow: "0 24px 60px -12px rgba(0,0,0,0.35), 0 8px 20px -6px rgba(0,0,0,0.15)",
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0" style={{ borderBottom: "1px solid var(--neu-border)" }}>

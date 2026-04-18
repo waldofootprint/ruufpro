@@ -380,7 +380,7 @@ export function ProfileTab() {
       {/* Trust Signals */}
       <SettingsSection
         title="Trust Signals"
-        description="Shown as badges to homeowners. Only toggle on what applies."
+        description="Shown as badges on your demo page, estimates, and preview. Riley also references these when homeowners ask about credentials. Only toggle on what applies to you."
       >
         <div className="space-y-1">
           {TRUST_SIGNALS.map((signal) => (

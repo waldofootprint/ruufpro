@@ -1008,16 +1008,12 @@ export const DEMO_RILEY_ANALYTICS = {
 // ── Chatbot Config (fully trained state) ───────────────────────────────
 
 export const DEMO_CHATBOT_CONFIG = {
-  price_range_low: 8000,
-  price_range_high: 25000,
   offers_free_inspection: true,
-  typical_timeline_days: "5-7 business days for roof replacement; emergency repairs same-day when possible",
   materials_brands: ["GAF Timberline HD", "Owens Corning Duration", "CertainTeed Landmark"],
   process_steps: "1) Free inspection with measurements, 2) Detailed written estimate, 3) Financing options presented, 4) Roof replacement or repair, 5) Final walkthrough & cleanup",
   does_insurance_work: true,
   insurance_description: "We work with all major insurers. Our team will help document damage and file claims.",
   financing_provider: "Sunlight Financial",
-  financing_terms: "0% APR for 12-60 months with approved credit",
   warranty_description: "15-year workmanship warranty on all roofing work. We stand behind everything we install.",
   emergency_available: true,
   emergency_description: "24/7 emergency roofing service for storm damage, leaks, and urgent repairs.",
