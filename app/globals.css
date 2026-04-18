@@ -199,3 +199,127 @@
     @apply font-sans;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   Neumorphic Dashboard System
+   Scoped to .neu-dashboard so it doesn't bleed into marketing/contractor sites.
+   ────────────────────────────────────────────────────────────────────── */
+
+.neu-dashboard {
+  --neu-bg: #e0e2e6;
+  --neu-text: #2d2d2d;
+  --neu-text-muted: #6b7280;
+  --neu-accent: #0d9488;
+  --neu-accent-fg: #ffffff;
+  --neu-shadow-dark: rgba(0, 0, 0, 0.12);
+  --neu-shadow-light: rgba(255, 255, 255, 0.7);
+  --neu-border: rgba(0, 0, 0, 0.04);
+  --neu-inset-dark: rgba(0, 0, 0, 0.08);
+  --neu-inset-light: rgba(255, 255, 255, 0.5);
+
+  background: var(--neu-bg);
+  color: var(--neu-text);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+}
+
+.neu-dashboard.dark {
+  --neu-bg: #2a2a2e;
+  --neu-text: #e5e5e5;
+  --neu-text-muted: #9ca3af;
+  --neu-accent: #f97316;
+  --neu-accent-fg: #ffffff;
+  --neu-shadow-dark: rgba(0, 0, 0, 0.4);
+  --neu-shadow-light: rgba(255, 255, 255, 0.04);
+  --neu-border: rgba(255, 255, 255, 0.04);
+  --neu-inset-dark: rgba(0, 0, 0, 0.3);
+  --neu-inset-light: rgba(255, 255, 255, 0.03);
+
+  background: var(--neu-bg);
+  color: var(--neu-text);
+}
+
+/* Raised card — extruded from the surface */
+.neu-raised {
+  background: var(--neu-bg);
+  border: 1px solid var(--neu-border);
+  border-radius: 16px;
+  box-shadow:
+    6px 6px 14px var(--neu-shadow-dark),
+    -6px -6px 14px var(--neu-shadow-light);
+  transition: box-shadow 0.2s ease;
+}
+
+.neu-raised:hover {
+  box-shadow:
+    8px 8px 18px var(--neu-shadow-dark),
+    -8px -8px 18px var(--neu-shadow-light);
+}
+
+/* Flat raised — subtle extrusion for smaller elements */
+.neu-flat {
+  background: var(--neu-bg);
+  border: 1px solid var(--neu-border);
+  border-radius: 12px;
+  box-shadow:
+    3px 3px 8px var(--neu-shadow-dark),
+    -3px -3px 8px var(--neu-shadow-light);
+}
+
+/* Inset — pressed into the surface */
+.neu-inset {
+  background: var(--neu-bg);
+  border: 1px solid var(--neu-border);
+  border-radius: 12px;
+  box-shadow:
+    inset 3px 3px 6px var(--neu-inset-dark),
+    inset -3px -3px 6px var(--neu-inset-light);
+}
+
+/* Deep inset — for input fields and active sidebar items */
+.neu-inset-deep {
+  background: var(--neu-bg);
+  border-radius: 10px;
+  box-shadow:
+    inset 4px 4px 8px var(--neu-inset-dark),
+    inset -4px -4px 8px var(--neu-inset-light);
+}
+
+/* Accent button — raised with teal/orange fill */
+.neu-accent-btn {
+  background: var(--neu-accent);
+  color: var(--neu-accent-fg);
+  border: none;
+  border-radius: 12px;
+  box-shadow:
+    4px 4px 10px var(--neu-shadow-dark),
+    -2px -2px 6px var(--neu-shadow-light);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.neu-accent-btn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    5px 5px 14px var(--neu-shadow-dark),
+    -3px -3px 8px var(--neu-shadow-light);
+}
+
+.neu-accent-btn:active {
+  transform: translateY(0);
+  box-shadow:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.15),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.05);
+}
+
+/* Text overrides inside neumorphic dashboard */
+.neu-dashboard .neu-muted {
+  color: var(--neu-text-muted);
+}
+
+/* Heat score badge — circle with neumorphic extrusion */
+.neu-score {
+  background: var(--neu-bg);
+  border-radius: 12px;
+  box-shadow:
+    3px 3px 6px var(--neu-shadow-dark),
+    -3px -3px 6px var(--neu-shadow-light);
+}

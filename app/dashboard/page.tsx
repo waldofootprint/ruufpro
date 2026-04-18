@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useDashboard } from "./DashboardContext";
 import { supabase } from "@/lib/supabase";
 import { calculateHeatScore } from "@/lib/heat-score";
+import { detectIntent, type ChatMessage } from "@/lib/intent-detection";
 import { StatCard, StatCardGrid } from "@/components/dashboard/stat-cards";
 import { LeadList, type LeadWithDetails } from "@/components/dashboard/lead-list";
 import StormAlertBanner from "@/components/dashboard/StormAlertBanner";
@@ -63,41 +64,97 @@ export default function DashboardHome() {
       chatByLead.get(c.lead_id)!.push(c);
     });
 
+    // Fetch widget events for all leads in one query
+    const { data: widgetEvents } = await supabase
+      .from("widget_events")
+      .select("lead_id, event_type, metadata, created_at")
+      .eq("contractor_id", contractorId)
+      .in("lead_id", leadIds.length > 0 ? leadIds : ["__none__"])
+      .order("created_at", { ascending: false });
+
+    // Group widget events by lead
+    const eventsByLead = new Map<string, typeof widgetEvents>();
+    widgetEvents?.forEach((e) => {
+      if (!e.lead_id) return;
+      if (!eventsByLead.has(e.lead_id)) eventsByLead.set(e.lead_id, []);
+      eventsByLead.get(e.lead_id)!.push(e);
+    });
+
     // Build enriched leads
     const enriched: LeadWithDetails[] = rawLeads.map((lead) => {
       const pd = lead.property_data_cache;
       const leadChats = chatByLead.get(lead.id) || [];
       const latestChat = leadChats[0];
+      const leadEvents = eventsByLead.get(lead.id) || [];
 
-      // Parse chat messages
-      let chatMessages: { role: string; content: string }[] = [];
+      // Parse chat messages + run intent detection
+      let chatMessages: ChatMessage[] = [];
       let chatStage = "unknown";
       let chatTopics: string[] = [];
+      let chatDepthTier: string | undefined;
       if (latestChat?.messages) {
         try {
           const msgs = typeof latestChat.messages === "string" ? JSON.parse(latestChat.messages) : latestChat.messages;
           if (Array.isArray(msgs)) {
-            chatMessages = msgs.filter((m: any) => m.role && m.content).slice(-5);
+            chatMessages = msgs.filter((m: any) => m.role && (m.content || m.parts));
           }
         } catch {}
       }
+
+      // Run intent detection on full conversation
+      if (chatMessages.length > 0) {
+        const intent = detectIntent(chatMessages);
+        chatStage = intent.stage;
+        chatTopics = intent.questionTypes;
+        // Map stage to chat depth tier
+        if (intent.stage === "decision" || intent.stage === "close") {
+          chatDepthTier = "high_intent";
+        } else if (intent.stage === "consideration") {
+          chatDepthTier = "engaged";
+        } else if (chatMessages.filter(m => m.role === "user").length > 0) {
+          chatDepthTier = "browsing";
+        }
+      }
+
+      // Aggregate widget events
+      const viewEvents = leadEvents.filter(
+        (e) => e.event_type === "widget_view" || e.event_type === "living_estimate_view"
+      );
+      const materialEvents = leadEvents.filter((e) => e.event_type === "material_switch");
+      const priceEvents = leadEvents.filter((e) => e.event_type === "price_adjustment");
+
+      const widgetViews = viewEvents.length;
+      const lastViewAt = viewEvents[0]?.created_at || null;
+      const materialSwitches = materialEvents.length;
+      const priceAdjustments = priceEvents.length;
+
+      // Extract unique materials compared
+      const materialsCompared = Array.from(
+        new Set(
+          materialEvents.flatMap((e) => {
+            const meta = e.metadata as any;
+            return [meta?.previous_material, meta?.new_material].filter(Boolean);
+          })
+        )
+      );
 
       // Calculate most recent activity
       const activityDates = [
         lead.created_at,
         lead.contacted_at,
         latestChat?.updated_at,
+        lastViewAt,
       ].filter(Boolean) as string[];
       const lastActivity = activityDates.length > 0
         ? activityDates.reduce((a, b) => (new Date(a) > new Date(b) ? a : b))
         : lead.created_at;
 
-      // Heat score
+      // Heat score — now with real widget data
       const { score } = calculateHeatScore({
-        widgetViews: 0, // TODO: wire up when widget_events table exists
-        lastViewAt: null,
-        materialSwitches: 0,
-        chatDepthTier: chatMessages.length > 10 ? "high_intent" : chatMessages.length > 4 ? "engaged" : chatMessages.length > 0 ? "browsing" : null,
+        widgetViews,
+        lastViewAt,
+        materialSwitches,
+        chatDepthTier: chatDepthTier || null,
         lastActivityAt: lastActivity,
         estimateHigh: lead.estimate_high,
         homeValue: pd?.estimated_value,
@@ -121,22 +178,36 @@ export default function DashboardHome() {
       if (pd?.in_replacement_window) {
         alerts.push({ type: "replacement", label: "Replacement window" });
       }
+      if (widgetViews >= 4) {
+        alerts.push({ type: "hot_activity", label: `Viewed ${widgetViews}x` });
+      }
+
+      // Display-ready chat messages (last 5 for preview)
+      const previewMessages = chatMessages
+        .filter((m: any) => m.role && (m.content || m.parts))
+        .slice(-5)
+        .map((m: any) => ({
+          role: m.role,
+          content: m.content || m.parts?.filter((p: any) => p.type === "text").map((p: any) => p.text).join("") || "",
+        }));
 
       return {
         ...lead,
         heatScore: score,
         propertyData: pd || undefined,
-        chatPreview: latestChat ? {
-          messages: chatMessages,
+        chatPreview: chatMessages.length > 0 ? {
+          messages: previewMessages,
           stage: chatStage,
-          messageCount: chatMessages.length,
+          messageCount: chatMessages.filter(m => m.role === "user").length,
           topics: chatTopics,
         } : undefined,
         signals: {
-          widgetViews: 0,
-          materialSwitches: 0,
-          chatDepthTier: chatMessages.length > 10 ? "high_intent" : chatMessages.length > 4 ? "engaged" : chatMessages.length > 0 ? "browsing" : undefined,
-          priceAdjustments: 0,
+          widgetViews,
+          lastViewAt: lastViewAt || undefined,
+          materialSwitches,
+          materialsCompared: materialsCompared.length > 0 ? materialsCompared : undefined,
+          chatDepthTier,
+          priceAdjustments,
         },
         alerts,
       };
@@ -144,6 +215,25 @@ export default function DashboardHome() {
 
     setLeads(enriched);
     setLoading(false);
+  }
+
+  async function handleStatusChange(leadId: string, newStatus: string) {
+    // Optimistic update
+    setLeads((prev) =>
+      prev.map((l) => (l.id === leadId ? { ...l, status: newStatus as any } : l))
+    );
+
+    const { error } = await supabase
+      .from("leads")
+      .update({ status: newStatus })
+      .eq("id", leadId)
+      .eq("contractor_id", contractorId);
+
+    if (error) {
+      console.error("Failed to update status:", error);
+      // Revert on failure
+      loadLeads();
+    }
   }
 
   // Computed stats
@@ -189,10 +279,10 @@ export default function DashboardHome() {
     <div className="max-w-[1200px] mx-auto space-y-6">
       {/* Greeting */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-1">
-          Hello, {firstName} 👋
+        <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: "var(--neu-text)" }}>
+          Hello, {firstName}
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm neu-muted">
           {leads.length > 0
             ? `You have ${leads.length} lead${leads.length !== 1 ? "s" : ""} · ${hotLeads} hot · $${(pipelineValue / 1000).toFixed(0)}K pipeline`
             : "Your pipeline is empty — leads will show up here as homeowners engage."}
@@ -233,7 +323,7 @@ export default function DashboardHome() {
       <StormAlertBanner contractorId={contractorId} />
 
       {/* Lead List */}
-      <LeadList leads={leads} />
+      <LeadList leads={leads} onStatusChange={handleStatusChange} />
     </div>
   );
 }

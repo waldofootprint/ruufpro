@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { DashboardProvider, useDashboard } from "./DashboardContext";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +18,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const { businessName, newLeadCount, tier, loading } = useDashboard();
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Persist dark mode preference
+  useEffect(() => {
+    const saved = localStorage.getItem("ruufpro-dashboard-dark");
+    if (saved === "true") setDarkMode(true);
+  }, []);
+
+  function toggleDarkMode() {
+    setDarkMode((prev) => {
+      localStorage.setItem("ruufpro-dashboard-dark", String(!prev));
+      return !prev;
+    });
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -25,22 +40,24 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="neu-dashboard flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-current/20 border-t-current" style={{ color: "var(--neu-accent)" }} />
+          <p className="neu-muted text-sm">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className={cn("neu-dashboard flex min-h-screen", darkMode && "dark")}>
       <DashboardSidebar
         businessName={businessName}
         tier={tier}
         newLeadCount={newLeadCount}
         onLogout={handleLogout}
+        darkMode={darkMode}
+        onToggleDark={toggleDarkMode}
       />
 
       {/* Main content */}
