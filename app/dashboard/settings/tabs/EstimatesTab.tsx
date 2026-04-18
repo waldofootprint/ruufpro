@@ -37,10 +37,10 @@ const MATERIALS = [
 const BUFFERS = [0, 5, 10, 15, 20] as const;
 const SURGE_MULTIPLIERS = ["1.10", "1.15", "1.20", "1.25", "1.35"] as const;
 const SURGE_DURATIONS = [
-  { val: "3", label: "3 days" },
-  { val: "7", label: "1 week" },
-  { val: "14", label: "2 weeks" },
-  { val: "30", label: "30 days" },
+  { value: "3", label: "3 days" },
+  { value: "7", label: "1 week" },
+  { value: "14", label: "2 weeks" },
+  { value: "30", label: "30 days" },
 ] as const;
 
 interface Addon {
@@ -446,7 +446,7 @@ export function EstimatesTab() {
                 Duration
               </label>
               <PillGroup
-                options={[...SURGE_DURATIONS] as { value: string; label: string }[]}
+                options={SURGE_DURATIONS.map((d) => ({ value: d.value, label: d.label }))}
                 value={surgeDurationDays}
                 onChange={setSurgeDurationDays}
               />
