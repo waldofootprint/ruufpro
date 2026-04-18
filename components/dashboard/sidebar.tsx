@@ -39,9 +39,9 @@ const MAIN_NAV = [
 ];
 
 const TOOL_NAV = [
-  { href: "/dashboard/chatbot", label: "Riley Chat", icon: MessageSquare },
-  { href: "/dashboard/estimate-settings", label: "Estimates", icon: Calculator },
-  { href: "/dashboard/reviews", label: "Reviews", icon: Star },
+  { href: "/dashboard/settings?tab=riley", label: "Riley Chat", icon: MessageSquare },
+  { href: "/dashboard/settings?tab=estimates", label: "Estimates", icon: Calculator },
+  { href: "/dashboard/settings?tab=reviews", label: "Reviews", icon: Star },
 ];
 
 const ACCOUNT_NAV = [
