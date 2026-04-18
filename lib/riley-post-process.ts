@@ -64,6 +64,26 @@ const PROJECTED_SKEPTICISM: { pattern: RegExp; replacement: string }[] = [
   { pattern: /you might be (?:asking yourself|thinking|wondering)[^.!?]*/gi, replacement: "The estimate is satellite-based — a free inspection gets the final cost dialed in" },
 ];
 
+// ── Timeline overpromise (banned everywhere) ──────────────────────────────
+// Riley #21: specific timelines = binding-quote liability (Air Canada precedent).
+// Catch numeric ranges, "few days/weeks", "a week or two" — replace with hedge.
+// Sentence-level strip: if a sentence contains a concrete timeframe, drop the
+// number clause and keep the factors language.
+const TIMELINE_SPECIFIC: RegExp[] = [
+  // Range: "2 to 5 days", "1-3 weeks", "a few days to a week", "few to several days"
+  /(?:a\s+few|a\s+couple\s+of|several|\d+)\s*(?:days?|weeks?|months?)?\s*(?:to|up\s+to|[-–])\s*(?:a\s+few|a\s+couple\s+of|several|\d+)\s*(?:days?|weeks?|months?)/i,
+  // "a day or two" / "a week or two" / "a month or two"
+  /a\s+(?:day|week|month)\s+or\s+two/i,
+  // "takes X days/weeks" / "take 3 days" / "takes a few days"
+  /(?:takes?|take|taking|lasts?|lasting|run|runs|running)\s+(?:about\s+|around\s+|roughly\s+|typically\s+|usually\s+|only\s+)?(?:a\s+few|a\s+couple\s+of|several|\d+)\s*(?:days?|weeks?|months?)/i,
+  // "usually/typically/most X days"
+  /(?:usually|typically|most|generally|normally|often)\s+(?:a\s+few|a\s+couple\s+of|several|\d+)\s*(?:days?|weeks?|months?)/i,
+  // Bare "in X days/weeks" / "within 3 days"
+  /(?:in|within|over)\s+(?:a\s+few|a\s+couple\s+of|several|\d+)\s*(?:days?|weeks?|months?)/i,
+];
+
+const TIMELINE_HEDGE = "timing really depends on roof size, weather, and materials — a free inspection gets you a window specific to your roof";
+
 // ── Estimate accuracy overpromise (banned everywhere) ──────────────────────
 // The satellite estimate is a BALLPARK RANGE, never "exact" or "precise" numbers.
 const ESTIMATE_OVERPROMISE: { pattern: RegExp; replacement: string }[] = [
@@ -143,6 +163,9 @@ export function postProcessRileyResponse(
 
   // 5. Replace estimate overpromise language
   result = fixEstimateOverpromise(result);
+
+  // 5b. Strip specific timeline claims (Riley #21)
+  result = fixTimelineOverpromise(result);
 
   // 6. Fix ALL CAPS words (except whitelisted acronyms)
   result = fixAllCaps(result);
@@ -243,6 +266,29 @@ function fixEstimateOverpromise(text: string): string {
     result = result.replace(pattern, replacement);
   }
   return result;
+}
+
+function fixTimelineOverpromise(text: string): string {
+  const sentences = splitSentences(text);
+  if (sentences.length === 0) return text;
+
+  let hedgeAdded = false;
+  const kept: string[] = [];
+
+  for (const sentence of sentences) {
+    const hasLeak = TIMELINE_SPECIFIC.some((p) => p.test(sentence));
+    if (!hasLeak) {
+      kept.push(sentence);
+      continue;
+    }
+    // Drop the offending sentence; inject hedge once per response
+    if (!hedgeAdded) {
+      kept.push(TIMELINE_HEDGE.charAt(0).toUpperCase() + TIMELINE_HEDGE.slice(1) + ".");
+      hedgeAdded = true;
+    }
+  }
+
+  return kept.join(" ");
 }
 
 function fixAllCaps(text: string): string {
