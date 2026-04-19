@@ -118,13 +118,29 @@ export async function POST(request: NextRequest) {
 
     const preCoords = lat && lng ? { lat, lng } : undefined;
     const [roofResult, weatherSurge] = await Promise.all([
-      address ? getRoofData(address, preCoords) : Promise.resolve({ data: null }),
+      address ? getRoofData(address, preCoords) : Promise.resolve({ data: null, invalid: undefined as string | undefined }),
       getWeatherSurge(lat, lng),
     ]);
 
     roofData = roofResult.data;
     if (roofData) {
       geometry = inferRoofGeometry(roofData);
+    }
+
+    // Geocoding sanity: reject non-residential place types (park, bare
+    // route, intersection, commercial POIs) before running cost/guardrail.
+    if (roofResult.invalid) {
+      console.warn(
+        `[estimate] geocode rejected (${roofResult.invalid}) for "${address}"`
+      );
+      return NextResponse.json(
+        {
+          error:
+            "That address doesn't look like a residential property we can measure from satellite. Please double-check the address or contact us for a manual quote.",
+          error_code: "couldnt_measure_accurately",
+        },
+        { status: 422 }
+      );
     }
 
     // Step 3: Determine which materials the contractor has priced

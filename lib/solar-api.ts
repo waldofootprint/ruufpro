@@ -46,6 +46,48 @@ interface GeoResult {
   lat: number;
   lng: number;
   formattedAddress: string;
+  types: string[];
+  hasStreetNumber: boolean;
+  locationType: string; // ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE
+}
+
+// Place types we won't burn a Solar API call on — park, intersection, routes
+// without street numbers, etc. Returns a reason string when invalid, null
+// when the address looks residential-enough to measure.
+function validateResidentialPlace(g: GeoResult): string | null {
+  const REJECT = new Set([
+    "park",
+    "intersection",
+    "route", // "123 Main St" routes have street_address; a bare "Main St" becomes route-only
+    "natural_feature",
+    "airport",
+    "cemetery",
+    "church",
+    "school",
+    "university",
+    "hospital",
+    "shopping_mall",
+    "stadium",
+  ]);
+  const ACCEPT = new Set([
+    "street_address",
+    "premise",
+    "subpremise",
+    "residential",
+    "rooftop",
+  ]);
+
+  const hasAccept = g.types.some((t) => ACCEPT.has(t));
+  const hasReject = g.types.some((t) => REJECT.has(t));
+
+  if (hasReject && !hasAccept) {
+    return `non_residential_place:${g.types.slice(0, 3).join(",")}`;
+  }
+  // Pure route/intersection geocodes come back with types like ["route"] only
+  if (!hasAccept && !g.hasStreetNumber && g.locationType !== "ROOFTOP") {
+    return `no_street_number:${g.types.slice(0, 3).join(",") || "unknown"}`;
+  }
+  return null;
 }
 
 async function geocodeAddress(address: string): Promise<GeoResult | null> {
@@ -62,10 +104,16 @@ async function geocodeAddress(address: string): Promise<GeoResult | null> {
   }
 
   const result = data.results[0];
+  const hasStreetNumber = (result.address_components || []).some(
+    (c: { types: string[] }) => c.types.includes("street_number")
+  );
   return {
     lat: result.geometry.location.lat,
     lng: result.geometry.location.lng,
     formattedAddress: result.formatted_address,
+    types: result.types || [],
+    hasStreetNumber,
+    locationType: result.geometry?.location_type || "APPROXIMATE",
   };
 }
 
@@ -205,7 +253,11 @@ async function callSolarAPI(
 export async function getRoofData(
   address: string,
   preCoords?: { lat: number; lng: number }
-): Promise<{ data: RoofData | null; geocoded: GeoResult | null }> {
+): Promise<{
+  data: RoofData | null;
+  geocoded: GeoResult | null;
+  invalid?: string;
+}> {
   // Step 1: Check cache
   const addressHash = hashAddress(address);
   const cached = await getCachedRoofData(addressHash);
@@ -213,10 +265,28 @@ export async function getRoofData(
     return { data: cached, geocoded: null };
   }
 
-  // Step 2: Use pre-resolved coords or geocode the address
-  const geo = preCoords
-    ? { lat: preCoords.lat, lng: preCoords.lng, formattedAddress: address }
-    : await geocodeAddress(address);
+  // Step 2: Use pre-resolved coords or geocode the address. When we geocode
+  // server-side, we also get place types back — reject non-residential hits
+  // before burning a Solar API call on them.
+  let geo: GeoResult | null;
+  if (preCoords) {
+    geo = {
+      lat: preCoords.lat,
+      lng: preCoords.lng,
+      formattedAddress: address,
+      types: [],
+      hasStreetNumber: false,
+      locationType: "ROOFTOP", // trust widget-side Places Autocomplete
+    };
+  } else {
+    geo = await geocodeAddress(address);
+    if (geo) {
+      const invalid = validateResidentialPlace(geo);
+      if (invalid) {
+        return { data: null, geocoded: geo, invalid };
+      }
+    }
+  }
   if (!geo) {
     return { data: null, geocoded: null };
   }
