@@ -219,6 +219,7 @@ export async function POST(request: NextRequest) {
 
       if (sqft < 600) trip = `under_600_sqft:${sqft}`;
       else if (sqft > 10000) trip = `over_10k_sqft:${sqft}`;
+      else if (segs >= 12) trip = `too_many_segments:${segs}segs_${sqft}sqft`;
       else if (segs >= 8) {
         const living = cachedProp?.square_footage || 0;
         if (living > 0 && sqft > living * 1.75) {
