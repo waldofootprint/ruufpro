@@ -218,8 +218,16 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   const isContractorConfigured = rateHigh > 0 && rateLow > 0 && (rateHigh / rateLow) < 1.15;
   const bandPercent = isContractorConfigured ? CONTRACTOR_BAND_PERCENT : DEFAULT_BAND_PERCENT;
 
+  // In BUNDLED MODE the $/sqft rate is already an all-in installed price that
+  // typical waste and typical pitch are baked into. Applying the multipliers on
+  // top double-counts and inflates homeowner-facing prices ~40% vs competitors
+  // like Roofle. In ITEMIZED MODE the rate is material+labor only, so waste and
+  // pitch are legitimate line items.
+  const effectiveWasteFactor = isContractorConfigured ? wasteFactor : 1.0;
+  const effectivePitchMultiplier = isContractorConfigured ? pitchMultiplier : 1.0;
+
   // Material cost at midpoint (area × waste × $/sqft)
-  const materialSqft = roofAreaSqft * wasteFactor;
+  const materialSqft = roofAreaSqft * effectiveWasteFactor;
   const materialCost = materialSqft * rateMid;
 
   // --- BUNDLED vs ITEMIZED MODE ---
@@ -273,10 +281,11 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   }
 
   // Pitch multiplier applies to labor-intensive costs (material install + tear-off)
-  // Accessories and penetrations are less affected by pitch
-  const pitchAdjustedMaterial = materialCost * pitchMultiplier;
-  const pitchAdjustedTearoff = tearoffCost * pitchMultiplier;
-  const pitchAdjustedPenetrations = effectivePenetrationCost * pitchMultiplier;
+  // Accessories and penetrations are less affected by pitch.
+  // Skipped in bundled mode — see effectivePitchMultiplier note above.
+  const pitchAdjustedMaterial = materialCost * effectivePitchMultiplier;
+  const pitchAdjustedTearoff = tearoffCost * effectivePitchMultiplier;
+  const pitchAdjustedPenetrations = effectivePenetrationCost * effectivePitchMultiplier;
 
   // Subtotal before overhead
   const subtotal = pitchAdjustedMaterial + accessoryCost + pitchAdjustedTearoff + pitchAdjustedPenetrations;
@@ -298,8 +307,8 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
     breakdown: {
       materialCostLow: Math.round(materialCost),
       materialCostHigh: Math.round(materialCost), // same — midpoint-based now
-      pitchMultiplier,
-      wasteFactor,
+      pitchMultiplier: effectivePitchMultiplier,
+      wasteFactor: effectiveWasteFactor,
       bufferPercent: bandPercent,
       accessoryCost: Math.round(accessoryCost),
       tearoffCost: Math.round(tearoffCost),
