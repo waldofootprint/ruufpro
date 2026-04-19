@@ -1,0 +1,136 @@
+#!/usr/bin/env node
+// V4 regression harness — hits /api/estimate with the bench set and writes
+// CSV results. Reusable across Mode A / Mode C / future calibrations.
+//
+// Usage:
+//   node scripts/bench-v4.mjs                       # prod (ruufpro.com)
+//   node scripts/bench-v4.mjs --base http://...     # custom base URL
+//   node scripts/bench-v4.mjs --out .tmp/foo.csv    # custom output path
+//   node scripts/bench-v4.mjs --input scripts/bench-addresses.json
+//
+// Reads bench fixture, POSTs each address to /api/estimate, picks the
+// asphalt-material estimate (apples-to-apples with Roofle Premium Preferred
+// OC Duration), logs CSV with deltas vs Roofle when available.
+
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const argv = process.argv.slice(2);
+function arg(flag, fallback) {
+  const i = argv.indexOf(flag);
+  return i >= 0 ? argv[i + 1] : fallback;
+}
+
+const BASE = arg("--base", "https://ruufpro.com").replace(/\/$/, "");
+const INPUT = arg("--input", path.join(__dirname, "bench-addresses.json"));
+const OUT = arg("--out", path.join(__dirname, "..", ".tmp", "calculator-bench", "v4-bench-BB.csv"));
+
+const fixture = JSON.parse(fs.readFileSync(INPUT, "utf8"));
+const { contractor_id, contractor_label, options, addresses } = fixture;
+
+fs.mkdirSync(path.dirname(OUT), { recursive: true });
+
+const header = [
+  "id", "address", "roofer", "status", "sqft", "num_segs", "is_satellite",
+  "v4_low", "v4_mid", "v4_high",
+  "roofle_low", "roofle_high", "roofle_mid",
+  "delta_mid_pct", "trip_reason", "notes",
+];
+
+const rows = [header.join(",")];
+const deltasRaw = []; // collected in-memory, avoid re-parsing CSV
+
+function csvEscape(v) {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function pct(a, b) {
+  if (!a || !b) return null;
+  return ((a - b) / b) * 100;
+}
+
+console.log(`\nV4 Bench — ${BASE} — contractor=${contractor_label}`);
+console.log(`Options: pitch=${options.pitch_category}, material=${options.current_material}, timeline=${options.timeline}`);
+console.log(`Bench: ${addresses.length} addresses\n`);
+
+for (const row of addresses) {
+  const payload = {
+    contractor_id,
+    address: row.address,
+    pitch_category: options.pitch_category,
+    current_material: options.current_material,
+    shingle_layers: options.shingle_layers,
+    timeline: options.timeline,
+    financing_interest: options.financing_interest,
+  };
+
+  process.stdout.write(`#${row.id} ${row.address} ... `);
+  let res, body;
+  try {
+    res = await fetch(`${BASE}/api/estimate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    body = await res.json();
+  } catch (err) {
+    console.log(`FETCH_ERROR: ${err.message}`);
+    rows.push([row.id, row.address, row.roofer, "fetch_error", "", "", "", "", "", "", row.roofle_low ?? "", row.roofle_high ?? "", "", "", err.message, row.notes].map(csvEscape).join(","));
+    continue;
+  }
+
+  if (!res.ok) {
+    const reason = body?.error_code || body?.error || `http_${res.status}`;
+    console.log(`REFUSED: ${reason}`);
+    rows.push([row.id, row.address, row.roofer, "refused", "", "", "", "", "", "", row.roofle_low ?? "", row.roofle_high ?? "", "", "", reason, row.notes].map(csvEscape).join(","));
+    continue;
+  }
+
+  const asphalt = (body.estimates || []).find((e) => e.material === "asphalt");
+  if (!asphalt) {
+    console.log(`NO_ASPHALT (materials: ${(body.estimates || []).map(e => e.material).join(",")})`);
+    rows.push([row.id, row.address, row.roofer, "no_asphalt", "", "", "", "", "", "", row.roofle_low ?? "", row.roofle_high ?? "", "", "", "", row.notes].map(csvEscape).join(","));
+    continue;
+  }
+
+  const mid = Math.round((asphalt.price_low + asphalt.price_high) / 2);
+  const roofleMid = row.roofle_low && row.roofle_high ? Math.round((row.roofle_low + row.roofle_high) / 2) : null;
+  const deltaPct = roofleMid ? pct(mid, roofleMid) : null;
+
+  console.log(
+    `${asphalt.roof_area_sqft} sqft · $${asphalt.price_low.toLocaleString()}-$${asphalt.price_high.toLocaleString()}` +
+    (deltaPct !== null ? ` · Δ ${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%` : "")
+  );
+
+  rows.push([
+    row.id, row.address, row.roofer, "ok",
+    asphalt.roof_area_sqft, asphalt.num_segments, asphalt.is_satellite,
+    asphalt.price_low, mid, asphalt.price_high,
+    row.roofle_low ?? "", row.roofle_high ?? "", roofleMid ?? "",
+    deltaPct !== null ? deltaPct.toFixed(2) : "",
+    "", row.notes,
+  ].map(csvEscape).join(","));
+  if (deltaPct !== null) deltasRaw.push({ id: row.id, delta: deltaPct });
+}
+
+fs.writeFileSync(OUT, rows.join("\n") + "\n");
+console.log(`\n→ CSV written to ${OUT}`);
+
+// Summary: MAE + max deviation across addresses with roofle_mid
+if (deltasRaw.length) {
+  const abs = deltasRaw.map((d) => Math.abs(d.delta));
+  const mae = abs.reduce((a, b) => a + b, 0) / abs.length;
+  const max = Math.max(...abs);
+  console.log(`\nSummary (vs Roofle midpoint, ${deltasRaw.length} addresses):`);
+  for (const d of deltasRaw) {
+    const sign = d.delta >= 0 ? "+" : "";
+    console.log(`  #${d.id}: ${sign}${d.delta.toFixed(2)}%`);
+  }
+  console.log(`  MAE: ${mae.toFixed(2)}%`);
+  console.log(`  Max: ${max.toFixed(2)}%`);
+  console.log(`  Acceptance: MAE ≤ 5% AND max ≤ 10% — ${mae <= 5 && max <= 10 ? "PASS 🟢" : "FAIL 🟡"}`);
+}

@@ -1,0 +1,61 @@
+{
+  "contractor_id": "df6dd65e-a2b0-4c1a-bbf6-e94deec5dc1f",
+  "contractor_label": "GMR Metal Roofs Florida",
+  "options": {
+    "pitch_category": "moderate",
+    "current_material": "asphalt",
+    "shingle_layers": "not_sure",
+    "timeline": "1-3 months",
+    "financing_interest": "no"
+  },
+  "addresses": [
+    {
+      "id": 1,
+      "address": "10632 Brighton Hill Cir S, Jacksonville, FL 32256",
+      "roofer": "NEXGEN",
+      "roofle_low": 19671,
+      "roofle_high": 21639,
+      "notes": "medium — green pre-BB"
+    },
+    {
+      "id": 2,
+      "address": "1823 Ernest St, Jacksonville, FL 32204",
+      "roofer": "NEXGEN",
+      "roofle_low": 25999,
+      "roofle_high": 28599,
+      "notes": "small Riverside — Mode A brought from -47% to -19.4%"
+    },
+    {
+      "id": 3,
+      "address": "24 Deer Haven Dr, Ponte Vedra, FL 32082",
+      "roofer": "NEXGEN",
+      "roofle_low": 25224,
+      "roofle_high": 27746,
+      "notes": "estate — V4 refuses, Mode B lead written"
+    },
+    {
+      "id": 4,
+      "address": "1807 Tall Pines Dr, Largo, FL 33771",
+      "roofer": "Bay to Bay",
+      "roofle_low": null,
+      "roofle_high": null,
+      "notes": "1,514 sqft Zillow — small Pinellas"
+    },
+    {
+      "id": 5,
+      "address": "2228 Golf Manor Blvd, Valrico, FL 33596",
+      "roofer": "Tampa Bay Roofs",
+      "roofle_low": null,
+      "roofle_high": null,
+      "notes": "2,779 sqft Zillow — watch pool/lanai over-segmentation"
+    },
+    {
+      "id": 6,
+      "address": "19943 Tamiami Ave, Tampa, FL 33647",
+      "roofer": "Tampa Bay Roofs",
+      "roofle_low": null,
+      "roofle_high": null,
+      "notes": "4,188 sqft Zillow — multi-gable stress test"
+    }
+  ]
+}
