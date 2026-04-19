@@ -198,43 +198,108 @@ export async function POST(request: NextRequest) {
     // Build detail display from the first estimate (shared roof data)
     const firstEst = estimates[0];
 
-    // Sanity guardrail (Session AV): reject implausible roof measurements from
-    // Solar API. Three trip conditions (in order of certainty):
+    // Sanity guardrail (Session AV). Three trip conditions:
     //   1. < 600 sqft  — pin off-structure, vacant lot, fragment
     //   2. > 10,000 sqft — neighbor-grab, commercial parcel
-    //   3. > 8 segments AND roof > 2× living_sqft — dense suburbia over-select
-    //      (segment heuristic only fires when cached RentCast data exists;
-    //      cache-only lookup, no new paid API calls)
+    //   3. > 8 segments AND roof > 2× living_sqft — dense-suburbia over-select
+    // When trip fires AND cached RentCast living_sqft exists, synthesize a
+    // bounded estimate from property records instead of returning error.
+    let isFallback = false;
+    let estimatesFinal = estimates;
+    let firstEstFinal = firstEst;
+
     if (firstEst.is_satellite) {
       const sqft = firstEst.roof_area_sqft;
       const segs = firstEst.num_segments || 0;
       let trip: string | null = null;
 
+      const cachedProp = address
+        ? await getCachedProperty(address).catch(() => null)
+        : null;
+
       if (sqft < 600) trip = `under_600_sqft:${sqft}`;
       else if (sqft > 10000) trip = `over_10k_sqft:${sqft}`;
-      else if (segs > 8 && address) {
-        const prop = await getCachedProperty(address).catch(() => null);
-        const living = prop?.square_footage || 0;
+      else if (segs > 8) {
+        const living = cachedProp?.square_footage || 0;
         if (living > 0 && sqft > living * 2) {
           trip = `segment_heuristic:${segs}segs_${sqft}sqft_vs_${living}living`;
         }
       }
 
       if (trip) {
-        console.warn(
-          `[estimate] guardrail tripped (${trip}): address="${address}"`
-        );
-        return NextResponse.json(
-          {
-            error:
-              "We couldn't measure your roof accurately from satellite. Please contact us for a manual quote.",
-            error_code: "couldnt_measure_accurately",
-          },
-          { status: 422 }
-        );
+        const living = cachedProp?.square_footage || 0;
+        // Try fallback synthesis from cached property records
+        if (living > 0 && roofData) {
+          const PITCH_MULT: Record<string, number> = {
+            flat: 1.02,
+            low: 1.10,
+            moderate: 1.20,
+            steep: 1.35,
+          };
+          const pitchMult = PITCH_MULT[pitch_category] || 1.18;
+          const stories = cachedProp?.stories || 0;
+          const storyFactor = stories >= 2 ? 0.55 : 1.0;
+          const synthArea = Math.round(living * storyFactor * pitchMult);
+
+          const synthRoofData = {
+            roofAreaSqft: synthArea,
+            pitchDegrees: roofData.pitchDegrees ?? 22,
+            numSegments: 2,
+            segments: roofData.segments,
+            source: roofData.source,
+          };
+
+          const synthInput = { ...sharedInput, roofData: synthRoofData };
+          estimatesFinal = pricedMaterials
+            .map((mat) => {
+              const result = calculateEstimate({ ...synthInput, material: mat });
+              const display = formatEstimate(result);
+              const meta = MATERIAL_META[mat];
+              return {
+                material: mat,
+                label: meta.label,
+                description: meta.description,
+                warranty: meta.warranty,
+                wind_rating: meta.windRating,
+                lifespan: meta.lifespan,
+                price_low: result.priceLow,
+                price_high: result.priceHigh,
+                range_display: display.range,
+                roof_area_sqft: result.roofAreaSqft,
+                pitch_degrees: result.pitchDegrees,
+                num_segments: result.numSegments,
+                is_satellite: false, // synthesized, not satellite-measured
+                breakdown: result.breakdown,
+                tier: "",
+              };
+            })
+            .sort((a, b) => a.price_low - b.price_low)
+            .map((est, i) => ({ ...est, tier: tierLabels[i] || "Premium" }));
+
+          firstEstFinal = estimatesFinal[0];
+          isFallback = true;
+          console.warn(
+            `[estimate] guardrail tripped (${trip}) → fallback synth: ${synthArea} sqft from ${living} living × ${storyFactor} × ${pitchMult}`
+          );
+        } else {
+          console.warn(
+            `[estimate] guardrail tripped (${trip}) → no cache, rejecting: address="${address}"`
+          );
+          return NextResponse.json(
+            {
+              error:
+                "We couldn't measure your roof accurately from satellite. Please contact us for a manual quote.",
+              error_code: "couldnt_measure_accurately",
+            },
+            { status: 422 }
+          );
+        }
       }
     }
-    const detailDisplay = `Based on ${firstEst.roof_area_sqft.toLocaleString()} sqft roof · ${firstEst.is_satellite ? "satellite-measured" : "estimated"}`;
+
+    const detailDisplay = isFallback
+      ? `Estimated from property records · ${firstEstFinal.roof_area_sqft.toLocaleString()} sqft roof (less precise — satellite view was unclear)`
+      : `Based on ${firstEstFinal.roof_area_sqft.toLocaleString()} sqft roof · ${firstEstFinal.is_satellite ? "satellite-measured" : "estimated"}`;
 
     // Step 5: Return full response
     return NextResponse.json({
