@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getRoofData } from "@/lib/solar-api";
 import { inferRoofGeometry } from "@/lib/roof-geometry";
+import { getCachedProperty } from "@/lib/rentcast-api";
 import {
   calculateEstimate,
   formatEstimate,
@@ -198,14 +199,30 @@ export async function POST(request: NextRequest) {
     const firstEst = estimates[0];
 
     // Sanity guardrail (Session AV): reject implausible roof measurements from
-    // Solar API. Under 600 sqft = pin off-structure / vacant lot / fragment.
-    // Over 10,000 sqft = neighbor-grab or commercial parcel. Returning a bogus
-    // price destroys trust; better to show a clear "contact us" fallback.
+    // Solar API. Three trip conditions (in order of certainty):
+    //   1. < 600 sqft  — pin off-structure, vacant lot, fragment
+    //   2. > 10,000 sqft — neighbor-grab, commercial parcel
+    //   3. > 8 segments AND roof > 2× living_sqft — dense suburbia over-select
+    //      (segment heuristic only fires when cached RentCast data exists;
+    //      cache-only lookup, no new paid API calls)
     if (firstEst.is_satellite) {
       const sqft = firstEst.roof_area_sqft;
-      if (sqft < 600 || sqft > 10000) {
+      const segs = firstEst.num_segments || 0;
+      let trip: string | null = null;
+
+      if (sqft < 600) trip = `under_600_sqft:${sqft}`;
+      else if (sqft > 10000) trip = `over_10k_sqft:${sqft}`;
+      else if (segs > 8 && address) {
+        const prop = await getCachedProperty(address).catch(() => null);
+        const living = prop?.square_footage || 0;
+        if (living > 0 && sqft > living * 2) {
+          trip = `segment_heuristic:${segs}segs_${sqft}sqft_vs_${living}living`;
+        }
+      }
+
+      if (trip) {
         console.warn(
-          `[estimate] guardrail tripped: ${sqft} sqft, ${firstEst.num_segments} segments, address="${address}"`
+          `[estimate] guardrail tripped (${trip}): address="${address}"`
         );
         return NextResponse.json(
           {
