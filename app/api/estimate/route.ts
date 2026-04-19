@@ -196,6 +196,27 @@ export async function POST(request: NextRequest) {
 
     // Build detail display from the first estimate (shared roof data)
     const firstEst = estimates[0];
+
+    // Sanity guardrail (Session AV): reject implausible roof measurements from
+    // Solar API. Under 600 sqft = pin off-structure / vacant lot / fragment.
+    // Over 10,000 sqft = neighbor-grab or commercial parcel. Returning a bogus
+    // price destroys trust; better to show a clear "contact us" fallback.
+    if (firstEst.is_satellite) {
+      const sqft = firstEst.roof_area_sqft;
+      if (sqft < 600 || sqft > 10000) {
+        console.warn(
+          `[estimate] guardrail tripped: ${sqft} sqft, ${firstEst.num_segments} segments, address="${address}"`
+        );
+        return NextResponse.json(
+          {
+            error:
+              "We couldn't measure your roof accurately from satellite. Please contact us for a manual quote.",
+            error_code: "couldnt_measure_accurately",
+          },
+          { status: 422 }
+        );
+      }
+    }
     const detailDisplay = `Based on ${firstEst.roof_area_sqft.toLocaleString()} sqft roof · ${firstEst.is_satellite ? "satellite-measured" : "estimated"}`;
 
     // Step 5: Return full response
