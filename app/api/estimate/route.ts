@@ -245,6 +245,27 @@ export async function POST(request: NextRequest) {
         ]);
       }
 
+      // Story-count pitch conflict: 2-story flat-roof residential is
+      // ~nonexistent in FL. If homeowner picked "flat" or "low" but
+      // property records show 2+ stories, they likely misread the form.
+      const stories = cachedProp?.stories || 0;
+      if (
+        stories >= 2 &&
+        (pitch_category === "flat" || pitch_category === "low")
+      ) {
+        console.warn(
+          `[estimate] pitch conflict: ${stories}-story home with pitch=${pitch_category} at "${address}"`
+        );
+        return NextResponse.json(
+          {
+            error:
+              "The pitch you picked doesn't match what we see for this property. A flat or low-slope roof on a multi-story home is unusual — please re-check the pitch question or contact us for a manual quote.",
+            error_code: "pitch_conflict_recheck",
+          },
+          { status: 422 }
+        );
+      }
+
       if (sqft < 600) trip = `under_600_sqft:${sqft}`;
       else if (sqft > 10000) trip = `over_10k_sqft:${sqft}`;
       else if (segs >= 12) trip = `too_many_segments:${segs}segs_${sqft}sqft`;
