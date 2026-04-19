@@ -175,6 +175,10 @@ export interface Lead {
   estimate_pitch_degrees: number | null;
   estimate_segments: number | null;
 
+  // Mode B (Session AZ): 'measured' = normal satellite path; 'needs_manual_quote'
+  // = guardrail refused measurement, roofer should follow up with on-site quote.
+  measurement_status?: "measured" | "needs_manual_quote" | null;
+
   created_at: string;
 }
 

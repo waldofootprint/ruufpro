@@ -799,7 +799,20 @@ export function LeadList({ leads, onStatusChange }: LeadListProps) {
                   <div className="hidden lg:block" />
 
                   <p className="hidden lg:block text-sm font-semibold" style={{ color: "var(--neu-text)" }}>
-                    {lead.estimate_low && lead.estimate_high
+                    {lead.measurement_status === "needs_manual_quote" ? (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wide"
+                        style={{
+                          background: "rgba(249, 115, 22, 0.12)",
+                          color: "var(--neu-accent)",
+                          letterSpacing: "0.04em",
+                        }}
+                        title="Satellite measurement refused — needs on-site quote"
+                      >
+                        <AlertTriangle className="h-3 w-3" />
+                        On-Site
+                      </span>
+                    ) : lead.estimate_low && lead.estimate_high
                       ? `$${(lead.estimate_low / 1000).toFixed(0)}K – $${(lead.estimate_high / 1000).toFixed(0)}K`
                       : "—"}
                   </p>

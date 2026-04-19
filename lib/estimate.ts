@@ -60,6 +60,12 @@ export interface EstimateInput {
   rates: ContractorRates;
   bufferPercent?: number; // contractor's safety buffer (0-20%)
 
+  // Minimum job price floor. If the computed midpoint comes in below this,
+  // we lift the midpoint to the floor before applying the ±band. Matches how
+  // Roofle handles small roofs (they won't quote a 2,000 sqft roof at $12K
+  // because no roofer will show up to do it for that price).
+  minimumJobPrice?: number;
+
   // Weather surge (from NOAA monitoring, if active)
   weatherSurgeMultiplier?: number;
 }
@@ -291,7 +297,15 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   const subtotal = pitchAdjustedMaterial + accessoryCost + pitchAdjustedTearoff + pitchAdjustedPenetrations;
 
   // Apply weather surge (no overhead markup — rate already includes it)
-  const midEstimate = Math.round(subtotal * weatherSurge);
+  const rawMid = Math.round(subtotal * weatherSurge);
+
+  // Mode A (Session AZ): minimum job price floor. If the contractor has set
+  // a floor and our computed midpoint is below it, lift the midpoint up.
+  // Small roofs that formulaically come in at $13K on a $5.50/sqft rate get
+  // pulled up to the roofer's realistic minimum (e.g. $20K). Applied
+  // before the ±band so the whole range moves together.
+  const floor = input.minimumJobPrice || 0;
+  const midEstimate = floor > 0 && rawMid < floor ? floor : rawMid;
 
   // Apply ±band to get the range
   const priceLow = Math.round(midEstimate * (1 - bandPercent / 100));

@@ -80,6 +80,7 @@ export function EstimatesTab() {
     flat_low: "", flat_high: "",
   });
   const [buffer, setBuffer] = useState(10);
+  const [minJobPrice, setMinJobPrice] = useState("");
   const [serviceZips, setServiceZips] = useState("");
 
   const [surgeEnabled, setSurgeEnabled] = useState(false);
@@ -132,6 +133,7 @@ export function EstimatesTab() {
         });
         setServiceZips(settings.service_zips?.join(", ") || "");
         setBuffer(settings.buffer_percent ?? 10);
+        setMinJobPrice(settings.minimum_job_price?.toString() || "");
         setFinancingEnabled(settings.financing_enabled ?? false);
         setFinancingProvider(settings.financing_provider || "");
         setFinancingTermMonths(settings.financing_term_months?.toString() || "120");
@@ -230,6 +232,7 @@ export function EstimatesTab() {
       flat_high: parseFloat(rates.flat_high) || null,
       service_zips: zipsArray.length > 0 ? zipsArray : null,
       buffer_percent: buffer,
+      minimum_job_price: minJobPrice ? parseFloat(minJobPrice) : null,
       financing_enabled: financingEnabled,
       financing_provider: financingProvider || null,
       financing_term_months: financingTermMonths ? parseInt(financingTermMonths) : null,
@@ -390,6 +393,34 @@ export function EstimatesTab() {
         />
         <p className="text-[11px] neu-muted">
           Example: with +15%, $10,000–$14,000 becomes $10,000–$16,100.
+        </p>
+      </SettingsSection>
+
+      {/* Minimum Job Price */}
+      <SettingsSection
+        title="Minimum Job Price"
+        description="Your smallest complete job price. If the calculator produces a number below this, it rounds up to your minimum. Leave blank to disable."
+      >
+        <div className="relative max-w-[200px]">
+          <span
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px]"
+            style={{ color: "var(--neu-text-muted)" }}
+          >
+            $
+          </span>
+          <input
+            type="number"
+            step="500"
+            min="0"
+            placeholder="20000"
+            value={minJobPrice}
+            onChange={(e) => setMinJobPrice(e.target.value)}
+            className="neu-inset-deep w-full bg-transparent pl-7 pr-3 py-2.5 text-[14px] outline-none"
+            style={{ color: "var(--neu-text)" }}
+          />
+        </div>
+        <p className="text-[11px] neu-muted">
+          Most FL asphalt roofers land $18K–$22K. A small roof that formulas to $13K still needs a crew, dumpster, permit — so it quotes at your floor instead.
         </p>
       </SettingsSection>
 

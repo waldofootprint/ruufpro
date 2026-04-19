@@ -64,6 +64,41 @@ const MATERIAL_META: Record<string, { label: string; warranty: string; windRatin
   },
 };
 
+// Mode B (Session AZ): when a guardrail refuses the measurement, we still
+// write a lead so the roofer can follow up with an on-site quote instead of
+// the homeowner dead-ending at a "contact us" message.
+async function writeManualQuoteLead(
+  supabase: ReturnType<typeof getSupabase>,
+  contractor_id: string,
+  fields: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    timeline?: string;
+    financing_interest?: string;
+    sms_consent?: boolean;
+    trip_reason: string;
+  }
+) {
+  if (!fields.name || !fields.email) return; // require at least name+email
+  const { error } = await supabase.from("leads").insert({
+    contractor_id,
+    name: fields.name,
+    email: fields.email,
+    phone: fields.phone || null,
+    address: fields.address || null,
+    source: "estimate_widget",
+    status: "new",
+    measurement_status: "needs_manual_quote",
+    message: `Satellite measurement refused by guardrail (${fields.trip_reason}). Homeowner needs an on-site quote.`,
+    timeline: fields.timeline || null,
+    financing_interest: fields.financing_interest || null,
+    sms_consent: fields.sms_consent ?? false,
+  });
+  if (error) console.error("[estimate] needs_manual_quote lead insert failed:", error);
+}
+
 export async function POST(request: NextRequest) {
   const supabase = getSupabase();
   try {
@@ -75,6 +110,9 @@ export async function POST(request: NextRequest) {
       timeline, financing_interest,
       material, // optional: if provided, also return a single-material response for backward compat
       lat, lng, // optional: pre-resolved coords from Places API (skips server-side geocoding)
+      // Mode B (Session AZ): contact fields passed up front so we can write a
+      // `needs_manual_quote` lead if a guardrail refuses the measurement.
+      name, email, phone, sms_consent,
     } = body;
 
     if (!contractor_id) {
@@ -133,11 +171,16 @@ export async function POST(request: NextRequest) {
       console.warn(
         `[estimate] geocode rejected (${roofResult.invalid}) for "${address}"`
       );
+      await writeManualQuoteLead(supabase, contractor_id, {
+        name, email, phone, address, timeline, financing_interest, sms_consent,
+        trip_reason: `geocode_${roofResult.invalid}`,
+      });
       return NextResponse.json(
         {
           error:
-            "That address doesn't look like a residential property we can measure from satellite. Please double-check the address or contact us for a manual quote.",
+            "We couldn't get an exact satellite measurement on this roof. Your details were sent over for a free on-site quote.",
           error_code: "couldnt_measure_accurately",
+          measurement_status: "needs_manual_quote",
         },
         { status: 422 }
       );
@@ -171,6 +214,8 @@ export async function POST(request: NextRequest) {
       financingInterest: financing_interest,
       rates,
       bufferPercent: settings.buffer_percent || 0,
+      // Mode A: per-contractor minimum job price floor (Session AZ)
+      minimumJobPrice: settings.minimum_job_price || undefined,
       // Weather surge — only applied when roofer has opted in AND not expired.
       weatherSurgeMultiplier: (() => {
         if (!settings.weather_surge_enabled) return undefined;
@@ -256,6 +301,8 @@ export async function POST(request: NextRequest) {
         console.warn(
           `[estimate] pitch conflict: ${stories}-story home with pitch=${pitch_category} at "${address}"`
         );
+        // No manual-quote lead here — this is a user input error we want them
+        // to correct, not a guardrail refusal.
         return NextResponse.json(
           {
             error:
@@ -349,11 +396,19 @@ export async function POST(request: NextRequest) {
           console.warn(
             `[estimate] guardrail tripped (${trip}) → no cache, rejecting: address="${address}"`
           );
+          // Mode B: write a lead with measurement_status='needs_manual_quote'
+          // so the roofer gets the homeowner in their pipeline instead of
+          // dead-ending them.
+          await writeManualQuoteLead(supabase, contractor_id, {
+            name, email, phone, address, timeline, financing_interest, sms_consent,
+            trip_reason: trip,
+          });
           return NextResponse.json(
             {
               error:
-                "We couldn't measure your roof accurately from satellite. Please contact us for a manual quote.",
+                "We couldn't get an exact satellite measurement on this roof. Your details were sent over for a free on-site quote.",
               error_code: "couldnt_measure_accurately",
+              measurement_status: "needs_manual_quote",
             },
             { status: 422 }
           );

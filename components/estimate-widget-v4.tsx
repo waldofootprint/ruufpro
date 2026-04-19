@@ -333,6 +333,10 @@ export default function EstimateWidgetV4({
 
   // G/B/B estimate results
   const [estimateData, setEstimateData] = useState<EstimateResponse | null>(null);
+  // Mode B (Session AZ): when a guardrail refuses the measurement, the
+  // widget still converts the submission into a needs_manual_quote lead
+  // server-side and shows a confirmation screen instead of dead-ending.
+  const [manualQuote, setManualQuote] = useState<{ contractorName: string } | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [livingEstimateUrl, setLivingEstimateUrl] = useState("");
 
@@ -401,10 +405,25 @@ export default function EstimateWidgetV4({
           current_material: currentMaterial,
           shingle_layers: "not_sure", timeline, financing_interest: financing,
           lat: propertyCoords?.lat, lng: propertyCoords?.lng,
+          // Mode B: server writes a needs_manual_quote lead if a guardrail
+          // refuses the measurement, so contact fields must travel up front.
+          name, email, phone, sms_consent: agreedToSms,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Estimate failed");
+      if (!res.ok) {
+        // Mode B: guardrail refusal. Server has already written a lead with
+        // measurement_status='needs_manual_quote'. Show confirmation screen
+        // instead of dead-ending — DO NOT run the client-side lead insert or
+        // notify flow below (server handles lead; no estimate to attach).
+        if (data.error_code === "couldnt_measure_accurately" && data.measurement_status === "needs_manual_quote") {
+          setManualQuote({ contractorName });
+          setDirection(1);
+          setStep(7);
+          return;
+        }
+        throw new Error(data.error || "Estimate failed");
+      }
       setEstimateData(data);
 
       // Default selection = first (cheapest) material
@@ -1059,8 +1078,26 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
+        {/* ===== STEP 7 (Mode B): Manual-quote confirmation ===== */}
+        {step === 7 && manualQuote && (
+          <div className="space-y-5 py-4 text-center">
+            <p className="text-[12px] font-semibold uppercase" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>
+              Request Received
+            </p>
+            <h2 className="text-[24px] font-bold" style={{ color: C.text, letterSpacing: "-0.025em" }}>
+              We couldn&apos;t get an exact satellite measurement on this roof.
+            </h2>
+            <p className="text-[15px] leading-relaxed" style={{ color: C.textSecondary }}>
+              Your details were sent to <span style={{ color: C.text, fontWeight: 600 }}>{manualQuote.contractorName}</span> for a free on-site quote. They&apos;ll reach out shortly to schedule.
+            </p>
+            <p className="text-[12px]" style={{ color: C.textTertiary }}>
+              Complex roof shapes, trees, or older satellite imagery can make automatic measurement unreliable — an on-site visit gets you an exact number.
+            </p>
+          </div>
+        )}
+
         {/* ===== STEP 7: Good/Better/Best Results ===== */}
-        {step === 7 && estimateData && (
+        {step === 7 && estimateData && !manualQuote && (
           <div className="space-y-5 py-2">
             <div className="text-center">
               <p className="text-[12px] font-semibold uppercase mb-2" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>
