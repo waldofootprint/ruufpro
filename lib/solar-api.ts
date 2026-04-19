@@ -33,6 +33,10 @@ export interface RoofData {
     azimuthDegrees: number; // compass direction the segment faces
   }[];
   source: "google_solar" | "cache";
+  // Confidence signals from Google Solar API (present only on fresh fetches).
+  imageryQuality?: "HIGH" | "MEDIUM" | "LOW";
+  imageryDate?: string; // ISO YYYY-MM-DD when imagery was captured
+  imageryProcessedDate?: string; // ISO YYYY-MM-DD when imagery was processed
 }
 
 // ----- GEOCODING -----
@@ -145,6 +149,17 @@ async function callSolarAPI(
   const solar = data.solarPotential;
   if (!solar?.wholeRoofStats) return null;
 
+  // Confidence signals — imageryQuality is HIGH/MEDIUM/LOW, dates are {year,month,day}
+  const imageryQuality: "HIGH" | "MEDIUM" | "LOW" | undefined = data.imageryQuality;
+  const formatDate = (d: { year?: number; month?: number; day?: number } | undefined) => {
+    if (!d?.year) return undefined;
+    const mm = String(d.month || 1).padStart(2, "0");
+    const dd = String(d.day || 1).padStart(2, "0");
+    return `${d.year}-${mm}-${dd}`;
+  };
+  const imageryDate = formatDate(data.imageryDate);
+  const imageryProcessedDate = formatDate(data.imageryProcessedDate);
+
   const segments = (solar.roofSegmentStats || []).map(
     (seg: {
       stats: { areaMeters2: number };
@@ -178,6 +193,9 @@ async function callSolarAPI(
     numSegments: segments.length,
     segments,
     source: "google_solar",
+    imageryQuality,
+    imageryDate,
+    imageryProcessedDate,
   };
 }
 

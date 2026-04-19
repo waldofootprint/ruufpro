@@ -227,6 +227,20 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Google Solar confidence gates — only run on fresh fetches (cache hits
+      // don't carry these fields; segment heuristics already cover over-selects).
+      if (!trip && roofData?.source === "google_solar") {
+        if (roofData.imageryQuality === "LOW") {
+          trip = `low_imagery_quality:${sqft}sqft`;
+        } else if (roofData.imageryProcessedDate) {
+          const processed = Date.parse(roofData.imageryProcessedDate);
+          const twoYearsAgo = Date.now() - 2 * 365 * 24 * 60 * 60 * 1000;
+          if (!isNaN(processed) && processed < twoYearsAgo) {
+            trip = `stale_imagery:${roofData.imageryProcessedDate}`;
+          }
+        }
+      }
+
       if (trip) {
         const living = cachedProp?.square_footage || 0;
         // Try fallback synthesis from cached property records
