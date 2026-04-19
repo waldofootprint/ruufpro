@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getRoofData } from "@/lib/solar-api";
 import { inferRoofGeometry } from "@/lib/roof-geometry";
-import { getCachedProperty } from "@/lib/rentcast-api";
+import { getCachedProperty, fetchPropertyData } from "@/lib/rentcast-api";
 import {
   calculateEstimate,
   formatEstimate,
@@ -213,9 +213,21 @@ export async function POST(request: NextRequest) {
       const segs = firstEst.num_segments || 0;
       let trip: string | null = null;
 
-      const cachedProp = address
+      let cachedProp = address
         ? await getCachedProperty(address).catch(() => null)
         : null;
+
+      // Server-side pre-warm fallback. If cache is cold (widget prewarm
+      // skipped or widget isn't V4) AND we're in the over-select risk zone,
+      // synchronously fetch RentCast with a 3s timeout so the segment
+      // heuristic has living_sqft to compare against. One fetch per unique
+      // address — subsequent requests hit cache.
+      if (!cachedProp && address && segs >= 8) {
+        cachedProp = await Promise.race([
+          fetchPropertyData(address).catch(() => null),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+        ]);
+      }
 
       if (sqft < 600) trip = `under_600_sqft:${sqft}`;
       else if (sqft > 10000) trip = `over_10k_sqft:${sqft}`;

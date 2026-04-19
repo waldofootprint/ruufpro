@@ -719,6 +719,14 @@ export default function EstimateWidgetV4({
                         if (coords) {
                           setPropertyCoords(coords);
                         }
+
+                        // Pre-warm RentCast cache so the guardrail has
+                        // living_sqft to compare against by submit time.
+                        fetch("/api/prewarm-property", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ address: s.description }),
+                        }).catch(() => { /* fire-and-forget */ });
                       }}
                       className={cn("w-full text-left px-4 py-3 text-[15px] transition-colors duration-150 flex items-start gap-3", variant === "light" ? "hover:bg-black/5" : "hover:bg-white/10")}
                       style={{ color: C.text, borderBottom: `1px solid ${C.separator}` }}
