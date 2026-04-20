@@ -14,7 +14,7 @@ import argparse, os, sys, zipfile
 from pathlib import Path
 from urllib.request import urlretrieve
 
-BLOB_URL = "https://usbuildingdata.blob.core.windows.net/usbuildings-v2/{state}.geojson.zip"
+BLOB_URL = "https://minedbuildings.z5.web.core.windows.net/legacy/usbuildings-v2/{state}.geojson.zip"
 
 
 def download(state: str, out_dir: Path) -> Path:

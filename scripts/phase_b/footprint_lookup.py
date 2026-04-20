@@ -228,14 +228,14 @@ out geom;"""
         br.record_success()
         polys = _overpass_to_polygons(data)
         if not polys:
-            return None, "closed"
-        # Nearest polygon to the point — simple centroid distance heuristic
+            return None, state
         nearest = min(polys, key=lambda p: _centroid_dist2(p, lat, lng))
         return nearest, state
     except (HTTPError, URLError, TimeoutError, OSError) as e:
         log.warning("overpass failed: %s", e)
         br.record_failure()
-        return None, "closed"
+        # Return the state that was granted at the top (closed or half_open), not a blanket "closed".
+        return None, state
 
 
 def _overpass_to_polygons(data: dict) -> list[dict]:
