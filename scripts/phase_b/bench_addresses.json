@@ -1,0 +1,31 @@
+{
+  "comment": "Geographically-stratified 22-address FL benchmark per Phase B scoping Section 5. Coordinates from Google Maps / public listings. Replace with verified address records before BM wire-in.",
+  "addresses": [
+    {"city": "Jacksonville", "county": "Duval", "label": "JAX-1", "lat": 30.3322, "lng": -81.6557, "addr": "1823 Ernest St"},
+    {"city": "Jacksonville", "county": "Duval", "label": "JAX-2", "lat": 30.2538, "lng": -81.5128, "addr": "10632 Brighton Hill Cir S"},
+    {"city": "Jacksonville", "county": "Duval", "label": "JAX-3", "lat": 30.1661, "lng": -81.4516, "addr": "24 Deer Haven Dr"},
+    {"city": "Jacksonville", "county": "Duval", "label": "JAX-4", "lat": 30.3196, "lng": -81.6612, "addr": "1400 Talbot Ave"},
+    {"city": "Jacksonville", "county": "Duval", "label": "JAX-5", "lat": 30.2710, "lng": -81.4750, "addr": "13075 Beach Blvd"},
+
+    {"city": "Tampa", "county": "Hillsborough", "label": "TPA-1", "lat": 27.9506, "lng": -82.4572, "addr": "400 N Ashley Dr"},
+    {"city": "Tampa", "county": "Hillsborough", "label": "TPA-2", "lat": 27.9945, "lng": -82.4469, "addr": "2512 N Florida Ave"},
+    {"city": "Tampa", "county": "Hillsborough", "label": "TPA-3", "lat": 27.9428, "lng": -82.4584, "addr": "615 Channelside Dr"},
+    {"city": "Tampa", "county": "Hillsborough", "label": "TPA-4", "lat": 27.8903, "lng": -82.5132, "addr": "Golf Manor Rd"},
+    {"city": "Tampa", "county": "Hillsborough", "label": "TPA-5", "lat": 27.9709, "lng": -82.5000, "addr": "5001 W Cypress St"},
+
+    {"city": "Orlando", "county": "Orange", "label": "ORL-1", "lat": 28.5383, "lng": -81.3792, "addr": "400 S Orange Ave"},
+    {"city": "Orlando", "county": "Orange", "label": "ORL-2", "lat": 28.4550, "lng": -81.4072, "addr": "7007 Sea Harbor Dr"},
+    {"city": "Orlando", "county": "Orange", "label": "ORL-3", "lat": 28.5729, "lng": -81.3453, "addr": "1000 Universal Studios Plaza"},
+    {"city": "Orlando", "county": "Orange", "label": "ORL-4", "lat": 28.5421, "lng": -81.3790, "addr": "200 S Orange Ave"},
+    {"city": "Orlando", "county": "Orange", "label": "ORL-5", "lat": 28.4810, "lng": -81.3441, "addr": "8375 S John Young Pkwy"},
+
+    {"city": "Miami", "county": "Miami-Dade", "label": "MIA-1", "lat": 25.7617, "lng": -80.1918, "addr": "100 Biscayne Blvd"},
+    {"city": "Miami", "county": "Miami-Dade", "label": "MIA-2", "lat": 25.7907, "lng": -80.1300, "addr": "1001 Ocean Dr"},
+    {"city": "Miami", "county": "Miami-Dade", "label": "MIA-3", "lat": 25.7327, "lng": -80.2432, "addr": "1500 Coral Way"},
+    {"city": "Miami", "county": "Miami-Dade", "label": "MIA-4", "lat": 25.7560, "lng": -80.3750, "addr": "10400 NW 25th St"},
+    {"city": "Miami", "county": "Miami-Dade", "label": "MIA-5", "lat": 25.7275, "lng": -80.2395, "addr": "3301 Coral Way"},
+
+    {"city": "Leesburg", "county": "Lake", "label": "RUR-1", "lat": 28.8108, "lng": -81.8774, "addr": "600 W Main St"},
+    {"city": "Ocala", "county": "Marion", "label": "RUR-2", "lat": 29.1872, "lng": -82.1401, "addr": "110 SE Watula Ave"}
+  ]
+}
