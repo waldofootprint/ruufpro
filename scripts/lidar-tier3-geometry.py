@@ -306,6 +306,10 @@ def main():
     ap.add_argument("lng", type=float, nargs="?", default=None)
     ap.add_argument("--footprint_geojson", default=None,
                     help="Use footprint from geojson instead of OSM Overpass")
+    ap.add_argument("--footprint_xy_json", default=None,
+                    help="Bench mode: pre-projected polygon XY in tile CRS. "
+                         "Skips Overpass + lat/lng reprojection. Format: "
+                         "{'polygon_xy_ftus': [[x,y], ...]}")
     ap.add_argument("--radius_m", type=float, default=40)
     ap.add_argument("--crs_epsg", type=int, default=0)
     ap.add_argument("--height_above_ground_ft", type=float, default=HEIGHT_ABOVE_GROUND_FT_FALLBACK)
@@ -320,7 +324,13 @@ def main():
 
     # --- Footprint ---
     print(f"[1/7] Footprint")
-    if args.footprint_geojson:
+    if args.footprint_xy_json:
+        # Bench mode: polygon already in tile CRS (e.g. RoofN3D faux-ftUS).
+        j = json.loads(Path(args.footprint_xy_json).read_text())
+        poly_ft = Polygon(j["polygon_xy_ftus"])
+        n_found = 1
+        print(f"  loaded pre-projected XY footprint from {args.footprint_xy_json}")
+    elif args.footprint_geojson:
         gj = json.loads(Path(args.footprint_geojson).read_text())
         feat = gj["features"][0] if gj.get("type") == "FeatureCollection" else gj
         poly_ll = shp_shape(feat["geometry"])
@@ -335,7 +345,8 @@ def main():
             poly_ll, n_found = tier2.fetch_footprint(args.lat, args.lng, wide)
         if poly_ll is None:
             raise SystemExit("no footprint")
-    poly_ft = tier2.reproject_polygon(poly_ll, crs_str)
+    if not args.footprint_xy_json:
+        poly_ft = tier2.reproject_polygon(poly_ll, crs_str)
     structure_footprint_sqft = float(poly_ft.area)
     # Perimeter of the footprint polygon (for G7 reference)
     fp_perim_ft = float(Polygon(poly_ft.exterior.coords).length)
