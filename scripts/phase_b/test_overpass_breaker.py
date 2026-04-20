@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """
-Verify Overpass circuit-breaker opens after CIRCUIT_FAIL_THRESHOLD (=2) failures,
-stays open until cooldown (300s), and record_success() resets state.
+Verify full Overpass circuit-breaker cycle:
 
-Uses monkey-patched urlopen to simulate failures — no real Overpass traffic.
+  CLOSED → fail → CLOSED(failures=1)
+         → fail → CLOSED(failures=2, opened_at=now)       [threshold reached]
+  OPEN   → retry attempt → SHORT-CIRCUITED (no network)   [cooldown gate]
+         → wait past 300s cooldown
+  HALF_OPEN → probe allowed
+            → success → CLOSED(failures=0)
 
-Stop condition: all assertions pass.
+The cooldown gate is the critical behavior — asserts that a retry attempt during
+the 5-min window does NOT call the network (no `urlopen` increment).
+
+Uses monkey-patched urlopen to simulate failures; no real Overpass traffic.
+`_set_opened_at_past()` fast-forwards the DB timestamp rather than sleeping 5 min.
 
 Requires DATABASE_URL (breaker state persists in footprint_source_health table).
 
@@ -60,48 +68,57 @@ def main():
     import urllib.request as ur
     orig = ur.urlopen
     _reset_breaker()
-    failures = []
     calls_made = [0]
 
-    def fake_urlopen(*a, **kw):
+    def fake_urlopen(*_a, **_kw):
         calls_made[0] += 1
         raise _FakeURLError()
 
     try:
         ur.urlopen = fake_urlopen
 
-        # 1st failure — breaker stays closed, request hits network
+        # --- Step 1: CLOSED, fail #1 — network IS called, state stays closed
+        before = calls_made[0]
         geom, state = fl.overpass_lookup(30.33, -81.65)
-        assert geom is None and state == "closed", f"1st call: {state}"
-        print(f"  ✅ 1st failure → closed, calls={calls_made[0]}")
+        assert geom is None and state == "closed", f"step1: state={state}"
+        assert calls_made[0] == before + 1, "step1: expected 1 network call"
+        print(f"  ✅ step1  CLOSED + fail → state=closed, network_called=yes (calls={calls_made[0]})")
 
-        # 2nd failure — breaker transitions to open at end of this call
+        # --- Step 2: CLOSED, fail #2 — network IS called; threshold met, opened_at stamped for next call
+        before = calls_made[0]
         geom, state = fl.overpass_lookup(30.33, -81.65)
-        assert geom is None and state == "closed", f"2nd call: {state}"
-        print(f"  ✅ 2nd failure → closed→open recorded, calls={calls_made[0]}")
+        assert geom is None and state == "closed", f"step2: state={state}"
+        assert calls_made[0] == before + 1, "step2: expected 1 network call"
+        print(f"  ✅ step2  CLOSED + fail → threshold reached (calls={calls_made[0]}, circuit now opened)")
 
-        # 3rd call — breaker OPEN, short-circuits, no network call
-        calls_before = calls_made[0]
+        # --- Step 3: OPEN + retry attempt inside cooldown window — MUST short-circuit (no network call)
+        before = calls_made[0]
         geom, state = fl.overpass_lookup(30.33, -81.65)
-        assert geom is None and state == "open", f"3rd call: {state}"
-        assert calls_made[0] == calls_before, f"network was called while open: {calls_made[0]} vs {calls_before}"
-        print(f"  ✅ 3rd call → open, short-circuited (no network call)")
+        assert state == "open", f"step3: expected state=open, got {state}"
+        assert calls_made[0] == before, (
+            f"step3 COOLDOWN VIOLATION: network was called while breaker open "
+            f"({calls_made[0]} vs {before}). Cooldown gate is broken."
+        )
+        print(f"  ✅ step3  OPEN + retry inside cooldown → SHORT-CIRCUITED, network_called=no (calls unchanged={calls_made[0]})")
 
-        # Advance time past cooldown — half-open probe allowed
+        # --- Step 4: Fast-forward past 300s cooldown — retry becomes HALF_OPEN probe
         _set_opened_at_past(fl.CIRCUIT_COOLDOWN_SEC + 10)
+        before = calls_made[0]
         geom, state = fl.overpass_lookup(30.33, -81.65)
-        assert state == "half_open", f"post-cooldown: {state}"
-        print(f"  ✅ post-cooldown → half_open probe allowed")
+        assert state == "half_open", f"step4: expected half_open, got {state}"
+        assert calls_made[0] == before + 1, "step4: half_open probe should call network"
+        print(f"  ✅ step4  cooldown elapsed → HALF_OPEN probe allowed, network_called=yes (calls={calls_made[0]})")
 
-        # Simulate success — breaker closes, counter resets
+        # --- Step 5: record_success() on a probe that succeeded — counter resets, state returns to CLOSED
         br = fl._CircuitBreaker()
         br.record_success()
         allowed, state2 = br.allow()
-        assert allowed and state2 == "closed", f"post-success: allowed={allowed} state={state2}"
-        print(f"  ✅ record_success → closed, counter reset")
+        assert allowed and state2 == "closed", f"step5: allowed={allowed} state={state2}"
+        print(f"  ✅ step5  probe success → CLOSED, failure counter reset")
 
         print()
-        print(f"  all 5 assertions passed")
+        print(f"  full cycle verified: CLOSED → OPEN → cooldown-blocked retry → HALF_OPEN → CLOSED")
+        print(f"  5 assertions passed")
         sys.exit(0)
     finally:
         ur.urlopen = orig

@@ -67,17 +67,25 @@ def _pg_conn():
     return psycopg2.connect(dsn)
 
 
-def ms_lookup(lat: float, lng: float, max_dist_m: int = MS_MAX_DIST_M) -> Optional[dict]:
-    """Query building_footprints via footprint_lookup() SQL helper. Returns GeoJSON polygon or None."""
-    import psycopg2
-    conn = _pg_conn()
+def ms_lookup(lat: float, lng: float, max_dist_m: int = MS_MAX_DIST_M, conn=None) -> Optional[dict]:
+    """Query building_footprints via footprint_lookup() SQL helper. Returns GeoJSON polygon or None.
+
+    If `conn` is None, opens a fresh psycopg2 connection for each call (includes TCP+TLS
+    handshake — ~50-100ms at cold start). If `conn` is supplied, reuses it (production case
+    with pgbouncer/pool). Benches should reuse — see bench_ms_lookup.py.
+    """
+    close_after = False
+    if conn is None:
+        conn = _pg_conn()
+        close_after = True
     try:
         with conn.cursor() as cur:
             cur.execute("select geom_geojson from footprint_lookup(%s, %s, %s)", (lat, lng, max_dist_m))
             row = cur.fetchone()
         return row[0] if row else None
     finally:
-        conn.close()
+        if close_after:
+            conn.close()
 
 
 # ---------------------------------------------------------------------------
