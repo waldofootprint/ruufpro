@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import importlib.util
 _spec = importlib.util.spec_from_file_location("tier2", Path(__file__).parent / "lidar-tier2-sqft.py")
 tier2 = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(tier2)
+from lidar_geometry_utils import alpha_shape_perimeter
 
 RANSAC_RESIDUAL_FT = 0.49             # 0.15m, vertical
 MIN_SAMPLES = 30                      # lowered from 50 — small dormers
@@ -229,8 +230,19 @@ def main():
 
     # Aggregate
     roof_horiz_sqft = _hull_area(roof_points[:, :2])
-    sloped_sum = sum(p["sloped_area_sqft"] for p in planes)
-    perim_ft = _hull_perimeter(roof_points[:, :2])  # Pipeline B: convex hull (alpha-shape skipped on purpose for diff)
+    # Bug 2 (applied to B in round 3): anchor sloped to roof_horiz and distribute proportionally
+    # by each plane's detected horiz weight, then divide by |nz|. Prevents overlapping-plane
+    # double-count that made raw sum(sloped) < roof_horiz (geometrically impossible).
+    raw_sum_horiz = sum(p["horiz_area_sqft"] for p in planes) or 1.0
+    sloped_sum = 0.0
+    for p in planes:
+        weight = p["horiz_area_sqft"] / raw_sum_horiz
+        exclusive_horiz = weight * roof_horiz_sqft
+        sloped_sum += exclusive_horiz / max(abs(p["normal"][2]), 1e-6)
+    # Round-3 standardization: use shared alpha-shape perimeter (same as Pipeline A).
+    # Convex-hull perimeter retained as secondary field for reference.
+    perim_ft, _alpha_area, alpha_flags_b = alpha_shape_perimeter(roof_points[:, :2])
+    perim_ft_hull = _hull_perimeter(roof_points[:, :2])
 
     out = {
         "address_label": args.address_label,
@@ -242,6 +254,8 @@ def main():
         "roof_horiz_sqft": round(roof_horiz_sqft, 1),
         "roof_sloped_sqft_sum": round(sloped_sum, 1),
         "roof_perimeter_ft": round(perim_ft, 1),
+        "roof_perimeter_ft_hull": round(perim_ft_hull, 1),
+        "alpha_flags": alpha_flags_b,
         "point_density_pts_per_m2": round(density, 2),
         "low_confidence_density": low_confidence,
         "class6_fallback": class6_fallback,

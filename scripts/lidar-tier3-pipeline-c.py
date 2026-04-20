@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import importlib.util
 _spec = importlib.util.spec_from_file_location("tier2", Path(__file__).parent / "lidar-tier2-sqft.py")
 tier2 = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(tier2)
+from lidar_geometry_utils import alpha_shape_perimeter
 
 BBOX_HALF_FT = 130
 CLUSTER_TOLERANCE_FT = 3.0
@@ -145,16 +146,18 @@ def main():
             hull_all = ConvexHull(seed_pts2d)
             roof_horiz = float(hull_all.volume)
             verts = seed_pts2d[hull_all.vertices]
-            perim = sum(float(np.linalg.norm(verts[i] - verts[(i+1) % len(verts)])) for i in range(len(verts)))
+            perim_hull = sum(float(np.linalg.norm(verts[i] - verts[(i+1) % len(verts)])) for i in range(len(verts)))
         except Exception:
-            roof_horiz = 0.0; perim = 0.0
+            roof_horiz = 0.0; perim_hull = 0.0
+        # Round-3 standardization: report alpha-shape perimeter as primary (same as Pipelines A+B).
+        perim, _alpha_area, alpha_flags_c = alpha_shape_perimeter(seed_pts2d)
         # Filter segments to those within seed building
         segments = [s for s in segments if s["id"] == seed_cluster_id or
                     any(abs(s["id"] - cid) < 1 for cid in unique_clusters
                         if (cluster_ids == cid).sum() >= MIN_CLUSTER_PTS
                         and float(np.linalg.norm(np.array([xs[cluster_ids == cid].mean(), ys[cluster_ids == cid].mean()]) - np.array([cx, cy]))) < 50.0)]
     else:
-        roof_horiz = 0.0; perim = 0.0
+        roof_horiz = 0.0; perim = 0.0; perim_hull = 0.0; alpha_flags_c = {"no_seed_cluster": True}
 
     sloped_sum = sum(s["sloped_area_sqft"] for s in segments)
 
@@ -168,6 +171,8 @@ def main():
         "roof_horiz_sqft": round(roof_horiz, 1),
         "roof_sloped_sqft_sum": round(sloped_sum, 1),
         "roof_perimeter_ft": round(perim, 1),
+        "roof_perimeter_ft_hull": round(perim_hull, 1),
+        "alpha_flags": alpha_flags_c,
         "num_segments": len(segments),
         "segments": segments,
         "ridge_length_ft": None, "hip_length_ft": None, "valley_length_ft": None,
