@@ -86,11 +86,43 @@ def _smoke_byte_identity(fks):
     return rows, max_drift
 
 
+def _recover_laz_offset_ftus(gt_edges):
+    """Recover (cx, cy) offset the RoofN3D adapter applied at LAZ write.
+
+    Adapter (scripts/roofn3d_adapter.py:256-295) does:
+        pts_ft = points_m * MET_TO_FTUS
+        cx, cy = pts_ft[:, 0].mean(), pts_ft[:, 1].mean()
+        pts_ft[:, 0] -= cx ; pts_ft[:, 1] -= cy
+    (cx, cy) is NOT stored in GT.json or selection.json. Approximate from
+    GT edge endpoints (roof outline: eaves + ridge/apex corners) — mean
+    ≈ roof centroid ≈ point-cloud centroid to within <10 ft on typical
+    residential footprints. Sufficient for edge-midpoint matching where
+    the distinguishing scale is edge length (10-100 ft).
+
+    Z offset is zero (adapter does not re-origin Z).
+    """
+    MET_TO_FT = 3.2808333333333333
+    xs_ft = []
+    ys_ft = []
+    for ge in gt_edges:
+        for ep in ge["endpoints_m"]:
+            xs_ft.append(ep[0] * MET_TO_FT)
+            ys_ft.append(ep[1] * MET_TO_FT)
+    if not xs_ft:
+        return (0.0, 0.0)
+    return (sum(xs_ft) / len(xs_ft), sum(ys_ft) / len(ys_ft))
+
+
 def _match_gt_to_emitted(gt_edges, emitted_by_type):
     """For each GT edge, find the emitted edge (any type) with closest 3D
     midpoint. Returns list of {gt_edge, matched_emitted_or_None, midpoint_dist_ft, type_match}.
+
+    GT endpoints are converted from UTM meters → ftUS and then shifted by
+    the recovered LAZ-frame offset, so coordinates align with emitted
+    endpoints (which are in LAZ frame post-shift).
     """
     MET_TO_FT = 3.2808333333333333
+    cx, cy = _recover_laz_offset_ftus(gt_edges)
     all_emitted = []
     for t, lst in emitted_by_type.items():
         for e in lst:
@@ -107,8 +139,9 @@ def _match_gt_to_emitted(gt_edges, emitted_by_type):
     matches = []
     for ge in gt_edges:
         a_m, b_m = ge["endpoints_m"]
-        a_ft = [a_m[k] * MET_TO_FT for k in range(3)]
-        b_ft = [b_m[k] * MET_TO_FT for k in range(3)]
+        # Convert to ftUS and apply LAZ-frame shift (X,Y only; Z unchanged).
+        a_ft = [a_m[0] * MET_TO_FT - cx, a_m[1] * MET_TO_FT - cy, a_m[2] * MET_TO_FT]
+        b_ft = [b_m[0] * MET_TO_FT - cx, b_m[1] * MET_TO_FT - cy, b_m[2] * MET_TO_FT]
         gt_mid_ft = [(a_ft[k] + b_ft[k]) / 2 for k in range(3)]
         best = None
         best_d = float("inf")
@@ -450,7 +483,12 @@ def _render(verdicts, per_bldg, smoke_rows, max_drift, commit):
     out.append("# 396g — Hip-Detection Diagnostic Report\n")
     out.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d')}  ")
     out.append(f"**Session:** 396g-builder (diagnostic execution)  ")
-    out.append(f"**Harness commit:** `{commit}`  ")
+    out.append("**Harness commits:** `d72bd01` (diagnostic scripts, original atomic commit) "
+               f"+ `{commit}` (report-only coordinate-frame correction; per "
+               "`feedback_harness_vs_tuning_categories.md` mechanical-fix pattern — "
+               "GT endpoints now shifted by recovered LAZ offset before matching. "
+               "Diag JSONs from pass at d72bd01 unchanged and unreferenced by the fix; "
+               "Pipeline A still e95d561; smoke gate unchanged.)  ")
     out.append("**Anchor doc:** `decisions/396g-scoping.md`  ")
     out.append("**Pipeline A frozen at:** `e95d561` (source unchanged in this session)  ")
     out.append("**Eval set:** n=12, frozen per scoping §4: `141, 1054136, 129184, 175628, 19418, 2624, 36947, 407, 44573, 547, 80, 7268`  ")
@@ -555,6 +593,32 @@ def main():
 
     diag_default = {fk: _load_diag(fk, nomerge=False) for fk in N12_FKS}
     diag_nomerge = {fk: _load_diag(fk, nomerge=True) for fk in N12_FKS}
+
+    # Verification banner: recovered LAZ offset + coordinate-range sanity
+    # (per feedback_harness_vs_tuning_categories.md lock-down: pre-run verification
+    # gate proving the corrected experiment will actually run).
+    print("[396g-report] coord-frame verification banner:")
+    for fk in N12_FKS:
+        d = diag_default[fk]
+        cx, cy = _recover_laz_offset_ftus(d["gt"]["edges"])
+        MET_TO_FT = 3.2808333333333333
+        gt_mids_ft = []
+        for ge in d["gt"]["edges"]:
+            a_m, b_m = ge["endpoints_m"]
+            gt_mids_ft.append(((a_m[0] + b_m[0]) / 2 * MET_TO_FT - cx,
+                               (a_m[1] + b_m[1]) / 2 * MET_TO_FT - cy))
+        em_mids = []
+        for t, lst in d["post_classification_edges_by_type"].items():
+            for e in lst:
+                se, en = e["line_endpoints"]
+                em_mids.append(((se[0] + en[0]) / 2, (se[1] + en[1]) / 2))
+        def _rng(vals, i):
+            if not vals:
+                return "(n/a)"
+            return f"[{min(v[i] for v in vals):.1f}, {max(v[i] for v in vals):.1f}]"
+        print(f"  fk={fk}: offset=({cx:.1f}, {cy:.1f})  "
+              f"gt_mid_x={_rng(gt_mids_ft, 0)} em_mid_x={_rng(em_mids, 0)}  "
+              f"gt_mid_y={_rng(gt_mids_ft, 1)} em_mid_y={_rng(em_mids, 1)}")
 
     smoke_rows, max_drift = _smoke_byte_identity(N12_FKS)
     verdicts, per_bldg = _evaluate_hypotheses(diag_default, diag_nomerge)
