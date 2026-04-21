@@ -41,7 +41,14 @@
       "command": "npx",
       "args": ["-y", "@supabase/mcp-server-supabase@latest", "--project-ref", "comcpamnxjtldlnnudqc"],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_5f515771c75bb3366b03e9d154f74c2b05077a09"
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
+      }
+    },
+    "supabase-geospatial": {
+      "command": "npx",
+      "args": ["-y", "@supabase/mcp-server-supabase@latest", "--project-ref", "vfmnjwpjxamtbuehmtrv"],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
       }
     }
   }
