@@ -162,6 +162,9 @@ def scan_buildingparts(dump_dir, want_per_class, min_sqft, max_sqft, exclude_fks
                 "pitch_ratio_over_12": round(12 * np.tan(np.deg2rad(pitch_deg)), 2),
                 "horiz_area_sqft": round(horiz_sqft, 1),
                 "nz": round(nz, 4),
+                # 396d line-derivation: preserve roof-polygon vertex array in UTM-18N meters.
+                # Used by scripts/roofn3d_line_derive.py for shared-vertex edge detection.
+                "verts_m": p["verts_m"].tolist(),
             })
         try:
             fp_ll = [list(utm18_to_ll(x, y))[::-1] for x, y in fp_xy_m]  # [lng, lat]
