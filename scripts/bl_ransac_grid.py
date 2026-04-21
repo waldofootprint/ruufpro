@@ -25,7 +25,7 @@ Usage:
       --tile3_fp  bench-assets/fl-tiles/ms-footprint-3.geojson \\
       --out_dir   .tmp/bl-grid \\
       [--smoke]   # run ONE cell at Phase A defaults, Phase A 10 bldgs only
-      [--threshold_ft 0.12,0.15,0.18,0.22,0.27] \\
+      [--threshold_m 0.12,0.15,0.18,0.22,0.27] \\  # METERS per scoping §4
       [--min_inliers_mul 0.75,1.0,1.5] \\
       [--merge_angle_deg 5.0,6.0,7.0] \\
       [--merge_offset_ft 0.98,1.47,1.96] \\
@@ -61,10 +61,15 @@ def cell_id(cfg):
     return hashlib.sha1(key).hexdigest()[:12]
 
 
+METERS_TO_FTUS = 3.28084
+
+
 def build_env(cfg):
-    """cfg: dict with threshold_ft, min_inliers, merge_angle_deg, merge_offset_ft."""
+    """cfg: dict with threshold_m (scoping §4 spec), min_inliers, merge_angle_deg, merge_offset_ft.
+    threshold_m is converted to feet at env-set time (the constant in lidar-tier3-geometry.py
+    is stored in feet but scoping §4 specifies meters). Fix for unit-bug detour BL 2026-04-21."""
     env = os.environ.copy()
-    env["RANSAC_THRESHOLD_FT_OVERRIDE"] = f"{cfg['threshold_ft']:.4f}"
+    env["RANSAC_THRESHOLD_FT_OVERRIDE"] = f"{cfg['threshold_m'] * METERS_TO_FTUS:.4f}"
     env["RANSAC_MIN_INLIERS_OVERRIDE"] = str(int(cfg["min_inliers"]))
     env["MERGE_ANGLE_DEG_OVERRIDE"] = f"{cfg['merge_angle_deg']:.4f}"
     env["MERGE_OFFSET_FT_OVERRIDE"] = f"{cfg['merge_offset_ft']:.4f}"
@@ -146,7 +151,9 @@ def main():
     ap.add_argument("--out_dir", required=True)
     ap.add_argument("--smoke", action="store_true",
                     help="One cell at Phase A defaults, Phase A 10 bldgs only, no FL tiles.")
-    ap.add_argument("--threshold_ft", default="0.12,0.15,0.18,0.22,0.27")
+    ap.add_argument("--threshold_m", default="0.12,0.15,0.18,0.22,0.27",
+                    help="RANSAC inlier threshold grid in METERS (scoping §4). "
+                         "Converted to feet internally via * 3.28084 for env var.")
     ap.add_argument("--min_inliers_mul", default="0.75,1.0,1.5")
     ap.add_argument("--merge_angle_deg", default="5.0,6.0,7.0")
     ap.add_argument("--merge_offset_ft", default="0.98,1.47,1.96")
@@ -159,8 +166,10 @@ def main():
 
     # Build config grid
     if args.smoke:
+        # Phase A default 0.49 ft back-converted to meters so build_env * 3.28084
+        # reproduces Phase A's 0.49 ft byte-identically. 0.49 / 3.28084 = 0.149353 m.
         configs = [{
-            "threshold_ft": 0.49,
+            "threshold_m": 0.49 / METERS_TO_FTUS,
             "min_inliers": PHASE_A_MIN_INLIERS,
             "merge_angle_deg": 5.0,
             "merge_offset_ft": 0.98,
@@ -170,14 +179,25 @@ def main():
         tile1_fp = tile3_fp = None
         print(f"[SMOKE MODE] 1 cell x {len(fks)} Phase A bldgs, no FL tiles")
     else:
-        thresholds = parse_float_list(args.threshold_ft)
+        thresholds_m = parse_float_list(args.threshold_m)
         mul_list = parse_float_list(args.min_inliers_mul)
         angles = parse_float_list(args.merge_angle_deg)
         offsets = parse_float_list(args.merge_offset_ft)
+        # Unit verification banner — per BL unit-bug correction protocol (advisor 2026-04-21)
+        print("=" * 60)
+        print("  RANSAC threshold unit-conversion banner (scoping §4 → env)")
+        print("  input_m  |  env_ft   |  sanity_m (env_ft / 3.28084)")
+        print("  " + "-" * 52)
+        for tm in thresholds_m:
+            tft = tm * METERS_TO_FTUS
+            sanity = tft / METERS_TO_FTUS
+            marker = "  <-- Phase A" if abs(tm - 0.15) < 1e-6 else ""
+            print(f"  {tm:.4f}   |  {tft:.4f}   |  {sanity:.4f}{marker}")
+        print("=" * 60)
         configs = []
-        for t, m, a, o in itertools.product(thresholds, mul_list, angles, offsets):
+        for t, m, a, o in itertools.product(thresholds_m, mul_list, angles, offsets):
             configs.append({
-                "threshold_ft": t,
+                "threshold_m": t,
                 "min_inliers": int(round(PHASE_A_MIN_INLIERS * m)),
                 "merge_angle_deg": a,
                 "merge_offset_ft": o,
@@ -228,7 +248,7 @@ def main():
             "ok": ok_count, "total": len(results),
         })
         print(f"[{ci+1}/{total_cells}] cell {cid} | "
-              f"{cfg['threshold_ft']:.2f}ft / {cfg['min_inliers']} / "
+              f"{cfg['threshold_m']:.3f}m ({cfg['threshold_m']*METERS_TO_FTUS:.3f}ft) / {cfg['min_inliers']} / "
               f"{cfg['merge_angle_deg']:.1f}° / {cfg['merge_offset_ft']:.2f}ft | "
               f"{ok_count}/{len(results)} ok in {cell_elapsed:.0f}s")
 

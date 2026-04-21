@@ -33,8 +33,12 @@ import argparse, json
 from pathlib import Path
 from statistics import mean
 
+METERS_TO_FTUS = 3.28084
+# Scoping §4 canonical baseline: 0.15 m (the "current value" cell in the threshold grid).
+# Phase A constant is stored as 0.49 ft — a display-rounded version of 0.15 m * 3.28084
+# = 0.4921 ft (0.42% higher than 0.49). Smoke gate #2 validates the drift is negligible.
 PHASE_A_CFG = {
-    "threshold_ft": 0.49, "min_inliers": 50,
+    "threshold_m": 0.15, "min_inliers": 50,
     "merge_angle_deg": 5.0, "merge_offset_ft": 0.98,
 }
 
@@ -207,7 +211,7 @@ def main():
     # Identify baseline
     baseline = None
     for c in cells:
-        if (abs(c["cfg"]["threshold_ft"] - PHASE_A_CFG["threshold_ft"]) < 1e-6
+        if (abs(c["cfg"]["threshold_m"] - PHASE_A_CFG["threshold_m"]) < 1e-6
                 and c["cfg"]["min_inliers"] == PHASE_A_CFG["min_inliers"]
                 and abs(c["cfg"]["merge_angle_deg"] - PHASE_A_CFG["merge_angle_deg"]) < 1e-6
                 and abs(c["cfg"]["merge_offset_ft"] - PHASE_A_CFG["merge_offset_ft"]) < 1e-6):
@@ -293,13 +297,13 @@ def main():
         "",
         "## Top 5 wins",
         "",
-        "| threshold_ft | min_inl | merge° | merge_ft | plane_exact | pitch_g10 | horiz_g10 | pm1 | t1_p | t3_p | t1_peri% | t3_peri% | t1_horiz% | t3_horiz% |",
+        "| threshold_m | min_inl | merge° | merge_ft | plane_exact | pitch_g10 | horiz_g10 | pm1 | t1_p | t3_p | t1_peri% | t3_peri% | t1_horiz% | t3_horiz% |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for c in wins[:5]:
         cfg = c["cfg"]; r = c["r3d"]; f = c["fl"]
         lines.append(
-            f"| {cfg['threshold_ft']:.2f} | {cfg['min_inliers']} | {cfg['merge_angle_deg']:.1f} | "
+            f"| {cfg['threshold_m']:.3f} | {cfg['min_inliers']} | {cfg['merge_angle_deg']:.1f} | "
             f"{cfg['merge_offset_ft']:.2f} | {r['plane_exact_rate']:.1f}% | "
             f"{r['pitch_g10_rate']:.1f}% | {r['horiz_g10_rate']:.1f}% | {r['plane_pm1_rate']:.1f}% | "
             f"{f['t1_planes']} | {f['t3_planes']} | {f['t1_peri_pct']:+.2f} | "
@@ -312,13 +316,13 @@ def main():
         "",
         "## Top 5 partial wins",
         "",
-        "| threshold_ft | min_inl | merge° | merge_ft | plane_exact | pitch_g10 | horiz_g10 | pm1 | t1_p | t3_p | t1_peri% | t3_peri% | t1_horiz% | t3_horiz% |",
+        "| threshold_m | min_inl | merge° | merge_ft | plane_exact | pitch_g10 | horiz_g10 | pm1 | t1_p | t3_p | t1_peri% | t3_peri% | t1_horiz% | t3_horiz% |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for c in partials[:5]:
         cfg = c["cfg"]; r = c["r3d"]; f = c["fl"]
         lines.append(
-            f"| {cfg['threshold_ft']:.2f} | {cfg['min_inliers']} | {cfg['merge_angle_deg']:.1f} | "
+            f"| {cfg['threshold_m']:.3f} | {cfg['min_inliers']} | {cfg['merge_angle_deg']:.1f} | "
             f"{cfg['merge_offset_ft']:.2f} | {r['plane_exact_rate']:.1f}% | "
             f"{r['pitch_g10_rate']:.1f}% | {r['horiz_g10_rate']:.1f}% | {r['plane_pm1_rate']:.1f}% | "
             f"{f['t1_planes']} | {f['t3_planes']} | {f['t1_peri_pct']:+.2f} | "
