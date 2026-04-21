@@ -89,7 +89,7 @@ for (const f of ["feature-flags.mjs", "measurement-pipeline.mjs"]) {
   let s = readFileSync(p, "utf8");
   s = s.replace(
     /from\s+["']@supabase\/supabase-js["']/g,
-    `from "${process.cwd()}/node_modules/@supabase/supabase-js/dist/module/index.js"`
+    `from "${process.cwd()}/node_modules/@supabase/supabase-js/dist/index.mjs"`
   );
   writeFileSync(p, s);
 }
@@ -134,8 +134,11 @@ async function mgmtQuery(sql) {
 
 async function seedContractor() {
   const safe = CONTRACTOR_NAME.replace(/'/g, "''");
+  const email = `${CONTRACTOR_NAME}@example.com`;
   const rows = await mgmtQuery(
-    `insert into contractors (business_name, is_prospect, lidar_enabled) values ('${safe}', true, true) returning id;`
+    `insert into contractors (business_name, email, phone, city, state, business_type, is_prospect, lidar_enabled)
+     values ('${safe}', '${email}', '555-000-0000', 'Smoke', 'FL', 'residential', true, true)
+     returning id;`
   );
   return rows[0].id;
 }
