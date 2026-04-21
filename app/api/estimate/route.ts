@@ -15,6 +15,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getRoofData } from "@/lib/solar-api";
+import {
+  runMeasurementPipeline,
+  prodAdapters,
+} from "@/lib/measurement-pipeline";
 import { inferRoofGeometry } from "@/lib/roof-geometry";
 import { getCachedProperty, fetchPropertyData } from "@/lib/rentcast-api";
 import {
@@ -155,14 +159,50 @@ export async function POST(request: NextRequest) {
     let geometry = null;
 
     const preCoords = lat && lng ? { lat, lng } : undefined;
+    const getRoofDataStart = Date.now();
     const [roofResult, weatherSurge] = await Promise.all([
       address ? getRoofData(address, preCoords) : Promise.resolve({ data: null, invalid: undefined as string | undefined }),
       getWeatherSurge(lat, lng),
     ]);
+    const getRoofDataElapsedMs = Date.now() - getRoofDataStart;
 
     roofData = roofResult.data;
     if (roofData) {
       geometry = inferRoofGeometry(roofData);
+    }
+
+    // Shadow telemetry — Phase B / Session BM CP4 measurement pipeline harness.
+    // LiDAR adapter stubbed (decisions/phase-b-lidar-runtime-surface.md); pipeline
+    // routes to Solar via the cached roofResult (zero duplicate Solar API cost).
+    // Fire-and-forget: response latency unaffected. BN will swap /api/estimate
+    // to consume pipeline output once the real Python LiDAR service lands and
+    // waitUntil is wired for guaranteed telemetry completion on Vercel.
+    if (address && lat != null && lng != null && roofData) {
+      const cachedRoofData = roofData;
+      void runMeasurementPipeline(
+        {
+          contractorId: contractor_id ?? null,
+          leadId: null,
+          widgetEventId: null,
+          address,
+          lat,
+          lng,
+        },
+        {
+          ...prodAdapters,
+          runSolar: async () => ({
+            available: true,
+            horizSqft: cachedRoofData.roofAreaSqft,
+            // Solar API returns pitch in degrees (verified lib/solar-api.ts:240).
+            // Pipeline schema stores rise/run ratio (migration 082). Convert.
+            pitch: Math.tan((cachedRoofData.pitchDegrees * Math.PI) / 180),
+            segmentCount: cachedRoofData.numSegments,
+            elapsedMs: getRoofDataElapsedMs,
+          }),
+        }
+      ).catch((err) => {
+        console.error("[measurement-pipeline] shadow telemetry failed", err);
+      });
     }
 
     // Geocoding sanity: reject non-residential place types (park, bare
