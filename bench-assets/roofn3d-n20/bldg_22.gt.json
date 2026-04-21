@@ -1,0 +1,51 @@
+{
+  "fk_buildings": "22",
+  "roof_type": "Saddleback roof",
+  "plane_count": 2,
+  "footprint_sqft": 1554.6,
+  "planes": [
+    {
+      "id": 0,
+      "pitch_deg": 34.6,
+      "pitch_ratio_over_12": 8.28,
+      "horiz_area_sqft": 770.9,
+      "nz": 0.8231
+    },
+    {
+      "id": 1,
+      "pitch_deg": 34.6,
+      "pitch_ratio_over_12": 8.28,
+      "horiz_area_sqft": 783.6,
+      "nz": 0.8231
+    }
+  ],
+  "footprint_polygon_ll": [
+    [
+      -73.85181163662456,
+      40.5780897016167
+    ],
+    [
+      -73.85197161371708,
+      40.57803578832637
+    ],
+    [
+      -73.85201820421996,
+      40.57811616076632
+    ],
+    [
+      -73.85185822697031,
+      40.57817007411835
+    ],
+    [
+      -73.85181163662456,
+      40.5780897016167
+    ]
+  ],
+  "seed_lat": 40.57810028532062,
+  "seed_lng": -73.85189426364217,
+  "seed_utm18_x_m": 597171.5317844,
+  "seed_utm18_y_m": 4492557.2488188,
+  "n_points": 1039,
+  "laz_path": ".tmp/roofn3d/selected/buildings/bldg_22.laz",
+  "footprint_xy_path": ".tmp/roofn3d/selected/buildings/bldg_22.footprint.xy.json"
+}

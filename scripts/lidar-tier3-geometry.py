@@ -31,11 +31,14 @@ tier2 = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(tier2)
 from lidar_geometry_utils import alpha_shape_perimeter as _shared_alpha_shape_perimeter
 
 # --- CONSTANTS (see design doc §3, §5) ---
-RANSAC_THRESHOLD_FT = 0.49           # 0.15m — plane inlier residual
-RANSAC_MIN_INLIERS = 50
+# Env-var overrides (BL tuning harness, 2026-04-21). Defaults = Phase A frozen
+# values at e95d561. When env unset, constants equal Phase A exactly.
+import os as _os
+RANSAC_THRESHOLD_FT = float(_os.getenv("RANSAC_THRESHOLD_FT_OVERRIDE", "0.49"))  # 0.15m — plane inlier residual
+RANSAC_MIN_INLIERS = int(_os.getenv("RANSAC_MIN_INLIERS_OVERRIDE", "50"))
 RANSAC_MAX_ITER = 500
-MERGE_ANGLE_DEG = 5.0                # planes w/ normals within this angle
-MERGE_OFFSET_FT = 0.98               # AND perpendicular offset within this -> merge
+MERGE_ANGLE_DEG = float(_os.getenv("MERGE_ANGLE_DEG_OVERRIDE", "5.0"))           # planes w/ normals within this angle
+MERGE_OFFSET_FT = float(_os.getenv("MERGE_OFFSET_FT_OVERRIDE", "0.98"))           # AND perpendicular offset within this -> merge
 MIN_PLANE_AREA_SQFT = 15.0
 DENSITY_THRESHOLD_PTS_PER_M2 = 4.0
 HEIGHT_ABOVE_GROUND_FT_FALLBACK = 6.5

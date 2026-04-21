@@ -1,0 +1,65 @@
+{
+  "fk_buildings": "129184",
+  "roof_type": "Pyramid roof",
+  "plane_count": 4,
+  "footprint_sqft": 1599.3,
+  "planes": [
+    {
+      "id": 0,
+      "pitch_deg": 17.87,
+      "pitch_ratio_over_12": 3.87,
+      "horiz_area_sqft": 393.6,
+      "nz": 0.9517
+    },
+    {
+      "id": 1,
+      "pitch_deg": 17.87,
+      "pitch_ratio_over_12": 3.87,
+      "horiz_area_sqft": 438.0,
+      "nz": 0.9517
+    },
+    {
+      "id": 2,
+      "pitch_deg": 17.87,
+      "pitch_ratio_over_12": 3.87,
+      "horiz_area_sqft": 421.2,
+      "nz": 0.9517
+    },
+    {
+      "id": 3,
+      "pitch_deg": 17.87,
+      "pitch_ratio_over_12": 3.87,
+      "horiz_area_sqft": 346.4,
+      "nz": 0.9517
+    }
+  ],
+  "footprint_polygon_ll": [
+    [
+      -74.19535088088351,
+      40.54174277458308
+    ],
+    [
+      -74.19529916174368,
+      40.54163560575581
+    ],
+    [
+      -74.19542903357946,
+      40.54159912836005
+    ],
+    [
+      -74.19548075290012,
+      40.54170629713156
+    ],
+    [
+      -74.19535088088351,
+      40.54174277458308
+    ]
+  ],
+  "seed_lat": 40.54168531610101,
+  "seed_lng": -74.19538214200246,
+  "seed_utm18_x_m": 568136.5075896,
+  "seed_utm18_y_m": 4488192.801852999,
+  "n_points": 355,
+  "laz_path": ".tmp/roofn3d/selected/buildings/bldg_129184.laz",
+  "footprint_xy_path": ".tmp/roofn3d/selected/buildings/bldg_129184.footprint.xy.json"
+}

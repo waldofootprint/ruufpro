@@ -1,0 +1,65 @@
+{
+  "fk_buildings": "141",
+  "roof_type": "Two-sided hip roof",
+  "plane_count": 4,
+  "footprint_sqft": 1507.4,
+  "planes": [
+    {
+      "id": 0,
+      "pitch_deg": 21.07,
+      "pitch_ratio_over_12": 4.62,
+      "horiz_area_sqft": 509.4,
+      "nz": 0.9331
+    },
+    {
+      "id": 1,
+      "pitch_deg": 21.07,
+      "pitch_ratio_over_12": 4.62,
+      "horiz_area_sqft": 233.3,
+      "nz": 0.9331
+    },
+    {
+      "id": 2,
+      "pitch_deg": 21.07,
+      "pitch_ratio_over_12": 4.62,
+      "horiz_area_sqft": 570.9,
+      "nz": 0.9331
+    },
+    {
+      "id": 3,
+      "pitch_deg": 21.07,
+      "pitch_ratio_over_12": 4.62,
+      "horiz_area_sqft": 193.8,
+      "nz": 0.9331
+    }
+  ],
+  "footprint_polygon_ll": [
+    [
+      -73.76722973818718,
+      40.610386994040894
+    ],
+    [
+      -73.76707981680062,
+      40.610472671348084
+    ],
+    [
+      -73.7670171844101,
+      40.61040901768843
+    ],
+    [
+      -73.76716710573028,
+      40.61032334046072
+    ],
+    [
+      -73.76722973818718,
+      40.610386994040894
+    ]
+  ],
+  "seed_lat": 40.61039580354712,
+  "seed_lng": -73.76714471669194,
+  "seed_utm18_x_m": 604294.3923084,
+  "seed_utm18_y_m": 4496239.1962162005,
+  "n_points": 1252,
+  "laz_path": ".tmp/roofn3d/selected/buildings/bldg_141.laz",
+  "footprint_xy_path": ".tmp/roofn3d/selected/buildings/bldg_141.footprint.xy.json"
+}

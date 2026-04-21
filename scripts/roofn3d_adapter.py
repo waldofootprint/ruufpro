@@ -114,13 +114,17 @@ def is_roof_plane(verts_m, nz, z_ground_threshold=0.5):
     return True
 
 
-def scan_buildingparts(dump_dir, want_per_class, min_sqft, max_sqft):
-    """First pass: pick fk_buildings by class + footprint size."""
+def scan_buildingparts(dump_dir, want_per_class, min_sqft, max_sqft, exclude_fks=None):
+    """First pass: pick fk_buildings by class + footprint size.
+    exclude_fks: iterable of fk_buildings to skip (defensive re-pick guard)."""
     bp_path = Path(dump_dir) / "roofn3d_buildingparts.csv"
     buckets = {c: [] for c in PITCHED_CLASSES}
+    exclude_set = set(str(x) for x in (exclude_fks or []))
     for row in iter_rows(bp_path):
         cls = (row.get("class") or "").strip()
         if cls not in PITCHED_CLASSES: continue
+        fk_probe = row.get("fk_buildings") or row.get("fk_building") or row.get("id")
+        if fk_probe and str(fk_probe) in exclude_set: continue
         polys = parse_wkt_multipolygon_z(row.get("brep", ""))
         if not polys: continue
         # Filter to roof planes only (brep includes walls + floor)
@@ -300,10 +304,13 @@ def main():
     px.add_argument("--n_pyramid", type=int, default=2)
     px.add_argument("--min_footprint_sqft", type=float, default=1500.0)
     px.add_argument("--max_footprint_sqft", type=float, default=6000.0)
+    px.add_argument("--exclude_fks", default="",
+                    help="Comma-separated fk_buildings to skip (defensive re-pick guard)")
 
     args = ap.parse_args()
     if args.cmd != "extract":
         raise SystemExit(f"unknown cmd {args.cmd}")
+    exclude_fks = [x.strip() for x in args.exclude_fks.split(",") if x.strip()]
 
     out_dir = Path(args.out_dir); out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "buildings").mkdir(exist_ok=True)
@@ -315,7 +322,8 @@ def main():
     }
     print(f"[1/3] Scanning buildingparts.csv for {want} in {args.min_footprint_sqft}-{args.max_footprint_sqft} sqft")
     t0 = time.time()
-    buckets = scan_buildingparts(args.dump_dir, want, args.min_footprint_sqft, args.max_footprint_sqft)
+    buckets = scan_buildingparts(args.dump_dir, want, args.min_footprint_sqft, args.max_footprint_sqft,
+                                 exclude_fks=exclude_fks)
     for c, lst in buckets.items():
         print(f"  {c}: {len(lst)} candidates (want {want[c]})")
     # Trim each bucket
