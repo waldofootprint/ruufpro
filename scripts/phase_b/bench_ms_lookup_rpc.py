@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Run from in-region host for prod-path numbers. Laptop runs are network-floored ~40-130ms.
 """
 Benchmark MS Footprints lookup latency via PostgREST RPC — the production path.
 
