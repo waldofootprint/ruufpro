@@ -240,10 +240,9 @@ function withTimeout<T>(
 // Run LiDAR + Solar with the scoping §3 race:
 //  - LiDAR budget: 15s
 //  - Hard wall: 20s
-//  - LiDAR-first: wait up to +3s for Solar to cross-check
-//  - Solar-first: wait up to +15s for LiDAR (primary)
-// Implementation: timeout-wrap each leg, await in parallel under the hard wall.
-// Grace windows emerge naturally from the 15s/20s ceilings.
+//  - LiDAR-success first: wait at most +3s for Solar cross-check, else ship LiDAR-only
+//  - LiDAR-fail first: wait full Solar budget (Solar is now primary)
+//  - Solar-first: wait remainder of LiDAR budget (primary path)
 async function raceLidarSolar(
   req: PipelineRequest,
   adapters: PipelineAdapters,
@@ -256,7 +255,10 @@ async function raceLidarSolar(
     ? withTimeout(
         adapters.runLidar(req, controller.signal),
         TIMEOUTS_MS.lidarBudget,
-        () => ({ outcome: "tnm_5xx_or_timeout" as const, elapsedMs: TIMEOUTS_MS.lidarBudget })
+        // Pipeline A source surfaces TNM-specific codes internally; wall-clock
+        // timeout at the harness layer surfaces as pipeline_crash. BN will add
+        // finer codes when the real adapter lands.
+        () => ({ outcome: "pipeline_crash" as const, elapsedMs: TIMEOUTS_MS.lidarBudget })
       )
     : Promise.resolve(null);
 
@@ -266,9 +268,36 @@ async function raceLidarSolar(
     () => ({ available: false, elapsedMs: TIMEOUTS_MS.hardWall - 100 })
   );
 
-  const [lidar, solar] = await Promise.all([lidarPromise, solarPromise]);
+  // Track settlement without blocking on both.
+  let solarSettled = false;
+  let solarValue: SolarResult | null = null;
+  const solarTracked = solarPromise.then((v) => {
+    solarSettled = true;
+    solarValue = v;
+    return v;
+  });
+
+  // Wait for LiDAR first (resolves immediately to null when disabled).
+  const lidarValue = await lidarPromise;
+
+  if (lidarValue && lidarValue.outcome === "ok" && !solarSettled) {
+    // LiDAR primary succeeded — cap Solar cross-check at +3s grace.
+    const grace = new Promise<"grace">((r) =>
+      setTimeout(() => r("grace"), TIMEOUTS_MS.solarGraceAfterLidar)
+    );
+    const winner = await Promise.race([solarTracked, grace]);
+    clearTimeout(hardWallTimer);
+    if (winner === "grace") {
+      // Solar exceeded grace — ship LiDAR-only. solar_delta_* stays null.
+      return { lidar: lidarValue, solar: null };
+    }
+    return { lidar: lidarValue, solar: solarValue };
+  }
+
+  // LiDAR absent or non-ok: wait for Solar up to its full budget.
+  await solarTracked;
   clearTimeout(hardWallTimer);
-  return { lidar, solar };
+  return { lidar: lidarValue, solar: solarValue };
 }
 
 // ---------------------------------------------------------------------------
@@ -292,10 +321,10 @@ async function runSolarPipelineProd(
   _signal: AbortSignal
 ): Promise<SolarResult> {
   // CP3 scope ends at module boundary — /api/estimate keeps calling
-  // lib/solar-api.ts directly. This adapter is defined so CP4 wiring can
-  // pipe Solar's existing response through the harness without rewriting
-  // solar-api. Until CP4, prod runs never call this path.
-  return { available: false, elapsedMs: 0 };
+  // lib/solar-api.ts directly. This adapter is wired in CP4. Throw loudly
+  // pre-CP4 so a misconfigured caller fails visibly instead of silently
+  // reporting Solar unavailable.
+  throw new Error("Solar adapter not wired; CP4 pending");
 }
 
 async function writeMeasurementRunProd(row: MeasurementRunRow): Promise<string | null> {
