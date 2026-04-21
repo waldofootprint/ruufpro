@@ -7,7 +7,8 @@ type SlackEvent =
   | { type: "new_signup"; businessName: string; email: string; city: string; state: string }
   | { type: "new_lead"; businessName: string; homeownerName: string; phone: string; city: string }
   | { type: "site_claimed"; businessName: string; email: string; slug: string }
-  | { type: "trial_expired"; businessName: string; email: string; contractorId: string };
+  | { type: "trial_expired"; businessName: string; email: string; contractorId: string }
+  | { type: "error"; title: string; message: string; context?: Record<string, unknown> };
 
 export async function notifySlack(event: SlackEvent): Promise<void> {
   const webhookUrl = process.env.SLACK_NOTIFICATIONS_WEBHOOK_URL;
@@ -31,6 +32,13 @@ export async function notifySlack(event: SlackEvent): Promise<void> {
     case "trial_expired":
       text = `:hourglass: *Trial Expired*\n*${event.businessName}* — 14-day Pro trial ended\nEmail: ${event.email} · ID: \`${event.contractorId}\``;
       break;
+    case "error": {
+      const ctx = event.context
+        ? "\n" + Object.entries(event.context).map(([k, v]) => `• ${k}: \`${JSON.stringify(v)}\``).join("\n")
+        : "";
+      text = `:rotating_light: *${event.title}*\n${event.message}${ctx}`;
+      break;
+    }
   }
 
   try {
