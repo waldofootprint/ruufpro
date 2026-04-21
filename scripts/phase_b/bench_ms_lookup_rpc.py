@@ -24,6 +24,11 @@ Stop condition: p95 ≤ 100 ms.
 Reads SUPABASE_URL + SUPABASE_ANON_KEY from env, or NEXT_PUBLIC_SUPABASE_URL +
 NEXT_PUBLIC_SUPABASE_ANON_KEY, or from .env file in repo root.
 
+GOTCHA (BK): `load_env()` prefers NEXT_PUBLIC_SUPABASE_URL over SUPABASE_URL.
+If you're overriding the target project via env vars, pass
+NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY — plain SUPABASE_*
+names get shadowed by whatever `.env` has (usually prod).
+
 Usage:
   python3 scripts/phase_b/bench_ms_lookup_rpc.py
 """
