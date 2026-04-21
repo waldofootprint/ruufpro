@@ -8,8 +8,33 @@ emits TSV with EWKB-hex geometry + attrs. TSV ships straight into
 `geometry(Polygon, 4326)` input function accepts EWKB hex with SRID embedded, so no
 staging table is needed.
 
-Prep-stage reconciliation gate (Gate 1 of two):
-    source_features_read == polygons_written + non_polygons_skipped + malformed_skipped
+MultiPolygon handling (option A per BK decision):
+  Migration 079 column is strict `geometry(Polygon, 4326)`. MS FL source is mostly
+  simple Polygons but includes some MultiPolygons.
+    * MultiPolygon w/ exactly ONE ring  →  coerce to its single Polygon and write.
+                                            Keeps the building; avoids false-skip.
+    * MultiPolygon w/ 2+ rings          →  cannot fit Polygon column without loss of
+                                            rings; count as `multi_ring_skipped` (own
+                                            counter, not conflated with malformed or
+                                            non_polygon_type). Logged sample to stderr.
+  If `multi_ring_skipped` is materially >0 on the FL load, a schema change to
+  `geometry(MultiPolygon, 4326)` becomes a future decision — tracked explicitly, not
+  dropped silently.
+
+Schema note (vintage_year canonicity):
+  Migration 079 schema defines `vintage_year int` as the per-row capture-year column.
+  Earlier BJ loader (`ms_load_api.py`) referenced a `capture_year` column against an
+  older schema draft; that column does NOT exist in the current migration. This
+  loader writes ONLY the four columns present in migration 079: geom, state_code,
+  source, vintage_year. `vintage_year` = max year parsed from MS
+  `capture_dates_range`, fallback 2018.
+
+Prep-stage reconciliation gate (Gate 1 of two), 5 counters:
+    source_features_read
+      == polygons_written
+       + non_polygon_type_skipped
+       + multi_ring_skipped
+       + malformed_skipped
 Non-zero exit on mismatch. Never silently skips.
 
 Sample (first 20) of skipped feature line numbers logged to stderr for eyeballing.
@@ -85,7 +110,9 @@ def main():
 
     source_features_read = 0
     polygons_written = 0
-    non_polygons_skipped = 0
+    polygons_written_coerced_from_mp = 0  # sub-count of polygons_written (not a separate gate term)
+    non_polygon_type_skipped = 0
+    multi_ring_skipped = 0
     malformed_skipped = 0
     skip_log = []
 
@@ -100,12 +127,35 @@ def main():
                     skip_log.append(f"L{line_no}: json-decode-failed")
                 continue
             geom_raw = feat.get("geometry")
-            if not geom_raw or geom_raw.get("type") != "Polygon":
-                non_polygons_skipped += 1
+            if not geom_raw:
+                non_polygon_type_skipped += 1
                 if len(skip_log) < SAMPLE_SKIP_LOG_LIMIT:
-                    gt = geom_raw.get("type") if geom_raw else None
-                    skip_log.append(f"L{line_no}: non-polygon type={gt!r}")
+                    skip_log.append(f"L{line_no}: no geometry field")
                 continue
+            gtype = geom_raw.get("type")
+
+            if gtype == "Polygon":
+                pass  # happy path — proceed to shapely parse below
+            elif gtype == "MultiPolygon":
+                # Option A coercion: single-ring MP → Polygon; multi-ring → own counter.
+                coords = geom_raw.get("coordinates") or []
+                if len(coords) == 1:
+                    geom_raw = {"type": "Polygon", "coordinates": coords[0]}
+                    polygons_written_coerced_from_mp += 1
+                else:
+                    multi_ring_skipped += 1
+                    if len(skip_log) < SAMPLE_SKIP_LOG_LIMIT:
+                        skip_log.append(
+                            f"L{line_no}: multipolygon rings={len(coords)} (skipped — "
+                            f"schema is geometry(Polygon))"
+                        )
+                    continue
+            else:
+                non_polygon_type_skipped += 1
+                if len(skip_log) < SAMPLE_SKIP_LOG_LIMIT:
+                    skip_log.append(f"L{line_no}: unsupported type={gtype!r}")
+                continue
+
             try:
                 g = shape(geom_raw)
                 ewkb_hex = wkb.dumps(g, hex=True, srid=4326)
@@ -130,12 +180,14 @@ def main():
 
     elapsed = time.time() - t0
     print()
-    print(f"  source_features_read  = {source_features_read:,}")
-    print(f"  polygons_written      = {polygons_written:,}")
-    print(f"  non_polygons_skipped  = {non_polygons_skipped:,}")
-    print(f"  malformed_skipped     = {malformed_skipped:,}")
-    print(f"  elapsed               = {elapsed:.1f}s")
-    print(f"  output                = {dst} ({dst.stat().st_size/1e9:.2f} GB)")
+    print(f"  source_features_read          = {source_features_read:,}")
+    print(f"  polygons_written              = {polygons_written:,}")
+    print(f"    (of which coerced from MP)  = {polygons_written_coerced_from_mp:,}")
+    print(f"  non_polygon_type_skipped      = {non_polygon_type_skipped:,}")
+    print(f"  multi_ring_skipped            = {multi_ring_skipped:,}")
+    print(f"  malformed_skipped             = {malformed_skipped:,}")
+    print(f"  elapsed                       = {elapsed:.1f}s")
+    print(f"  output                        = {dst} ({dst.stat().st_size/1e9:.2f} GB)")
     print()
     if skip_log:
         print("  sample skipped (first 20, for eyeballing):", file=sys.stderr)
@@ -143,9 +195,14 @@ def main():
             print(f"    {s}", file=sys.stderr)
         print(file=sys.stderr)
 
-    # === Gate 1: prep-stage reconciliation ===
+    # === Gate 1: prep-stage reconciliation (5 counters) ===
     gate_lhs = source_features_read
-    gate_rhs = polygons_written + non_polygons_skipped + malformed_skipped
+    gate_rhs = (
+        polygons_written
+        + non_polygon_type_skipped
+        + multi_ring_skipped
+        + malformed_skipped
+    )
     if gate_lhs != gate_rhs:
         print(
             f"FAILURE: prep reconciliation mismatch. "
@@ -156,8 +213,10 @@ def main():
         sys.exit(1)
     print(
         f"SUCCESS: prep gate passed. "
-        f"{gate_lhs:,} read = {polygons_written:,} written + "
-        f"{non_polygons_skipped:,} non-polygon + {malformed_skipped:,} malformed"
+        f"{gate_lhs:,} read = {polygons_written:,} written "
+        f"+ {non_polygon_type_skipped:,} non-polygon "
+        f"+ {multi_ring_skipped:,} multi-ring "
+        f"+ {malformed_skipped:,} malformed"
     )
 
 
