@@ -98,6 +98,13 @@ def _pdal_pipeline(ept_url: str, bbox_3857: tuple[float, float, float, float], o
     and does its own roof-point extraction, so we keep the slice broad here —
     no classification filter at fetch time)."""
     minx, miny, maxx, maxy = bbox_3857
+    # Mechanical fix (A.10 §7.3, harness bug) — Pipeline A's
+    # `assert_ftus_projected` (scripts/lidar-tier3-geometry.py:58) requires a
+    # FL ftUS CRS tag in the LAZ header (EPSG ∈ {2236, 2238, 6438, 6440}).
+    # EPT output in EPSG:3857 has no CRS tag and is not ftUS — reproject via
+    # filters.reprojection to EPSG:2236 (NAD83 / FL East / ftUS). Accepted
+    # for all FL addresses; small-parcel distortion in W-FL zone is bounded
+    # and sqft units remain correct.
     return {
         "pipeline": [
             {
@@ -106,10 +113,12 @@ def _pdal_pipeline(ept_url: str, bbox_3857: tuple[float, float, float, float], o
                 "bounds": f"([{minx},{maxx}],[{miny},{maxy}])",
                 "threads": 4,
             },
+            {"type": "filters.reprojection", "out_srs": "EPSG:2236"},
             {
                 "type": "writers.las",
                 "filename": str(out_laz),
                 "compression": "laszip",
+                "a_srs": "EPSG:2236",
                 "forward": "all",
             },
         ]
