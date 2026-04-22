@@ -31,3 +31,6 @@ skills-lock.json
 # Python bytecode (services/lidar-measure)
 __pycache__/
 *.pyc
+
+# MS Footprints local cache (4.3GB)
+.cache/
