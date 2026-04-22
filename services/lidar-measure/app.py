@@ -1,12 +1,13 @@
 """
 Track A.3-A.6 — Modal runtime for Pipeline A (LiDAR sqft/pitch/segments/perimeter).
+Track A.10 — Fetch redundancy (EPT primary + TNM secondary + Solar tertiary).
 
-Wraps scripts/lidar-tier3-geometry.py @ e95d561 (frozen). Handles TNM tile
-lookup + LAZ download + subprocess invocation + output mapping to the TS
-`LidarResult` shape in lib/measurement-pipeline.types.ts.
+Wraps scripts/lidar-tier3-geometry.py @ 0367980 (frozen post-A.8-prep). Handles
+parcel fetch via fetch_dispatch (EPT first, TNM second) + subprocess invocation
++ output mapping to the TS `LidarResult` shape in lib/measurement-pipeline.types.ts.
 
 Deploy: modal deploy services/lidar-measure/app.py
-Invoke: POST {lat, lng, address} to the deployed URL.
+Invoke: POST {lat, lng, address, debug_skip_ept?, debug_skip_tnm?} to the deployed URL.
 
 Cold-only deploy per Hannah 2026-04-22 (Option a). keep_warm left OFF — flip
 ON at A.8 pilot if cost analysis on smoke supports it.
@@ -16,8 +17,8 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -26,19 +27,27 @@ from typing import Any
 import modal
 
 # ---------------------------------------------------------------------------
-# Image — A.1 §7 scoping called for `apt_install("pdal", "python3-pdal")`
-# but (a) PDAL packages aren't in Debian bookworm's default repos and
-# (b) Pipeline A doesn't actually import PDAL — tier3 reads LAZ via
-# `laspy[lazrs]` (grep confirms: no `import pdal` anywhere in scripts/).
-# Dropped to laspy+lazrs alone. Saves ~500MB image size. Build-time
-# bug-fix audit-trail per feedback_harness_vs_tuning_categories.md.
+# Image — Track A.10 rebase to micromamba + conda-forge PDAL.
+#
+# Track A.1–A.6 dropped apt-install(pdal) because (a) PDAL isn't in Debian
+# bookworm's default repos and (b) Pipeline A doesn't import PDAL — tier3
+# reads LAZ via laspy[lazrs]. Track A.10 re-adds PDAL for `readers.ept`
+# (EPT primary fetch) via micromamba + conda-forge, which pins cleanly and
+# leaves the laspy pip layer intact. Image grows ~+300MB; acceptable per
+# scoping doc signoff 2026-04-22.
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SCRIPTS_DIR = REPO_ROOT / "scripts"
+LIDAR_MEASURE_DIR = Path(__file__).resolve().parent
 
 image = (
-    modal.Image.debian_slim(python_version="3.11")
+    modal.Image.micromamba(python_version="3.11")
+    .micromamba_install(
+        "pdal=2.7",
+        "python-pdal=3.4",
+        channels=["conda-forge"],
+    )
     .pip_install(
         "numpy==1.26.4",
         "scipy==1.13.1",
@@ -51,12 +60,17 @@ image = (
     )
     # Single source of truth: mount the real scripts/ directory. No copy.
     .add_local_dir(SCRIPTS_DIR.as_posix(), remote_path="/opt/scripts")
+    # Track A.10: mount lidar-measure/ modules (ept_fetch, fetch_dispatch,
+    # circuit_breaker) + FL EPT catalog JSON into /root so they're importable
+    # by app.py. /root is on sys.path by default on Modal.
+    .add_local_dir(LIDAR_MEASURE_DIR.as_posix(), remote_path="/root/lidar_measure")
 )
 
 app = modal.App("lidar-measure", image=image)
 
 # ---------------------------------------------------------------------------
-# TNM orchestration
+# TNM orchestration — unchanged behavior, wrapped into a closure for
+# fetch_dispatch. See Track A.10 scoping §4 "TNM role shift".
 # ---------------------------------------------------------------------------
 
 TNM_API = "https://tnmaccess.nationalmap.gov/api/v1/products"
@@ -84,7 +98,6 @@ def _tnm_pick_best_laz(items: list[dict]) -> dict | None:
         laz_items.append(it)
     if not laz_items:
         return None
-    # Newest first — fall back to publicationDate / dateCreated string sort
     laz_items.sort(
         key=lambda x: (x.get("publicationDate") or x.get("dateCreated") or ""),
         reverse=True,
@@ -121,7 +134,7 @@ def _fetch_tnm_laz_url(lat: float, lng: float) -> tuple[str | None, str]:
     items = data.get("items") or []
     pick = _tnm_pick_best_laz(items)
     if not pick:
-        return None, "no_footprint_lidar"  # no LiDAR coverage for bbox
+        return None, "no_footprint_lidar"
     return pick.get("downloadURL"), "ok"
 
 
@@ -144,8 +157,20 @@ def _download_laz(url: str, dest: Path) -> str:
         return "laz_download_failed"
 
 
+def _tnm_fetcher(lat: float, lng: float, output_laz: Path) -> str:
+    """Closure passed to fetch_dispatch. Returns outcome string matching the
+    existing harness contract: 'ok' | 'tnm_5xx_or_timeout' | 'laz_download_failed'
+    | 'no_footprint_lidar'.
+    """
+    url, outcome = _fetch_tnm_laz_url(lat, lng)
+    if outcome != "ok":
+        return outcome
+    assert url is not None
+    return _download_laz(url, output_laz)
+
+
 # ---------------------------------------------------------------------------
-# Pipeline A invocation (subprocess; source frozen at e95d561)
+# Pipeline A invocation (subprocess; source frozen at 0367980 post-A.8-prep)
 # ---------------------------------------------------------------------------
 
 
@@ -222,26 +247,22 @@ def _weighted_pitch(segments: list[dict]) -> float | None:
     return (num / den) if den > 0 else None
 
 
-def _map_to_lidar_result(tier3_json: dict, elapsed_ms: int) -> dict:
+def _map_to_lidar_result(tier3_json: dict, elapsed_ms: int, fetch_meta: dict) -> dict:
     """Tier3 output → LidarResult JSON (matches lib/measurement-pipeline.types.ts).
 
-    KNOWN GAPS (see close report §3 deferred):
-      - inlierRatio: tier3 output doesn't expose RANSAC inlier aggregate.
-        Left undefined; downstream gate will read "fail" until exposed.
-      - residual: tier3 doesn't export plane residual. Left undefined.
+    Pipeline A @ 0367980 exposes `inlierRatio` (aggregate mean RANSAC inlier
+    ratio, area-weighted) and `residual` (aggregate RMS plane fit residual, m).
+    Track A.8 gate now reads both from this payload — no undefined fallback.
 
-    Both require a Pipeline A source change (frozen at e95d561) and open a
-    fresh advisor scoping session before pilot flag flip (A.8).
+    `fetch_meta` carries A.10 telemetry (fetch_path, collection_id) piped through
+    to the response for Modal-log auditability. Not part of the TS LidarResult
+    contract; kept as an optional field until the TS type is updated.
     """
     segments = tier3_json.get("segments") or []
     roof_horiz = tier3_json.get("roof_horiz_sqft")
     footprint = tier3_json.get("structure_footprint_sqft") or 0
     alpha_area = tier3_json.get("roof_alpha_area_sqft") or 0
 
-    # footprintCoverage proxy: roof points' alpha-hull area / footprint polygon.
-    # Intent of the gate threshold (strong ≥ 0.85) is "roof data covers most of
-    # the building"; alpha/footprint captures that when tier3 produced a
-    # footprint (else zero division -> None).
     coverage = None
     if footprint and footprint > 0 and alpha_area > 0:
         coverage = max(0.0, min(1.0, alpha_area / footprint))
@@ -256,8 +277,10 @@ def _map_to_lidar_result(tier3_json: dict, elapsed_ms: int) -> dict:
         "density": tier3_json.get("point_density_pts_per_m2"),
         "footprintCoverage": coverage,
         "residual": tier3_json.get("residual"),
-        "cacheTier": "cold",  # BN: no cache layer yet (B.1/B.2 separate track)
+        "cacheTier": "cold",
         "elapsedMs": elapsed_ms,
+        "fetchPath": fetch_meta.get("fetch_path"),
+        "fetchCollection": fetch_meta.get("collection_id"),
     }
 
 
@@ -266,18 +289,27 @@ def _map_to_lidar_result(tier3_json: dict, elapsed_ms: int) -> dict:
 # ---------------------------------------------------------------------------
 
 
-@app.function(timeout=60)
+@app.function(timeout=90)
 @modal.fastapi_endpoint(method="POST")
 def measure(body: dict[str, Any]) -> dict:
     """POST /measure — returns JSON matching TS LidarResult shape.
 
-    Request:  {"lat": <float>, "lng": <float>, "address": <str>}
-    Response: LidarResult JSON.
+    Request:  {"lat": <float>, "lng": <float>, "address": <str>,
+               "debug_skip_ept"?: <bool>, "debug_skip_tnm"?: <bool>}
+    Response: LidarResult JSON (plus fetchPath + fetchCollection telemetry).
+
+    debug_skip_* flags satisfy Track A.10 §9 Gate 1 + Gate 2: smoke forces one
+    path unreachable at the dispatch layer so the other path is exercised in
+    isolation. Flags are auditable via Modal logs; no image-level env vars.
     """
+    # A.10 imports — inside the function so Modal builds the image before trying
+    # to resolve them locally. /root/lidar_measure is on the image via the
+    # add_local_dir mount above.
+    sys.path.insert(0, "/root/lidar_measure")
+    import fetch_dispatch  # type: ignore
+
     t0 = time.time()
 
-    # Input validation -> any malformed request gets pipeline_crash with
-    # elapsedMs so harness can degrade cleanly.
     try:
         lat = float(body["lat"])
         lng = float(body["lng"])
@@ -287,40 +319,47 @@ def measure(body: dict[str, Any]) -> dict:
             "elapsedMs": int((time.time() - t0) * 1000),
         }
 
-    # 1. TNM lookup
-    url, outcome = _fetch_tnm_laz_url(lat, lng)
-    if outcome != "ok":
-        return {"outcome": outcome, "elapsedMs": int((time.time() - t0) * 1000)}
-    assert url is not None
+    debug_skip_ept = bool(body.get("debug_skip_ept"))
+    debug_skip_tnm = bool(body.get("debug_skip_tnm"))
 
-    # 2. LAZ download to tempdir
     with tempfile.TemporaryDirectory() as tmp:
         tmp_dir = Path(tmp)
-        # tier3 writes to <laz.parent.parent>/tier3-*.json — keep laz one level deep
         laz_dir = tmp_dir / "tile" / "laz"
         laz_dir.mkdir(parents=True, exist_ok=True)
         laz_path = laz_dir / "tile.laz"
 
-        dl_outcome = _download_laz(url, laz_path)
-        if dl_outcome != "ok":
+        # 1. Fetch dispatch (EPT primary -> TNM secondary)
+        dr = fetch_dispatch.dispatch(
+            lat,
+            lng,
+            laz_path,
+            debug_skip_ept=debug_skip_ept,
+            debug_skip_tnm=debug_skip_tnm,
+            tnm_fetcher=_tnm_fetcher,
+        )
+
+        if dr.outcome != "ok":
             return {
-                "outcome": dl_outcome,
+                "outcome": dr.outcome,
+                "fetchPath": dr.fetch_path,
                 "elapsedMs": int((time.time() - t0) * 1000),
             }
 
-        # 3. Pipeline A subprocess
+        # 2. Pipeline A subprocess
         data, outcome, stderr = _run_tier3(laz_path, lat, lng)
         if outcome != "ok":
-            # Log stderr tail for Modal logs (non-fatal; harness gets the code)
-            print(f"[tier3 fail outcome={outcome}] stderr tail:\n{stderr[-800:]}")
+            print(f"[tier3 fail outcome={outcome} fetch_path={dr.fetch_path}] stderr tail:\n{stderr[-800:]}")
             return {
                 "outcome": outcome,
+                "fetchPath": dr.fetch_path,
+                "fetchCollection": dr.collection_id,
                 "elapsedMs": int((time.time() - t0) * 1000),
             }
         assert data is not None
 
-    # 4. Map to LidarResult
-    return _map_to_lidar_result(data, int((time.time() - t0) * 1000))
+    # 3. Map to LidarResult + attach fetch telemetry
+    fetch_meta = {"fetch_path": dr.fetch_path, "collection_id": dr.collection_id}
+    return _map_to_lidar_result(data, int((time.time() - t0) * 1000), fetch_meta)
 
 
 # ---------------------------------------------------------------------------
