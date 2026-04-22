@@ -184,8 +184,16 @@ def _classify_tier3_failure(stderr: str) -> str:
     return "pipeline_crash"
 
 
-def _run_tier3(laz_path: Path, lat: float, lng: float) -> tuple[dict | None, str, str]:
+def _run_tier3(laz_path: Path, lat: float, lng: float, *, override_crs_epsg: int | None = None) -> tuple[dict | None, str, str]:
     """Subprocess-invoke scripts/lidar-tier3-geometry.py.
+
+    override_crs_epsg: A.10 mechanical fix — when LAZ came from EPT
+    (reprojected to EPSG:2236 in ept_fetch.py), pass --crs_epsg to use
+    Pipeline A's documented "legacy tiles" CRS override (line 52-57 of
+    lidar-tier3-geometry.py). laspy's read_tile_crs() in tier2-sqft.py
+    only returns WKT-VLR strings; PDAL's writers.las emits GeoTIFF VLR by
+    default, which read_tile_crs doesn't recognize. The override bypasses
+    header reading entirely — same Pipeline A code path, zero source edit.
 
     Returns (parsed_output_json, outcome, stderr_for_debug).
     On success, outcome='ok'. On failure, outcome is a LidarOutcome code.
@@ -197,6 +205,8 @@ def _run_tier3(laz_path: Path, lat: float, lng: float) -> tuple[dict | None, str
         str(lat),
         str(lng),
     ]
+    if override_crs_epsg:
+        cmd += ["--crs_epsg", str(override_crs_epsg)]
     try:
         proc = subprocess.run(
             cmd,
@@ -345,8 +355,13 @@ def measure(body: dict[str, Any]) -> dict:
                 "elapsedMs": int((time.time() - t0) * 1000),
             }
 
-        # 2. Pipeline A subprocess
-        data, outcome, stderr = _run_tier3(laz_path, lat, lng)
+        # 2. Pipeline A subprocess. EPT path reprojects to EPSG:2236 at fetch
+        # time; Pipeline A's CRS reader misses PDAL's VLR shape, so pass the
+        # documented --crs_epsg override for that path only. TNM-sourced LAZ
+        # carries native FL ftUS CRS in a laspy-readable VLR and needs no
+        # override.
+        fetch_override = 2236 if dr.fetch_path == "ept" else None
+        data, outcome, stderr = _run_tier3(laz_path, lat, lng, override_crs_epsg=fetch_override)
         if outcome != "ok":
             print(f"[tier3 fail outcome={outcome} fetch_path={dr.fetch_path}] stderr tail:\n{stderr[-800:]}")
             return {
