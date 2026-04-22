@@ -13,6 +13,7 @@
 // never exposed to the browser.
 
 import { NextRequest, NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { createClient } from "@supabase/supabase-js";
 import { getRoofData } from "@/lib/solar-api";
 import {
@@ -171,38 +172,41 @@ export async function POST(request: NextRequest) {
       geometry = inferRoofGeometry(roofData);
     }
 
-    // Shadow telemetry — Phase B / Session BM CP4 measurement pipeline harness.
-    // LiDAR adapter stubbed (decisions/phase-b-lidar-runtime-surface.md); pipeline
-    // routes to Solar via the cached roofResult (zero duplicate Solar API cost).
-    // Fire-and-forget: response latency unaffected. BN will swap /api/estimate
-    // to consume pipeline output once the real Python LiDAR service lands and
-    // waitUntil is wired for guaranteed telemetry completion on Vercel.
+    // Measurement pipeline — Phase B / Track A.5 (2026-04-22).
+    // LiDAR adapter now HTTP-clients to the Modal service (Track A.3-A.4).
+    // Solar override still uses the cached roofResult to avoid a duplicate
+    // Solar API call. Wrapped in waitUntil so the measurement_runs insert
+    // survives serverless termination on Vercel — previously fire-and-forget
+    // rows could be dropped when the response returned before the insert
+    // completed.
     if (address && lat != null && lng != null && roofData) {
       const cachedRoofData = roofData;
-      void runMeasurementPipeline(
-        {
-          contractorId: contractor_id ?? null,
-          leadId: null,
-          widgetEventId: null,
-          address,
-          lat,
-          lng,
-        },
-        {
-          ...prodAdapters,
-          runSolar: async () => ({
-            available: true,
-            horizSqft: cachedRoofData.roofAreaSqft,
-            // Solar API returns pitch in degrees (verified lib/solar-api.ts:240).
-            // Pipeline schema stores rise/run ratio (migration 082). Convert.
-            pitch: Math.tan((cachedRoofData.pitchDegrees * Math.PI) / 180),
-            segmentCount: cachedRoofData.numSegments,
-            elapsedMs: getRoofDataElapsedMs,
-          }),
-        }
-      ).catch((err) => {
-        console.error("[measurement-pipeline] shadow telemetry failed", err);
-      });
+      waitUntil(
+        runMeasurementPipeline(
+          {
+            contractorId: contractor_id ?? null,
+            leadId: null,
+            widgetEventId: null,
+            address,
+            lat,
+            lng,
+          },
+          {
+            ...prodAdapters,
+            runSolar: async () => ({
+              available: true,
+              horizSqft: cachedRoofData.roofAreaSqft,
+              // Solar API returns pitch in degrees (verified lib/solar-api.ts:240).
+              // Pipeline schema stores rise/run ratio (migration 082). Convert.
+              pitch: Math.tan((cachedRoofData.pitchDegrees * Math.PI) / 180),
+              segmentCount: cachedRoofData.numSegments,
+              elapsedMs: getRoofDataElapsedMs,
+            }),
+          }
+        ).catch((err) => {
+          console.error("[measurement-pipeline] background run failed", err);
+        })
+      );
     }
 
     // Geocoding sanity: reject non-residential place types (park, bare

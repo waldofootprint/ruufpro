@@ -5,10 +5,12 @@
 // as advisory-only; Mode B trips strictly on LiDAR-internal gates + source
 // availability, NEVER on LiDAR↔Solar disagreement.
 //
-// BM option (c): LiDAR adapter is stubbed. Every request with LiDAR enabled
-// emits outcome="pipeline_crash" from runLidarPipelineProd — harness degrades
-// cleanly to Solar. Deployment surface for real Pipeline A runtime tracked
-// separately (decisions/phase-b-lidar-runtime-surface.md).
+// Track A.3-A.6 (2026-04-22): LiDAR adapter now HTTP-clients to the Modal
+// service hosting Pipeline A (services/lidar-measure/app.py). Real outcome
+// codes flow through from the Python service; wall-clock timeout at the
+// harness layer still surfaces as "pipeline_crash" (reserved for genuine
+// hang/crash semantics). LIDAR_MEASURE_URL must be set; missing env =>
+// pipeline_crash so harness degrades to Solar cleanly.
 //
 // Pipeline A source (scripts/lidar-tier3-geometry.py @ e95d561) UNTOUCHED.
 
@@ -305,15 +307,47 @@ async function raceLidarSolar(
 // ---------------------------------------------------------------------------
 
 async function runLidarPipelineProd(
-  _req: PipelineRequest,
-  _signal: AbortSignal
+  req: PipelineRequest,
+  signal: AbortSignal
 ): Promise<LidarResult> {
-  // BM option (c): adapter stubbed. Deployment surface for real Pipeline A
-  // runtime tracked in decisions/phase-b-lidar-runtime-surface.md as a BN
-  // blocker. Returns pipeline_crash so the harness degrades to Solar cleanly;
-  // "pipeline_crash" keeps the 081 check-constraint list stable vs. adding
-  // a "not_implemented" code that would need migration 083+.
-  return { outcome: "pipeline_crash", elapsedMs: 0 };
+  // Track A.3-A.6: HTTP-client to Modal service (services/lidar-measure).
+  // Service owns TNM lookup + LAZ download + Pipeline A invocation and
+  // returns a LidarResult-shaped JSON. Any fetch-layer failure (missing
+  // env, network, non-200, malformed JSON, abort) is surfaced as
+  // pipeline_crash so the harness degrades to Solar. Python-layer failure
+  // codes (tnm_5xx_or_timeout / laz_download_failed / no_class_6 /
+  // no_footprint_lidar / ok) pass through unchanged.
+  const t0 = Date.now();
+  const url = process.env.LIDAR_MEASURE_URL;
+  if (!url) {
+    return { outcome: "pipeline_crash", elapsedMs: 0 };
+  }
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ lat: req.lat, lng: req.lng, address: req.address }),
+      signal,
+    });
+    if (!res.ok) {
+      return { outcome: "pipeline_crash", elapsedMs: Date.now() - t0 };
+    }
+    const data = (await res.json()) as Partial<LidarResult> & { outcome?: string };
+    // Defensive: if the service returned a shape without an outcome field,
+    // treat as crash rather than trusting undefined fields downstream.
+    if (!data || typeof data.outcome !== "string") {
+      return { outcome: "pipeline_crash", elapsedMs: Date.now() - t0 };
+    }
+    return {
+      ...data,
+      elapsedMs: data.elapsedMs ?? Date.now() - t0,
+    } as LidarResult;
+  } catch {
+    // AbortError (hard-wall 20s) or network error. Harness already has a
+    // 15s budget wrapper that may have fired first — either way,
+    // pipeline_crash is the honest code here.
+    return { outcome: "pipeline_crash", elapsedMs: Date.now() - t0 };
+  }
 }
 
 async function runSolarPipelineProd(
