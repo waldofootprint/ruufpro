@@ -80,7 +80,9 @@ async function callModalDirect(url, lat, lng, address) {
       elapsedMs: body?.elapsedMs ?? null,
       horizSqft: body?.horizSqft ?? null,
       segmentCount: body?.segmentCount ?? null,
-      response_preview: JSON.stringify(body).slice(0, 300),
+      footprintSource: body?.footprintSource ?? null,
+      footprintLatencyMs: body?.footprintLatencyMs ?? null,
+      response_preview: JSON.stringify(body).slice(0, 400),
     };
   } catch (err) {
     return { wall_ms: Date.now() - t0, http_status: null, error: String(err) };
