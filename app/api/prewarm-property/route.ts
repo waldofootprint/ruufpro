@@ -89,8 +89,8 @@ async function firePgWarmup(): Promise<void> {
     try {
       const supabase = createServerSupabase();
       const { error } = await supabase
-        .from("building_footprints")
-        .select("gid", { count: "exact", head: true })
+        .from("contractors")
+        .select("id", { head: true })
         .abortSignal(controller.signal)
         .limit(1);
       const elapsedMs = Date.now() - t0;
