@@ -11,14 +11,21 @@
 //      Gated on `lidar_pipeline_global.enabled=true`. 2s hard timeout —
 //      warmup failure must never surface to the user.
 //
-//   3. PostGIS connection-pool warmup (Track A.9-class-2 §3.4). Fires a single
-//      `building_footprints` SELECT against Supabase so the shared pool has a
-//      hot backend connection before Modal's psycopg2.connect() runs (Bohannon
-//      ~3s PG cold-connect remediation). Gated on the same flag as Modal.
+//   3. PostGIS connection-pool warmup — split across TWO projects:
+//        (a) main project (`firePgWarmup`) — legacy warmup, keeps main-pool
+//            hot for /api/estimate's main-project reads.
+//        (b) geospatial project (`firePgGeospatialWarmup`, Track A.9-prod-deploy
+//            §3.1). Fires a `building_footprints` SELECT against the geospatial
+//            project so Modal's psycopg2.connect() hits a warm backend
+//            (Bohannon ~3s PG cold-connect remediation). This is the pool
+//            Modal actually uses — main-pool warmup was cross-project and
+//            never remediated Bohannon.
+//      Both gated on the same flag as Modal.
 //
 // Called on widget mount (warmup-only, no body) and on address-pick (full).
 
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { getCachedProperty, fetchPropertyData } from "@/lib/rentcast-api";
 import { readFlags } from "@/lib/feature-flags";
 import { createServerSupabase } from "@/lib/supabase-server";
@@ -119,11 +126,71 @@ async function firePgWarmup(): Promise<void> {
   }
 }
 
+async function firePgGeospatialWarmup(): Promise<void> {
+  const t0 = Date.now();
+  try {
+    const flags = await readFlags(null);
+    if (!flags.lidarGlobal) {
+      return;
+    }
+    const url = process.env.SUPABASE_GEOSPATIAL_URL;
+    const key = process.env.SUPABASE_GEOSPATIAL_ANON_KEY;
+    if (!url || !key) {
+      console.log(
+        JSON.stringify({
+          event: "pg_geospatial_prewarm",
+          status: "error",
+          elapsedMs: Date.now() - t0,
+          error: "missing_env",
+          urlPresent: Boolean(url),
+          keyPresent: Boolean(key),
+        })
+      );
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PG_WARMUP_TIMEOUT_MS);
+    try {
+      const supabase = createClient(url, key, {
+        auth: { persistSession: false },
+      });
+      const { error } = await supabase
+        .from("building_footprints")
+        .select("id", { head: true })
+        .abortSignal(controller.signal)
+        .limit(1);
+      const elapsedMs = Date.now() - t0;
+      console.log(
+        JSON.stringify({
+          event: "pg_geospatial_prewarm",
+          status: error ? "error" : "ok",
+          elapsedMs,
+          error: error?.message,
+        })
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (err) {
+    const elapsedMs = Date.now() - t0;
+    const message = err instanceof Error ? err.message : String(err);
+    console.log(
+      JSON.stringify({
+        event: "pg_geospatial_prewarm",
+        status: "error",
+        elapsedMs,
+        error: message,
+      })
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   // Always kick off Modal + PG warmup in parallel — independent of RentCast.
   // Fire-and-forget: we do NOT await these before responding.
   void fireModalWarmup();
   void firePgWarmup();
+  void firePgGeospatialWarmup();
 
   try {
     const body = await request.json().catch(() => ({}));
