@@ -9,8 +9,9 @@ parcel fetch via fetch_dispatch (EPT first, TNM second) + subprocess invocation
 Deploy: modal deploy services/lidar-measure/app.py
 Invoke: POST {lat, lng, address, debug_skip_ept?, debug_skip_tnm?} to the deployed URL.
 
-Cold-only deploy per Hannah 2026-04-22 (Option a). keep_warm left OFF — flip
-ON at A.8 pilot if cost analysis on smoke supports it.
+Track A.9-class-2 (2026-04-22): keep_warm=1 flipped ON per Hannah Q2=Path 3
+(decisions/track-a9-class-2-modal-warmth.md §3.1). Warmth floor closes the
+1-in-3 residual pipeline_crash at ~22s (Brighton pattern, A.8-timeout-fix §9).
 """
 
 from __future__ import annotations
@@ -306,6 +307,9 @@ def _map_to_lidar_result(tier3_json: dict, elapsed_ms: int, fetch_meta: dict) ->
 
 @app.function(
     timeout=90,
+    # Track A.9-class-2 §3.1 — min_containers=1 closes cold-start gap (avg 34.1s per A.8-diag H4).
+    # (Modal renamed keep_warm → min_containers 2025-02-24; spec intent preserved.)
+    min_containers=1,
     # Track A.9-class-1 §3.2 — DATABASE_URL for phase_b.footprint_lookup PostGIS primary.
     secrets=[modal.Secret.from_name("supabase-database-url")],
 )

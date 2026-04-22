@@ -125,9 +125,11 @@ export const SOLAR_DISAGREE = {
   pitchRatio: 0.333, // |pitchLidar - pitchSolar| > 0.333 rise/run
 } as const;
 
-// hardWall MUST ≥ lidarBudget; cold-start Modal measured 23.9s
+// hardWall MUST ≥ lidarBudget (5s gap preserved per A.8-timeout-fix 8c703fa).
+// Track A.9-class-2 §3.2 (2026-04-22): raised 30→40s / 35→45s to cover A.8-diag
+// H4 Modal cold avg 34.1s (n=20, max 56s). Pairs with keep_warm=1 (app.py §3.1).
 export const TIMEOUTS_MS = {
-  lidarBudget: 30_000,
-  hardWall: 35_000,
+  lidarBudget: 40_000,
+  hardWall: 45_000,
   solarGraceAfterLidar: 3_000,
 } as const;

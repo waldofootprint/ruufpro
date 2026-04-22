@@ -49,14 +49,9 @@ LIDAR_MEASURE_URL=<url> GOOGLE_MAPS_API_KEY=... node scripts/smoke-lidar-modal.m
 
 ## Cost / warm-pool
 
-Deployed **cold-only** per Track A.1 §7 (Hannah 2026-04-22, Option a). Cold start
-3-8 s is inside the 20 s cold-path p95 budget.
-
-Flip to warm on the A.8 pilot session if smoke cost analysis supports it:
-
-```python
-@app.function(image=image, timeout=60, keep_warm=1)
-```
+Deployed with `keep_warm=1` per Track A.9-class-2 §3.1 (2026-04-22). Warmth
+floor closes the ~22s Brighton-pattern cold-start crash (A.8-timeout-fix §9).
+Projected cost ceiling $20/mo per scoping §3.7.
 
 ## Port-out trigger
 
