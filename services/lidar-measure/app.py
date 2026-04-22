@@ -26,11 +26,12 @@ from typing import Any
 import modal
 
 # ---------------------------------------------------------------------------
-# Image — PDAL apt_install per A.1 scoping (§7 rationale: Python + PDAL stack
-# covered by `image.apt_install("pdal")` with no Dockerfile). laspy[lazrs] is
-# the actual LAZ reader tier3 uses (import laspy in scripts/lidar-tier3-*.py);
-# PDAL system packages included per scope spec. Deferred: if laspy proves
-# sufficient alone, drop pdal apt layer to shrink image (~500MB).
+# Image — A.1 §7 scoping called for `apt_install("pdal", "python3-pdal")`
+# but (a) PDAL packages aren't in Debian bookworm's default repos and
+# (b) Pipeline A doesn't actually import PDAL — tier3 reads LAZ via
+# `laspy[lazrs]` (grep confirms: no `import pdal` anywhere in scripts/).
+# Dropped to laspy+lazrs alone. Saves ~500MB image size. Build-time
+# bug-fix audit-trail per feedback_harness_vs_tuning_categories.md.
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -38,7 +39,6 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
-    .apt_install("pdal", "python3-pdal")
     .pip_install(
         "numpy==1.26.4",
         "scipy==1.13.1",
@@ -46,6 +46,8 @@ image = (
         "shapely==2.0.4",
         "requests==2.32.3",
         "pyproj==3.6.1",
+        # Modal 1.4+ no longer auto-injects FastAPI for web endpoints.
+        "fastapi[standard]==0.115.4",
     )
     # Single source of truth: mount the real scripts/ directory. No copy.
     .add_local_dir(SCRIPTS_DIR.as_posix(), remote_path="/opt/scripts")
