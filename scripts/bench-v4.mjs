@@ -26,6 +26,20 @@ function arg(flag, fallback) {
 const BASE = arg("--base", "https://ruufpro.com").replace(/\/$/, "");
 const INPUT = arg("--input", path.join(__dirname, "bench-addresses.json"));
 const OUT = arg("--out", path.join(__dirname, "..", ".tmp", "calculator-bench", "v4-bench-BB.csv"));
+const GEOCODE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || process.env.GOOGLE_MAPS_API_KEY;
+
+// Harness fix (Track A.8 2026-04-22): /api/estimate gates measurement_runs +
+// LiDAR path on top-level lat/lng. Widget sends precoords; bench must match.
+async function geocode(address) {
+  if (!GEOCODE_KEY) return null;
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GEOCODE_KEY}`;
+  const r = await fetch(url);
+  if (!r.ok) return null;
+  const j = await r.json();
+  if (j.status !== "OK" || !j.results?.length) return null;
+  const loc = j.results[0].geometry.location;
+  return { lat: loc.lat, lng: loc.lng };
+}
 
 const fixture = JSON.parse(fs.readFileSync(INPUT, "utf8"));
 const { contractor_id, contractor_label, options, addresses } = fixture;
@@ -58,9 +72,12 @@ console.log(`Options: pitch=${options.pitch_category}, material=${options.curren
 console.log(`Bench: ${addresses.length} addresses\n`);
 
 for (const row of addresses) {
+  const coords = await geocode(row.address);
   const payload = {
     contractor_id,
     address: row.address,
+    lat: coords?.lat,
+    lng: coords?.lng,
     pitch_category: options.pitch_category,
     current_material: options.current_material,
     shingle_layers: options.shingle_layers,
