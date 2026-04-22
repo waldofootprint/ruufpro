@@ -29,6 +29,9 @@ import importlib.util
 _spec = importlib.util.spec_from_file_location("tier2", Path(__file__).parent / "lidar-tier2-sqft.py")
 tier2 = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(tier2)
 from lidar_geometry_utils import alpha_shape_perimeter as _shared_alpha_shape_perimeter
+# Track A.9-class-1 §3.1 — route footprint fetch through the 3-tier chain
+# (MS PostGIS → self-derive → Overpass with circuit breaker) instead of direct Overpass.
+from phase_b import footprint_lookup as _footprint_lookup  # noqa: E402
 
 # --- CONSTANTS (see design doc §3, §5) ---
 # Env-var overrides (BL tuning harness, 2026-04-21). Defaults = Phase A frozen
@@ -327,6 +330,8 @@ def main():
 
     # --- Footprint ---
     print(f"[1/7] Footprint")
+    footprint_source = None
+    footprint_latency_ms = None
     if args.footprint_xy_json:
         # Bench mode: polygon already in tile CRS (e.g. RoofN3D faux-ftUS).
         j = json.loads(Path(args.footprint_xy_json).read_text())
@@ -342,10 +347,18 @@ def main():
     else:
         if args.lat is None or args.lng is None:
             raise SystemExit("lat/lng required unless --footprint_geojson is provided")
-        poly_ll, n_found = tier2.fetch_footprint(args.lat, args.lng, args.radius_m)
-        if poly_ll is None:
-            wide = max(args.radius_m * 2, 100)
-            poly_ll, n_found = tier2.fetch_footprint(args.lat, args.lng, wide)
+        # A.9-class-1: resolve() covers MS PostGIS → LiDAR self-derive → Overpass-with-breaker.
+        # The old wide-radius retry was Overpass-only; MS/self-derive don't accept a radius
+        # widening, and Overpass inside resolve() uses its own fixed 25m radius + breaker.
+        fp_result = _footprint_lookup.resolve(args.lat, args.lng, laz_path=str(laz_path))
+        footprint_source = fp_result.source.value
+        footprint_latency_ms = round(fp_result.latency_ms, 1)
+        if fp_result.geom_geojson is not None:
+            poly_ll = shp_shape(fp_result.geom_geojson)
+            n_found = 1
+        else:
+            poly_ll = None
+            n_found = 0
         if poly_ll is None:
             raise SystemExit("no footprint")
     if not args.footprint_xy_json:
@@ -473,6 +486,9 @@ def main():
         "num_segments": len(planes),
         "inlierRatio": inlier_ratio,
         "residual": residual,
+        # A.9-class-1 §3.1 — footprint-source provenance (2 new fields only).
+        "footprint_source": footprint_source,
+        "footprint_latency_ms": footprint_latency_ms,
         "segments": [
             {
                 "id": i,

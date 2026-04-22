@@ -34,6 +34,9 @@ CIRCUIT_COOLDOWN_SEC = 300  # 5 min
 OVERPASS_TIMEOUT_SEC = 8
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 MS_MAX_DIST_M = 30
+# Track A.9-class-1 §3.4 — hard cap PostGIS lookup; on timeout fall through to self-derive.
+FOOTPRINT_LOOKUP_TIMEOUT_MS = 2000
+PG_CONNECT_TIMEOUT_SEC = 2
 
 
 class Source(str, Enum):
@@ -64,7 +67,7 @@ def _pg_conn():
     dsn = os.environ.get("DATABASE_URL")
     if not dsn:
         raise RuntimeError("DATABASE_URL not set")
-    return psycopg2.connect(dsn)
+    return psycopg2.connect(dsn, connect_timeout=PG_CONNECT_TIMEOUT_SEC)
 
 
 def ms_lookup(lat: float, lng: float, max_dist_m: int = MS_MAX_DIST_M, conn=None) -> Optional[dict]:
@@ -73,6 +76,9 @@ def ms_lookup(lat: float, lng: float, max_dist_m: int = MS_MAX_DIST_M, conn=None
     If `conn` is None, opens a fresh psycopg2 connection for each call (includes TCP+TLS
     handshake — ~50-100ms at cold start). If `conn` is supplied, reuses it (production case
     with pgbouncer/pool). Benches should reuse — see bench_ms_lookup.py.
+
+    Hard cap statement at FOOTPRINT_LOOKUP_TIMEOUT_MS per A.9-class-1 §3.4. On timeout
+    psycopg2 raises QueryCanceled, which resolve() catches and falls through to next source.
     """
     close_after = False
     if conn is None:
@@ -80,6 +86,7 @@ def ms_lookup(lat: float, lng: float, max_dist_m: int = MS_MAX_DIST_M, conn=None
         close_after = True
     try:
         with conn.cursor() as cur:
+            cur.execute(f"set local statement_timeout = {int(FOOTPRINT_LOOKUP_TIMEOUT_MS)}")
             cur.execute("select geom_geojson from footprint_lookup(%s, %s, %s)", (lat, lng, max_dist_m))
             row = cur.fetchone()
         return row[0] if row else None

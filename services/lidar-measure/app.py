@@ -57,6 +57,8 @@ image = (
         "pyproj==3.6.1",
         # Modal 1.4+ no longer auto-injects FastAPI for web endpoints.
         "fastapi[standard]==0.115.4",
+        # Track A.9-class-1 §3.2 — phase_b.footprint_lookup talks to Supabase PostGIS.
+        "psycopg2-binary==2.9.9",
     )
     # Single source of truth: mount the real scripts/ directory. No copy.
     .add_local_dir(SCRIPTS_DIR.as_posix(), remote_path="/opt/scripts")
@@ -291,6 +293,9 @@ def _map_to_lidar_result(tier3_json: dict, elapsed_ms: int, fetch_meta: dict) ->
         "elapsedMs": elapsed_ms,
         "fetchPath": fetch_meta.get("fetch_path"),
         "fetchCollection": fetch_meta.get("collection_id"),
+        # Track A.9-class-1 §3.1 — passthrough of footprint provenance for bench + logs.
+        "footprintSource": tier3_json.get("footprint_source"),
+        "footprintLatencyMs": tier3_json.get("footprint_latency_ms"),
     }
 
 
@@ -299,7 +304,11 @@ def _map_to_lidar_result(tier3_json: dict, elapsed_ms: int, fetch_meta: dict) ->
 # ---------------------------------------------------------------------------
 
 
-@app.function(timeout=90)
+@app.function(
+    timeout=90,
+    # Track A.9-class-1 §3.2 — DATABASE_URL for phase_b.footprint_lookup PostGIS primary.
+    secrets=[modal.Secret.from_name("supabase-database-url")],
+)
 @modal.fastapi_endpoint(method="POST")
 def measure(body: dict[str, Any]) -> dict:
     """POST /measure — returns JSON matching TS LidarResult shape.
