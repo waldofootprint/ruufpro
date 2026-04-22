@@ -1,0 +1,11 @@
+id,address,roofer,status,sqft,num_segs,is_satellite,v4_low,v4_mid,v4_high,roofle_low,roofle_high,roofle_mid,delta_mid_pct,trip_reason,notes
+1,"10632 Brighton Hill Cir S, Jacksonville, FL 32256",NEXGEN,ok,3448,8,true,19800,22000,24200,,,,,,medium — green pre-BB
+2,"1823 Ernest St, Jacksonville, FL 32204",NEXGEN,ok,2294,5,true,19800,22000,24200,,,,,,small Riverside — Mode A brought from -47% to -19.4%
+3,"24 Deer Haven Dr, Ponte Vedra, FL 32082",NEXGEN,refused,,,,,,,,,,,couldnt_measure_accurately,"estate — V4 refuses, Mode B lead written. Note: RuufPro Mode B refusal here is CORRECT behavior (estate too large for reliable auto-measure). Per policy §category-2, Mode B + Roofle wrong = PASS."
+4,"1807 Tall Pines Dr, Largo, FL 33771",Bay to Bay,ok,1776,4,true,19800,22000,24200,,,,,,"1,514 sqft Zillow — small Pinellas"
+5,"2228 Golf Manor Blvd, Valrico, FL 33596",Tampa Bay Roofs,refused,,,,,,,,,,,couldnt_measure_accurately,"2,779 sqft Zillow — hip w/ detached pool cage (Roofle correctly excluded)"
+6,"19943 Tamiami Ave, Tampa, FL 33647",Tampa Bay Roofs,ok,3674,9,true,20667,22963,25259,,,,,,"4,188 sqft Zillow — multi-gable stress test"
+7,"9806 Mountain Lake Dr, Orlando, FL 32832",,ok,4248,7,true,23897,26552,29207,,,,,,"2,556 sqft — Orange County hip. Zillow: https://www.zillow.com/homedetails/9806-Mountain-Lake-Dr-Orlando-FL-32832/71066543_zpid/"
+8,"9833 Camberley Cir, Orlando, FL 32836",,refused,,,,,,,,,,,couldnt_measure_accurately,"3,191 sqft — complex + lanai, partial edge canopy (iq HIGH). Zillow: https://www.zillow.com/homedetails/9833-Camberley-Cir-Orlando-FL-32836/46051100_zpid/"
+9,"492 Bohannon Blvd, Orlando, FL 32824",,ok,2744,4,true,19800,22000,24200,,,,,,"1,712 sqft — hip + lanai screen enclosure. Zillow: https://www.zillow.com/homedetails/492-Bohannon-Blvd-Orlando-FL-32824/46128905_zpid/"
+10,"420 Stately Shoals Trl, Ponte Vedra, FL 32081",,refused,,,,,,,,,,,couldnt_measure_accurately,"3,982 sqft — 2-story hip, St. Johns. Realtor.com primary (Zillow 403): https://www.realtor.com/realestateandhomes-detail/420-Stately-Shoals-Trl_Ponte-Vedra_FL_32081_M57036-45106"

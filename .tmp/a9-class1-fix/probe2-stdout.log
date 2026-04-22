@@ -1,0 +1,26 @@
+[probe1] Modal=https://waldofootprint--lidar-measure-measure.modal.run
+[probe1] spacing=10s
+[probe1] log=/Users/hannahwaldo/RoofReady/.tmp/a8-diag/probe1-2026-04-22T19-54-43-258Z.jsonl
+
+[probe1] brighton: 10632 Brighton Hill Cir S, Jacksonville, FL 32256 @ 30.2082767,-81.5228272
+  [brighton #1] ok  wall=27601ms  fetch=ept
+  [brighton #2] ok  wall=22192ms  fetch=ept
+  [brighton #3] ok  wall=21943ms  fetch=ept
+  [brighton #4] ok  wall=21536ms  fetch=ept
+  [brighton #5] ok  wall=21536ms  fetch=ept
+
+[probe1] dunedin: 2501 Main St, Dunedin, FL 34698 @ 28.0193227,-82.7398122
+  [dunedin #1] ok  wall=15555ms  fetch=ept
+  [dunedin #2] ok  wall=15652ms  fetch=ept
+  [dunedin #3] ok  wall=15755ms  fetch=ept
+  [dunedin #4] ok  wall=16899ms  fetch=ept
+  [dunedin #5] ok  wall=15299ms  fetch=ept
+
+================================================================================
+Probe 1 summary (H7 test — deterministic crash if 5/5 fail):
+  brighton: crash=0/5  ok=5/5  other=0/5
+         walls=[27601, 22192, 21943, 21536, 21536]ms
+  dunedin: crash=0/5  ok=5/5  other=0/5
+         walls=[15555, 15652, 15755, 16899, 15299]ms
+
+Log: /Users/hannahwaldo/RoofReady/.tmp/a8-diag/probe1-2026-04-22T19-54-43-258Z.jsonl

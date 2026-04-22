@@ -1,0 +1,5 @@
+{"id":"ernest","addr":"1823 Ernest St, Jacksonville, FL 32204","lat":30.3192684,"lng":-81.6834253,"wall_ms":32473,"outcome":"ok","footprintSource":"microsoft","footprintLatencyMs":1811.8,"horizSqft":4231.9,"elapsedMs":28181}
+{"id":"tallpines","addr":"1807 Tall Pines Dr, Largo, FL 33771","lat":27.9001218,"lng":-82.75631109999999,"wall_ms":20523,"outcome":"ok","footprintSource":"microsoft","footprintLatencyMs":1835.5,"horizSqft":1704,"elapsedMs":19803}
+{"id":"tamiami","addr":"19943 Tamiami Ave, Tampa, FL 33647","lat":28.1579637,"lng":-82.34179759999999,"wall_ms":13072,"outcome":"ok","footprintSource":"microsoft","footprintLatencyMs":1790.7,"horizSqft":2235.6,"elapsedMs":12362}
+{"id":"mountainlake","addr":"9806 Mountain Lake Dr, Orlando, FL 32832","lat":28.4059073,"lng":-81.22282059999999,"wall_ms":23210,"outcome":"ok","footprintSource":"microsoft","footprintLatencyMs":1813.9,"horizSqft":3744.6,"elapsedMs":22558}
+{"id":"bohannon","addr":"492 Bohannon Blvd, Orlando, FL 32824","lat":28.3983439,"lng":-81.38807779999999,"wall_ms":21203,"outcome":"ok","footprintSource":"microsoft","footprintLatencyMs":3000.9,"horizSqft":2396.1,"elapsedMs":20587}
