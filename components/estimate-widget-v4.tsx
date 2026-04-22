@@ -365,6 +365,21 @@ export default function EstimateWidgetV4({
     }).catch(() => {});
   }, [contractorId, sessionFp]);
 
+  // Track A.8-timeout-fix: pre-warm Modal LiDAR container on widget mount
+  // so the first real estimate hits a warm container (~3s) instead of
+  // eating ~24s cold-start. Fire-once guard survives React Strict-Mode
+  // double-mount in dev. Fire-and-forget — never blocks user flow.
+  const modalPrewarmFiredRef = useRef(false);
+  useEffect(() => {
+    if (modalPrewarmFiredRef.current) return;
+    modalPrewarmFiredRef.current = true;
+    fetch("/api/prewarm-property", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }).catch(() => {});
+  }, []);
+
   // Track material switch events — fire-and-forget to widget-events API
   const handleMaterialSwitch = (newMaterial: string, est: { tier: string; price_low: number; price_high: number }) => {
     if (newMaterial === selectedMaterial || !sessionFp || !contractorId) return;
