@@ -27,3 +27,7 @@ node_modules/
 .agents/
 .playwright-mcp/
 skills-lock.json
+
+# Python bytecode (services/lidar-measure)
+__pycache__/
+*.pyc
