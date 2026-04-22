@@ -398,6 +398,12 @@ def main():
     # --- Segments (§3) ---
     print(f"[3/7] Segment detection")
     planes = detect_segments(roof_points)
+    # RANSAC aggregate quality — exposed for downstream gate (Track A.8-prep).
+    n_roof_points_total = len(roof_points)
+    total_inliers = sum(len(p["points"]) for p in planes)
+    inlier_ratio = (total_inliers / n_roof_points_total) if n_roof_points_total > 0 else 0.0
+    residual = (float(sum(np.abs(p["points"] @ p["normal"] + p["d"]).sum() for p in planes) / total_inliers)
+                if total_inliers > 0 else None)
     print(f"  planes detected: {len(planes)}")
     for i, p in enumerate(planes):
         print(f"    seg {i}: pitch {p['pitch_degrees']:.1f}° ({p['pitch_ratio_over_12']:.1f}/12) "
@@ -465,6 +471,8 @@ def main():
         "low_confidence_density": low_confidence,
         "class6_fallback": class6_fallback,
         "num_segments": len(planes),
+        "inlierRatio": inlier_ratio,
+        "residual": residual,
         "segments": [
             {
                 "id": i,

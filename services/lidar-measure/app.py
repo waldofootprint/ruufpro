@@ -252,10 +252,10 @@ def _map_to_lidar_result(tier3_json: dict, elapsed_ms: int) -> dict:
         "pitch": _weighted_pitch(segments),
         "segmentCount": tier3_json.get("num_segments"),
         "perimeterFt": tier3_json.get("roof_perimeter_ft"),
-        # inlierRatio: not exposed by tier3; omitted -> gate classifies fail
+        "inlierRatio": tier3_json.get("inlierRatio"),
         "density": tier3_json.get("point_density_pts_per_m2"),
         "footprintCoverage": coverage,
-        # residual: not exposed; omitted
+        "residual": tier3_json.get("residual"),
         "cacheTier": "cold",  # BN: no cache layer yet (B.1/B.2 separate track)
         "elapsedMs": elapsed_ms,
     }
