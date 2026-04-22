@@ -125,8 +125,9 @@ export const SOLAR_DISAGREE = {
   pitchRatio: 0.333, // |pitchLidar - pitchSolar| > 0.333 rise/run
 } as const;
 
+// hardWall MUST ≥ lidarBudget; cold-start Modal measured 23.9s
 export const TIMEOUTS_MS = {
-  lidarBudget: 15_000,
-  hardWall: 20_000,
+  lidarBudget: 30_000,
+  hardWall: 35_000,
   solarGraceAfterLidar: 3_000,
 } as const;
