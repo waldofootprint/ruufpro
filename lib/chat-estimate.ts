@@ -4,7 +4,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { getRoofData } from "@/lib/solar-api";
-import { inferRoofGeometry } from "@/lib/roof-geometry";
+import { geometryForEstimate } from "@/lib/estimate-geometry-policy";
 import {
   calculateEstimate,
   ESTIMATE_DISCLAIMER,
@@ -100,9 +100,7 @@ export async function runChatEstimate(
   try {
     const roofResult = await getRoofData(address);
     roofData = roofResult.data;
-    if (roofData) {
-      geometry = inferRoofGeometry(roofData);
-    }
+    geometry = geometryForEstimate(null, roofData);
   } catch (err) {
     console.error("Chat estimate — Solar API error:", err);
   }

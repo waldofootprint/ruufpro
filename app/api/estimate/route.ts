@@ -20,7 +20,7 @@ import {
   runMeasurementPipeline,
   prodAdapters,
 } from "@/lib/measurement-pipeline";
-import { inferRoofGeometry } from "@/lib/roof-geometry";
+import { geometryForEstimate } from "@/lib/estimate-geometry-policy";
 import { getCachedProperty, fetchPropertyData } from "@/lib/rentcast-api";
 import {
   calculateEstimate,
@@ -168,9 +168,7 @@ export async function POST(request: NextRequest) {
     const getRoofDataElapsedMs = Date.now() - getRoofDataStart;
 
     roofData = roofResult.data;
-    if (roofData) {
-      geometry = inferRoofGeometry(roofData);
-    }
+    geometry = geometryForEstimate(null, roofData);
 
     // Measurement pipeline — Phase B / Track A.5 (2026-04-22).
     // LiDAR adapter now HTTP-clients to the Modal service (Track A.3-A.4).
