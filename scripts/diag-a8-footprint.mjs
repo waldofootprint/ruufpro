@@ -56,7 +56,7 @@ out body geom;
 `;
   const r = await fetch(OVERPASS, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "RuufPro-A8-diag/1.0 (admin@getruufpro.com)" },
     body: "data=" + encodeURIComponent(q),
   });
   if (!r.ok) throw new Error(`overpass ${r.status}`);
