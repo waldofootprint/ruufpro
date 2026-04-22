@@ -33,7 +33,7 @@ CIRCUIT_FAIL_THRESHOLD = 2
 CIRCUIT_COOLDOWN_SEC = 300  # 5 min
 OVERPASS_TIMEOUT_SEC = 8
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
-MS_MAX_DIST_M = 30
+MS_MAX_DIST_M = 50
 # Track A.9-class-1 §3.4 — hard cap PostGIS lookup; on timeout fall through to self-derive.
 FOOTPRINT_LOOKUP_TIMEOUT_MS = 2000
 PG_CONNECT_TIMEOUT_SEC = 2
@@ -226,7 +226,7 @@ def overpass_lookup(lat: float, lng: float, breaker: Optional[_CircuitBreaker] =
         return None, state
 
     query = f"""[out:json][timeout:{OVERPASS_TIMEOUT_SEC}];
-(way["building"](around:25,{lat},{lng});relation["building"](around:25,{lat},{lng}););
+(way["building"](around:40,{lat},{lng});relation["building"](around:40,{lat},{lng}););
 out geom;"""
     req = Request(OVERPASS_URL, data=f"data={query}".encode(), method="POST")
     try:
