@@ -1,6 +1,6 @@
 # lidar-measure (Modal service)
 
-Pipeline A runtime surface. Wraps `scripts/lidar-tier3-geometry.py` @ `e95d561` (frozen).
+Pipeline A runtime surface. Wraps `scripts/lidar-tier3-geometry.py` @ `0367980` (frozen, re-opened 2026-04-22 per `decisions/pipeline-a-reopen-inlier-residual.md` — output-JSON surface only, bit-identical).
 
 ## Deploy
 
