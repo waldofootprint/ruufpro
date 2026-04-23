@@ -493,6 +493,7 @@ export async function runMeasurementPipeline(
     pipeline: decision.pipeline,
     xcheckStatus: decision.xcheckStatus,
     modeBTripped: decision.modeBTripped,
+    lidarGateStatus: decision.lidarGateStatus,
     horizSqft: horiz,
     pitch,
     segmentCount: segs,

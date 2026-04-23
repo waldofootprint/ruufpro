@@ -63,6 +63,10 @@ export interface PipelineResult {
   pipeline: Pipeline;
   xcheckStatus: XcheckStatus;
   modeBTripped: boolean;
+  // Track D.5 Option-A 2026-04-23: surfaced so /api/estimate can gate
+  // LiDAR-primary on `pipeline === "lidar" && lidarGateStatus === "strong"`
+  // (Q1-A1). Null when LiDAR disabled or never ran.
+  lidarGateStatus: GateStatus | null;
   horizSqft: number | null;
   pitch: number | null;
   segmentCount: number | null;

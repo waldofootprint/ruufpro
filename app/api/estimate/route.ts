@@ -13,13 +13,13 @@
 // never exposed to the browser.
 
 import { NextRequest, NextResponse } from "next/server";
-import { waitUntil } from "@vercel/functions";
 import { createClient } from "@supabase/supabase-js";
-import { getRoofData } from "@/lib/solar-api";
+import { getRoofData, type RoofData } from "@/lib/solar-api";
 import {
   runMeasurementPipeline,
   prodAdapters,
 } from "@/lib/measurement-pipeline";
+import type { PipelineResult } from "@/lib/measurement-pipeline.types";
 import { geometryForEstimate } from "@/lib/estimate-geometry-policy";
 import { getCachedProperty, fetchPropertyData } from "@/lib/rentcast-api";
 import {
@@ -168,19 +168,19 @@ export async function POST(request: NextRequest) {
     const getRoofDataElapsedMs = Date.now() - getRoofDataStart;
 
     roofData = roofResult.data;
-    geometry = geometryForEstimate(null, roofData);
 
-    // Measurement pipeline — Phase B / Track A.5 (2026-04-22).
-    // LiDAR adapter now HTTP-clients to the Modal service (Track A.3-A.4).
-    // Solar override still uses the cached roofResult to avoid a duplicate
-    // Solar API call. Wrapped in waitUntil so the measurement_runs insert
-    // survives serverless termination on Vercel — previously fire-and-forget
-    // rows could be dropped when the response returned before the insert
-    // completed.
+    // Track D.5 Option-A 2026-04-23: promote measurement pipeline from
+    // waitUntil (telemetry-only) to in-band await so LiDAR output can feed
+    // the sync price path. Q1-A1: LiDAR-primary when outcome=ok AND gate=strong;
+    // Solar fallback otherwise (including borderline, no_class_6, mode_b, crash).
+    // Q2-B1: guardrails automatically read LiDAR segs+sqft via overwritten
+    // roofData below. Q3-C1: no_class_6 → Solar fallback, counts normally.
+    // Outer budget bounded by TIMEOUTS_MS.hardWall (45s) inside the harness.
+    let pipelineResult: PipelineResult | null = null;
     if (address && lat != null && lng != null && roofData) {
       const cachedRoofData = roofData;
-      waitUntil(
-        runMeasurementPipeline(
+      try {
+        pipelineResult = await runMeasurementPipeline(
           {
             contractorId: contractor_id ?? null,
             leadId: null,
@@ -201,11 +201,49 @@ export async function POST(request: NextRequest) {
               elapsedMs: getRoofDataElapsedMs,
             }),
           }
-        ).catch((err) => {
-          console.error("[measurement-pipeline] background run failed", err);
-        })
-      );
+        );
+      } catch (err) {
+        console.error("[measurement-pipeline] in-band run failed", err);
+        pipelineResult = null;
+      }
     }
+
+    // Q1-A1 gate: LiDAR-primary iff `pipeline=lidar` AND gate=strong AND
+    // all three measurement fields populated. Anything else → Solar path
+    // untouched. Borderline/fail/no_class_6/pipeline_crash all fall to Solar.
+    const useLidar =
+      pipelineResult?.pipeline === "lidar" &&
+      pipelineResult.lidarGateStatus === "strong" &&
+      pipelineResult.horizSqft != null &&
+      pipelineResult.pitch != null &&
+      pipelineResult.segmentCount != null;
+
+    if (useLidar && pipelineResult) {
+      // Convert LiDAR result (rise/run pitch, horizontal sqft) to RoofData
+      // shape so calculateEstimate consumes LiDAR values without any math
+      // changes. Preserves imageryQuality flags from Solar fetch so downstream
+      // gates that reference them still have signal when available.
+      const lidarPitchDegrees =
+        (Math.atan(pipelineResult.pitch!) * 180) / Math.PI;
+      const lidarRoofData: RoofData = {
+        roofAreaSqft: pipelineResult.horizSqft!,
+        pitchDegrees: lidarPitchDegrees,
+        numSegments: pipelineResult.segmentCount!,
+        segments: roofData?.segments ?? [],
+        source: roofData?.source ?? "google_solar",
+        imageryQuality: roofData?.imageryQuality,
+        imageryDate: roofData?.imageryDate,
+        imageryProcessedDate: roofData?.imageryProcessedDate,
+      };
+      roofData = lidarRoofData;
+    }
+
+    // Track A.7 policy wired (was locked to null per A.7 scope): LiDAR-win
+    // returns undefined from geometryForEstimate so itemized mode falls back
+    // to materialCost * 0.10; Solar-win preserves today's inferred geometry.
+    const pipelineUsed =
+      useLidar ? "lidar" : (pipelineResult?.pipeline ?? null);
+    geometry = geometryForEstimate(pipelineUsed, roofData);
 
     // Geocoding sanity: reject non-residential place types (park, bare
     // route, intersection, commercial POIs) before running cost/guardrail.
@@ -365,9 +403,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Google Solar confidence gates — only run on fresh fetches (cache hits
-      // don't carry these fields; segment heuristics already cover over-selects).
-      if (!trip && roofData?.source === "google_solar") {
+      // Google Solar confidence gates — only run on fresh Solar fetches.
+      // Skipped when LiDAR wins Q1-A1 (Q2-B1 consistency: LiDAR-everything
+      // at guardrail layer; Solar imagery flags don't describe LiDAR output).
+      if (!trip && !useLidar && roofData?.source === "google_solar") {
         if (roofData.imageryQuality === "LOW") {
           trip = `low_imagery_quality:${sqft}sqft`;
         } else if (roofData.imageryProcessedDate) {
@@ -462,7 +501,11 @@ export async function POST(request: NextRequest) {
       ? `Estimated from property records · ${firstEstFinal.roof_area_sqft.toLocaleString()} sqft roof (less precise — satellite view was unclear)`
       : `Based on ${firstEstFinal.roof_area_sqft.toLocaleString()} sqft roof · ${firstEstFinal.is_satellite ? "satellite-measured" : "estimated"}`;
 
-    // Step 5: Return full response
+    // Step 5: Return full response.
+    // Track D.5 Option-A §0 post-mortem: cross-layer fields surfaced so Gate-2
+    // G2 can assert `measurement_runs.horiz_sqft === sqft_used_for_estimate`
+    // and `pipeline` response field matches the actual data source feeding
+    // calculateEstimate (not just telemetry winner).
     return NextResponse.json({
       estimates,
       roof_data: {
@@ -472,6 +515,10 @@ export async function POST(request: NextRequest) {
         is_satellite: firstEst.is_satellite,
         detail_display: detailDisplay,
       },
+      pipeline: pipelineUsed,
+      sqft_used_for_estimate: firstEst.roof_area_sqft,
+      lidar_gate_status: pipelineResult?.lidarGateStatus ?? null,
+      measurement_run_id: pipelineResult?.telemetryRowId ?? null,
       // Weather surge: "detected" = NOAA sees alerts, "active" = roofer opted in
       weather_surge: weatherSurge.isSurged
         ? {
