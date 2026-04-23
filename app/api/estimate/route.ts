@@ -241,8 +241,16 @@ export async function POST(request: NextRequest) {
     // Track A.7 policy wired (was locked to null per A.7 scope): LiDAR-win
     // returns undefined from geometryForEstimate so itemized mode falls back
     // to materialCost * 0.10; Solar-win preserves today's inferred geometry.
-    const pipelineUsed =
-      useLidar ? "lidar" : (pipelineResult?.pipeline ?? null);
+    //
+    // pipelineUsed reflects the actual price-path data source, not the harness
+    // winner. Borderline-LiDAR rows fall through to Solar data at Q1-A1 gate,
+    // so response.pipeline must read "solar" to keep the G2 cross-layer
+    // assertion consistent with §0 post-mortem (telemetry/price-path parity).
+    const pipelineUsed = useLidar
+      ? ("lidar" as const)
+      : roofData
+      ? ("solar" as const)
+      : null;
     geometry = geometryForEstimate(pipelineUsed, roofData);
 
     // Geocoding sanity: reject non-residential place types (park, bare
