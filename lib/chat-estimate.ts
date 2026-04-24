@@ -182,6 +182,10 @@ export async function runChatEstimate(
         shingleLayers: "not_sure",
         rates,
         weatherSurgeMultiplier,
+        // PRICING.1c-corrected (2026-04-24): chat path doesn't plumb shape
+        // resolver yet — safe-middle hip default keeps pricing deterministic
+        // and inside the projected 1c band for chat-served quotes.
+        roofShapeClass: "hip",
       });
 
       const low = result.priceLow.toLocaleString("en-US", {

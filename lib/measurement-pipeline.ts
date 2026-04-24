@@ -17,6 +17,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { notifySlack } from "./slack-notify";
 import { readFlags } from "./feature-flags";
+import { resolveShapeClass } from "./estimate";
 import {
   GATE_THRESHOLDS,
   SOLAR_DISAGREE,
@@ -449,6 +450,20 @@ export async function runMeasurementPipeline(
     // Solar does not expose perimeter; stays null
   }
 
+  // PRICING.1c-corrected (2026-04-24): resolve shape class using widget input
+  // if supplied, else auto-classify from LiDAR geometry. alphaAreaSqft not
+  // currently plumbed through LidarResult (Modal response shim at
+  // services/lidar-measure/app.py:285 drops roof_alpha_area_sqft — frozen per
+  // scoping §5.1). Resolver degrades to compactness-only in the auto path.
+  // Solar-served rows have no perimeter → auto falls to safe-middle hip default.
+  const resolvedShape = resolveShapeClass(
+    req.widgetShapeClass ?? null,
+    horiz,
+    // alphaAreaSqft not exposed on LiDAR result (Modal shim-level limitation).
+    null,
+    perim,
+  );
+
   const row: MeasurementRunRow = {
     contractor_id: req.contractorId,
     lead_id: req.leadId,
@@ -478,6 +493,8 @@ export async function runMeasurementPipeline(
     solar_ms: solar?.elapsedMs ?? null,
     total_ms: adapters.now() - t0,
     flags_snapshot: flags,
+    shape_class: resolvedShape.shapeClass,
+    shape_class_source: resolvedShape.source,
   };
 
   // Fire-and-forget telemetry — a write hiccup must not block /api/estimate.
@@ -499,5 +516,7 @@ export async function runMeasurementPipeline(
     segmentCount: segs,
     perimeterFt: perim,
     telemetryRowId,
+    shapeClass: resolvedShape.shapeClass,
+    shapeClassSource: resolvedShape.source,
   };
 }

@@ -39,9 +39,12 @@ export interface RegionalRates {
 // Old defaults had 30-45% spread which compounded into 85% output ranges.
 // These tightened rates reflect 2025-2026 market midpoints with ±10% spread.
 const REGIONAL_DEFAULTS: Record<string, RegionalRates> = {
-  // Southeast / Sun Belt — lower labor costs, high storm demand
+  // Southeast / Sun Belt — lower labor costs, high storm demand.
+  // PRICING.1c-corrected (2026-04-24): asphalt band raised to ±4% around
+  // Roofle small-simple anchor $6.46 per scoping §0 Q1=c. Preserves
+  // homeowner-facing band signal without re-anchoring the mid.
   southeast: {
-    asphalt_low: 5.00, asphalt_high: 6.00,
+    asphalt_low: 6.20, asphalt_high: 6.72,
     metal_low: 11.00,  metal_high: 13.00,
     tile_low: 13.00,   tile_high: 15.75,
     flat_low: 5.55,    flat_high: 6.95,

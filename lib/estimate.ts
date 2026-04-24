@@ -52,6 +52,13 @@ export interface EstimateInput {
   shingleLayers: 1 | 2 | "not_sure";
   material: RoofMaterial; // desired material
 
+  // PRICING.1c-corrected (2026-04-24): resolved roof shape class drives the
+  // complexity multiplier in calculateEstimate. Resolver lives in
+  // /api/estimate/route.ts (widget input wins, else auto from Pipeline A).
+  // Required input — calculateEstimate no longer derives complexity from
+  // numSegments (HARD RULE per feedback_no_segcount_pricing_signal.md).
+  roofShapeClass: RoofShapeClass;
+
   // Lead qualification (doesn't affect price, captured for the roofer)
   timeline?: "no_timeline" | "1_3_months" | "now";
   financingInterest?: "yes" | "no" | "maybe";
@@ -126,24 +133,79 @@ function crossCheckPitch(
   return Math.max(solarPitchDegrees, homeownerPitch);
 }
 
-// Size + shape complexity multiplier on the $/sqft rate.
-// Encodes what Roofle does implicitly: larger, more complex roofs
-// cost more per sqft than small simple ones (more cuts, more labor,
-// more staging, more accessories). Range 1.00× (small simple)
-// → 1.35× (large complex). Calibrated against Roofle D.5 bench.
-// Applied in BOTH bundled + itemized modes on the effective rate.
-export function getSizeShapeMultiplier(sqft: number, numSegments: number): number {
-  const sizeFactor =
-    sqft <= 2000 ? 0 :
-    sqft >= 5000 ? 0.20 :
-    ((sqft - 2000) / 3000) * 0.20;
-  const complexityFactor =
-    numSegments <= 2 ? 0 :
-    numSegments <= 4 ? 0.05 :
-    0.15;
-  const raw = sizeFactor + complexityFactor;
-  const capped = Math.min(raw, 0.25);
-  return 1.0 + capped;
+export type RoofShapeClass = "simple_gable" | "hip" | "complex_multiplane";
+
+// PRICING.1c-corrected (2026-04-24): replaces PRICING.1b segs-keyed design.
+// Segment count is a Pipeline-A-drift-prone signal (±4–10% run-to-run at
+// fixed hash) — banned from pricing path per feedback_no_segcount_pricing_signal.
+// Shape class is a stable fixture/widget/auto-resolver input; size is a
+// discrete runtime `sqft` bucket. Multiplicative, not additive. Compound
+// range 1.00× (small simple_gable) → 1.32× (large hip). Calibrated against
+// Roofle D.5 bench implied rates ($6.46 small-simple → $8.26 large-complex,
+// with hip > complex_multiplane per back-calc in
+// memory/project_pricing_1c_corrected_direction.md).
+export function getSizeShapeMultiplier(
+  sqft: number,
+  shapeClass: RoofShapeClass,
+): number {
+  const sizeMult =
+    sqft < 2000 ? 1.00 :
+    sqft <= 4000 ? 1.02 :
+    1.10;
+  const complexityMult =
+    shapeClass === "simple_gable" ? 1.00 :
+    shapeClass === "complex_multiplane" ? 1.05 :
+    1.20; // hip
+  return sizeMult * complexityMult;
+}
+
+// Shape-class resolver — widget input wins, else auto-classify from Pipeline A
+// geometry. Returns both the resolved class and the source for telemetry
+// (written to measurement_runs.shape_class_source per migration 084).
+//
+// alphaHullRatio (roof_alpha_area_sqft / roof_horiz_sqft, threshold <0.85)
+// is specified in scoping §3.4 but Pipeline A @ 8695096 does not plumb
+// alpha_area_sqft through services/lidar-measure/app.py → LidarResult
+// (Modal-deployed code frozen per scoping §5.1). Until a future Pipeline A
+// re-open exposes alphaAreaSqft, the resolver degrades gracefully to
+// compactness-only. Safe-middle default is hip when auto has insufficient
+// signal.
+export type ShapeClassSource = "widget" | "auto_complex" | "auto_hip_default";
+
+export function resolveShapeClass(
+  widgetShapeClass: RoofShapeClass | "not_sure" | null | undefined,
+  horizSqft: number | null | undefined,
+  alphaAreaSqft: number | null | undefined,
+  perimeterFt: number | null | undefined,
+): { shapeClass: RoofShapeClass; source: ShapeClassSource } {
+  if (widgetShapeClass && widgetShapeClass !== "not_sure") {
+    return { shapeClass: widgetShapeClass, source: "widget" };
+  }
+
+  // Auto-classify from stable Pipeline A fields.
+  const alphaHullOk =
+    alphaAreaSqft != null &&
+    alphaAreaSqft > 0 &&
+    horizSqft != null &&
+    horizSqft > 0;
+  const compactnessOk =
+    horizSqft != null &&
+    horizSqft > 0 &&
+    perimeterFt != null &&
+    perimeterFt > 0;
+
+  const alphaHullRatio = alphaHullOk ? alphaAreaSqft! / horizSqft! : null;
+  const compactness = compactnessOk
+    ? (4 * Math.PI * horizSqft!) / (perimeterFt! * perimeterFt!)
+    : null;
+
+  const alphaFlagsComplex = alphaHullRatio != null && alphaHullRatio < 0.85;
+  const compactFlagsComplex = compactness != null && compactness < 0.5;
+
+  if (alphaFlagsComplex || compactFlagsComplex) {
+    return { shapeClass: "complex_multiplane", source: "auto_complex" };
+  }
+  return { shapeClass: "hip", source: "auto_hip_default" };
 }
 
 // Waste factor: more complex roofs (more segments) need more extra material
@@ -237,12 +299,13 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   const rateHigh = input.rates[`${input.material}_high` as keyof ContractorRates] || 0;
   const rateBaseMid = (rateLow + rateHigh) / 2;
 
-  // PRICING.1 (2026-04-23): size + shape multiplier on the effective $/sqft rate.
-  // Linear contractor rates don't scale with roof size/complexity; Roofle's
-  // implied rates climb ~28% from small simple ($6.46) to large complex ($8.26).
-  // Applied in BOTH modes so both configured contractors and default rates
-  // scale with complexity. See decisions/pricing-market-defaults-scoping.md.
-  const sizeShapeMultiplier = getSizeShapeMultiplier(roofAreaSqft, numSegments);
+  // PRICING.1c-corrected (2026-04-24): size + shape-class multiplier on the
+  // effective $/sqft rate. Replaces PRICING.1b segs-keyed design — segs
+  // drifts run-to-run at fixed Pipeline A hash (±4–10%), so pricing on it
+  // produces non-deterministic prices. shapeClass is resolved in the route
+  // (widget input wins, else auto). Hip > complex_multiplane > simple_gable
+  // per back-calc against Roofle D.5 bench implied rates.
+  const sizeShapeMultiplier = getSizeShapeMultiplier(roofAreaSqft, input.roofShapeClass);
   const rateMid = rateBaseMid * sizeShapeMultiplier;
 
   // Detect if contractor has set custom rates (not using regional defaults).

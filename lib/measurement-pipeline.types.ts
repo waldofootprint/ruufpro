@@ -28,6 +28,13 @@ export type XcheckStatus =
 
 export type Pipeline = "lidar" | "solar" | "mode_b";
 
+// PRICING.1c-corrected (2026-04-24): resolved roof shape class + source.
+// Mirrors lib/estimate.ts RoofShapeClass + ShapeClassSource. Duplicated here
+// to keep measurement-pipeline type surface self-contained; estimate.ts
+// imports these names from its own module for pricing math.
+export type ResolvedRoofShapeClass = "simple_gable" | "hip" | "complex_multiplane";
+export type ResolvedShapeClassSource = "widget" | "auto_complex" | "auto_hip_default";
+
 export interface LidarResult {
   outcome: LidarOutcome;
   horizSqft?: number;
@@ -57,6 +64,10 @@ export interface PipelineRequest {
   address: string;
   lat: number;
   lng: number;
+  // PRICING.1c-corrected (2026-04-24): optional widget-supplied shape class.
+  // Resolver (pipeline layer) prefers this over auto-classification from
+  // LiDAR geometry. `null` / `"not_sure"` → auto. Absent → auto.
+  widgetShapeClass?: ResolvedRoofShapeClass | "not_sure" | null;
 }
 
 export interface PipelineResult {
@@ -72,6 +83,11 @@ export interface PipelineResult {
   segmentCount: number | null;
   perimeterFt: number | null;
   telemetryRowId: string | null;
+  // PRICING.1c-corrected (2026-04-24): resolved shape class + source,
+  // surfaced so the sync price path in /api/estimate calls
+  // getSizeShapeMultiplier with the same value written to measurement_runs.
+  shapeClass: ResolvedRoofShapeClass;
+  shapeClassSource: ResolvedShapeClassSource;
 }
 
 export interface FlagState {
@@ -106,6 +122,11 @@ export interface MeasurementRunRow {
   solar_ms: number | null;
   total_ms: number;
   flags_snapshot: FlagState;
+  // PRICING.1c-corrected (2026-04-24): shape-class audit columns. Written on
+  // every insert so post-ship observability distinguishes widget-driven vs
+  // auto-classified rows. Migration 084 adds the DB columns + CHECK constraint.
+  shape_class: ResolvedRoofShapeClass | null;
+  shape_class_source: ResolvedShapeClassSource | null;
 }
 
 export interface PipelineAdapters {

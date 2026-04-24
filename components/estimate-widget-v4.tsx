@@ -218,6 +218,16 @@ const FINANCING_OPTIONS = [
   { id: "maybe", label: "Maybe", description: "Want to learn more" },
 ];
 
+// PRICING.1c-corrected (2026-04-24): widget radio — shape class drives the
+// complexity multiplier in calculateEstimate. "not_sure" defers to the
+// server-side auto-classifier that reads Pipeline A geometry.
+const SHAPE_OPTIONS = [
+  { id: "simple_gable", label: "Simple gable", description: "Two straight slopes meeting at a ridge" },
+  { id: "hip", label: "Hip", description: "All sides slope downward to the walls" },
+  { id: "complex_multiplane", label: "Complex multi-plane", description: "Several wings, dormers, or levels" },
+  { id: "not_sure", label: "Not sure", description: "We'll detect it from the satellite view" },
+];
+
 // ----- TYPES -----
 
 interface MaterialEstimate {
@@ -322,6 +332,9 @@ export default function EstimateWidgetV4({
   const { suggestions, search: searchPlaces, clearSuggestions, isLoaded: placesLoaded, getPlaceDetails } = usePlacesAutocomplete();
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [pitchCategory, setPitchCategory] = useState("");
+  // PRICING.1c-corrected (2026-04-24): widget-supplied shape class. Default
+  // "not_sure" → server auto-classifier resolves from LiDAR geometry.
+  const [shapeClass, setShapeClass] = useState<string>("not_sure");
   const [currentMaterial, setCurrentMaterial] = useState("");
   const [timeline, setTimeline] = useState("");
   const [financing, setFinancing] = useState("");
@@ -420,6 +433,7 @@ export default function EstimateWidgetV4({
           current_material: currentMaterial,
           shingle_layers: "not_sure", timeline, financing_interest: financing,
           lat: propertyCoords?.lat, lng: propertyCoords?.lng,
+          shape_class: shapeClass,
           // Mode B: server writes a needs_manual_quote lead if a guardrail
           // refuses the measurement, so contact fields must travel up front.
           name, email, phone, sms_consent: agreedToSms,
@@ -434,7 +448,7 @@ export default function EstimateWidgetV4({
         if (data.error_code === "couldnt_measure_accurately" && data.measurement_status === "needs_manual_quote") {
           setManualQuote({ contractorName });
           setDirection(1);
-          setStep(7);
+          setStep(8);
           return;
         }
         throw new Error(data.error || "Estimate failed");
@@ -527,15 +541,15 @@ export default function EstimateWidgetV4({
         }
       } catch (e) { console.error("Living estimate creation failed:", e); }
 
-      setDirection(1); setStep(7);
+      setDirection(1); setStep(8);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally { setLoading(false); }
   };
 
   // Steps: 1=Landing, 2=Address, 3=Pitch, 4=Current Material, 5=Timeline+Financing, 6=Contact, 7=Results
-  const totalSteps = 6;
-  const progress = step === 1 || step === 7 ? 0 : ((step - 1) / totalSteps) * 100;
+  const totalSteps = 7;
+  const progress = step === 1 || step === 8 ? 0 : ((step - 1) / totalSteps) * 100;
 
   // Shared input style
   const inputStyle = {
@@ -858,8 +872,59 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
-        {/* ===== STEP 4: Current Material ===== */}
+        {/* ===== STEP 4: Roof Shape (PRICING.1c-corrected 2026-04-24) ===== */}
         {step === 4 && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-[21px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
+                What&rsquo;s your roof shape?
+              </h2>
+              <p className="text-[14px]" style={{ color: C.textSecondary, letterSpacing: "-0.016em" }}>
+                This helps us price complex roofs accurately. Pick &ldquo;Not sure&rdquo; and we&rsquo;ll detect it for you.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {SHAPE_OPTIONS.map((opt) => {
+                const isSelected = shapeClass === opt.id;
+                return (
+                  <motion.button
+                    key={opt.id}
+                    onClick={() => { setShapeClass(opt.id); nextStep(); }}
+                    whileHover={!isSelected ? { y: -2 } : undefined}
+                    whileTap={{ scale: 0.97 }}
+                    className="text-left rounded-xl p-4 transition-all duration-300"
+                    style={{
+                      background: isSelected ? C.cardSelectedBg : C.cardBg,
+                      border: `1px solid ${isSelected ? C.cardSelectedBorder : C.cardBorder}`,
+                      boxShadow: isSelected ? S.cardSelected : S.cardRaised,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = C.cardHoverBg;
+                        e.currentTarget.style.borderColor = C.cardHoverBorder;
+                        e.currentTarget.style.boxShadow = S.cardHover;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = C.cardBg;
+                        e.currentTarget.style.borderColor = C.cardBorder;
+                        e.currentTarget.style.boxShadow = S.cardRaised;
+                      }
+                    }}
+                  >
+                    <p className="text-[14px] font-semibold" style={{ color: C.text }}>{opt.label}</p>
+                    <p className="text-[12px] mt-0.5" style={{ color: C.textTertiary }}>{opt.description}</p>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ===== STEP 5: Current Material ===== */}
+        {step === 5 && (
           <div className="space-y-5">
             <div>
               <h2 className="text-[21px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
@@ -912,8 +977,8 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
-        {/* ===== STEP 5: Timeline + Financing (was Step 6) ===== */}
-        {step === 5 && (
+        {/* ===== STEP 6: Timeline + Financing ===== */}
+        {step === 6 && (
           <div className="space-y-7">
             <div>
               <h2 className="text-[21px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
@@ -993,8 +1058,8 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
-        {/* ===== STEP 6: Contact Info (was Step 7) ===== */}
-        {step === 6 && (
+        {/* ===== STEP 7: Contact Info ===== */}
+        {step === 7 && (
           <div className="space-y-5">
             <div>
               <h2 className="text-[21px] font-semibold mb-1" style={{ color: C.text, letterSpacing: "0.011em", lineHeight: 1.19 }}>
@@ -1093,8 +1158,8 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
-        {/* ===== STEP 7 (Mode B): Manual-quote confirmation ===== */}
-        {step === 7 && manualQuote && (
+        {/* ===== STEP 8 (Mode B): Manual-quote confirmation ===== */}
+        {step === 8 && manualQuote && (
           <div className="space-y-5 py-4 text-center">
             <p className="text-[12px] font-semibold uppercase" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>
               Request Received
@@ -1111,8 +1176,8 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
-        {/* ===== STEP 7: Good/Better/Best Results ===== */}
-        {step === 7 && estimateData && !manualQuote && (
+        {/* ===== STEP 8: Good/Better/Best Results ===== */}
+        {step === 8 && estimateData && !manualQuote && (
           <div className="space-y-5 py-2">
             <div className="text-center">
               <p className="text-[12px] font-semibold uppercase mb-2" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>

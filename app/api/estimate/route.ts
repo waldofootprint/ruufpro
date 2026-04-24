@@ -25,8 +25,10 @@ import { getCachedProperty, fetchPropertyData } from "@/lib/rentcast-api";
 import {
   calculateEstimate,
   formatEstimate,
+  resolveShapeClass,
   type RoofMaterial,
   type ContractorRates,
+  type RoofShapeClass,
 } from "@/lib/estimate";
 import { getWeatherSurge } from "@/lib/weather-surge";
 
@@ -122,6 +124,9 @@ export async function POST(request: NextRequest) {
       // estimate_settings lookup and synthesize rates from metro/regional
       // defaults. Used by bench harness + demo pages + un-configured widgets.
       use_market_defaults, state: reqState,
+      // PRICING.1c-corrected (2026-04-24): optional widget-supplied shape class.
+      // When absent or "not_sure", pipeline auto-classifies from geometry.
+      shape_class: reqShapeClass,
     } = body;
 
     if (!contractor_id) {
@@ -228,6 +233,7 @@ export async function POST(request: NextRequest) {
             address,
             lat,
             lng,
+            widgetShapeClass: reqShapeClass ?? null,
           },
           {
             ...prodAdapters,
@@ -329,6 +335,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // PRICING.1c-corrected (2026-04-24): resolve shape class for pricing.
+    // Pipeline writes its own resolution to measurement_runs; this fallback
+    // covers route-level pricing when pipeline didn't run (no address/coords,
+    // or pipeline errored). Widget input wins, else auto from whatever
+    // geometry is available, else safe-middle hip default.
+    const pricingShapeClass: RoofShapeClass = pipelineResult
+      ? pipelineResult.shapeClass
+      : resolveShapeClass(
+          reqShapeClass ?? null,
+          roofData?.roofAreaSqft ?? null,
+          null,
+          null,
+        ).shapeClass;
+
     // Step 4: Calculate estimates for all priced materials
     const sharedInput = {
       roofData: roofData || undefined,
@@ -342,6 +362,7 @@ export async function POST(request: NextRequest) {
       financingInterest: financing_interest,
       rates,
       bufferPercent: settings.buffer_percent || 0,
+      roofShapeClass: pricingShapeClass,
       // Mode A: per-contractor minimum job price floor (Session AZ)
       minimumJobPrice: settings.minimum_job_price || undefined,
       // Weather surge — only applied when roofer has opted in AND not expired.

@@ -498,7 +498,7 @@ function fallbackRates(state: string): RegionalRates {
   // (1.85× prior materials+labor values) to match the new regional-pricing.ts
   // baseline + size/shape multiplier in calculateEstimate.
   const FALLBACKS: Record<string, RegionalRates> = {
-    se: { asphalt_low: 5.00, asphalt_high: 6.00, metal_low: 11.00, metal_high: 13.00, tile_low: 13.00, tile_high: 15.75, flat_low: 5.55, flat_high: 6.95 },
+    se: { asphalt_low: 6.20, asphalt_high: 6.72, metal_low: 11.00, metal_high: 13.00, tile_low: 13.00, tile_high: 15.75, flat_low: 5.55, flat_high: 6.95 },
     ne: { asphalt_low: 6.50, asphalt_high: 7.85, metal_low: 12.95, metal_high: 15.75, tile_low: 15.75, tile_high: 19.45, flat_low: 6.95, flat_high: 8.80 },
     mw: { asphalt_low: 5.55, asphalt_high: 6.95, metal_low: 12.05, metal_high: 14.80, tile_low: 13.90, tile_high: 17.60, flat_low: 6.00, flat_high: 7.85 },
     w:  { asphalt_low: 6.95, asphalt_high: 8.80, metal_low: 13.90, metal_high: 17.60, tile_low: 16.65, tile_high: 21.30, flat_low: 7.40, flat_high: 9.70 },
