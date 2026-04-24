@@ -172,6 +172,12 @@ for (const row of addresses) {
     timeline: options.timeline,
     financing_interest: options.financing_interest,
     ...(USE_MARKET_DEFAULTS ? { use_market_defaults: true, state: "FL" } : {}),
+    // PRICING.1c-bench-wiring-fix (2026-04-24): pass fixture shape_class so
+    // bench exercises the widget-input branch of getSizeShapeMultiplier.
+    // Without this, every row falls to compactness-only auto-classifier
+    // (alphaAreaSqft not plumbed through Modal shim per PRICING.1c-corrected
+    // §3 Deferred item 2). BL-precedent mechanical harness fix.
+    ...(row.roof_shape_class ? { shape_class: row.roof_shape_class } : {}),
   };
 
   process.stdout.write(`#${row.id} ${row.address} ... `);
