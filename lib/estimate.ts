@@ -139,9 +139,11 @@ export function getSizeShapeMultiplier(sqft: number, numSegments: number): numbe
     ((sqft - 2000) / 3000) * 0.20;
   const complexityFactor =
     numSegments <= 2 ? 0 :
-    numSegments <= 4 ? 0.10 :
+    numSegments <= 4 ? 0.05 :
     0.15;
-  return 1.0 + sizeFactor + complexityFactor;
+  const raw = sizeFactor + complexityFactor;
+  const capped = Math.min(raw, 0.25);
+  return 1.0 + capped;
 }
 
 // Waste factor: more complex roofs (more segments) need more extra material
