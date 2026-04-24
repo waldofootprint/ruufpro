@@ -1,22 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-
-/* ─── Speed-to-Lead Calculator Logic ─── */
-function useSpeedToLead(responseMinutes: number, leadsPerMonth: number, avgJobValue: number, closeRate: number) {
-  return useMemo(() => {
-    const rate = closeRate / 100;
-    const speedMultiplier = responseMinutes <= 5
-      ? 1
-      : Math.max(0.15, 1 - ((responseMinutes - 5) / 55) * 0.85);
-    const lostJobs = Math.round((leadsPerMonth * rate * (1 - speedMultiplier)) * 10) / 10;
-    const monthlyLost = Math.round(lostJobs * avgJobValue);
-    return { lostJobs, monthlyLost };
-  }, [responseMinutes, leadsPerMonth, avgJobValue, closeRate]);
-}
+import EstimateWidgetV4 from "@/components/estimate-widget-v4";
 
 /* ─── Nav ─── */
 function Navbar() {
@@ -64,7 +52,7 @@ function Navbar() {
           href="/signup"
           className="px-6 py-2.5 rounded-full bg-[#D4863E] text-white text-sm font-bold hover:bg-[#c0763a] transition-colors shadow-sm"
         >
-          Get My Free Site
+          Start Free Trial
         </Link>
         <button
           className="md:hidden p-2 text-[#1A1A1A]/70"
@@ -96,119 +84,6 @@ function Navbar() {
   );
 }
 
-/* ─── Custom Slider (cross-browser consistent) ─── */
-function HeroSlider({ label, value, displayValue, min, max, step, onChange, last = false }: {
-  label: string; value: number; displayValue: string; min: number; max: number; step: number; onChange: (v: number) => void; last?: boolean;
-}) {
-  const pct = ((value - min) / (max - min)) * 100;
-  return (
-    <div className={last ? "mb-6" : "mb-4"}>
-      <div className="flex justify-between mb-2">
-        <span className="text-xs font-semibold text-[#1A1A1A]/60 uppercase tracking-wide">{label}</span>
-        <span className="text-sm font-bold text-[#1A1A1A] tabular-nums">{displayValue}</span>
-      </div>
-      <div className="relative h-1.5 bg-[#1A1A1A]/10 rounded-full">
-        <div
-          className="absolute left-0 top-0 h-full bg-[#C75B39] rounded-full transition-[width] duration-100"
-          style={{ width: `${pct}%` }}
-        />
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="absolute -top-2 left-0 w-full h-[22px] appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#C75B39] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md"
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ─── Speed-to-Lead Calculator ─── */
-function SpeedToLeadCalculator() {
-  const [responseMinutes, setResponseMinutes] = useState(45);
-  const [leadsPerMonth, setLeadsPerMonth] = useState(15);
-  const [avgJobValue, setAvgJobValue] = useState(8500);
-  const [closeRate, setCloseRate] = useState(30);
-  const { lostJobs, monthlyLost } = useSpeedToLead(responseMinutes, leadsPerMonth, avgJobValue, closeRate);
-
-  const responseLabel = responseMinutes < 60
-    ? `${responseMinutes} min`
-    : responseMinutes === 60
-      ? "1 hr"
-      : `${(responseMinutes / 60).toFixed(1)} hrs`;
-
-  return (
-    <div className="w-full max-w-[380px] mx-auto">
-      <div className="bg-white rounded-2xl border border-black/8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6">
-        <p className="text-base font-bold text-[#1A1A1A] mb-5">
-          How fast do you respond to leads?
-        </p>
-
-        <HeroSlider
-          label="Your response time"
-          value={responseMinutes}
-          displayValue={responseLabel}
-          min={5} max={120} step={5}
-          onChange={setResponseMinutes}
-        />
-
-        <HeroSlider
-          label="Leads per month"
-          value={leadsPerMonth}
-          displayValue={`${leadsPerMonth}`}
-          min={5} max={50} step={1}
-          onChange={setLeadsPerMonth}
-        />
-
-        <HeroSlider
-          label="Average job value"
-          value={avgJobValue}
-          displayValue={`$${avgJobValue.toLocaleString()}`}
-          min={2000} max={25000} step={500}
-          onChange={setAvgJobValue}
-        />
-
-        <HeroSlider
-          label="Close rate"
-          value={closeRate}
-          displayValue={`${closeRate}%`}
-          min={10} max={60} step={5}
-          onChange={setCloseRate}
-          last
-        />
-
-        <div className="border-t border-black/8 my-4" />
-
-        <div className="text-center mb-4">
-          <p className="text-[11px] text-[#1A1A1A]/40 mb-1">Slow responses cost you</p>
-          <p className="text-3xl font-black text-[#C75B39] tracking-tight">
-            ${monthlyLost.toLocaleString()}
-            <span className="text-sm font-bold text-[#1A1A1A]/30">/mo</span>
-          </p>
-        </div>
-
-        <p className="text-center text-xs text-emerald-600 font-semibold mb-4">
-          RuufPro responds in under 5 seconds — 24/7
-        </p>
-
-        <Link
-          href="/signup"
-          className="block w-full py-3 rounded-xl bg-[#D4863E] text-white text-sm font-bold text-center hover:bg-[#c0763a] transition-colors shadow-sm"
-        >
-          Respond Instantly — Free
-        </Link>
-
-        <p className="text-[10px] text-[#1A1A1A]/25 text-center mt-3">
-          Source: Lead Connect — 5 min response = 21x more conversions
-        </p>
-      </div>
-    </div>
-  );
-}
-
 /* ─── Hero Section ─── */
 export default function RidgelineHero() {
   return (
@@ -228,7 +103,7 @@ export default function RidgelineHero() {
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
               className="text-[#D4863E] text-sm font-bold uppercase tracking-[0.15em] mb-4"
             >
-              More Calls. More Contracts. More Roofs.
+              Built for solo roofers and small crews
             </motion.p>
 
             {/* Headline */}
@@ -243,10 +118,10 @@ export default function RidgelineHero() {
               }}
               className="text-4xl md:text-5xl lg:text-[56px] font-black text-[#1A1A1A] leading-[1.05] tracking-tight mb-6"
             >
-              Your Website Should Be
+              Stop missing leads
               <br />
-              Your Best{" "}
-              <span className="text-[#C75B39]">Salesperson</span>
+              while you&apos;re{" "}
+              <span className="text-[#C75B39]">on the roof</span>.
             </motion.h1>
 
             {/* Sub-copy */}
@@ -261,9 +136,9 @@ export default function RidgelineHero() {
               }}
               className="text-[#1A1A1A]/60 text-base md:text-lg leading-relaxed max-w-[520px] mb-8"
             >
-              Get a professional roofing website for free. Upgrade to instant
-              satellite estimates, an AI chatbot that answers homeowner questions
-              24/7, and automated reviews when you&apos;re ready.
+              RuufPro captures homeowner estimates, answers their questions with
+              AI, and qualifies them before they ever hit your phone. You show
+              up to jobs that are already sold.
             </motion.p>
 
             {/* CTAs */}
@@ -282,13 +157,13 @@ export default function RidgelineHero() {
                 href="/signup"
                 className="px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold hover:bg-[#c0763a] transition-colors shadow-lg hover:shadow-xl"
               >
-                Build My Free Site
+                Start free trial — no card
               </Link>
               <a
                 href="#demo"
                 className="px-8 py-3.5 rounded-full border-2 border-[#1B3A4B]/20 text-[#1B3A4B] text-sm font-bold hover:bg-[#1B3A4B] hover:text-white transition-colors"
               >
-                See It In Action
+                See it in action ↓
               </a>
             </motion.div>
 
@@ -299,17 +174,15 @@ export default function RidgelineHero() {
               transition={{ delay: 0.4 }}
               className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-[#1A1A1A]/40 font-medium"
             >
-              <span>Free forever</span>
-              <span className="w-1 h-1 rounded-full bg-[#1A1A1A]/20" />
-              <span>5 min setup</span>
+              <span>14 days free</span>
               <span className="w-1 h-1 rounded-full bg-[#1A1A1A]/20" />
               <span>No credit card</span>
               <span className="w-1 h-1 rounded-full bg-[#1A1A1A]/20" />
-              <span>No contracts</span>
+              <span>Cancel anytime</span>
             </motion.div>
           </div>
 
-          {/* Right — 40% Calculator */}
+          {/* Right — 40% Calculator Widget (live product) */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -321,7 +194,12 @@ export default function RidgelineHero() {
             }}
             className="w-full lg:max-w-[42%]"
           >
-            <SpeedToLeadCalculator />
+            <EstimateWidgetV4
+              contractorId="c2a1286d-4faa-444a-b5b7-99f592359f80"
+              contractorName="Demo Roofing Co"
+              contractorPhone="(555) 123-4567"
+              variant="light"
+            />
           </motion.div>
         </div>
       </div>

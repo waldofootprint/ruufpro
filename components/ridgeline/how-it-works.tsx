@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { UserPlus, SlidersHorizontal, BellRing } from "lucide-react";
+import { UserPlus, Code2, BellRing } from "lucide-react";
 
 const STEPS = [
   {
@@ -10,23 +10,23 @@ const STEPS = [
     title: "Sign Up",
     time: "~60 seconds",
     description:
-      "Enter your business name, phone, and city. That's all. We generate everything — design, copy, SEO, hosting.",
+      "Start your 14-day free trial. No credit card. Takes 60 seconds to create your account.",
   },
   {
     number: "02",
-    icon: SlidersHorizontal,
-    title: "Customize Your Site",
+    icon: Code2,
+    title: "Embed the Widget",
     time: "~2 minutes",
     description:
-      "Pick your template, add your logo and photos, set your service area. We handle the SEO, hosting, and design.",
+      "Paste one line of code on your existing site, landing page, or Facebook ad link. Riley and the estimator go live instantly.",
   },
   {
     number: "03",
     icon: BellRing,
-    title: "Start Getting Leads",
+    title: "Show Up to Warm Jobs",
     time: "Instant",
     description:
-      "Homeowners find your site, get an instant satellite estimate, and you get a text the moment they reach out — no chasing required.",
+      "Homeowners get an instant estimate, Riley qualifies them 24/7 (roof age, insurance, urgency), and every lead hits your dashboard warm — not cold.",
   },
 ];
 
@@ -69,12 +69,11 @@ export default function RidgelineHowItWorks() {
           <h2
             className="text-[clamp(2rem,5vw,4rem)] font-black uppercase tracking-tighter text-[#1B3A4B] leading-[0.95] max-w-3xl mx-auto"
             style={{
-              fontFamily: '"Arial Black", Impact, sans-serif',
               textShadow:
                 "1px 1px 0 #1B3A4B15, 2px 2px 0 #1B3A4B10, 3px 3px 0 #1B3A4B08",
             }}
           >
-            Under 5 Minutes. Seriously.
+            Live in 5 Minutes. Seriously.
           </h2>
         </div>
 
@@ -93,7 +92,6 @@ export default function RidgelineHowItWorks() {
                 {/* Step number */}
                 <span
                   className="text-[clamp(3rem,5vw,4.5rem)] font-black text-[#1B3A4B]/8 leading-none block mb-4 group-hover:text-[#1B3A4B]/15 transition-colors"
-                  style={{ fontFamily: '"Arial Black", Impact, sans-serif' }}
                 >
                   {step.number}
                 </span>
@@ -133,7 +131,7 @@ export default function RidgelineHowItWorks() {
             href="/signup"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#D4863E] text-white text-sm font-bold uppercase tracking-wider hover:bg-[#c0763a] transition-colors duration-300 shadow-lg hover:shadow-xl"
           >
-            Get My Free Site
+            Start Free Trial
             <svg
               viewBox="0 0 24 24"
               className="w-4 h-4 stroke-current"

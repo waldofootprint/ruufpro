@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Download, Smartphone } from "lucide-react";
+import { ArrowRight, Download, Smartphone, Star } from "lucide-react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -365,21 +365,33 @@ export default function RidgelineProFeatures() {
             outcome="After a job is marked complete, RuufPro emails the homeowner a friendly review request — your business name, one big button, done. No awkward asking. No forgetting. Just 5-star reviews on autopilot."
             stat="Roofers who ask for reviews close 5x more jobs."
           >
-            {/* Email mockup */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden max-w-[260px] mx-auto">
-              <div className="bg-gray-50 border-b border-gray-200 px-3 py-2">
-                <p className="text-[9px] text-gray-400">From: IronShield Roofing via RuufPro</p>
-                <p className="text-[9px] text-gray-400">To: sarah.mitchell@email.com</p>
-                <p className="text-[10px] font-semibold text-gray-700 mt-0.5">How was your experience with IronShield Roofing?</p>
+            {/* Email mockup — matches site's email-card pattern (bg-gray-50 header + rounded-2xl + shadow-lg) */}
+            <div className="w-full max-w-[340px] mx-auto bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+              <div className="bg-gray-50 border-b border-gray-100 px-5 py-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-[#1B3A4B] flex items-center justify-center text-white text-xs font-bold">IS</div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-800">IronShield Roofing</p>
+                    <p className="text-[10px] text-gray-400">via RuufPro</p>
+                  </div>
+                </div>
+                <p className="text-sm font-bold text-gray-900">How was your experience with IronShield Roofing?</p>
               </div>
-              <div className="px-4 py-4 text-center">
-                <p className="text-[11px] text-gray-600 leading-relaxed mb-3">
+              <div className="px-5 py-5 text-center">
+                {/* Gold stars */}
+                <div className="flex items-center justify-center gap-1 mb-3">
+                  {[0,1,2,3,4].map((i) => (
+                    <Star key={i} className="w-4 h-4 text-[#D4863E]" fill="#D4863E" strokeWidth={0} />
+                  ))}
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed mb-4">
                   Hi Sarah, thanks for choosing IronShield Roofing! If you have a minute, a quick review would really help us out.
                 </p>
-                <div className="bg-blue-600 text-white text-[11px] font-semibold py-2 px-4 rounded-md inline-block">
-                  ⭐ Leave a Review
+                <div className="bg-[#D4863E] text-white text-xs font-bold py-2.5 px-5 rounded-full inline-flex items-center gap-1.5 shadow-md shadow-[#D4863E]/20">
+                  <Star className="w-3.5 h-3.5" fill="white" strokeWidth={0} />
+                  Leave a Review
                 </div>
-                <p className="text-[8px] text-gray-300 mt-3">Sent on behalf of IronShield Roofing</p>
+                <p className="text-[9px] text-gray-300 mt-4">Sent on behalf of IronShield Roofing</p>
               </div>
             </div>
           </FeatureCard>

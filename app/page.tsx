@@ -1,7 +1,6 @@
 import Component from "@/components/ui/hero";
 import RidgelineDemo from "@/components/ridgeline/demo";
 import RidgelineGoogleFilter from "@/components/ridgeline/google-filter";
-import RidgelineSEOAdvantage from "@/components/ridgeline/seo-advantage";
 import RidgelineProFeatures from "@/components/ridgeline/pro-features";
 import RidgelineHowItWorks from "@/components/ridgeline/how-it-works";
 import RidgelineWhatsTheCatch from "@/components/ridgeline/whats-the-catch";
@@ -18,7 +17,6 @@ export default function Home() {
       <Component />
       <RidgelineDemo />
       <RidgelineGoogleFilter />
-      <RidgelineSEOAdvantage />
       <RidgelineProFeatures />
       <RidgelineHowItWorks />
       <RidgelineWhatsTheCatch />
