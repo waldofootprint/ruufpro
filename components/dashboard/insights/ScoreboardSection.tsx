@@ -10,7 +10,7 @@ export function ScoreboardSection({ stats }: { stats: ScoreboardStats }) {
 
   return (
     <SectionShell icon={TrendingUp} title="The Scoreboard" caption="This week · your numbers">
-      <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>
+      <p className="text-[15px] leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>
         {buildSummary(stats)}
       </p>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">

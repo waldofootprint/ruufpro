@@ -284,16 +284,35 @@ export default function DashboardHome() {
   }
 
   return (
-    <div className="max-w-[1200px] mx-auto space-y-6">
+    <div className="max-w-[1200px] mx-auto space-y-7">
       {/* Greeting */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: "var(--neu-text)" }}>
-          Hello, {firstName}
+      <div className="relative">
+        <span
+          className="neu-glow-orange"
+          style={{ width: 480, height: 240, top: -80, left: -120 }}
+          aria-hidden
+        />
+        <div className="neu-eyebrow mb-3 flex items-center gap-2 relative z-[1]">
+          <span
+            className="inline-block h-1.5 w-1.5 rounded-full"
+            style={{ background: "#16a34a", boxShadow: "0 0 0 3px rgba(22,163,74,0.18)" }}
+          />
+          <span>Live · {new Date().toLocaleDateString("en-US", { weekday: "long" })}, {new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+        </div>
+        <h1
+          className="font-bold mb-2 relative z-[1]"
+          style={{ color: "var(--neu-text)", fontSize: 44, lineHeight: 1.02, letterSpacing: "-0.04em" }}
+        >
+          Hello, <em className="neu-em">{firstName}</em>.
         </h1>
-        <p className="text-sm neu-muted">
-          {leads.length > 0
-            ? `You have ${leads.length} lead${leads.length !== 1 ? "s" : ""} · ${hotLeads} hot · $${(pipelineValue / 1000).toFixed(0)}K pipeline`
-            : "Your pipeline is empty — leads will show up here as homeowners engage."}
+        <p className="text-[15px] leading-relaxed max-w-[580px] relative z-[1]" style={{ color: "var(--neu-text-muted)" }}>
+          {leads.length > 0 ? (
+            <>
+              You have <strong style={{ color: "var(--neu-text)", fontWeight: 600 }}>{leads.length} lead{leads.length !== 1 ? "s" : ""}</strong> in your pipeline · <strong style={{ color: "var(--neu-text)", fontWeight: 600 }}>{hotLeads} hot</strong> · <strong style={{ color: "var(--neu-text)", fontWeight: 600 }}>${(pipelineValue / 1000).toFixed(0)}K</strong> potential.
+            </>
+          ) : (
+            "Your pipeline is empty — leads will show up here as homeowners engage."
+          )}
         </p>
       </div>
 

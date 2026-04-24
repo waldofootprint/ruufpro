@@ -18,28 +18,29 @@ export function HomeownersWantSection({ stats }: { stats: HomeownersWantStats })
 
   return (
     <SectionShell icon={MessageSquare} title="What Your Homeowners Want" caption={`From ${stats.totalConvos} Riley conversations`}>
-      <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>{parts.join(" ")}</p>
-      <div className="space-y-2.5">
+      <p className="text-[15px] leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>{parts.join(" ")}</p>
+      <div className="flex flex-col gap-3">
         {stats.questions.map((q) => (
-          <div key={q.type} className="grid grid-cols-[110px_1fr_40px] items-center gap-3 text-[12px]">
-            <span className="truncate" style={{ color: "var(--neu-text)" }}>{q.label}</span>
+          <div key={q.type} className="grid grid-cols-[120px_1fr_44px] items-center gap-3 text-[12.5px]">
+            <span className="truncate font-medium" style={{ color: "var(--neu-text)" }}>{q.label}</span>
             <div
-              className="h-2.5 relative overflow-hidden"
+              className="h-2 relative overflow-hidden"
               style={{
                 borderRadius: 999,
-                boxShadow: "inset 2px 2px 4px var(--neu-shadow-dark), inset -1px -1px 2px var(--neu-shadow-light)",
+                boxShadow: "inset 2px 2px 4px var(--neu-inset-dark), inset -1px -1px 2px var(--neu-inset-light)",
               }}
             >
               <div
                 className="h-full"
                 style={{
                   width: `${q.pct}%`,
-                  background: "var(--neu-accent)",
+                  background: "linear-gradient(90deg, var(--neu-accent), var(--neu-accent-2))",
                   borderRadius: 999,
+                  boxShadow: "0 2px 6px -1px rgba(249,115,22,0.5)",
                 }}
               />
             </div>
-            <span className="text-right font-bold" style={{ color: "var(--neu-text)" }}>{q.pct}%</span>
+            <span className="text-right font-bold tabular-nums" style={{ color: "var(--neu-text)", letterSpacing: "-0.01em" }}>{q.pct}%</span>
           </div>
         ))}
       </div>

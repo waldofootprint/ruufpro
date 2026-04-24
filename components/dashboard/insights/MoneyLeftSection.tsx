@@ -21,37 +21,30 @@ export function MoneyLeftSection({ stats }: { stats: MoneyLeftStats }) {
       title="Money Left on the Table"
       caption="Hot leads you haven't called yet"
     >
-      <p className="text-sm leading-relaxed mb-4" style={{ color: "var(--neu-text)" }}>{summary}</p>
-      <div className="space-y-2">
+      <p className="text-[15px] leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>{summary}</p>
+      <div className="flex flex-col gap-2">
         {stats.leads.map((l) => (
           <div
             key={l.id}
-            className="flex items-center gap-3 px-3.5 py-3"
+            className="flex items-center gap-3"
             style={{
-              borderRadius: 12,
-              boxShadow: "inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light)",
+              padding: "12px 16px",
+              borderLeft: "2px solid var(--neu-accent)",
+              background: "rgba(249, 115, 22, 0.04)",
+              borderRadius: "0 12px 12px 0",
             }}
           >
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold truncate" style={{ color: "var(--neu-text)" }}>
+              <p className="text-[13.5px] font-semibold truncate" style={{ color: "var(--neu-text)", letterSpacing: "-0.01em" }}>
                 {l.name}
                 {l.estimateLow && l.estimateHigh && (
-                  <span className="font-medium neu-muted"> · {formatUSD(l.estimateLow)}–{formatUSD(l.estimateHigh)}{l.estimateMaterial ? ` ${l.estimateMaterial.toLowerCase()}` : ""}</span>
+                  <span className="font-normal" style={{ color: "var(--neu-text-muted)" }}> · {formatUSD(l.estimateLow)}–{formatUSD(l.estimateHigh)}{l.estimateMaterial ? ` ${l.estimateMaterial.toLowerCase()}` : ""}</span>
                 )}
               </p>
-              <p className="text-[11px] neu-muted mt-0.5">{l.reason}</p>
+              <p className="text-[11.5px] mt-0.5" style={{ color: "var(--neu-text-muted)" }}>{l.reason}</p>
             </div>
-            <a
-              href="/dashboard"
-              className="shrink-0 text-[11px] font-bold px-3 py-1.5"
-              style={{
-                borderRadius: 10,
-                background: "var(--neu-accent)",
-                color: "var(--neu-accent-fg)",
-                boxShadow: "3px 3px 8px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light)",
-              }}
-            >
-              Open
+            <a href="/dashboard" className="neu-dark-cta shrink-0" style={{ padding: "7px 14px", fontSize: 11.5 }}>
+              Open →
             </a>
           </div>
         ))}

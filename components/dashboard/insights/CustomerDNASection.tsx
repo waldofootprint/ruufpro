@@ -44,19 +44,19 @@ export function CustomerDNASection({ stats }: { stats: CustomerDNAStats }) {
 
   return (
     <SectionShell icon={Dna} title="Customer DNA" caption="Patterns across your won leads">
-      <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>{summary}</p>
+      <p className="text-[15px] leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>{summary}</p>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
         {chips.map((c) => (
           <div
             key={c.label}
-            className="px-3.5 py-3"
+            className="px-4 py-3.5"
             style={{
-              borderRadius: 12,
-              boxShadow: "inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light)",
+              borderRadius: 14,
+              boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
             }}
           >
-            <p className="text-[10px] font-bold uppercase tracking-wider neu-muted mb-1">{c.label}</p>
-            <p className="text-sm font-bold" style={{ color: "var(--neu-text)" }}>{c.value}</p>
+            <p className="neu-eyebrow mb-1.5" style={{ fontSize: 10 }}>{c.label}</p>
+            <p className="text-[14px] font-semibold" style={{ color: "var(--neu-text)", letterSpacing: "-0.01em" }}>{c.value}</p>
           </div>
         ))}
       </div>

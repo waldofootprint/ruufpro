@@ -13,23 +13,33 @@ interface Props {
 
 export function SectionShell({ icon: Icon, iconColor, title, caption, children }: Props) {
   return (
-    <section className="neu-flat p-5 lg:p-6" style={{ borderRadius: 18 }}>
-      <header className="mb-4 flex items-center gap-2.5">
+    <section
+      className="p-6 lg:p-7"
+      style={{
+        background: "var(--neu-bg)",
+        borderRadius: 20,
+        boxShadow: "6px 6px 16px var(--neu-shadow-dark), -6px -6px 16px var(--neu-shadow-light)",
+      }}
+    >
+      <header className="mb-5 flex items-center gap-3">
         <div
-          className="flex h-8 w-8 items-center justify-center"
+          className="flex h-9 w-9 items-center justify-center"
           style={{
-            borderRadius: 10,
-            boxShadow: "inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light)",
+            borderRadius: 12,
+            background: "var(--neu-accent-light)",
             color: iconColor || "var(--neu-accent)",
           }}
         >
-          <Icon className="h-4 w-4" />
+          <Icon className="h-4 w-4" strokeWidth={2.5} />
         </div>
-        <div>
-          <h2 className="text-base font-bold tracking-tight" style={{ color: "var(--neu-text)" }}>
+        <div className="min-w-0">
+          <div className="neu-eyebrow" style={{ fontSize: 10.5, marginBottom: 4 }}>{caption}</div>
+          <h2
+            className="font-bold"
+            style={{ color: "var(--neu-text)", fontSize: 20, lineHeight: 1.1, letterSpacing: "-0.025em" }}
+          >
             {title}
           </h2>
-          <p className="text-[11px] neu-muted mt-0.5">{caption}</p>
         </div>
       </header>
       {children}
@@ -40,15 +50,21 @@ export function SectionShell({ icon: Icon, iconColor, title, caption, children }
 export function InsetStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div
-      className="px-3.5 py-3"
+      className="px-4 py-3.5"
       style={{
-        borderRadius: 12,
-        boxShadow: "inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light)",
+        background: "var(--neu-bg)",
+        borderRadius: 14,
+        boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
       }}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wider neu-muted mb-1">{label}</p>
-      <p className="text-xl font-bold tracking-tight" style={{ color: "var(--neu-text)" }}>{value}</p>
-      {sub && <p className="text-[11px] neu-muted mt-0.5">{sub}</p>}
+      <p className="neu-eyebrow mb-1.5" style={{ fontSize: 10 }}>{label}</p>
+      <p
+        className="font-bold tabular-nums"
+        style={{ color: "var(--neu-text)", fontSize: 26, lineHeight: 1, letterSpacing: "-0.035em" }}
+      >
+        {value}
+      </p>
+      {sub && <p className="text-[11.5px] mt-1.5" style={{ color: "var(--neu-text-muted)" }}>{sub}</p>}
     </div>
   );
 }

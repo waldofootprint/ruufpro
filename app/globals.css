@@ -207,33 +207,48 @@
    ────────────────────────────────────────────────────────────────────── */
 
 .neu-dashboard {
-  --neu-bg: #e0e2e6;
-  --neu-text: #2d2d2d;
-  --neu-text-muted: #6b7280;
-  --neu-accent: #0d9488;
+  /* Warm cream palette (v2 — matches demo-preview aesthetic) */
+  --neu-bg: #FAF8F4;
+  --neu-bg-2: #F5F3EE;
+  --neu-ink: #0F0F0F;
+  --neu-ink-2: #1F1A17;
+  --neu-text: #0F0F0F;
+  --neu-text-muted: #6B6B6B;
+  --neu-text-dim: #999;
+  --neu-accent: #F97316;
+  --neu-accent-2: #FB923C;
+  --neu-accent-light: #FFEDD5;
   --neu-accent-fg: #ffffff;
-  --neu-shadow-dark: rgba(0, 0, 0, 0.12);
-  --neu-shadow-light: rgba(255, 255, 255, 0.7);
-  --neu-border: rgba(0, 0, 0, 0.04);
-  --neu-inset-dark: rgba(0, 0, 0, 0.08);
-  --neu-inset-light: rgba(255, 255, 255, 0.5);
+  --neu-shadow-dark: rgba(184, 175, 158, 0.55);
+  --neu-shadow-light: rgba(255, 255, 255, 0.95);
+  --neu-border: rgba(31, 26, 23, 0.06);
+  --neu-inset-dark: rgba(184, 175, 158, 0.35);
+  --neu-inset-light: rgba(255, 255, 255, 0.9);
 
   background: var(--neu-bg);
   color: var(--neu-text);
   font-family: var(--font-dm-sans), system-ui, sans-serif;
+  letter-spacing: -0.005em;
 }
 
 .neu-dashboard.dark {
-  --neu-bg: #2a2a2e;
-  --neu-text: #e5e5e5;
-  --neu-text-muted: #9ca3af;
-  --neu-accent: #f97316;
+  /* Warm dark — deep umber, not cool slate */
+  --neu-bg: #1F1A17;
+  --neu-bg-2: #2A231E;
+  --neu-ink: #FAF8F4;
+  --neu-ink-2: #FAF8F4;
+  --neu-text: #FAF8F4;
+  --neu-text-muted: #A39B8F;
+  --neu-text-dim: #6B635A;
+  --neu-accent: #F97316;
+  --neu-accent-2: #FB923C;
+  --neu-accent-light: rgba(249, 115, 22, 0.15);
   --neu-accent-fg: #ffffff;
-  --neu-shadow-dark: rgba(0, 0, 0, 0.4);
-  --neu-shadow-light: rgba(255, 255, 255, 0.04);
-  --neu-border: rgba(255, 255, 255, 0.04);
-  --neu-inset-dark: rgba(0, 0, 0, 0.3);
-  --neu-inset-light: rgba(255, 255, 255, 0.03);
+  --neu-shadow-dark: rgba(0, 0, 0, 0.5);
+  --neu-shadow-light: rgba(255, 255, 255, 0.03);
+  --neu-border: rgba(255, 255, 255, 0.05);
+  --neu-inset-dark: rgba(0, 0, 0, 0.35);
+  --neu-inset-light: rgba(255, 255, 255, 0.025);
 
   background: var(--neu-bg);
   color: var(--neu-text);
@@ -319,8 +334,90 @@
 /* Heat score badge — circle with neumorphic extrusion */
 .neu-score {
   background: var(--neu-bg);
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow:
-    3px 3px 6px var(--neu-shadow-dark),
-    -3px -3px 6px var(--neu-shadow-light);
+    4px 4px 8px var(--neu-shadow-dark),
+    -4px -4px 8px var(--neu-shadow-light);
+}
+
+/* v2 additions — glass pill, dark CTA, em accent */
+.neu-dashboard em.neu-em,
+.neu-dashboard .neu-em {
+  font-style: normal;
+  color: var(--neu-accent);
+}
+
+.neu-glass-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 3px 8px -2px rgba(0, 0, 0, 0.05);
+}
+.neu-dashboard.dark .neu-glass-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.neu-dark-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--neu-ink-2);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow:
+    0 10px 24px -6px rgba(249, 115, 22, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.neu-dark-cta:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 30px -6px rgba(249, 115, 22, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.neu-dashboard.dark .neu-dark-cta {
+  background: var(--neu-accent);
+}
+
+/* Warm glow — for hero/page-head atmosphere */
+.neu-glow-orange {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse, rgba(249, 115, 22, 0.18), rgba(249, 115, 22, 0) 65%);
+  filter: blur(40px);
+}
+
+/* Eyebrow label pattern */
+.neu-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neu-text-dim);
+  font-weight: 700;
+}
+
+/* Scroll hint / footer micro-type */
+.neu-micro {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--neu-text-dim);
+  font-weight: 700;
 }

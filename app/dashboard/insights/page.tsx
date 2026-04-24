@@ -82,7 +82,7 @@ export default function InsightsPage() {
     data.customerDNA.wonCount > 0;
 
   return (
-    <div className="max-w-[880px] mx-auto space-y-5">
+    <div className="max-w-[920px] mx-auto space-y-6">
       <Heading firstName={firstName} />
       {!anyVisible ? (
         <div className="neu-flat p-8 text-center" style={{ borderRadius: 18 }}>
@@ -105,12 +105,21 @@ export default function InsightsPage() {
 
 function Heading({ firstName }: { firstName: string }) {
   return (
-    <div>
-      <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: "var(--neu-text)" }}>
-        Insights
+    <div className="relative">
+      <span
+        className="neu-glow-orange"
+        style={{ width: 420, height: 220, top: -70, left: -100 }}
+        aria-hidden
+      />
+      <div className="neu-eyebrow mb-3 relative z-[1]">Weekly Briefing</div>
+      <h1
+        className="font-bold mb-2 relative z-[1]"
+        style={{ color: "var(--neu-text)", fontSize: 44, lineHeight: 1.02, letterSpacing: "-0.04em" }}
+      >
+        Your <em className="neu-em">insights</em>, {firstName}.
       </h1>
-      <p className="text-sm neu-muted">
-        Your weekly briefing, {firstName} — what closed, what&apos;s waiting, what&apos;s working.
+      <p className="text-[15px] leading-relaxed relative z-[1]" style={{ color: "var(--neu-text-muted)" }}>
+        What closed, what&apos;s waiting, what&apos;s working.
       </p>
     </div>
   );

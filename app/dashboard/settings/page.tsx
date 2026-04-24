@@ -54,17 +54,32 @@ function SettingsShell() {
   return (
     <div className="max-w-[880px] mx-auto space-y-6">
       {/* Heading */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: "var(--neu-text)" }}>
-          Settings
+      <div className="relative">
+        <span
+          className="neu-glow-orange"
+          style={{ width: 420, height: 220, top: -70, left: -100 }}
+          aria-hidden
+        />
+        <div className="neu-eyebrow mb-3 relative z-[1]">Your Business</div>
+        <h1
+          className="font-bold mb-2 relative z-[1]"
+          style={{ color: "var(--neu-text)", fontSize: 44, lineHeight: 1.02, letterSpacing: "-0.04em" }}
+        >
+          <em className="neu-em">Settings</em>.
         </h1>
-        <p className="text-sm neu-muted">Tune your business, Riley, estimates, reviews, integrations, and billing.</p>
+        <p className="text-[15px] leading-relaxed relative z-[1]" style={{ color: "var(--neu-text-muted)" }}>
+          Tune your business, Riley, estimates, reviews, integrations, and billing.
+        </p>
       </div>
 
-      {/* Tab bar */}
+      {/* Tab bar — warm pill rail */}
       <div
-        className="neu-flat overflow-x-auto"
-        style={{ borderRadius: 14 }}
+        className="overflow-x-auto"
+        style={{
+          background: "var(--neu-bg)",
+          borderRadius: 18,
+          boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+        }}
       >
         <nav className="flex items-center gap-1 p-1.5 min-w-max">
           {TABS.map((tab) => {
@@ -74,12 +89,14 @@ function SettingsShell() {
               <button
                 key={tab.id}
                 onClick={() => setTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-all ${
-                  active ? "neu-inset-deep" : "neu-muted hover:opacity-80"
-                }`}
-                style={active ? { color: "var(--neu-accent)" } : undefined}
+                className={`flex items-center gap-2 rounded-full text-[12.5px] font-semibold transition-all ${active ? "neu-dark-cta" : ""}`}
+                style={
+                  active
+                    ? { padding: "8px 16px" }
+                    : { padding: "8px 16px", color: "var(--neu-text-muted)" }
+                }
               >
-                <Icon className="h-[15px] w-[15px]" />
+                <Icon className="h-[14px] w-[14px]" />
                 <span>{tab.label}</span>
               </button>
             );

@@ -14,7 +14,7 @@ export function Field({ label, hint, error, children, className = "" }: FieldWra
   return (
     <div className={className}>
       {label && (
-        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
+        <label className="neu-eyebrow mb-1.5 block" style={{ fontSize: 10.5 }}>
           {label}
         </label>
       )}

@@ -1,11 +1,7 @@
 "use client";
 
-// Dismissable storm alert banner for the roofer dashboard.
-// Shows when NOAA has active weather alerts in the roofer's service area.
-// Links to estimate-settings#storm-surge so the roofer can enable surge pricing.
-
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Zap } from "lucide-react";
 import Link from "next/link";
 
 interface StormAlert {
@@ -22,7 +18,6 @@ interface StormAlertBannerProps {
 
 export default function StormAlertBanner({
   contractorId,
-  serviceZips,
   weatherSurgeEnabled,
 }: StormAlertBannerProps) {
   const [dismissed, setDismissed] = useState(false);
@@ -31,24 +26,20 @@ export default function StormAlertBanner({
   useEffect(() => {
     if (!contractorId || weatherSurgeEnabled) return;
 
-    // Check localStorage for recent dismissal (don't re-show for 4 hours)
     const dismissKey = `storm-alert-dismissed-${contractorId}`;
     const dismissedAt = localStorage.getItem(dismissKey);
     if (dismissedAt && Date.now() - parseInt(dismissedAt) < 4 * 60 * 60 * 1000) {
       return;
     }
 
-    // Fetch current weather alerts for this contractor
     async function checkAlerts() {
       try {
         const res = await fetch(`/api/weather-alerts?contractor_id=${contractorId}`);
         if (!res.ok) return;
         const data = await res.json();
-        if (data.alert) {
-          setAlert(data.alert);
-        }
+        if (data.alert) setAlert(data.alert);
       } catch {
-        // Silent fail — don't block the dashboard
+        /* silent */
       }
     }
     checkAlerts();
@@ -58,14 +49,6 @@ export default function StormAlertBanner({
 
   const surgePercent = Math.round((alert.suggestedMultiplier - 1) * 100);
 
-  const severityStyles: Record<string, { bg: string; border: string; badge: string }> = {
-    Extreme: { bg: "bg-red-50", border: "border-red-200", badge: "bg-red-600" },
-    Severe: { bg: "bg-orange-50", border: "border-orange-200", badge: "bg-orange-600" },
-    Moderate: { bg: "bg-amber-50", border: "border-amber-200", badge: "bg-amber-600" },
-  };
-
-  const style = severityStyles[alert.severity] || severityStyles.Moderate;
-
   function handleDismiss() {
     setDismissed(true);
     if (contractorId) {
@@ -74,36 +57,49 @@ export default function StormAlertBanner({
   }
 
   return (
-    <div className={`rounded-xl ${style.bg} ${style.border} border p-4 mb-6 relative`}>
+    <div
+      className="relative flex items-start gap-4 mb-6"
+      style={{
+        padding: "16px 20px",
+        borderRadius: 18,
+        background: "linear-gradient(135deg, rgba(255,237,213,0.65), rgba(254,215,170,0.45))",
+        border: "1px solid rgba(249,115,22,0.14)",
+        backdropFilter: "blur(22px) saturate(140%)",
+        WebkitBackdropFilter: "blur(22px) saturate(140%)",
+        boxShadow: "0 6px 14px -4px rgba(249,115,22,0.14)",
+      }}
+    >
+      <div
+        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px] text-white"
+        style={{
+          background: "linear-gradient(135deg, var(--neu-accent), var(--neu-accent-2))",
+          boxShadow: "0 10px 20px -4px rgba(249,115,22,0.5)",
+        }}
+      >
+        <Zap className="h-5 w-5" strokeWidth={2.5} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <h3 className="text-[15px] font-bold tracking-tight" style={{ color: "var(--neu-text)" }}>
+          {alert.event} detected in your service area
+        </h3>
+        <p className="text-[12.5px] mt-0.5" style={{ color: "var(--neu-text-muted)" }}>
+          Post-storm demand typically lifts prices by {surgePercent}%. Enable storm surge pricing to stay competitive — you set the amount and duration.
+        </p>
+      </div>
+
+      <Link href="/dashboard/settings?tab=estimates#storm-surge" className="neu-dark-cta flex-shrink-0">
+        Review Surge →
+      </Link>
+
       <button
         onClick={handleDismiss}
-        className="absolute top-3 right-3 p-1 rounded-md hover:bg-black/5 transition-colors"
-        aria-label="Dismiss storm alert"
+        className="absolute top-3 right-3 p-1 rounded-md transition-colors"
+        style={{ color: "var(--neu-text-dim)" }}
+        aria-label="Dismiss"
       >
-        <X className="w-4 h-4 text-slate-500" />
+        <X className="w-3.5 h-3.5" />
       </button>
-
-      <div className="flex items-start gap-3 pr-8">
-        <span className={`${style.badge} text-white text-xs font-bold px-2 py-1 rounded-md mt-0.5 whitespace-nowrap`}>
-          {alert.severity.toUpperCase()}
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-900">
-            {alert.event} detected in your service area
-          </p>
-          <p className="text-xs text-slate-600 mt-1">
-            Post-storm roofing demand typically increases prices by {surgePercent}%.
-            Enable storm surge pricing to keep your estimates competitive with
-            real market conditions. You choose the exact amount and duration.
-          </p>
-          <Link
-            href="/dashboard/settings?tab=estimates#storm-surge"
-            className="inline-flex items-center gap-1 mt-3 px-4 py-2 rounded-lg bg-[#1B3A4B] text-white text-xs font-bold hover:bg-[#162f3d] transition-colors"
-          >
-            Review Surge Settings
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }

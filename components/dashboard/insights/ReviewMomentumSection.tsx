@@ -22,7 +22,7 @@ export function ReviewMomentumSection({ stats }: { stats: ReviewMomentumStats })
   return (
     <SectionShell icon={Star} title="Review Momentum" caption="Google reviews · this month">
       {parts.length > 0 && (
-        <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>{parts.join(" ")}</p>
+        <p className="text-[15px] leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>{parts.join(" ")}</p>
       )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4">
         <InsetStat label="New this month" value={`+${stats.newThisMonth}`} sub={`${stats.totalReviewed} all-time`} />
@@ -31,17 +31,8 @@ export function ReviewMomentumSection({ stats }: { stats: ReviewMomentumStats })
         <InsetStat label="Unrequested" value={String(stats.unrequestedCompleted)} sub="Completed jobs" />
       </div>
       {stats.unrequestedCompleted > 0 && (
-        <a
-          href="/dashboard/settings?tab=reviews"
-          className="inline-block text-[12px] font-bold px-4 py-2"
-          style={{
-            borderRadius: 10,
-            background: "var(--neu-accent)",
-            color: "var(--neu-accent-fg)",
-            boxShadow: "3px 3px 8px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light)",
-          }}
-        >
-          Send Review Requests
+        <a href="/dashboard/settings?tab=reviews" className="neu-dark-cta">
+          Send Review Requests →
         </a>
       )}
     </SectionShell>

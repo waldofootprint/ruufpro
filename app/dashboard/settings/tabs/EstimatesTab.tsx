@@ -101,7 +101,10 @@ export function EstimatesTab() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!contractorId) return;
+    if (!contractorId) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       const { data: contractor } = await supabase
         .from("contractors")
@@ -109,7 +112,10 @@ export function EstimatesTab() {
         .eq("id", contractorId)
         .single();
 
-      if (!contractor) return;
+      if (!contractor) {
+        setLoading(false);
+        return;
+      }
       setContractorState(contractor.state || "TX");
       setMetroLabel(getMetroName(contractor.state || "TX") || getRegionName(contractor.state || "TX"));
 

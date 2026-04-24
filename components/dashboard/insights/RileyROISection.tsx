@@ -11,17 +11,31 @@ export function RileyROISection({ stats }: { stats: RileyROIStats }) {
 
   return (
     <SectionShell icon={Sparkles} title="Riley ROI" caption="What your AI assistant brought in">
-      <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>{summary}</p>
+      <p className="text-[15px] leading-relaxed mb-5" style={{ color: "var(--neu-text)" }}>{summary}</p>
       <div
-        className="text-center px-5 py-6"
+        className="text-center px-5 py-7"
         style={{
-          borderRadius: 14,
-          boxShadow: "inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light)",
+          borderRadius: 16,
+          background: "rgba(249, 115, 22, 0.04)",
+          boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
         }}
       >
-        <p className="text-[10px] font-bold uppercase tracking-wider neu-muted">{heroLabel}</p>
-        <p className="text-4xl font-extrabold tracking-tight my-1.5" style={{ color: "var(--neu-accent)" }}>{heroValue}</p>
-        <p className="text-xs neu-muted">{heroSub}</p>
+        <p className="neu-eyebrow" style={{ fontSize: 10.5 }}>{heroLabel}</p>
+        <p
+          className="font-bold tabular-nums my-2"
+          style={{
+            fontSize: 48,
+            lineHeight: 1,
+            letterSpacing: "-0.04em",
+            backgroundImage: "linear-gradient(135deg, var(--neu-accent), var(--neu-accent-2))",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+          }}
+        >
+          {heroValue}
+        </p>
+        <p className="text-[12.5px]" style={{ color: "var(--neu-text-muted)" }}>{heroSub}</p>
       </div>
     </SectionShell>
   );

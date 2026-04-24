@@ -82,15 +82,15 @@ function HeatBadge({ score }: { score: number }) {
   const color = tier === "hot" ? "#ef4444" : tier === "warm" ? "#f59e0b" : "var(--neu-text-muted)";
   return (
     <div
-      className="neu-score flex h-10 w-10 items-center justify-center text-sm font-extrabold tabular-nums"
-      style={{ color }}
+      className="neu-score flex h-11 w-11 items-center justify-center text-sm font-extrabold tabular-nums"
+      style={{ color, letterSpacing: "-0.02em" }}
     >
       {score}
     </div>
   );
 }
 
-// --- Alert Badge ---
+// --- Alert Badge (glass-pill variant) ---
 function AlertBadgeComponent({ alert }: { alert: AlertBadge }) {
   const colors = {
     stale: { icon: Clock, color: "#ef4444" },
@@ -102,10 +102,7 @@ function AlertBadgeComponent({ alert }: { alert: AlertBadge }) {
 
   const Icon = colors.icon;
   return (
-    <span
-      className="neu-flat inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold"
-      style={{ color: colors.color }}
-    >
+    <span className="neu-glass-pill" style={{ color: colors.color, fontSize: 10 }}>
       <Icon className="h-3 w-3" />
       {alert.label}
     </span>
@@ -321,18 +318,19 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
   const smsHref = lead.phone ? `sms:${lead.phone}${draft ? `&body=${smsBody}` : ""}` : undefined;
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* AI Draft Section */}
-      <div className="neu-inset p-4">
+      <div className="neu-inset p-4" style={{ borderRadius: 18 }}>
         <div className="flex items-center justify-between mb-3">
-          <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide neu-muted">
-            <Sparkles className="h-3.5 w-3.5" /> AI Draft Follow-Up
+          <h4 className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.14em]" style={{ color: "var(--neu-accent)" }}>
+            <Sparkles className="h-3.5 w-3.5" /> AI Draft · Follow-Up
           </h4>
           {!draftLoaded && (
             <button
-              className="neu-accent-btn flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold"
+              className="neu-dark-cta"
               onClick={generateDraft}
               disabled={draftLoading}
+              style={{ padding: "7px 14px", fontSize: 12 }}
             >
               {draftLoading ? (
                 <><Loader2 className="h-3 w-3 animate-spin" /> Drafting...</>
@@ -346,25 +344,36 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
         {draftLoaded && (
           <>
             <textarea
-              className="w-full neu-inset-deep p-3 text-sm leading-relaxed resize-none focus:outline-none"
-              style={{ color: "var(--neu-text)", minHeight: "80px" }}
+              className="w-full p-3.5 text-[13.5px] leading-relaxed resize-none focus:outline-none"
+              style={{
+                background: "#ffffff",
+                color: "var(--neu-text)",
+                borderRadius: 14,
+                boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.04)",
+                minHeight: "90px",
+                fontFamily: "inherit",
+              }}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               rows={3}
             />
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-3 items-center flex-wrap">
               {smsHref && (
                 <a href={smsHref}>
-                  <button className="neu-accent-btn flex items-center gap-1.5 px-4 py-2 text-xs font-semibold">
+                  <button className="neu-dark-cta">
                     <Send className="h-3.5 w-3.5" /> Send Text
                   </button>
                 </a>
               )}
-              <button className="neu-flat flex items-center gap-1.5 px-4 py-2 text-xs font-medium" style={{ color: "var(--neu-text)" }}>
-                <Mail className="h-3.5 w-3.5" /> Send Email
+              <button
+                className="neu-flat inline-flex items-center gap-1.5"
+                style={{ padding: "9px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: "var(--neu-text)" }}
+              >
+                <Mail className="h-3.5 w-3.5" /> Email
               </button>
               <button
-                className="neu-flat px-3 py-2 text-xs font-medium neu-muted ml-auto"
+                className="neu-glass-pill ml-auto"
+                style={{ padding: "7px 14px", fontSize: 12, color: "var(--neu-accent)", fontWeight: 600, cursor: "pointer" }}
                 onClick={() => { setDraftLoaded(false); setDraft(""); }}
               >
                 Regenerate
@@ -374,37 +383,39 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
         )}
 
         {!draftLoaded && !draftLoading && (
-          <p className="text-xs neu-muted">Click "Generate Draft" to create a personalized follow-up based on this lead&apos;s activity.</p>
+          <p className="text-[12.5px]" style={{ color: "var(--neu-text-muted)" }}>
+            Click <strong style={{ color: "var(--neu-text)", fontWeight: 600 }}>Generate Draft</strong> to create a personalized follow-up based on this lead&apos;s activity.
+          </p>
         )}
       </div>
 
       {/* Ask Copilot Section */}
-      <div className="neu-inset p-4">
-        <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide neu-muted mb-3">
+      <div className="neu-inset p-4" style={{ borderRadius: 18 }}>
+        <h4 className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.14em] mb-3" style={{ color: "var(--neu-accent)" }}>
           <MessageSquare className="h-3.5 w-3.5" /> Ask Copilot
         </h4>
 
         {/* Chat history */}
         {copilotMessages.length > 0 && (
-          <div className="space-y-2 mb-3 max-h-[200px] overflow-y-auto">
+          <div className="space-y-1.5 mb-3 max-h-[200px] overflow-y-auto">
             {copilotMessages.map((msg, i) => (
               <div
                 key={i}
                 className={cn(
-                  "px-3 py-2 rounded-xl text-sm leading-relaxed max-w-[85%]",
-                  msg.role === "user" ? "neu-flat" : "ml-auto"
+                  "px-3.5 py-2.5 text-[13px] leading-relaxed max-w-[88%]",
+                  msg.role === "user" ? "" : "ml-auto"
                 )}
                 style={
                   msg.role === "assistant"
-                    ? { background: "var(--neu-accent)", color: "var(--neu-accent-fg)" }
-                    : { color: "var(--neu-text)" }
+                    ? { background: "var(--neu-ink-2)", color: "#fff", borderRadius: 14, borderTopRightRadius: 4 }
+                    : { background: "var(--neu-bg-2)", color: "var(--neu-text)", borderRadius: 14, borderTopLeftRadius: 4 }
                 }
               >
                 {msg.content}
               </div>
             ))}
             {copilotLoading && (
-              <div className="ml-auto px-3 py-2 rounded-xl text-sm" style={{ background: "var(--neu-accent)", color: "var(--neu-accent-fg)" }}>
+              <div className="ml-auto px-3.5 py-2.5 text-sm" style={{ background: "var(--neu-ink-2)", color: "#fff", borderRadius: 14, borderTopRightRadius: 4 }}>
                 <Loader2 className="h-4 w-4 animate-spin inline" />
               </div>
             )}
@@ -412,12 +423,12 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
         )}
 
         {/* Quick action chips */}
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {QUICK_CHIPS.map((chip) => (
             <button
               key={chip}
-              className="neu-flat px-3 py-1.5 text-xs font-medium"
-              style={{ color: "var(--neu-accent)" }}
+              className="neu-flat"
+              style={{ padding: "6px 12px", borderRadius: 999, fontSize: 11.5, fontWeight: 500, color: "var(--neu-accent)" }}
               onClick={() => sendCopilotMessage(chip)}
               disabled={copilotLoading}
             >
@@ -426,12 +437,20 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
           ))}
         </div>
 
-        {/* Input */}
-        <div className="flex gap-2">
+        {/* Input bar — white pill w/ ink circle send */}
+        <div
+          className="flex items-center gap-2"
+          style={{
+            background: "#ffffff",
+            padding: "6px 6px 6px 16px",
+            borderRadius: 999,
+            boxShadow: "inset 2px 2px 6px var(--neu-inset-dark)",
+          }}
+        >
           <input
             type="text"
-            className="flex-1 neu-inset-deep px-3 py-2 text-sm focus:outline-none"
-            style={{ color: "var(--neu-text)" }}
+            className="flex-1 border-none outline-none bg-transparent text-[13.5px]"
+            style={{ color: "var(--neu-text)", fontFamily: "inherit" }}
             placeholder="Ask about this lead..."
             value={copilotInput}
             onChange={(e) => setCopilotInput(e.target.value)}
@@ -444,11 +463,18 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
             disabled={copilotLoading}
           />
           <button
-            className="neu-accent-btn px-3 py-2"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-full border-0"
+            style={{
+              background: "var(--neu-ink-2)",
+              color: "#fff",
+              cursor: copilotInput.trim() ? "pointer" : "not-allowed",
+              opacity: copilotInput.trim() ? 1 : 0.5,
+              boxShadow: "0 6px 14px -4px rgba(0,0,0,0.4)",
+            }}
             onClick={() => sendCopilotMessage(copilotInput)}
             disabled={copilotLoading || !copilotInput.trim()}
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -469,11 +495,17 @@ function LeadAccordion({
   const chat = lead.chatPreview;
 
   return (
-    <div className="px-4 pb-5 pt-4" style={{ borderTop: "1px solid var(--neu-border)" }}>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-4">
+    <div
+      className="px-5 pb-6 pt-6"
+      style={{
+        borderTop: "1px solid var(--neu-border)",
+        background: "linear-gradient(180deg, rgba(249,115,22,0.02), transparent 40%)",
+      }}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         {/* Property Intel */}
         <div className="neu-inset p-4">
-          <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide neu-muted mb-3">
+          <h4 className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.14em] neu-muted mb-3">
             <Home className="h-3.5 w-3.5" /> Property Intel
           </h4>
           <div className="space-y-2">
@@ -506,7 +538,7 @@ function LeadAccordion({
 
         {/* Behavioral Signals */}
         <div className="neu-inset p-4">
-          <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide neu-muted mb-3">
+          <h4 className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.14em] neu-muted mb-3">
             <BarChart3 className="h-3.5 w-3.5" /> Signals
           </h4>
           <div className="space-y-2">
@@ -539,36 +571,45 @@ function LeadAccordion({
         {/* Riley Chat + Copilot Insights */}
         <div className="flex flex-col gap-5">
           <div className="neu-inset p-4 flex-1">
-            <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide neu-muted mb-3">
+            <h4 className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.14em] neu-muted mb-3">
               <MessageSquare className="h-3.5 w-3.5" /> Riley Chat
             </h4>
             {chat && chat.messages.length > 0 ? (
               <>
-                <div className="space-y-2 mb-3">
+                <div className="flex flex-col gap-1.5 mb-3">
                   {chat.messages.slice(-3).map((msg, i) => (
                     <div
                       key={i}
                       className={cn(
-                        "px-3 py-2 rounded-xl text-sm leading-relaxed max-w-[90%]",
-                        msg.role === "user"
-                          ? "neu-flat"
-                          : "ml-auto"
+                        "px-3.5 py-2.5 text-[13px] leading-[1.45] max-w-[88%]",
+                        msg.role === "user" ? "" : "ml-auto"
                       )}
-                      style={msg.role !== "user" ? { background: "var(--neu-accent)", color: "var(--neu-accent-fg)" } : { color: "var(--neu-text)" }}
+                      style={
+                        msg.role !== "user"
+                          ? { background: "var(--neu-ink-2)", color: "#fff", borderRadius: 14, borderTopRightRadius: 4 }
+                          : { background: "var(--neu-bg-2)", color: "var(--neu-text)", borderRadius: 14, borderTopLeftRadius: 4 }
+                      }
                     >
                       {msg.content.length > 120 ? msg.content.slice(0, 120) + "..." : msg.content}
                     </div>
                   ))}
                 </div>
-                <p className="text-[11px] neu-muted flex items-center gap-1.5">
-                  <span className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    chat.stage === "decision" || chat.stage === "close" ? "bg-red-400" :
-                    chat.stage === "consideration" ? "bg-amber-400" : "bg-emerald-400"
-                  )} />
-                  {chat.stage} · {chat.messageCount} message{chat.messageCount !== 1 ? "s" : ""}
-                  {chat.topics.length > 0 && ` · ${chat.topics.map(t => TOPIC_LABELS[t] || t).join(", ")}`}
-                </p>
+                <div className="flex items-center gap-1.5 text-[10.5px] font-semibold" style={{ color: "var(--neu-text-dim)", letterSpacing: "0.04em" }}>
+                  <span
+                    className="inline-block h-1.5 w-1.5 rounded-full"
+                    style={{
+                      background: chat.stage === "decision" || chat.stage === "close" ? "#ef4444"
+                        : chat.stage === "consideration" ? "#f59e0b" : "#16a34a",
+                      boxShadow: `0 0 0 3px ${
+                        chat.stage === "decision" || chat.stage === "close" ? "rgba(239,68,68,0.18)"
+                        : chat.stage === "consideration" ? "rgba(245,158,11,0.18)" : "rgba(22,163,74,0.18)"
+                      }`,
+                    }}
+                  />
+                  <span style={{ textTransform: "capitalize" }}>{chat.stage} stage</span>
+                  <span>· {chat.messageCount} message{chat.messageCount !== 1 ? "s" : ""}</span>
+                  {chat.topics.length > 0 && <span>· {chat.topics.map(t => TOPIC_LABELS[t] || t).join(", ")}</span>}
+                </div>
               </>
             ) : (
               <p className="text-sm neu-muted">No conversation yet</p>
@@ -576,17 +617,22 @@ function LeadAccordion({
           </div>
 
           <div className="neu-inset p-4">
-            <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide neu-muted mb-3">
+            <h4 className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.14em] neu-muted mb-3">
               <Shield className="h-3.5 w-3.5" /> Copilot Insights
             </h4>
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-2">
               {generateInsights(lead).map((insight, i) => (
                 <div
                   key={i}
-                  className="px-3 py-2 rounded-r-lg text-sm leading-relaxed"
                   style={{
+                    padding: "10px 14px",
                     borderLeft: "2px solid var(--neu-accent)",
+                    background: "rgba(249, 115, 22, 0.04)",
+                    borderRadius: "0 10px 10px 0",
                     color: "var(--neu-text)",
+                    fontSize: 13.5,
+                    lineHeight: 1.5,
+                    letterSpacing: "-0.005em",
                   }}
                 >
                   {insight}
@@ -728,15 +774,16 @@ export function LeadList({ leads, onStatusChange }: LeadListProps) {
     <div>
       {/* Sort Controls */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold" style={{ color: "var(--neu-text)" }}>Leads</h2>
-        <div className="flex gap-2">
+        <h2 className="font-bold" style={{ color: "var(--neu-text)", fontSize: 22, letterSpacing: "-0.03em" }}>Leads</h2>
+        <div className="flex gap-1.5">
           {(["heat", "newest", "value"] as SortKey[]).map((key) => (
             <button
               key={key}
               className={cn(
-                "px-3 py-1.5 text-xs font-medium transition-all",
-                sortKey === key ? "neu-accent-btn" : "neu-flat neu-muted"
+                "px-3.5 py-2 text-[12px] font-semibold rounded-full transition-all",
+                sortKey === key ? "neu-dark-cta" : "neu-flat"
               )}
+              style={sortKey !== key ? { color: "var(--neu-text-muted)" } : undefined}
               onClick={() => setSortKey(key)}
             >
               {key === "heat" && "Heat Score"}
@@ -748,7 +795,14 @@ export function LeadList({ leads, onStatusChange }: LeadListProps) {
       </div>
 
       {/* Lead Table */}
-      <div className="neu-raised overflow-hidden">
+      <div
+        className="overflow-hidden"
+        style={{
+          background: "var(--neu-bg)",
+          borderRadius: 24,
+          boxShadow: "8px 8px 22px var(--neu-shadow-dark), -8px -8px 22px var(--neu-shadow-light)",
+        }}
+      >
         {/* Header */}
         <div
           className="hidden lg:grid grid-cols-[48px_1.5fr_100px_120px_100px_100px_90px] gap-2 px-4 py-2.5"
