@@ -37,11 +37,11 @@ export default function DashboardHome() {
         *,
         property_data_cache (
           estimated_value, value_range_low, value_range_high,
-          year_built, estimated_roof_age_years, is_original_roof, in_replacement_window,
+          year_built,
           owner_names, owner_occupied,
           last_sale_date, last_sale_price,
-          square_footage, flood_zone,
-          fema_disaster_count, county_name
+          square_footage, fema_flood_zone,
+          disaster_exposure_count, county_fips
         )
       `)
       .eq("contractor_id", contractorId)
@@ -87,8 +87,19 @@ export default function DashboardHome() {
     });
 
     // Build enriched leads
+    const currentYear = new Date().getFullYear();
     const enriched: LeadWithDetails[] = rawLeads.map((lead) => {
-      const pd = lead.property_data_cache;
+      const pdRaw = lead.property_data_cache;
+      // Map DB shape → legacy UI shape. Three columns were renamed; three are derived from year_built.
+      const pd = pdRaw ? {
+        ...pdRaw,
+        flood_zone: (pdRaw as any).fema_flood_zone ?? null,
+        fema_disaster_count: (pdRaw as any).disaster_exposure_count ?? null,
+        county_name: (pdRaw as any).county_fips ?? null,
+        estimated_roof_age_years: pdRaw.year_built ? currentYear - pdRaw.year_built : null,
+        is_original_roof: null,
+        in_replacement_window: pdRaw.year_built ? (() => { const age = currentYear - pdRaw.year_built; return age >= 15 && age <= 25; })() : null,
+      } : null;
       const leadChats = chatByLead.get(lead.id) || [];
       const latestChat = leadChats[0];
       const leadEvents = eventsByLead.get(lead.id) || [];
