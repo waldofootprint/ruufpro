@@ -10,6 +10,16 @@
 //
 // Sources: RSMeans material+labor rates, HomeAdvisor contractor surveys,
 // Instant Roofer/Roofr reverse-engineered rates (2024-2026)
+//
+// PRICING.1 recalibration (2026-04-23): rates raised ~1.85× to reflect
+// ALL-IN installed cost (materials + labor + overhead + profit + typical
+// pitch + typical waste) BEFORE the size/shape multiplier in
+// `calculateEstimate`. Previously these were materials+labor only, which
+// undershot Roofle/Roofr published demos by 30-40% in the southeast.
+// Back-calibrated from D.5 bench: Roofle implied $6.46-$8.26/sqft for FL
+// asphalt (small simple → large complex); our rate × size/shape multiplier
+// (1.00× → 1.35×) must land in that envelope. See
+// decisions/pricing-market-defaults-scoping.md.
 
 export interface RegionalRates {
   asphalt_low: number;
@@ -31,38 +41,38 @@ export interface RegionalRates {
 const REGIONAL_DEFAULTS: Record<string, RegionalRates> = {
   // Southeast / Sun Belt — lower labor costs, high storm demand
   southeast: {
-    asphalt_low: 2.75, asphalt_high: 3.25,
-    metal_low: 6.00,   metal_high: 7.00,
-    tile_low: 7.00,    tile_high: 8.50,
-    flat_low: 3.00,    flat_high: 3.75,
+    asphalt_low: 5.00, asphalt_high: 6.00,
+    metal_low: 11.00,  metal_high: 13.00,
+    tile_low: 13.00,   tile_high: 15.75,
+    flat_low: 5.55,    flat_high: 6.95,
   },
   // Northeast — higher labor costs, seasonal demand
   northeast: {
-    asphalt_low: 3.50, asphalt_high: 4.25,
-    metal_low: 7.00,   metal_high: 8.50,
-    tile_low: 8.50,    tile_high: 10.50,
-    flat_low: 3.75,    flat_high: 4.75,
+    asphalt_low: 6.50, asphalt_high: 7.85,
+    metal_low: 12.95,  metal_high: 15.75,
+    tile_low: 15.75,   tile_high: 19.45,
+    flat_low: 6.95,    flat_high: 8.80,
   },
   // Midwest — moderate costs, storm and winter demand
   midwest: {
-    asphalt_low: 3.00, asphalt_high: 3.75,
-    metal_low: 6.50,   metal_high: 8.00,
-    tile_low: 7.50,    tile_high: 9.50,
-    flat_low: 3.25,    flat_high: 4.25,
+    asphalt_low: 5.55, asphalt_high: 6.95,
+    metal_low: 12.05,  metal_high: 14.80,
+    tile_low: 13.90,   tile_high: 17.60,
+    flat_low: 6.00,    flat_high: 7.85,
   },
   // West — higher costs, fire and earthquake building codes
   west: {
-    asphalt_low: 3.75, asphalt_high: 4.75,
-    metal_low: 7.50,   metal_high: 9.50,
-    tile_low: 9.00,    tile_high: 11.50,
-    flat_low: 4.00,    flat_high: 5.25,
+    asphalt_low: 6.95, asphalt_high: 8.80,
+    metal_low: 13.90,  metal_high: 17.60,
+    tile_low: 16.65,   tile_high: 21.30,
+    flat_low: 7.40,    flat_high: 9.70,
   },
   // Southwest — moderate, high tile demand
   southwest: {
-    asphalt_low: 2.90, asphalt_high: 3.50,
-    metal_low: 6.50,   metal_high: 8.00,
-    tile_low: 7.50,    tile_high: 10.00,
-    flat_low: 3.00,    flat_high: 4.00,
+    asphalt_low: 5.40, asphalt_high: 6.50,
+    metal_low: 12.05,  metal_high: 14.80,
+    tile_low: 13.90,   tile_high: 18.50,
+    flat_low: 5.55,    flat_high: 7.40,
   },
 };
 

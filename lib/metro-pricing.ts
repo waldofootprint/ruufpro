@@ -18,13 +18,20 @@ import type { RegionalRates } from "./regional-pricing";
 
 // ---- CONSTANTS ----
 
-// National baseline rates per material ($/sqft, materials + labor).
-// US weighted averages from RSMeans/HomeAdvisor 2024-2026.
+// National baseline rates per material ($/sqft, ALL-IN installed price
+// before size/shape multiplier). US weighted averages 2025-2026.
+//
+// PRICING.1 recalibration (2026-04-23): raised from materials+labor-only
+// ($3.50-$9.00) to all-in-installed ($6.25-$15.50). Back-calibrated from
+// D.5 bench where Roofle implied $6.46-$8.26/sqft FL asphalt. Final $/sqft
+// = NATIONAL_BASE_RATE × metro_wage_multiplier × size_shape_multiplier.
+// For Jacksonville (wage 22.42): $6.25 × 0.890 × 1.30 = ~$7.23/sqft on a
+// medium-complex roof — matches Roofle's observed $7.23-$7.69 envelope.
 const NATIONAL_BASE_RATES = {
-  asphalt: 3.50,
-  metal: 7.50,
-  tile: 9.00,
-  flat: 4.00,
+  asphalt: 6.25,
+  metal: 13.00,
+  tile: 15.50,
+  flat: 7.00,
 };
 
 // BLS national average roofer hourly mean wage (May 2024)
@@ -487,12 +494,15 @@ function fallbackRates(state: string): RegionalRates {
     OH: "mw", MI: "mw", IN: "mw", IL: "mw", WI: "mw", MN: "mw",
     IA: "mw", MO: "mw", KS: "mw", NE: "mw", SD: "mw", ND: "mw", KY: "mw",
   };
+  // PRICING.1 (2026-04-23): fallbacks recalibrated to all-in installed price
+  // (1.85× prior materials+labor values) to match the new regional-pricing.ts
+  // baseline + size/shape multiplier in calculateEstimate.
   const FALLBACKS: Record<string, RegionalRates> = {
-    se: { asphalt_low: 2.75, asphalt_high: 3.25, metal_low: 6.00, metal_high: 7.00, tile_low: 7.00, tile_high: 8.50, flat_low: 3.00, flat_high: 3.75 },
-    ne: { asphalt_low: 3.50, asphalt_high: 4.25, metal_low: 7.00, metal_high: 8.50, tile_low: 8.50, tile_high: 10.50, flat_low: 3.75, flat_high: 4.75 },
-    mw: { asphalt_low: 3.00, asphalt_high: 3.75, metal_low: 6.50, metal_high: 8.00, tile_low: 7.50, tile_high: 9.50, flat_low: 3.25, flat_high: 4.25 },
-    w:  { asphalt_low: 3.75, asphalt_high: 4.75, metal_low: 7.50, metal_high: 9.50, tile_low: 9.00, tile_high: 11.50, flat_low: 4.00, flat_high: 5.25 },
-    sw: { asphalt_low: 2.90, asphalt_high: 3.50, metal_low: 6.50, metal_high: 8.00, tile_low: 7.50, tile_high: 10.00, flat_low: 3.00, flat_high: 4.00 },
+    se: { asphalt_low: 5.00, asphalt_high: 6.00, metal_low: 11.00, metal_high: 13.00, tile_low: 13.00, tile_high: 15.75, flat_low: 5.55, flat_high: 6.95 },
+    ne: { asphalt_low: 6.50, asphalt_high: 7.85, metal_low: 12.95, metal_high: 15.75, tile_low: 15.75, tile_high: 19.45, flat_low: 6.95, flat_high: 8.80 },
+    mw: { asphalt_low: 5.55, asphalt_high: 6.95, metal_low: 12.05, metal_high: 14.80, tile_low: 13.90, tile_high: 17.60, flat_low: 6.00, flat_high: 7.85 },
+    w:  { asphalt_low: 6.95, asphalt_high: 8.80, metal_low: 13.90, metal_high: 17.60, tile_low: 16.65, tile_high: 21.30, flat_low: 7.40, flat_high: 9.70 },
+    sw: { asphalt_low: 5.40, asphalt_high: 6.50, metal_low: 12.05, metal_high: 14.80, tile_low: 13.90, tile_high: 18.50, flat_low: 5.55, flat_high: 7.40 },
   };
   const region = REGION_MAP[state.toUpperCase()] || "se";
   return FALLBACKS[region];

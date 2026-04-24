@@ -126,6 +126,24 @@ function crossCheckPitch(
   return Math.max(solarPitchDegrees, homeownerPitch);
 }
 
+// Size + shape complexity multiplier on the $/sqft rate.
+// Encodes what Roofle does implicitly: larger, more complex roofs
+// cost more per sqft than small simple ones (more cuts, more labor,
+// more staging, more accessories). Range 1.00× (small simple)
+// → 1.35× (large complex). Calibrated against Roofle D.5 bench.
+// Applied in BOTH bundled + itemized modes on the effective rate.
+export function getSizeShapeMultiplier(sqft: number, numSegments: number): number {
+  const sizeFactor =
+    sqft <= 2000 ? 0 :
+    sqft >= 5000 ? 0.20 :
+    ((sqft - 2000) / 3000) * 0.20;
+  const complexityFactor =
+    numSegments <= 2 ? 0 :
+    numSegments <= 4 ? 0.10 :
+    0.15;
+  return 1.0 + sizeFactor + complexityFactor;
+}
+
 // Waste factor: more complex roofs (more segments) need more extra material
 // because of cuts at hips, valleys, and edges
 export function getWasteFactor(numSegments: number): number {
@@ -215,7 +233,15 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   // Get contractor's rates — use MIDPOINT for the best estimate
   const rateLow = input.rates[`${input.material}_low` as keyof ContractorRates] || 0;
   const rateHigh = input.rates[`${input.material}_high` as keyof ContractorRates] || 0;
-  const rateMid = (rateLow + rateHigh) / 2;
+  const rateBaseMid = (rateLow + rateHigh) / 2;
+
+  // PRICING.1 (2026-04-23): size + shape multiplier on the effective $/sqft rate.
+  // Linear contractor rates don't scale with roof size/complexity; Roofle's
+  // implied rates climb ~28% from small simple ($6.46) to large complex ($8.26).
+  // Applied in BOTH modes so both configured contractors and default rates
+  // scale with complexity. See decisions/pricing-market-defaults-scoping.md.
+  const sizeShapeMultiplier = getSizeShapeMultiplier(roofAreaSqft, numSegments);
+  const rateMid = rateBaseMid * sizeShapeMultiplier;
 
   // Detect if contractor has set custom rates (not using regional defaults).
   // A contractor who KNOWS their pricing sets a tight spread (e.g. $3.10-$3.30 = 1.065 ratio).

@@ -39,6 +39,10 @@ const BASE = arg("--base", "https://ruufpro.com").replace(/\/$/, "");
 const INPUT = arg("--input", path.join(__dirname, "bench-addresses.json"));
 const OUT = arg("--out", path.join(__dirname, "..", ".tmp", "calculator-bench", "v4-bench-BB.csv"));
 const FLOOR_OFF = hasFlag("--floor-off");
+// PRICING.1 (2026-04-23): --use-market-defaults bypasses contractor-configured
+// rates and uses metro/regional defaults (getMetroDefaults). Lets bench verify
+// the ship-bar against DEFAULTS not against one contractor's pricing policy.
+const USE_MARKET_DEFAULTS = hasFlag("--use-market-defaults");
 const GEOCODE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || process.env.GOOGLE_MAPS_API_KEY;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -152,7 +156,7 @@ function pct(a, b) {
 
 console.log(`\nV4 Bench — ${BASE} — contractor=${contractor_label}`);
 console.log(`Options: pitch=${options.pitch_category}, material=${options.current_material}, timeline=${options.timeline}`);
-console.log(`Bench: ${addresses.length} addresses${FLOOR_OFF ? " [FLOOR-OFF MODE]" : ""}\n`);
+console.log(`Bench: ${addresses.length} addresses${FLOOR_OFF ? " [FLOOR-OFF MODE]" : ""}${USE_MARKET_DEFAULTS ? " [MARKET-DEFAULTS MODE]" : ""}\n`);
 
 try {
 for (const row of addresses) {
@@ -167,6 +171,7 @@ for (const row of addresses) {
     shingle_layers: options.shingle_layers,
     timeline: options.timeline,
     financing_interest: options.financing_interest,
+    ...(USE_MARKET_DEFAULTS ? { use_market_defaults: true, state: "FL" } : {}),
   };
 
   process.stdout.write(`#${row.id} ${row.address} ... `);

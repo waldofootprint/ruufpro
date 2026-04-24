@@ -118,6 +118,10 @@ export async function POST(request: NextRequest) {
       // Mode B (Session AZ): contact fields passed up front so we can write a
       // `needs_manual_quote` lead if a guardrail refuses the measurement.
       name, email, phone, sms_consent,
+      // PRICING.1 (2026-04-23): market-default rate mode. When true, bypass
+      // estimate_settings lookup and synthesize rates from metro/regional
+      // defaults. Used by bench harness + demo pages + un-configured widgets.
+      use_market_defaults, state: reqState,
     } = body;
 
     if (!contractor_id) {
@@ -131,29 +135,65 @@ export async function POST(request: NextRequest) {
     const { bedrooms, roof_type } = body;
 
     // Step 1: Look up the roofer's pricing
-    const { data: settings, error: settingsErr } = await supabase
-      .from("estimate_settings")
-      .select("*")
-      .eq("contractor_id", contractor_id)
-      .single();
+    // PRICING.1: if use_market_defaults=true, synthesize from metro/regional
+    // defaults instead of loading contractor-configured rates. Metro from
+    // city+state (parsed out of address when available) using BLS wage data.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let settings: any = null;
+    let rates: ContractorRates;
 
-    if (settingsErr || !settings) {
-      return NextResponse.json(
-        { error: "Contractor estimate settings not found. Please configure pricing first." },
-        { status: 404 }
-      );
+    if (use_market_defaults) {
+      // Parse city from "street, CITY, STATE ZIP" address; state from reqState or address tail.
+      let city: string | undefined;
+      let state: string = reqState || "";
+      if (address && typeof address === "string") {
+        const parts = address.split(",").map((p) => p.trim());
+        if (parts.length >= 3) {
+          city = parts[parts.length - 2];
+          const tail = parts[parts.length - 1]; // "FL 32256"
+          const stateMatch = tail.match(/^([A-Z]{2})\b/);
+          if (stateMatch && !state) state = stateMatch[1];
+        }
+      }
+      const { getMetroDefaults } = await import("@/lib/metro-pricing");
+      const { rates: marketRates } = getMetroDefaults(state || "FL", city);
+      rates = {
+        asphalt_low: marketRates.asphalt_low,
+        asphalt_high: marketRates.asphalt_high,
+        metal_low: marketRates.metal_low,
+        metal_high: marketRates.metal_high,
+        tile_low: marketRates.tile_low,
+        tile_high: marketRates.tile_high,
+        flat_low: marketRates.flat_low,
+        flat_high: marketRates.flat_high,
+      };
+      settings = { minimum_job_price: 0 }; // no contractor floor in market-default mode
+    } else {
+      const { data: loaded, error: settingsErr } = await supabase
+        .from("estimate_settings")
+        .select("*")
+        .eq("contractor_id", contractor_id)
+        .single();
+
+      if (settingsErr || !loaded) {
+        return NextResponse.json(
+          { error: "Contractor estimate settings not found. Please configure pricing first." },
+          { status: 404 }
+        );
+      }
+      settings = loaded;
+
+      rates = {
+        asphalt_low: loaded.asphalt_low || 0,
+        asphalt_high: loaded.asphalt_high || 0,
+        metal_low: loaded.metal_low || 0,
+        metal_high: loaded.metal_high || 0,
+        tile_low: loaded.tile_low || 0,
+        tile_high: loaded.tile_high || 0,
+        flat_low: loaded.flat_low || 0,
+        flat_high: loaded.flat_high || 0,
+      };
     }
-
-    const rates: ContractorRates = {
-      asphalt_low: settings.asphalt_low || 0,
-      asphalt_high: settings.asphalt_high || 0,
-      metal_low: settings.metal_low || 0,
-      metal_high: settings.metal_high || 0,
-      tile_low: settings.tile_low || 0,
-      tile_high: settings.tile_high || 0,
-      flat_low: settings.flat_low || 0,
-      flat_high: settings.flat_high || 0,
-    };
 
     // Step 2: Get roof data + weather surge (parallel to avoid latency)
     let roofData = null;
