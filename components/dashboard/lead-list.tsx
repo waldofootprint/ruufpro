@@ -626,7 +626,7 @@ function LeadAccordion({
   const chat = lead.chatPreview;
   const isDemo = useDemoMode();
   const [reviewSmsState, setReviewSmsState] = useState<"idle" | "loading" | "opened" | "error">("idle");
-  const [reviewEmailState, setReviewEmailState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [reviewEmailState, setReviewEmailState] = useState<"idle" | "confirming" | "sending" | "sent" | "error">("idle");
   const [reviewError, setReviewError] = useState<string | null>(null);
 
   const requestReviewSms = useCallback(async () => {
@@ -661,8 +661,18 @@ function LeadAccordion({
     }
   }, [lead.id, lead.name, lead.phone, isDemo, reviewSmsState]);
 
-  const requestReviewEmail = useCallback(async () => {
-    if (reviewEmailState === "sending" || reviewEmailState === "sent") return;
+  const openReviewEmailConfirm = useCallback(() => {
+    setReviewEmailState("confirming");
+    setReviewError(null);
+  }, []);
+
+  const cancelReviewEmail = useCallback(() => {
+    setReviewEmailState("idle");
+    setReviewError(null);
+  }, []);
+
+  const confirmSendReviewEmail = useCallback(async () => {
+    if (reviewEmailState !== "confirming") return;
     setReviewEmailState("sending");
     setReviewError(null);
     if (isDemo) {
@@ -886,14 +896,16 @@ function LeadAccordion({
                   cursor: reviewEmailState === "sending" || reviewEmailState === "sent" ? "default" : "pointer",
                   opacity: reviewEmailState === "sending" ? 0.6 : 1,
                 }}
-                onClick={requestReviewEmail}
-                disabled={reviewEmailState === "sending" || reviewEmailState === "sent"}
-                title="Automatically emails the customer a review request"
+                onClick={openReviewEmailConfirm}
+                disabled={reviewEmailState === "sending" || reviewEmailState === "sent" || reviewEmailState === "confirming"}
+                title="Email the customer a review request"
               >
                 {reviewEmailState === "sending" ? (
                   <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
                 ) : reviewEmailState === "sent" ? (
                   <><Mail className="h-4 w-4" /> Email Sent</>
+                ) : reviewEmailState === "confirming" ? (
+                  <><Mail className="h-4 w-4" /> Confirm below ↓</>
                 ) : (
                   <><Mail className="h-4 w-4" /> Email</>
                 )}
@@ -901,6 +913,39 @@ function LeadAccordion({
             )}
             {reviewError && (reviewSmsState === "error" || reviewEmailState === "error") && (
               <span className="text-xs" style={{ color: "#ef4444" }}>{reviewError}</span>
+            )}
+            {reviewEmailState === "confirming" && lead.email && (
+              <div
+                className="w-full mt-2 p-3.5"
+                style={{
+                  background: "rgba(249, 115, 22, 0.04)",
+                  borderLeft: "2px solid var(--neu-accent)",
+                  borderRadius: "0 10px 10px 0",
+                }}
+              >
+                <div className="text-[13px] mb-3" style={{ color: "var(--neu-text)", lineHeight: 1.5 }}>
+                  Send a review request email to <strong>{lead.email}</strong>?
+                </div>
+                <p className="text-[11px] neu-muted mb-3" style={{ lineHeight: 1.4 }}>
+                  Uses your configured review email template. They&apos;ll get a link to your Google Business profile. You can only send one review request per lead.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    className="neu-dark-cta"
+                    onClick={confirmSendReviewEmail}
+                    style={{ padding: "8px 16px", fontSize: 12.5 }}
+                  >
+                    <Send className="h-3.5 w-3.5" /> Send Review Request
+                  </button>
+                  <button
+                    className="neu-glass-pill"
+                    onClick={cancelReviewEmail}
+                    style={{ padding: "8px 16px", fontSize: 12, color: "var(--neu-text-muted)", fontWeight: 600, cursor: "pointer" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         )}
