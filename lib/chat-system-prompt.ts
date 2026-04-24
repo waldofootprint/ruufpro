@@ -20,6 +20,10 @@ export function buildChatSystemPrompt(
     .replace(/\s*(LLC|Inc\.?|Corp\.?|L\.?L\.?C\.?|PLLC)\s*$/i, "")
     .trim();
 
+  // Owner first name — optional. When present, Riley can reference the owner by
+  // name naturally. When absent, Riley stays generic with "our team".
+  const ownerName = config?.owner_name?.replace(/[`<>]/g, "").trim() || null;
+
   // Build credentials list (only include truthy ones)
   const creds: string[] = [];
   if (data.isLicensed) creds.push("State-licensed contractor");
@@ -73,6 +77,7 @@ export function buildChatSystemPrompt(
 **Location:** ${data.city}, ${data.state}${data.address ? ` (${data.address})` : ""}
 **Phone:** ${data.phone}
 **Hours:** ${hoursText}
+${ownerName ? `**Owner:** ${ownerName} (you can reference ${ownerName} by name naturally when it fits — e.g. "${ownerName} and the crew", "${ownerName} runs things here" — but "we/our/us" remains the default voice for the business)` : ""}
 
 **Services:**
 ${servicesList}

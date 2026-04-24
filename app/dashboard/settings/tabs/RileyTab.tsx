@@ -31,6 +31,7 @@ import { NeuButton } from "@/components/dashboard/settings/NeuButton";
 
 interface ChatbotConfigState {
   greeting_message: string;
+  owner_name: string;
   offers_free_inspection: boolean;
   materials_brands: string;
   process_steps: string;
@@ -49,6 +50,7 @@ interface ChatbotConfigState {
 
 const EMPTY_CONFIG: ChatbotConfigState = {
   greeting_message: "",
+  owner_name: "",
   offers_free_inspection: false,
   materials_brands: "",
   process_steps: "",
@@ -117,6 +119,7 @@ function getRelevantFieldCount(c: ChatbotConfigState): number {
 function normalizeFromDb(data: Record<string, unknown>): ChatbotConfigState {
   return {
     greeting_message: (data.greeting_message as string) ?? "",
+    owner_name: (data.owner_name as string) ?? "",
     offers_free_inspection: (data.offers_free_inspection as boolean) ?? false,
     materials_brands: Array.isArray(data.materials_brands) ? (data.materials_brands as string[]).join(", ") : "",
     process_steps: (data.process_steps as string) ?? "",
@@ -137,6 +140,7 @@ function normalizeFromDb(data: Record<string, unknown>): ChatbotConfigState {
 function prepareForDb(c: ChatbotConfigState) {
   return {
     greeting_message: c.greeting_message.trim() || null,
+    owner_name: c.owner_name.trim() || null,
     offers_free_inspection: c.offers_free_inspection,
     materials_brands: c.materials_brands.trim()
       ? c.materials_brands.split(",").map((s) => s.trim()).filter(Boolean)
@@ -359,6 +363,19 @@ export function RileyTab() {
           value={config.greeting_message}
           onChange={(e) => update("greeting_message", e.target.value)}
           hint={`${config.greeting_message.length}/200`}
+        />
+      </SettingsSection>
+
+      {/* Owner name */}
+      <SettingsSection
+        title="Owner's First Name"
+        description="When set, Riley can reference you by name (e.g. “Mike and the crew”). Leave blank and Riley stays generic (“our team”)."
+      >
+        <NeuInput
+          placeholder="Mike"
+          maxLength={40}
+          value={config.owner_name}
+          onChange={(e) => update("owner_name", e.target.value)}
         />
       </SettingsSection>
 

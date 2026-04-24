@@ -185,6 +185,7 @@ export interface Lead {
 export interface ChatbotConfig {
   // Customization
   greeting_message: string | null;
+  owner_name: string | null;
 
   // Tier 1: Services & process
   offers_free_inspection: boolean;
