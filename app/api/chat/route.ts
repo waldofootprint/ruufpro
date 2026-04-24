@@ -440,16 +440,17 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (err: unknown) {
     console.error("Chat API error:", err);
-    // Retry once for transient Anthropic errors (ZL-016)
+    // Transient Anthropic errors (429 / 503 / overloaded) — surface as 503 with
+    // retryable:true so the widget can auto-retry. Streaming can't be mid-flight
+    // retried server-side (stream already opened), so we signal client-side.
     const status = (err as { status?: number })?.status;
     const message = (err as { message?: string })?.message || "";
-    if (status === 429 || status === 503 || message.includes("overloaded")) {
-      try {
-        await new Promise((r) => setTimeout(r, 1000));
-        // Re-throw to caller — the retry would need to re-run the full streamText call
-        // For now, log and return a more helpful error
-        console.error("Chat API transient error, retry not yet implemented for streaming");
-      } catch { /* ignore retry errors */ }
+    const isTransient = status === 429 || status === 503 || message.includes("overloaded");
+    if (isTransient) {
+      return NextResponse.json(
+        { error: "Riley is briefly busy. Try again in a moment.", retryable: true },
+        { status: 503, headers: CORS_HEADERS }
+      );
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: CORS_HEADERS });
   }

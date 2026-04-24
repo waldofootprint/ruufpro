@@ -106,6 +106,7 @@ export function EstimatesTab() {
       return;
     }
     (async () => {
+     try {
       const { data: contractor } = await supabase
         .from("contractors")
         .select("id, state, city")
@@ -113,7 +114,6 @@ export function EstimatesTab() {
         .single();
 
       if (!contractor) {
-        setLoading(false);
         return;
       }
       setContractorState(contractor.state || "TX");
@@ -183,7 +183,11 @@ export function EstimatesTab() {
       } else {
         setAddons(existing);
       }
-      setLoading(false);
+     } catch (e) {
+       console.error("EstimatesTab load failed:", e);
+     } finally {
+       setLoading(false);
+     }
     })();
   }, [contractorId]);
 

@@ -10,6 +10,41 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
+// Rate limit: drafts are AI-generated — cap to prevent spam abuse.
+// Separate bucket from /api/dashboard/copilot chat (50/day) because drafts
+// are a discrete click action, not conversational turns.
+const MAX_DRAFTS_PER_CONTRACTOR_DAY = 100;
+const DAY_MS = 86_400_000;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function isRateLimitedDb(supabase: any, key: string, max: number, windowMs: number): Promise<boolean> {
+  try {
+    const now = new Date();
+    const resetAt = new Date(now.getTime() + windowMs);
+    const { data: existing } = await supabase
+      .from("rate_limits")
+      .select("count, reset_at")
+      .eq("key", key)
+      .maybeSingle();
+
+    if (!existing || new Date(existing.reset_at) < now) {
+      await supabase
+        .from("rate_limits")
+        .upsert({ key, count: 1, reset_at: resetAt.toISOString() }, { onConflict: "key" });
+      return false;
+    }
+
+    const newCount = existing.count + 1;
+    await supabase
+      .from("rate_limits")
+      .update({ count: newCount, updated_at: now.toISOString() })
+      .eq("key", key);
+    return newCount > max;
+  } catch {
+    return false; // fail open on DB error — don't block the dashboard
+  }
+}
+
 // Reuse the auth pattern from leads route
 async function getAuthedContractor(cookieStore: ReturnType<typeof cookies>) {
   const authSupabase = createServerClient(
@@ -71,6 +106,13 @@ export async function POST(request: NextRequest) {
   const cookieStore = cookies();
   const auth = await getAuthedContractor(cookieStore);
   if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (await isRateLimitedDb(auth.supabase, `copilot-drafts:${auth.contractor.id}`, MAX_DRAFTS_PER_CONTRACTOR_DAY, DAY_MS)) {
+    return NextResponse.json(
+      { error: "Daily draft limit reached", limit: MAX_DRAFTS_PER_CONTRACTOR_DAY },
+      { status: 429 }
+    );
+  }
 
   const body = await request.json();
   const { leadId, channel } = body;

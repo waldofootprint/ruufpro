@@ -71,6 +71,9 @@ export default function ChatWidget({
   const userMsgCountRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Last user text + retry guard so a transient Anthropic hiccup can auto-retry once.
+  const lastUserTextRef = useRef<string>("");
+  const retryingRef = useRef(false);
 
   // Restore lead captured state
   useEffect(() => {
@@ -141,6 +144,22 @@ export default function ChatWidget({
     },
     onError: (error) => {
       const msg = error?.message || "";
+      // Server surfaces transient Anthropic errors as 503 + {"retryable":true}.
+      // Auto-retry once silently so a momentary overload doesn't burn a user turn.
+      const transient =
+        !retryingRef.current &&
+        lastUserTextRef.current &&
+        (msg.includes("503") || msg.includes("retryable") || msg.toLowerCase().includes("briefly busy"));
+      if (transient) {
+        retryingRef.current = true;
+        const text = lastUserTextRef.current;
+        setTimeout(() => {
+          sendMessage({ text });
+          setTimeout(() => { retryingRef.current = false; }, 1000);
+        }, 1200);
+        return;
+      }
+      retryingRef.current = false;
       if (msg.includes("429") || msg.toLowerCase().includes("too many")) {
         setChatError("Riley is getting a lot of questions right now. Try again in a moment!");
       } else {
@@ -209,6 +228,8 @@ export default function ChatWidget({
     if (!text || capped || isLoading) return;
     setInputValue("");
     userMsgCountRef.current += 1;
+    lastUserTextRef.current = text;
+    retryingRef.current = false;
     sendMessage({ text });
   }, [inputValue, capped, isLoading, sendMessage]);
 
