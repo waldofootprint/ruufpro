@@ -7,7 +7,6 @@ import {
   ChevronUp,
   MessageSquare,
   Phone,
-  FileText,
   Pencil,
   ArrowUpDown,
   Flame,
@@ -216,10 +215,52 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
     { role: "user" | "assistant"; content: string }[]
   >([]);
   const [copilotLoading, setCopilotLoading] = useState(false);
+  const [emailState, setEmailState] = useState<"idle" | "confirming" | "sending" | "sent" | "error">("idle");
+  const [emailSubject, setEmailSubject] = useState("Following up on your roof");
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  const openEmailConfirm = useCallback(() => {
+    if (!draft.trim()) return;
+    setEmailState("confirming");
+    setEmailError(null);
+  }, [draft]);
+
+  const cancelEmail = useCallback(() => {
+    setEmailState("idle");
+    setEmailError(null);
+  }, []);
+
+  const confirmSendEmail = useCallback(async () => {
+    if (emailState !== "confirming" || !draft.trim()) return;
+    setEmailState("sending");
+    setEmailError(null);
+    if (isDemo) {
+      setTimeout(() => setEmailState("sent"), 600);
+      return;
+    }
+    try {
+      const res = await fetch("/api/dashboard/copilot/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId: lead.id, body: draft, subject: emailSubject }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setEmailError(data.error || "Could not send email");
+        setEmailState("error");
+        return;
+      }
+      setEmailState("sent");
+    } catch {
+      setEmailError("Network error — try again");
+      setEmailState("error");
+    }
+  }, [lead.id, draft, emailSubject, isDemo, emailState]);
 
   const generateDraft = useCallback(async () => {
-    if (draftLoaded) return;
     setDraftLoading(true);
+    setEmailState("idle");
+    setEmailError(null);
 
     if (isDemo) {
       const demoDraft = DEMO_AI_DRAFTS[lead.id];
@@ -246,7 +287,7 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
     }
     setDraftLoading(false);
     setDraftLoaded(true);
-  }, [lead.id, isDemo, draftLoaded]);
+  }, [lead.id, isDemo]);
 
   const sendCopilotMessage = useCallback(async (message: string) => {
     if (!message.trim()) return;
@@ -365,20 +406,110 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
                   </button>
                 </a>
               )}
-              <button
-                className="neu-flat inline-flex items-center gap-1.5"
-                style={{ padding: "9px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: "var(--neu-text)" }}
-              >
-                <Mail className="h-3.5 w-3.5" /> Email
-              </button>
+              {lead.email && (
+                <button
+                  className="neu-flat inline-flex items-center gap-1.5"
+                  style={{
+                    padding: "9px 16px",
+                    borderRadius: 999,
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    color: emailState === "sent" ? "#10b981" : "var(--neu-text)",
+                    cursor: emailState === "sending" || emailState === "sent" ? "default" : "pointer",
+                    opacity: emailState === "sending" ? 0.6 : 1,
+                  }}
+                  onClick={openEmailConfirm}
+                  disabled={emailState === "sending" || emailState === "sent" || emailState === "confirming"}
+                >
+                  {emailState === "sending" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Sending...</>
+                  ) : emailState === "sent" ? (
+                    <><Mail className="h-3.5 w-3.5" /> Email Sent</>
+                  ) : emailState === "confirming" ? (
+                    <><Mail className="h-3.5 w-3.5" /> Review below ↓</>
+                  ) : (
+                    <><Mail className="h-3.5 w-3.5" /> Send Email</>
+                  )}
+                </button>
+              )}
+              {emailState === "error" && emailError && (
+                <span className="text-[11px]" style={{ color: "#ef4444" }}>{emailError}</span>
+              )}
               <button
                 className="neu-glass-pill ml-auto"
-                style={{ padding: "7px 14px", fontSize: 12, color: "var(--neu-accent)", fontWeight: 600, cursor: "pointer" }}
-                onClick={() => { setDraftLoaded(false); setDraft(""); }}
+                style={{ padding: "7px 14px", fontSize: 12, color: "var(--neu-accent)", fontWeight: 600, cursor: draftLoading ? "not-allowed" : "pointer", opacity: draftLoading ? 0.5 : 1 }}
+                onClick={generateDraft}
+                disabled={draftLoading}
               >
-                Regenerate
+                {draftLoading ? "Regenerating..." : "Regenerate"}
               </button>
             </div>
+            {emailState === "confirming" && lead.email && (
+              <div
+                className="mt-3 p-3.5"
+                style={{
+                  background: "rgba(249, 115, 22, 0.04)",
+                  borderLeft: "2px solid var(--neu-accent)",
+                  borderRadius: "0 10px 10px 0",
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10.5px] font-bold uppercase tracking-[0.14em]" style={{ color: "var(--neu-accent)" }}>
+                    Confirm Email
+                  </span>
+                  <span className="text-[11px] neu-muted">To: <strong style={{ color: "var(--neu-text)" }}>{lead.email}</strong></span>
+                </div>
+                <label className="block text-[10.5px] font-semibold uppercase tracking-wide neu-muted mb-1">Subject</label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  className="w-full px-3 py-2 text-[13px] mb-3 focus:outline-none"
+                  style={{
+                    background: "#ffffff",
+                    color: "var(--neu-text)",
+                    borderRadius: 10,
+                    boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                    fontFamily: "inherit",
+                  }}
+                />
+                <label className="block text-[10.5px] font-semibold uppercase tracking-wide neu-muted mb-1">Body preview</label>
+                <div
+                  className="text-[13px] whitespace-pre-wrap mb-3 p-3"
+                  style={{
+                    background: "#ffffff",
+                    color: "var(--neu-text)",
+                    borderRadius: 10,
+                    boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                    lineHeight: 1.5,
+                    maxHeight: 160,
+                    overflowY: "auto",
+                  }}
+                >
+                  {draft}
+                </div>
+                <p className="text-[11px] neu-muted mb-3" style={{ lineHeight: 1.4 }}>
+                  Sent from <strong style={{ color: "var(--neu-text)" }}>noreply@ruufpro.com</strong>. Replies will come back to your inbox.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    className="neu-dark-cta"
+                    onClick={confirmSendEmail}
+                    disabled={!emailSubject.trim()}
+                    style={{ padding: "8px 16px", fontSize: 12.5 }}
+                  >
+                    <Send className="h-3.5 w-3.5" /> Send Email
+                  </button>
+                  <button
+                    className="neu-glass-pill"
+                    onClick={cancelEmail}
+                    style={{ padding: "8px 16px", fontSize: 12, color: "var(--neu-text-muted)", fontWeight: 600, cursor: "pointer" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -493,6 +624,69 @@ function LeadAccordion({
   const pd = lead.propertyData;
   const signals = lead.signals;
   const chat = lead.chatPreview;
+  const isDemo = useDemoMode();
+  const [reviewSmsState, setReviewSmsState] = useState<"idle" | "loading" | "opened" | "error">("idle");
+  const [reviewEmailState, setReviewEmailState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
+  const requestReviewSms = useCallback(async () => {
+    if (reviewSmsState === "loading") return;
+    setReviewSmsState("loading");
+    setReviewError(null);
+    if (isDemo) {
+      const demoBody = `Hey ${(lead.name || "").split(" ")[0] || "there"}, thanks again! Mind leaving us a quick Google review? https://g.page/demo`;
+      const href = lead.phone ? `sms:${lead.phone}&body=${encodeURIComponent(demoBody)}` : null;
+      if (href) window.location.href = href;
+      setReviewSmsState("opened");
+      return;
+    }
+    try {
+      const res = await fetch("/api/reviews/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId: lead.id, channel: "sms" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReviewError(data.error || "Could not prepare text");
+        setReviewSmsState("error");
+        return;
+      }
+      const href = `sms:${data.phone}&body=${encodeURIComponent(data.body)}`;
+      window.location.href = href;
+      setReviewSmsState("opened");
+    } catch {
+      setReviewError("Network error — try again");
+      setReviewSmsState("error");
+    }
+  }, [lead.id, lead.name, lead.phone, isDemo, reviewSmsState]);
+
+  const requestReviewEmail = useCallback(async () => {
+    if (reviewEmailState === "sending" || reviewEmailState === "sent") return;
+    setReviewEmailState("sending");
+    setReviewError(null);
+    if (isDemo) {
+      setTimeout(() => setReviewEmailState("sent"), 600);
+      return;
+    }
+    try {
+      const res = await fetch("/api/reviews/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId: lead.id, channel: "email" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReviewError(data.error || "Could not send review email");
+        setReviewEmailState("error");
+        return;
+      }
+      setReviewEmailState("sent");
+    } catch {
+      setReviewError("Network error — try again");
+      setReviewEmailState("error");
+    }
+  }, [lead.id, isDemo, reviewEmailState]);
 
   return (
     <div
@@ -658,13 +852,57 @@ function LeadAccordion({
             </button>
           </a>
         )}
-        <button className="neu-flat flex items-center gap-2 px-4 py-2.5 text-sm font-medium" style={{ color: "var(--neu-text)" }}>
-          <FileText className="h-4 w-4" /> Send Estimate
-        </button>
         {(lead.status === "won" || lead.status === "completed") && (
-          <button className="neu-flat flex items-center gap-2 px-4 py-2.5 text-sm font-medium" style={{ color: "var(--neu-accent)" }}>
-            <Star className="h-4 w-4" /> Request Review
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-semibold uppercase tracking-wide neu-muted flex items-center gap-1.5">
+              <Star className="h-3 w-3" /> Request Review
+            </span>
+            {lead.phone && (
+              <button
+                className="neu-flat flex items-center gap-2 px-3.5 py-2 text-sm font-medium"
+                style={{
+                  color: reviewSmsState === "opened" ? "#10b981" : "var(--neu-accent)",
+                  cursor: reviewSmsState === "loading" ? "wait" : "pointer",
+                  opacity: reviewSmsState === "loading" ? 0.6 : 1,
+                }}
+                onClick={requestReviewSms}
+                disabled={reviewSmsState === "loading"}
+                title="Opens your phone's text app with a prepopulated review request"
+              >
+                {reviewSmsState === "loading" ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Preparing...</>
+                ) : reviewSmsState === "opened" ? (
+                  <><Phone className="h-4 w-4" /> Text Ready</>
+                ) : (
+                  <><Phone className="h-4 w-4" /> Text</>
+                )}
+              </button>
+            )}
+            {lead.email && (
+              <button
+                className="neu-flat flex items-center gap-2 px-3.5 py-2 text-sm font-medium"
+                style={{
+                  color: reviewEmailState === "sent" ? "#10b981" : "var(--neu-accent)",
+                  cursor: reviewEmailState === "sending" || reviewEmailState === "sent" ? "default" : "pointer",
+                  opacity: reviewEmailState === "sending" ? 0.6 : 1,
+                }}
+                onClick={requestReviewEmail}
+                disabled={reviewEmailState === "sending" || reviewEmailState === "sent"}
+                title="Automatically emails the customer a review request"
+              >
+                {reviewEmailState === "sending" ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
+                ) : reviewEmailState === "sent" ? (
+                  <><Mail className="h-4 w-4" /> Email Sent</>
+                ) : (
+                  <><Mail className="h-4 w-4" /> Email</>
+                )}
+              </button>
+            )}
+            {reviewError && (reviewSmsState === "error" || reviewEmailState === "error") && (
+              <span className="text-xs" style={{ color: "#ef4444" }}>{reviewError}</span>
+            )}
+          </div>
         )}
 
         {/* Status selector — pushed to the right */}

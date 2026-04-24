@@ -41,11 +41,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { leadId } = body;
+    const { leadId, channel = "email" } = body as { leadId?: string; channel?: "sms" | "email" };
 
     if (!leadId) {
       return NextResponse.json(
         { error: "leadId is required" },
+        { status: 400 }
+      );
+    }
+
+    if (channel !== "sms" && channel !== "email") {
+      return NextResponse.json(
+        { error: "channel must be 'sms' or 'email'" },
         { status: 400 }
       );
     }
@@ -94,16 +101,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!lead.email) {
+    if (!contractor.google_review_url) {
       return NextResponse.json(
-        { error: "Lead has no email address on file" },
+        { error: "No Google review URL configured. Set it in your dashboard settings." },
         { status: 400 }
       );
     }
 
-    if (!contractor.google_review_url) {
+    // SMS channel — roofer sends from their own phone. Return a prefilled template.
+    // No DB write (we can't confirm they actually tapped send) and no dedup (legit to retry).
+    if (channel === "sms") {
+      if (!lead.phone) {
+        return NextResponse.json(
+          { error: "Lead has no phone number on file" },
+          { status: 400 }
+        );
+      }
+      const firstName = (lead.name || "").split(" ")[0] || "there";
+      const smsBody = `Hey ${firstName}, thanks again for choosing ${contractor.business_name}! If you've got a minute, would you mind leaving us a quick Google review? ${contractor.google_review_url}`;
+      return NextResponse.json({
+        success: true,
+        channel: "sms",
+        phone: lead.phone,
+        body: smsBody,
+      });
+    }
+
+    // Email channel — auto-sent via Inngest.
+    if (!lead.email) {
       return NextResponse.json(
-        { error: "No Google review URL configured. Set it in your dashboard settings." },
+        { error: "Lead has no email address on file" },
         { status: 400 }
       );
     }
@@ -135,7 +162,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, queued: true });
+    return NextResponse.json({ success: true, channel: "email", queued: true });
   } catch (err) {
     console.error("Review request endpoint error:", err);
     return NextResponse.json(
