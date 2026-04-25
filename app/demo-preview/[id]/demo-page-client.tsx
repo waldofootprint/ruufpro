@@ -1,7 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import ChatWidget from "@/components/chat-widget/ChatWidget";
 import EstimateWidgetV4 from "@/components/estimate-widget-v4";
+import { STUB_HIP_ROOF } from "@/lib/roof-3d-stub-data";
+
+const RoofRender3D = dynamic(
+  () => import("@/components/widget/roof-render-3d").then((m) => m.RoofRender3D),
+  { ssr: false, loading: () => <div className="render-3d-skeleton" /> }
+);
 
 void ChatWidget;
 
@@ -69,7 +76,7 @@ export default function DemoPageClient({ prospect }: { prospect: ProspectData })
 
         {/* ════════ ESTIMATE WIDGET SECTION ════════ */}
         <section>
-          <div className="section-eyebrow">Tool 2 of 4</div>
+          <div className="section-eyebrow">Tool 2 of 5</div>
           <h2 className="section-h2">
             Instant roof estimates — <em>without the tape measure.</em>
           </h2>
@@ -97,9 +104,33 @@ export default function DemoPageClient({ prospect }: { prospect: ProspectData })
           </div>
         </section>
 
+        {/* ════════ 3D ROOF RENDER SECTION ════════ */}
+        <section>
+          <div className="section-eyebrow">Tool 3 of 5</div>
+          <h2 className="section-h2">
+            See <em>their roof in 3D</em> — measured from space.
+          </h2>
+          <p className="section-lede">
+            The estimate isn&apos;t just a number — homeowners see the actual roof we measured.
+            Ridges, hips, valleys, every plane. Trust before you&apos;ve picked up the phone.
+          </p>
+
+          <div className="card-quiet">
+            <div className="kicker">3D Roof Model</div>
+            <h3>Proof we measured the right roof.</h3>
+            <p>
+              LiDAR + satellite imagery generates a real 3D model of every roof we estimate.
+              Homeowners drag, zoom, and see the planes our pricing is built from.
+            </p>
+            <div className="render-3d-embed">
+              <RoofRender3D scene={STUB_HIP_ROOF} />
+            </div>
+          </div>
+        </section>
+
         {/* ════════ REVIEW MAGNET SECTION ════════ */}
         <section>
-          <div className="section-eyebrow">Tool 3 of 4</div>
+          <div className="section-eyebrow">Tool 4 of 5</div>
           <h2 className="section-h2">
             Turn finished jobs into <em>5-star reviews</em> — automatically.
           </h2>
@@ -120,7 +151,7 @@ export default function DemoPageClient({ prospect }: { prospect: ProspectData })
 
         {/* ════════ COPILOT SECTION ════════ */}
         <section>
-          <div className="section-eyebrow">Tool 4 of 4</div>
+          <div className="section-eyebrow">Tool 5 of 5</div>
           <h2 className="section-h2">
             An AI that reads every lead <em>before you do.</em>
           </h2>
@@ -367,6 +398,17 @@ const CSS = `
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
   overflow: hidden;
 }
+.demo-v5-root .render-3d-embed {
+  border-radius: 14px; margin-top: 12px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+.demo-v5-root .render-3d-skeleton {
+  height: 560px; border-radius: 16px; margin-top: 12px;
+  background: linear-gradient(135deg, #cfe6f5 0%, #f4ede1 100%);
+  animation: pulse-3d 1.6s ease-in-out infinite;
+}
+@keyframes pulse-3d { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
 
 /* ── SCROLL HINT ── */
 .demo-v5-root .scroll-hint {
