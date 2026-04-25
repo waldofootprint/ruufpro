@@ -32,7 +32,7 @@ const args = (() => {
   return m;
 })();
 
-import { reconstruct, shadowScalars } from "./roof-reconstruction.mjs";
+import { partition } from "./roof-partition.mjs";
 
 const ADDRESS = args.get("address");
 const OUT_PATH = args.get("out");
@@ -75,10 +75,13 @@ async function measure(lat, lng) {
 }
 
 function centerAndProject(tier3, recon) {
-  // Decide source: reconstruction clusters (preferred) or legacy per-plane hulls.
-  const useRecon = recon && recon.ok && recon.clusters.length > 0;
+  // Decide source: RR.2 partition pieces (preferred) or legacy per-plane hulls.
+  // S1: render pieces whenever they exist + lifted; sanity (area drift vs roof_horiz_sqft)
+  // is informational, not a render gate — Hannah needs to G3-S1 eyeball the partition
+  // even when drift trips the threshold (footprint area ≠ roof_horiz_sqft on Bradenton).
+  const useRecon = recon && recon.pieces && recon.pieces.length > 0;
   const planeSource = useRecon
-    ? recon.clusters.map((c) => ({ id: c.id, vertices3d: c.boundary3d, type: c.type, sqft: c.sqft }))
+    ? recon.pieces.map((p) => ({ id: p.id, vertices3d: p.boundary3d, type: p.type, sqft: p.sqft }))
     : (tier3.segments || [])
         .filter((s) => Array.isArray(s.polygon_3d) && s.polygon_3d.length >= 3)
         .map((s) => ({
@@ -87,17 +90,23 @@ function centerAndProject(tier3, recon) {
           type: s.pitch_degrees != null && s.pitch_degrees < 25 ? "main" : "hip",
           sqft: Math.round(s.sloped_area_sqft || 0),
         }));
-  console.log(`[bake] geometry source: ${useRecon ? `reconstruction (${recon.clusters.length} clusters)` : "legacy per-plane hull"}`);
+  console.log(`[bake] geometry source: ${useRecon ? `RR.2 partition (${recon.pieces.length} pieces)` : "legacy per-plane hull"}`);
   if (useRecon && recon.sane && !recon.sane.ok) {
-    console.warn(`[bake] WARN reconstruction sanity: ${recon.sane.reason}`);
+    console.warn(`[bake] WARN partition sanity: ${recon.sane.reason}`);
   }
 
   // Collect every coord that contributes to scene geometry to find centroid + bounds.
   const allPts = [];
   for (const p of planeSource) for (const v of p.vertices3d) allPts.push(v);
-  // Also include intersection edges (legacy or reconstructed) so bounds capture them.
+
+  // Edges: RR.2 emits ridges only this session (Session 1 scope). Lift each ridge's
+  // 2D segment via the chosen plane (use planeA's normal/d) to get a 3D segment for
+  // bounds. The ridge sits on BOTH planes by construction so either choice agrees.
   const intersectionEdges = useRecon
-    ? (recon.intersections || []).map((e) => ({ type: e.type, endpoints: e.endpoints3d, lengthFt: e.lengthFt }))
+    ? (recon.ridges || []).map((r) => {
+        const seg = ridgeSegmentOnPiece(r, recon.pieces);
+        return { type: "ridge", endpoints: seg, lengthFt: seg ? Math.hypot(seg[1][0]-seg[0][0], seg[1][1]-seg[0][1], seg[1][2]-seg[0][2]) : 0 };
+      }).filter((e) => e.endpoints)
     : Object.entries(tier3.intersections_detail || {}).flatMap(([type, list]) =>
         ["ridge", "hip", "valley"].includes(type)
           ? list.map((e) => ({ type, endpoints: e.line_endpoints, lengthFt: e.length_ft }))
@@ -170,11 +179,14 @@ function centerAndProject(tier3, recon) {
       inlierRatio: tier3.inlierRatio,
       reconstruction: useRecon ? {
         enabled: true,
-        clusterCount: recon.clusters.length,
-        intersectionCount: (recon.intersections || []).length,
+        algorithm: "rr2-footprint-partition",
+        session: 1,
+        pieceCount: recon.pieces.length,
+        ridgeCount: (recon.ridges || []).length,
         sanityOk: recon.sane?.ok ?? null,
         sanityReason: recon.sane?.reason ?? null,
-        audit: recon.audit ?? null,
+        audit: recon.audit ?? null,         // emits regardless of sanity (RR.1 deferred item 9)
+        auditEmitted: recon.auditEmitted ?? false,
         totalArea: recon.totalArea ?? null,
         drift: recon.drift ?? null,
       } : { enabled: false },
@@ -191,12 +203,14 @@ async function main() {
   const tier3 = await measure(lat, lng);
   let recon = null;
   if (USE_RECONSTRUCTION) {
-    console.log(`[bake] running reconstruction…`);
-    recon = reconstruct(tier3, { logger: (m) => console.log(`  ${m}`) });
-    console.log(`[bake]   recon.ok=${recon.ok} clusters=${recon.clusters?.length ?? 0} intersections=${recon.intersections?.length ?? 0} sane=${recon.sane?.ok ?? "n/a"}`);
+    console.log(`[bake] running RR.2 footprint partition (Session 1 — ridges only)…`);
+    recon = partition(tier3, { logger: (m) => console.log(`  ${m}`) });
+    console.log(`[bake]   partition.ok=${recon.ok} pieces=${recon.pieces?.length ?? 0} ridges=${recon.ridges?.length ?? 0} sane=${recon.sane?.ok ?? "n/a"} auditEmitted=${recon.auditEmitted ?? false}`);
     if (recon.sane && !recon.sane.ok) console.log(`[bake]   sanity: ${recon.sane.reason}`);
-    const shadow = shadowScalars(tier3, recon);
-    console.log(`[bake]   shadow Δsqft%=${shadow.delta.sqft_pct} Δpitch=${shadow.delta.pitch_per12} Δsegs=${shadow.delta.segs}`);
+    if (recon.audit) {
+      const a = recon.audit;
+      console.log(`[bake]   audit: ${a.closed} closed / ${a.partial} partial / ${a.missing} missing of ${a.ridgeCount} ridges · ${a.zMismatches} z-mismatches`);
+    }
   }
   console.log(`[bake] projecting + centering…`);
   const scene = centerAndProject(tier3, recon);
@@ -208,6 +222,35 @@ async function main() {
   await fs.mkdir(path.dirname(outAbs), { recursive: true });
   await fs.writeFile(outAbs, JSON.stringify(scene, null, 2));
   console.log(`[bake] wrote ${outAbs}`);
+}
+
+/**
+ * Find the 3D segment for a ridge by locating any piece edge that lies along
+ * the ridge's 2D blade and reusing that edge's already-lifted z-coords.
+ * Falls back to null if no piece touched the ridge (audit will already flag this).
+ */
+function ridgeSegmentOnPiece(ridge, pieces) {
+  const seg2 = ridge.seg2d;
+  if (!seg2) return null;
+  const TOL = 0.5; // ft — same as RIDGE_MATCH_DIST_FT in roof-partition.mjs
+  const distSeg = (p, a, b) => {
+    const dx = b[0]-a[0], dy = b[1]-a[1];
+    const L2 = dx*dx + dy*dy;
+    if (L2 < 1e-12) return Math.hypot(p[0]-a[0], p[1]-a[1]);
+    let t = ((p[0]-a[0])*dx + (p[1]-a[1])*dy) / L2;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(p[0] - (a[0]+t*dx), p[1] - (a[1]+t*dy));
+  };
+  for (const piece of pieces) {
+    const v2 = piece.boundary2d, v3 = piece.boundary3d;
+    for (let i = 0; i < v2.length; i++) {
+      const a2 = v2[i], b2 = v2[(i+1) % v2.length];
+      if (distSeg(a2, seg2[0], seg2[1]) < TOL && distSeg(b2, seg2[0], seg2[1]) < TOL) {
+        return [v3[i], v3[(i+1) % v3.length]];
+      }
+    }
+  }
+  return null;
 }
 
 main().catch((e) => {
