@@ -83,10 +83,12 @@ function RoofGeometry({
   scene,
   hovered,
   onHover,
+  revealCount,
 }: {
   scene: RoofScene;
   hovered: string | null;
   onHover: (id: string | null) => void;
+  revealCount?: number;
 }) {
   const [color, normal, rough, ao] = useTexture([
     "/textures/shingle-color.jpg",
@@ -104,10 +106,14 @@ function RoofGeometry({
   }, [color, normal, rough, ao]);
 
   const maps = { color, normal, rough, ao };
+  const visible =
+    typeof revealCount === "number"
+      ? scene.planes.slice(0, Math.max(0, revealCount))
+      : scene.planes;
 
   return (
     <>
-      {scene.planes.map((plane) => (
+      {visible.map((plane) => (
         <PlaneMesh
           key={plane.id}
           plane={plane}
@@ -120,7 +126,29 @@ function RoofGeometry({
   );
 }
 
-export function RoofRender3D({ scene }: { scene: RoofScene }) {
+export function RoofRender3D({
+  scene,
+  revealCount,
+  revealEdgeCount,
+  showOverlays = true,
+  enableInteraction = true,
+  autoRotate = true,
+  className,
+  height = 560,
+  cameraPosition = [42, 30, 42],
+  cameraFov = 32,
+}: {
+  scene: RoofScene;
+  revealCount?: number;
+  revealEdgeCount?: number;
+  showOverlays?: boolean;
+  enableInteraction?: boolean;
+  autoRotate?: boolean;
+  className?: string;
+  height?: number;
+  cameraPosition?: [number, number, number];
+  cameraFov?: number;
+}) {
   const [hovered, setHovered] = useState<string | null>(null);
   const hoveredPlane = scene.planes.find((p) => p.id === hovered);
 
@@ -128,13 +156,21 @@ export function RoofRender3D({ scene }: { scene: RoofScene }) {
     background: `linear-gradient(to bottom, ${SKY_TOP} 0%, ${SKY_TOP} 35%, ${SKY_BOTTOM} 100%)`,
   };
 
+  const edgesToShow =
+    typeof revealEdgeCount === "number"
+      ? scene.edges.slice(0, Math.max(0, revealEdgeCount))
+      : scene.edges;
+
   return (
     <div
-      className="relative w-full h-[560px] rounded-2xl overflow-hidden shadow-inner ring-1 ring-stone-200/50"
-      style={skyStyle}
+      className={
+        className ??
+        "relative w-full rounded-2xl overflow-hidden shadow-inner ring-1 ring-stone-200/50"
+      }
+      style={{ ...skyStyle, height }}
     >
       <Canvas
-        camera={{ position: [42, 30, 42], fov: 32 }}
+        camera={{ position: cameraPosition, fov: cameraFov }}
         gl={{ antialias: true, alpha: true }}
       >
         <Suspense fallback={null}>
@@ -144,8 +180,13 @@ export function RoofRender3D({ scene }: { scene: RoofScene }) {
           <Environment preset="park" />
 
           <group rotation={[-Math.PI / 2, 0, 0]}>
-            <RoofGeometry scene={scene} hovered={hovered} onHover={setHovered} />
-            {scene.edges.map((edge) => {
+            <RoofGeometry
+              scene={scene}
+              hovered={hovered}
+              onHover={enableInteraction ? setHovered : () => {}}
+              revealCount={revealCount}
+            />
+            {edgesToShow.map((edge) => {
               const color =
                 edge.type === "ridge"
                   ? EDGE_RIDGE
@@ -167,15 +208,19 @@ export function RoofRender3D({ scene }: { scene: RoofScene }) {
 
           <OrbitControls
             enablePan={false}
+            enableZoom={enableInteraction}
+            enableRotate={enableInteraction}
             minDistance={28}
             maxDistance={120}
             maxPolarAngle={Math.PI / 2.05}
-            autoRotate
+            autoRotate={autoRotate}
             autoRotateSpeed={0.55}
           />
         </Suspense>
       </Canvas>
 
+      {showOverlays && (
+      <>
       <div className="absolute top-4 left-4 px-4 py-3 bg-white/95 backdrop-blur rounded-xl shadow-md">
         <div className="text-[11px] uppercase tracking-wide text-stone-500 font-medium">
           Roof measured
@@ -204,10 +249,12 @@ export function RoofRender3D({ scene }: { scene: RoofScene }) {
         </div>
       )}
 
-      {!hoveredPlane && (
+      {!hoveredPlane && enableInteraction && (
         <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-stone-900/70 text-white text-xs rounded-lg">
           Drag to rotate · Scroll to zoom
         </div>
+      )}
+      </>
       )}
     </div>
   );

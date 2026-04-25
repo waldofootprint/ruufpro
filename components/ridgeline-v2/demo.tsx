@@ -1,11 +1,19 @@
 // components/ridgeline-v2/demo.tsx
 //
-// Self-contained demo section — heading + estimate widget mockup + three-step strip.
-// Drop in as-is. Tailwind required, nothing else.
+// Auto-playing pipeline reveal: address types → 3D roof builds plane-by-plane
+// → edges draw on → sqft counts up → price counts up. Triggered when the
+// section scrolls into view. Replay button restarts the sequence.
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { LUXURY_FL_ROOF, type RoofScene } from "@/lib/roof-3d-stub-data";
+
+const RoofRender3D = dynamic(
+  () => import("@/components/widget/roof-render-3d").then((m) => m.RoofRender3D),
+  { ssr: false, loading: () => <div className="h-[420px] w-full bg-[#eef2f5]" /> }
+);
 
 const INK = "#0C1F28";
 const PAPER = "#FBF7EF";
@@ -20,103 +28,158 @@ const MONO =
 const DISPLAY =
   '"Barlow Condensed", "Oswald", "Arial Narrow", system-ui, sans-serif';
 
-type Step = {
-  n: string;
-  label: string;
-  visual: "address" | "satellite" | "lead";
-};
+const TARGET_ADDRESS = LUXURY_FL_ROOF.address;
+const SCENE: RoofScene = LUXURY_FL_ROOF;
+const TOTAL_SQFT = SCENE.totalSqft;
+const PRICE_LOW = Math.round((TOTAL_SQFT * 7) / 100) * 100;
+const PRICE_HIGH = Math.round((TOTAL_SQFT * 9) / 100) * 100;
 
-const STEPS: Step[] = [
-  { n: "01", label: "Homeowner enters their address", visual: "address" },
-  { n: "02", label: "Satellite measures the roof", visual: "satellite" },
-  { n: "03", label: "You get a hot lead in 4 seconds", visual: "lead" },
-];
+type Phase =
+  | "idle"
+  | "typing"
+  | "submitting"
+  | "building"
+  | "measuring"
+  | "pricing"
+  | "done";
 
-/* ─── Per-box visuals ─── */
-function StepVisual({ kind }: { kind: Step["visual"] }) {
-  if (kind === "address") {
-    return (
-      <div
-        style={{ borderColor: "rgba(251,247,239,0.2)" }}
-        className="flex items-center gap-2 rounded border px-3 py-2.5"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={RUST_2} strokeWidth="2">
-          <path d="M12 21s-7-7.5-7-12a7 7 0 1114 0c0 4.5-7 12-7 12z" />
-          <circle cx="12" cy="9" r="2.5" />
-        </svg>
-        <span
-          style={{ color: "rgba(251,247,239,0.7)", fontFamily: MONO }}
-          className="text-[11px]"
-        >
-          742 Evergreen Ter
-        </span>
-        <span
-          style={{ backgroundColor: RUST_2 }}
-          className="ml-1 inline-block h-3 w-[2px] animate-pulse"
-        />
-      </div>
+function useInView(ref: React.RefObject<HTMLDivElement>, rootMargin = "-20%") {
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => entry.isIntersecting && setInView(true),
+      { rootMargin, threshold: 0.1 }
     );
-  }
-  if (kind === "satellite") {
-    return (
-      <svg width="100%" height="56" viewBox="0 0 200 56" fill="none">
-        <defs>
-          <pattern id="grid" width="14" height="14" patternUnits="userSpaceOnUse">
-            <path d="M 14 0 L 0 0 0 14" fill="none" stroke="rgba(251,247,239,0.08)" strokeWidth="1" />
-          </pattern>
-        </defs>
-        <rect width="200" height="56" fill="url(#grid)" />
-        <path
-          d="M40 40 L40 22 L80 10 L120 22 L160 14 L160 40 Z"
-          fill="rgba(226,133,90,0.15)"
-          stroke={RUST_2}
-          strokeWidth="1.5"
-          strokeDasharray="3 2"
-        />
-        <circle cx="100" cy="26" r="2" fill={RUST_2} />
-        <circle cx="100" cy="26" r="6" fill="none" stroke={RUST_2} strokeWidth="1" opacity="0.5" />
-        <text x="168" y="44" fill="rgba(251,247,239,0.6)" fontSize="8" fontFamily={MONO}>
-          2,450 sf
-        </text>
-      </svg>
-    );
-  }
-  return (
-    <div
-      style={{
-        backgroundColor: "rgba(251,247,239,0.06)",
-        borderColor: "rgba(251,247,239,0.15)",
-      }}
-      className="flex items-center gap-2.5 rounded border px-3 py-2"
-    >
-      <div
-        style={{ backgroundColor: RUST }}
-        className="flex h-6 w-6 items-center justify-center rounded text-[10px] font-bold"
-      >
-        R
-      </div>
-      <div className="flex-1 leading-tight">
-        <p
-          style={{ color: PAPER, fontFamily: MONO, letterSpacing: "0.1em" }}
-          className="text-[9px] uppercase opacity-60"
-        >
-          RuufPro · now
-        </p>
-        <p style={{ color: PAPER }} className="text-[11px] font-semibold">
-          🔥 New lead — $14,200
-        </p>
-      </div>
-    </div>
-  );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [ref, rootMargin]);
+  return inView;
 }
 
-/* ─── Mockup widget ─── */
-function WidgetMockup() {
-  const [address, setAddress] = useState("");
-  const [showResult, setShowResult] = useState(false);
+function usePipelineSequence(active: boolean, runKey: number) {
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [typed, setTyped] = useState("");
+  const [planeCount, setPlaneCount] = useState(0);
+  const [edgeCount, setEdgeCount] = useState(0);
+  const [sqftDisplay, setSqftDisplay] = useState(0);
+  const [priceDisplay, setPriceDisplay] = useState(0);
+
+  useEffect(() => {
+    setPhase("idle");
+    setTyped("");
+    setPlaneCount(0);
+    setEdgeCount(0);
+    setSqftDisplay(0);
+    setPriceDisplay(0);
+    if (!active) return;
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const intervals: ReturnType<typeof setInterval>[] = [];
+
+    timers.push(
+      setTimeout(() => {
+        setPhase("typing");
+        let i = 0;
+        const id = setInterval(() => {
+          i++;
+          setTyped(TARGET_ADDRESS.slice(0, i));
+          if (i >= TARGET_ADDRESS.length) clearInterval(id);
+        }, 38);
+        intervals.push(id);
+      }, 500)
+    );
+
+    timers.push(setTimeout(() => setPhase("submitting"), 500 + 38 * TARGET_ADDRESS.length + 250));
+
+    const buildStart = 500 + 38 * TARGET_ADDRESS.length + 700;
+    timers.push(
+      setTimeout(() => {
+        setPhase("building");
+        let pi = 0;
+        const pid = setInterval(() => {
+          pi++;
+          setPlaneCount(pi);
+          if (pi >= SCENE.planes.length) clearInterval(pid);
+        }, 280);
+        intervals.push(pid);
+      }, buildStart)
+    );
+
+    const edgeStart = buildStart + 280 * SCENE.planes.length + 200;
+    timers.push(
+      setTimeout(() => {
+        let ei = 0;
+        const eid = setInterval(() => {
+          ei++;
+          setEdgeCount(ei);
+          if (ei >= SCENE.edges.length) clearInterval(eid);
+        }, 110);
+        intervals.push(eid);
+      }, edgeStart)
+    );
+
+    const measureStart = edgeStart + 110 * SCENE.edges.length + 200;
+    timers.push(
+      setTimeout(() => {
+        setPhase("measuring");
+        const start = performance.now();
+        const dur = 900;
+        const tick = () => {
+          const t = Math.min(1, (performance.now() - start) / dur);
+          setSqftDisplay(Math.round(t * TOTAL_SQFT));
+          if (t < 1) raf = requestAnimationFrame(tick);
+        };
+        let raf = requestAnimationFrame(tick);
+        rafIds.push(() => cancelAnimationFrame(raf));
+      }, measureStart)
+    );
+
+    const priceStart = measureStart + 1000;
+    timers.push(
+      setTimeout(() => {
+        setPhase("pricing");
+        const start = performance.now();
+        const dur = 1100;
+        const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+        const tick = () => {
+          const t = Math.min(1, (performance.now() - start) / dur);
+          setPriceDisplay(Math.round(ease(t) * PRICE_LOW));
+          if (t < 1) raf = requestAnimationFrame(tick);
+          else setPhase("done");
+        };
+        let raf = requestAnimationFrame(tick);
+        rafIds.push(() => cancelAnimationFrame(raf));
+      }, priceStart)
+    );
+
+    const rafIds: Array<() => void> = [];
+
+    return () => {
+      timers.forEach(clearTimeout);
+      intervals.forEach(clearInterval);
+      rafIds.forEach((c) => c());
+    };
+  }, [active, runKey]);
+
+  return { phase, typed, planeCount, edgeCount, sqftDisplay, priceDisplay };
+}
+
+function PipelineCard() {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(cardRef);
+  const [runKey, setRunKey] = useState(0);
+  const { phase, typed, planeCount, edgeCount, sqftDisplay, priceDisplay } =
+    usePipelineSequence(inView, runKey);
+
+  const showCaret = phase === "typing" || phase === "idle";
+  const submitGlow = phase === "submitting";
+  const showResult = phase === "measuring" || phase === "pricing" || phase === "done";
 
   return (
     <div
+      ref={cardRef}
       style={{ backgroundColor: PAPER, color: INK }}
       className="overflow-hidden rounded-md shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]"
     >
@@ -143,8 +206,8 @@ function WidgetMockup() {
         </div>
       </div>
 
-      {/* Widget body */}
-      <div className="px-7 py-9 md:px-10 md:py-11">
+      {/* Address row */}
+      <div className="px-6 pt-7 pb-5 md:px-9 md:pt-9">
         <p
           style={{ color: MUTED, fontFamily: MONO, letterSpacing: "0.14em" }}
           className="text-[10px] uppercase"
@@ -158,45 +221,127 @@ function WidgetMockup() {
             lineHeight: 0.95,
             letterSpacing: "-0.01em",
           }}
-          className="mt-2 text-[28px] font-extrabold uppercase md:text-[34px]"
+          className="mt-2 text-[26px] font-extrabold uppercase md:text-[32px]"
         >
           Get your roof price in 30 seconds
         </h3>
 
-        <label
-          style={{ color: MUTED, fontFamily: MONO, letterSpacing: "0.14em" }}
-          className="mt-7 block text-[10px] uppercase"
-        >
-          Property address
-        </label>
-        <input
-          type="text"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="742 Evergreen Terrace, Austin TX"
-          style={{
-            backgroundColor: PAPER,
-            border: `1px solid ${LINE}`,
-            color: INK,
-          }}
-          className="mt-2 w-full rounded px-3.5 py-3 text-[14px] placeholder:opacity-50 focus:outline-none"
+        <div className="mt-6 flex flex-col gap-2.5 md:flex-row">
+          <div className="relative flex-1">
+            <label
+              style={{ color: MUTED, fontFamily: MONO, letterSpacing: "0.14em" }}
+              className="block text-[10px] uppercase"
+            >
+              Property address
+            </label>
+            <div
+              style={{
+                backgroundColor: PAPER,
+                border: `1px solid ${LINE}`,
+                color: INK,
+              }}
+              className="mt-2 flex min-h-[46px] items-center rounded px-3.5 py-3 text-[14px]"
+            >
+              <span>{typed || ""}</span>
+              {!typed && (
+                <span style={{ color: INK, opacity: 0.4 }}>{TARGET_ADDRESS}</span>
+              )}
+              {showCaret && (
+                <span
+                  style={{ backgroundColor: RUST }}
+                  className="ml-0.5 inline-block h-[16px] w-[2px] animate-pulse"
+                />
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRunKey((k) => k + 1)}
+            style={{
+              backgroundColor: RUST,
+              color: PAPER,
+              boxShadow: submitGlow
+                ? `0 0 0 4px ${RUST_2}55, 0 0 24px ${RUST}88`
+                : "none",
+              transition: "box-shadow 220ms ease",
+            }}
+            className="self-end rounded px-5 py-3 text-[12px] font-semibold uppercase tracking-wide hover:opacity-90"
+          >
+            Get my estimate →
+          </button>
+        </div>
+      </div>
+
+      {/* 3D viewport */}
+      <div
+        style={{ borderTop: `1px solid ${LINE}`, borderBottom: `1px solid ${LINE}` }}
+        className="relative"
+      >
+        <RoofRender3D
+          scene={SCENE}
+          revealCount={planeCount}
+          revealEdgeCount={edgeCount}
+          showOverlays={false}
+          enableInteraction={phase === "done"}
+          autoRotate
+          height={420}
+          cameraPosition={[80, 32, 80]}
+          cameraFov={30}
+          className="relative w-full overflow-hidden"
         />
 
-        <button
-          type="button"
-          onClick={() => setShowResult(true)}
-          style={{ backgroundColor: RUST, color: PAPER }}
-          className="mt-4 w-full rounded py-3 text-[13px] font-semibold uppercase tracking-wide transition-opacity hover:opacity-90"
-        >
-          Get my estimate →
-        </button>
-
+        {/* Status pill */}
         <div
-          style={{ borderTop: `1px solid ${LINE}` }}
-          className={`mt-6 pt-5 transition-opacity ${
-            showResult ? "opacity-100" : "opacity-50"
-          }`}
+          style={{
+            backgroundColor: "rgba(12,31,40,0.92)",
+            color: PAPER,
+            fontFamily: MONO,
+            letterSpacing: "0.14em",
+          }}
+          className="absolute left-4 top-4 rounded px-3 py-1.5 text-[10px] uppercase backdrop-blur"
         >
+          {phase === "idle" && "Awaiting input"}
+          {phase === "typing" && "● Receiving address"}
+          {phase === "submitting" && "● Querying satellite"}
+          {phase === "building" && `● Reconstructing roof · ${planeCount}/${SCENE.planes.length} planes`}
+          {phase === "measuring" && "● Measuring surface area"}
+          {phase === "pricing" && "● Calculating price"}
+          {phase === "done" && "✓ Estimate ready · drag to explore"}
+        </div>
+
+        {/* Live measurement chip — appears with sqft */}
+        {sqftDisplay > 0 && (
+          <div
+            style={{ backgroundColor: PAPER, color: INK, border: `1px solid ${LINE}` }}
+            className="absolute right-4 top-4 rounded px-3 py-2 shadow-md"
+          >
+            <p
+              style={{ color: MUTED, fontFamily: MONO, letterSpacing: "0.14em" }}
+              className="text-[9px] uppercase"
+            >
+              Roof measured
+            </p>
+            <p
+              style={{ fontFamily: DISPLAY, lineHeight: 0.95 }}
+              className="mt-0.5 text-[22px] font-extrabold"
+            >
+              {sqftDisplay.toLocaleString()}{" "}
+              <span style={{ color: MUTED }} className="text-[12px] font-normal">
+                sqft
+              </span>
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Result row */}
+      <div
+        style={{ backgroundColor: PAPER }}
+        className={`flex flex-col gap-3 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-9 md:py-6 ${
+          showResult ? "opacity-100" : "opacity-40"
+        } transition-opacity duration-500`}
+      >
+        <div>
           <p
             style={{ color: MUTED, fontFamily: MONO, letterSpacing: "0.14em" }}
             className="text-[10px] uppercase"
@@ -210,14 +355,33 @@ function WidgetMockup() {
               lineHeight: 0.95,
               letterSpacing: "-0.01em",
             }}
-            className="mt-1 text-[34px] font-extrabold md:text-[44px]"
+            className="mt-1 text-[32px] font-extrabold md:text-[40px]"
           >
-            $14,200 — $17,800
+            ${priceDisplay.toLocaleString()}
+            {phase === "done" && (
+              <span style={{ color: INK }}> — ${PRICE_HIGH.toLocaleString()}</span>
+            )}
           </p>
-          <p style={{ color: MUTED }} className="mt-2 text-[12px]">
-            2,450 sq ft · Asphalt shingle · Moderate pitch
+          <p style={{ color: MUTED }} className="mt-1 text-[12px]">
+            {SCENE.planes.length} planes · {SCENE.pitch} pitch · Asphalt shingle
           </p>
         </div>
+
+        {phase === "done" && (
+          <button
+            type="button"
+            onClick={() => setRunKey((k) => k + 1)}
+            style={{
+              border: `1px solid ${LINE}`,
+              color: INK,
+              fontFamily: MONO,
+              letterSpacing: "0.14em",
+            }}
+            className="self-start rounded px-3 py-2 text-[10px] uppercase hover:bg-[#F4ECDC] md:self-auto"
+          >
+            ↻ Replay
+          </button>
+        )}
       </div>
     </div>
   );
@@ -228,7 +392,6 @@ export default function DemoV2() {
   return (
     <section id="demo" style={{ backgroundColor: INK, color: PAPER }} className="w-full">
       <div className="mx-auto max-w-[1200px] px-6 py-20 md:px-10 md:py-28">
-        {/* Eyebrow */}
         <p
           style={{ color: RUST_2, fontFamily: MONO, letterSpacing: "0.14em" }}
           className="text-[11px] uppercase"
@@ -236,7 +399,6 @@ export default function DemoV2() {
           Live demo · how it works
         </p>
 
-        {/* Heading */}
         <h2
           style={{
             fontFamily: DISPLAY,
@@ -250,7 +412,6 @@ export default function DemoV2() {
           <span style={{ color: RUST_2 }}>Watch it work.</span>
         </h2>
 
-        {/* Subhead */}
         <p
           style={{ color: "rgba(251, 247, 239, 0.7)" }}
           className="mt-6 max-w-[58ch] text-base leading-relaxed md:text-[17px]"
@@ -260,35 +421,8 @@ export default function DemoV2() {
           lead lands in your inbox.
         </p>
 
-        {/* Widget mockup */}
-        <div className="mx-auto mt-12 max-w-[560px] md:mt-16">
-          <WidgetMockup />
-        </div>
-
-        {/* Three-step strip */}
-        <div
-          style={{ backgroundColor: "rgba(251, 247, 239, 0.1)" }}
-          className="mt-12 grid grid-cols-1 gap-px overflow-hidden md:mt-16 md:grid-cols-3"
-        >
-          {STEPS.map((s) => (
-            <div key={s.n} style={{ backgroundColor: INK }} className="p-6 md:p-7">
-              <p
-                style={{ color: RUST_2, fontFamily: MONO, letterSpacing: "0.14em" }}
-                className="text-[10px] uppercase"
-              >
-                {s.n}
-              </p>
-              <p
-                style={{ color: PAPER }}
-                className="mt-2 text-[15px] font-semibold leading-snug"
-              >
-                {s.label}
-              </p>
-              <div className="mt-4">
-                <StepVisual kind={s.visual} />
-              </div>
-            </div>
-          ))}
+        <div className="mx-auto mt-12 max-w-[760px] md:mt-16">
+          <PipelineCard />
         </div>
       </div>
     </section>
