@@ -187,7 +187,7 @@ def _classify_tier3_failure(stderr: str) -> str:
     return "pipeline_crash"
 
 
-def _run_tier3(laz_path: Path, lat: float, lng: float, *, override_crs_epsg: int | None = None) -> tuple[dict | None, str, str]:
+def _run_tier3(laz_path: Path, lat: float, lng: float, *, override_crs_epsg: int | None = None, force_height_filter: bool = False, z_meters_to_feet: bool = False, emit_plane_inlier_points: bool = False) -> tuple[dict | None, str, str]:
     """Subprocess-invoke scripts/lidar-tier3-geometry.py.
 
     override_crs_epsg: A.10 mechanical fix — when LAZ came from EPT
@@ -210,6 +210,12 @@ def _run_tier3(laz_path: Path, lat: float, lng: float, *, override_crs_epsg: int
     ]
     if override_crs_epsg:
         cmd += ["--crs_epsg", str(override_crs_epsg)]
+    if force_height_filter:
+        cmd += ["--force_height_filter"]
+    if z_meters_to_feet:
+        cmd += ["--z_meters_to_feet"]
+    if emit_plane_inlier_points:
+        cmd += ["--emit_plane_inlier_points"]
     try:
         proc = subprocess.run(
             cmd,
@@ -344,6 +350,10 @@ def measure(body: dict[str, Any]) -> dict:
 
     debug_skip_ept = bool(body.get("debug_skip_ept"))
     debug_skip_tnm = bool(body.get("debug_skip_tnm"))
+    emit_full_tier3 = bool(body.get("emit_full_tier3"))
+    force_height_filter = bool(body.get("force_height_filter"))
+    z_meters_to_feet = bool(body.get("z_meters_to_feet"))
+    emit_plane_inlier_points = bool(body.get("emit_plane_inlier_points"))
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_dir = Path(tmp)
@@ -374,7 +384,7 @@ def measure(body: dict[str, Any]) -> dict:
         # carries native FL ftUS CRS in a laspy-readable VLR and needs no
         # override.
         fetch_override = 2236 if dr.fetch_path == "ept" else None
-        data, outcome, stderr = _run_tier3(laz_path, lat, lng, override_crs_epsg=fetch_override)
+        data, outcome, stderr = _run_tier3(laz_path, lat, lng, override_crs_epsg=fetch_override, force_height_filter=force_height_filter, z_meters_to_feet=z_meters_to_feet, emit_plane_inlier_points=emit_plane_inlier_points)
         if outcome != "ok":
             print(f"[tier3 fail outcome={outcome} fetch_path={dr.fetch_path}] stderr tail:\n{stderr[-800:]}")
             return {
@@ -387,7 +397,12 @@ def measure(body: dict[str, Any]) -> dict:
 
     # 3. Map to LidarResult + attach fetch telemetry
     fetch_meta = {"fetch_path": dr.fetch_path, "collection_id": dr.collection_id}
-    return _map_to_lidar_result(data, int((time.time() - t0) * 1000), fetch_meta)
+    result = _map_to_lidar_result(data, int((time.time() - t0) * 1000), fetch_meta)
+    if emit_full_tier3:
+        # Bake-mode passthrough — full geometry for offline visualization use.
+        # Additive only; no impact on the LidarResult contract.
+        result["fullTier3"] = data
+    return result
 
 
 # ---------------------------------------------------------------------------

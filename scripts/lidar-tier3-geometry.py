@@ -184,6 +184,32 @@ def _horiz_area_sqft(points):
         return 0.0
 
 
+def _plane_polygon_3d(plane):
+    """Convex-hull polygon of plane's inlier points, lifted to 3D via plane equation.
+
+    Additive output for downstream visualization (web 3D viewer). Does not affect
+    any computed metric — scopes to JSON serialization only.
+
+    Returns ordered list of [x,y,z] in tile CRS, or None if degenerate.
+    """
+    pts = plane["points"]
+    if len(pts) < 3:
+        return None
+    try:
+        hull = ConvexHull(pts[:, :2])
+        hull_xy = pts[hull.vertices, :2]
+    except Exception:
+        return None
+    n = plane["normal"]; d = plane["d"]
+    if abs(float(n[2])) < 1e-6:
+        return None
+    verts = []
+    for x, y in hull_xy:
+        z = (-float(d) - float(n[0]) * float(x) - float(n[1]) * float(y)) / float(n[2])
+        verts.append([round(float(x), 3), round(float(y), 3), round(float(z), 3)])
+    return verts
+
+
 # --- RIDGE / HIP / VALLEY (design §4) ---
 def classify_intersections(planes):
     """For each pair of adjacent planes, compute intersection line and classify."""
@@ -319,6 +345,13 @@ def main():
     ap.add_argument("--radius_m", type=float, default=40)
     ap.add_argument("--crs_epsg", type=int, default=0)
     ap.add_argument("--height_above_ground_ft", type=float, default=HEIGHT_ABOVE_GROUND_FT_FALLBACK)
+    ap.add_argument("--force_height_filter", action="store_true",
+                    help="Diagnostic: ignore class-6 sufficiency and always use height-above-ground filter.")
+    ap.add_argument("--z_meters_to_feet", action="store_true",
+                    help="Diagnostic: multiply LAS z by 3.28084 to convert meters → ftUS for tiles with mixed-unit CRS.")
+    ap.add_argument("--emit_plane_inlier_points", action="store_true",
+                    help="Bake-mode passthrough: include raw inlier xyz points per segment in tier3 JSON. "
+                         "Calculator-invisible; no algorithm change; scalars unchanged.")
     ap.add_argument("--address_label", default=None)
     args = ap.parse_args()
 
@@ -373,6 +406,18 @@ def main():
     laz = laspy.read(laz_path)
     xs, ys, zs = np.asarray(laz.x), np.asarray(laz.y), np.asarray(laz.z)
     cls = np.asarray(laz.classification)
+    # Diagnostic: surface LAZ header so we can detect mixed-unit (xy=ftUS, z=m) tiles.
+    laz_header_diag = {
+        "scales": [float(s) for s in laz.header.scales],
+        "offsets": [float(o) for o in laz.header.offsets],
+        "point_count": int(laz.header.point_count),
+        "min": [float(v) for v in laz.header.mins],
+        "max": [float(v) for v in laz.header.maxs],
+        "version": f"{laz.header.version}",
+    }
+    if args.z_meters_to_feet:
+        zs = zs * 3.28083989501312
+        print(f"  z_meters_to_feet: applied 3.28084 scale to z")
     mask = tier2.points_in_polygon_mask(xs, ys, poly_ft)
     print(f"  inside footprint: {mask.sum():,} of {len(xs):,}")
     if mask.sum() < 100:
@@ -394,9 +439,22 @@ def main():
     else:
         ground_z = float(np.median(pz[ground_mask_local]))
 
-    # Roof classification: class 6 preferred, fallback to height-above-ground
+    # Roof classification: class 6 preferred, fallback to height-above-ground.
+    # Diagnostic: per-class count + max-z within footprint, surfaces misclassified
+    # tiles (e.g. real roof points labeled as class 1 or 5 instead of 6).
+    class_diag = {}
+    for c in sorted(set(int(x) for x in np.unique(pc))):
+        cm = (pc == c)
+        zs_c = pz[cm]
+        class_diag[int(c)] = {
+            "count": int(cm.sum()),
+            "max_z": round(float(zs_c.max()), 2) if cm.sum() else None,
+            "p95_z": round(float(np.percentile(zs_c, 95)), 2) if cm.sum() else None,
+        }
+
     class6_mask = (pc == 6)
-    if class6_mask.sum() >= RANSAC_MIN_INLIERS:
+    force_height_filter = bool(getattr(args, "force_height_filter", False))
+    if class6_mask.sum() >= RANSAC_MIN_INLIERS and not force_height_filter:
         roof_mask = class6_mask
         class6_fallback = False
     else:
@@ -480,6 +538,15 @@ def main():
         "roof_alpha_area_sqft": round(alpha_area_sqft, 1),
         "alpha_flags": alpha_flags,
         "ground_z_ft": round(ground_z, 2),
+        "class_distribution": class_diag,
+        # Diagnostic — footprint polygon used for masking, in lat/lng (WGS84) for
+        # easy overlay on Google Maps + tile CRS for LAZ-frame reference.
+        "footprint_polygon_latlng": (
+            [[round(c[1], 7), round(c[0], 7)] for c in poly_ll.exterior.coords]
+            if poly_ll is not None else None
+        ),
+        "footprint_polygon_xy_ftus": [[round(c[0], 2), round(c[1], 2)] for c in poly_ft.exterior.coords],
+        "laz_header": laz_header_diag,
         "point_density_pts_per_m2": round(density_pts_per_m2, 2),
         "low_confidence_density": low_confidence,
         "class6_fallback": class6_fallback,
@@ -498,6 +565,12 @@ def main():
                 "sloped_area_sqft": round(p["sloped_area_sqft"], 1),
                 "n_points": int(len(p["points"])),
                 "centroid": [round(float(p["centroid"][k]), 2) for k in range(3)],
+                "polygon_3d": _plane_polygon_3d(p),
+                "normal": [round(float(p["normal"][k]), 4) for k in range(3)],
+                **(
+                    {"points": [[round(float(pt[0]), 2), round(float(pt[1]), 2), round(float(pt[2]), 2)] for pt in p["points"]]}
+                    if args.emit_plane_inlier_points else {}
+                ),
             } for i, p in enumerate(planes)
         ],
         "ridge_length_ft": round(ridge_len, 1),
