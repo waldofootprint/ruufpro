@@ -88,9 +88,9 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "RuufPro — Free Roofing Websites + Instant Estimates",
+  title: "RuufPro — Instant Estimates + AI Chatbot for Roofers",
   description:
-    "Get a professional roofing website in minutes. Free. Upgrade to Pro for $149/mo to turn visitors into leads.",
+    "Capture, qualify, and close more roofing jobs. Estimate widget + Riley AI + lead dashboard + review automation. $149/mo flat. 14-day free trial, no card.",
   manifest: "/manifest.json",
 };
 

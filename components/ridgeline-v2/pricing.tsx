@@ -24,7 +24,7 @@ const INCLUDED = [
   "Riley AI chatbot — 24/7 homeowner questions",
   "Lead dashboard + smart intel",
   "Review automation — Google reviews on autopilot",
-  "Custom branding + free roofer site",
+  "Custom branding — your colors, your logo",
   "Unlimited leads · no per-lead fees",
 ];
 

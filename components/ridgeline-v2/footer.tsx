@@ -95,7 +95,7 @@ export default function FooterV2() {
               className="mt-6 max-w-[28ch] text-[14px] leading-relaxed"
             >
               Built by a solo founder who watched great roofers lose jobs to
-              competitors with worse work and better websites.
+              competitors with worse work and slicker online tools.
             </p>
 
             <a
