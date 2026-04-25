@@ -19,6 +19,21 @@
   --font-heading: var(--font-dm-sans);
   --font-body: var(--font-dm-sans);
 
+  /* Ridgeline v2 — editorial palette + fonts (exact brand) */
+  --color-paper: #FBF7EF;
+  --color-paper-pure: #FFFFFF;
+  --color-ink: #0C1F28;
+  --color-ink-2: #14303D;
+  --color-rust: #C2562A;
+  --color-rust-2: #E2855A;
+  --color-sand: #F4ECDC;
+  --color-line: #E6DDC9;
+  --color-muted: #6B7378;
+
+  --font-display: var(--font-archivo);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-serif: var(--font-source-serif);
+
   /* Hero section animations */
   --animate-appear: appear 0.5s ease-out forwards;
   --animate-appear-zoom: appear-zoom 0.5s ease-out forwards;

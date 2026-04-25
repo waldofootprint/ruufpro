@@ -1,15 +1,12 @@
-import Component from "@/components/ui/hero";
-import RidgelineDemo from "@/components/ridgeline/demo";
-import RidgelineGoogleFilter from "@/components/ridgeline/google-filter";
-import RidgelineProFeatures from "@/components/ridgeline/pro-features";
-import RidgelineHowItWorks from "@/components/ridgeline/how-it-works";
-import RidgelineWhatsTheCatch from "@/components/ridgeline/whats-the-catch";
-import RidgelineComparison from "@/components/ridgeline/competitor-comparison";
-import RidgelineSocialProof from "@/components/ridgeline/social-proof";
-import RidgelinePricing from "@/components/ridgeline/pricing";
-import RidgelineFAQ from "@/components/ridgeline/faq";
-import RidgelineFinalCTA from "@/components/ridgeline/final-cta";
-import RidgelineFooter from "@/components/ridgeline/footer";
+import Component from "@/components/ridgeline-v2/hero";
+import RidgelineDemo from "@/components/ridgeline-v2/demo";
+import RidgelineGoogleFilter from "@/components/ridgeline-v2/evidence";
+import RidgelineProFeatures from "@/components/ridgeline-v2/features";
+import RidgelineHowItWorks from "@/components/ridgeline-v2/how-it-works";
+import RidgelinePricing from "@/components/ridgeline-v2/pricing";
+import RidgelineFAQ from "@/components/ridgeline-v2/faq";
+import RidgelineFinalCTA from "@/components/ridgeline-v2/final-cta";
+import RidgelineFooter from "@/components/ridgeline-v2/footer";
 
 export default function Home() {
   return (
@@ -19,9 +16,6 @@ export default function Home() {
       <RidgelineGoogleFilter />
       <RidgelineProFeatures />
       <RidgelineHowItWorks />
-      <RidgelineWhatsTheCatch />
-      <RidgelineComparison />
-      <RidgelineSocialProof />
       <RidgelinePricing />
       <RidgelineFAQ />
       <RidgelineFinalCTA />

@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { DM_Sans, Sora, Plus_Jakarta_Sans, Inter, Outfit, Lora, Roboto_Slab, Barlow, Barlow_Condensed } from "next/font/google";
+import { DM_Sans, Sora, Plus_Jakarta_Sans, Inter, Outfit, Lora, Roboto_Slab, Barlow, Barlow_Condensed, Archivo, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import CookieBanner from "@/components/cookie-banner";
 import { cn } from "@/lib/utils";
@@ -65,6 +65,28 @@ const barlowCondensed = Barlow_Condensed({
   display: "swap",
 });
 
+// Ridgeline v2 — editorial trio
+const archivo = Archivo({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800", "900"],
+  variable: "--font-archivo",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-source-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "RuufPro — Free Roofing Websites + Instant Estimates",
   description:
@@ -82,7 +104,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn(dmSans.className, dmSans.variable, sora.variable, plusJakarta.variable, inter.variable, outfit.variable, lora.variable, robotoSlab.variable, barlow.variable, barlowCondensed.variable)}>
+    <html lang="en" className={cn(dmSans.className, dmSans.variable, sora.variable, plusJakarta.variable, inter.variable, outfit.variable, lora.variable, robotoSlab.variable, barlow.variable, barlowCondensed.variable, archivo.variable, jetbrainsMono.variable, sourceSerif.variable)}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
