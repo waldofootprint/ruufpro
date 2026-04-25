@@ -36,12 +36,14 @@ Key changes from Version F:
 
 ## Opening Line Variants (by review count)
 
+> ICP locked at 20-100 reviews; <20 and >100 are auto-skipped by `lib/demo-prospect-scoring.ts`.
+> Anything outside the rows below should not be in the mail batch — flag and re-score.
+
 | Reviews | Opening |
 |---------|---------|
-| 50+ | "{{rating}} stars across {{review_count}} reviews. That kind of reputation takes years." |
-| 10-49 (default) | "{{rating}} stars on Google. Your customers clearly like working with you." |
-| 3-9 | "I could tell from your reviews that you do solid work." |
-| 0-2 | Skip the review line. "I came across {{business_name}} while looking up roofers in {{city}}." |
+| 61-100 | "{{rating}} stars across {{review_count}} reviews. That kind of reputation takes years." |
+| 30-60 (sweet-spot default) | "{{rating}} stars on Google. Your customers clearly like working with you." |
+| 20-29 | "I could tell from your reviews that you do solid work." |
 
 ## Personalization Variables
 

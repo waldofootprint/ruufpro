@@ -1,11 +1,17 @@
-// Demo Prospect Scoring — determines which prospects get a personalized demo page.
+// Prospect Scoring — single source of truth for ICP scoring across all outreach.
 // Targets roofers WITH websites (more data for Riley AI training).
-// Auto-skips competitors, franchises, review automation, low quality.
+// Auto-skips competitors, franchises, review automation, low quality, inactive businesses.
 //
-// Used by: /direct-mail skill, ops dashboard, CLI tools, API routes
+// Used by: /direct-mail skill, /prospect-scorer skill, ops dashboard, CLI tools, API routes.
+// Also re-exported by lib/nfc-scoring.ts for backwards-compat (single ICP, NFC is a tactic).
+//
+// ICP locked 2026-04-25: rich website + 1-10 crew (proxy: not multi-state/franchise) +
+// 4.0+ rating + 20-100 reviews + active in last 90 days + organic review pattern +
+// no competitor chatbot/widget/review platform.
 //
 // Auto-SKIP: no website, has competitor widget/chatbot/review platform,
-//            franchise, multi-state, review automation, <4.0★, <3 or >49 reviews
+//            franchise, multi-state, review automation, <4.0★, <20 or >100 reviews,
+//            no review activity in last 90 days.
 //
 // Tiers (by point total, max ~23):
 //   Platinum: 16+   → first demo pages + NFC cards
@@ -205,20 +211,20 @@ export function scoreDemoProspect(p: DemoProspectInput): DemoScoreResult {
     };
   }
 
-  // Review count bounds
-  if (reviews < 3) {
+  // Review count bounds (ICP: 20-100)
+  if (reviews < 20) {
     return {
       tier: "skip", score: 0,
-      reasons: [`${reviews} reviews — too new, possible side hustle`],
+      reasons: [`${reviews} reviews — below 20, too new/small for $149/mo fit`],
       autoSkipReason: "too_few_reviews",
       reviewAutomationSuspected: false,
     };
   }
 
-  if (reviews > 49) {
+  if (reviews > 100) {
     return {
       tier: "skip", score: 0,
-      reasons: [`${reviews} reviews — too established, doesn't need NFC card`],
+      reasons: [`${reviews} reviews — above 100, likely 10+ crew or has tech stack`],
       autoSkipReason: "too_many_reviews",
       reviewAutomationSuspected: false,
     };
@@ -233,6 +239,20 @@ export function scoreDemoProspect(p: DemoProspectInput): DemoScoreResult {
       autoSkipReason: "review_automation",
       reviewAutomationSuspected: true,
     };
+  }
+
+  // Active in last 90 days (latest review timestamp)
+  if (p.google_reviews && p.google_reviews.length > 0) {
+    const ninetyDaysAgo = Date.now() / 1000 - 90 * 24 * 60 * 60;
+    const hasActivity = p.google_reviews.some((r) => r.time && r.time > ninetyDaysAgo);
+    if (!hasActivity) {
+      return {
+        tier: "skip", score: 0,
+        reasons: ["No review activity in last 90 days — business may be dormant"],
+        autoSkipReason: "inactive_90d",
+        reviewAutomationSuspected: false,
+      };
+    }
   }
 
   // Review platform in competitor_tools also triggers skip
@@ -279,15 +299,18 @@ export function scoreDemoProspect(p: DemoProspectInput): DemoScoreResult {
     reasons.push(`+1 Testimonials on site (${p.website_testimonials.length})`);
   }
 
-  // Review count — fewer reviews = more need for NFC card
-  if (reviews >= 3 && reviews <= 15) {
+  // Review count sweet spot — 30-60 = highest-conversion ICP shape
+  // (established enough to afford $149, hungry enough to need help)
+  if (reviews >= 30 && reviews <= 60) {
     score += 3;
-    reasons.push(`+3 ${reviews} reviews — sweet spot, needs NFC card most`);
-  } else if (reviews >= 16 && reviews <= 30) {
-    score += 2;
-    reasons.push(`+2 ${reviews} reviews — growing`);
+    reasons.push(`+3 ${reviews} reviews — ICP sweet spot`);
+  } else if (reviews >= 20 && reviews <= 29) {
+    score += 1;
+    reasons.push(`+1 ${reviews} reviews — early-stage, hungry for growth`);
+  } else if (reviews >= 61 && reviews <= 100) {
+    score += 1;
+    reasons.push(`+1 ${reviews} reviews — established but borderline upper bound`);
   }
-  // 31-49 = +0 (no boost)
 
   // Organic review pattern
   if (!automation.suspected && p.google_reviews && p.google_reviews.length >= 3) {

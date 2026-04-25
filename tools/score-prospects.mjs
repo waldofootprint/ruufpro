@@ -9,7 +9,7 @@
 //   Platinum — 16+ points, top prospects (most website data for Riley)
 //   Gold     — 12-15 points, strong prospects
 //   Silver   — 8-11 points, maybe
-//   Skip     — <8 points, no website, competitor tools, franchise, <4.0★, <3 or >49 reviews
+//   Skip     — <8 points, no website, competitor tools, franchise, <4.0★, <20 or >100 reviews
 //
 // Outreach routing:
 //   Direct mail is primary channel
@@ -96,13 +96,13 @@ function scoreProspect(row) {
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  if (reviewCount < 3) {
-    reasons.push(`${reviewCount} reviews — too new, possible side hustle`);
+  if (reviewCount < 20) {
+    reasons.push(`${reviewCount} reviews — below 20, too new/small for $149/mo fit`);
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
-  if (reviewCount > 49) {
-    reasons.push(`${reviewCount} reviews — too established for NFC card`);
+  if (reviewCount > 100) {
+    reasons.push(`${reviewCount} reviews — above 100, likely 10+ crew or has tech stack`);
     return { tier: "skip", reasons, reviewCount, rating, outreachMethod: null };
   }
 
@@ -110,10 +110,10 @@ function scoreProspect(row) {
 
   let score = 0;
 
-  // Review count — fewer reviews = more need for NFC card
-  if (reviewCount >= 3 && reviewCount <= 15) { score += 3; reasons.push(`+3 ${reviewCount} reviews — sweet spot`); }
-  else if (reviewCount >= 16 && reviewCount <= 30) { score += 2; reasons.push(`+2 ${reviewCount} reviews — growing`); }
-  // 31-49 = +0
+  // Review count sweet spot — 30-60 = highest-conversion ICP shape
+  if (reviewCount >= 30 && reviewCount <= 60) { score += 3; reasons.push(`+3 ${reviewCount} reviews — ICP sweet spot`); }
+  else if (reviewCount >= 20 && reviewCount <= 29) { score += 1; reasons.push(`+1 ${reviewCount} reviews — early-stage, hungry`); }
+  else if (reviewCount >= 61 && reviewCount <= 100) { score += 1; reasons.push(`+1 ${reviewCount} reviews — established, borderline`); }
 
   // Rating
   if (rating >= 4.5) { score += 2; reasons.push(`+2 ${rating}★ — takes pride in work`); }
