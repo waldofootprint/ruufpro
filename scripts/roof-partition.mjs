@@ -1,22 +1,20 @@
 /**
- * Bake-side roof reconstruction — RR.2 footprint-partition design.
+ * Bake-side roof reconstruction — RR.3 adjacency-graph pivot, ridges-only.
  *
- * Calculator-invisible by construction: consumes Pipeline A tier3 JSON
- * (with `emit_plane_inlier_points: true`) plus its MS Footprint polygon,
- * cuts the footprint along projected plane-plane intersection lines, lifts
- * each piece to 3D via its assigned plane equation. Closed mesh + shared
- * ridge edges + footprint-bounded eaves come for free.
+ * RR.3 modifies the RR.2-S1 module in place. Two structural changes vs S1:
+ *   §3.1  plane-adjacency graph (convex hull of inlier xy + hull-vs-hull
+ *         proximity) gates plane-pair intersection enumeration. Non-adjacent
+ *         pairs are dropped before any blade is built.
+ *   §3.2  per-piece plane assignment is constrained to the piece's border_set
+ *         (planes whose intersection produced the piece's ridge edges).
+ *         S1 global inlier-vote becomes a fallback.
+ *   §3.3  sanity area-drift reference field swap: roof_horiz_sqft →
+ *         structure_footprint_sqft (stable Pipeline A field). Threshold 15%.
  *
- * Pipeline (Session 1 — RIDGES ONLY):
- *   3.1.1a  plane-pair intersection lines, filtered to ridges
- *   3.1.1b  project ridge segments into the footprint xy plane (clip to bbox)
- *   3.1.1c  footprint cut: subtract ε-buffered blade rectangles from footprint
- *   3.1.1d  plane assignment per piece (inlier vote, tie → nearest centroid)
- *   3.1.1e  3D lift via plane equation z = -(ax + by + d) / c
- *   3.1.1f  sanity check + audit (audit emits regardless of sanity pass/fail)
+ * S1's inlier-support filter (RIDGE_INLIER_NEAR_FT, RIDGE_MIN_BOTH_PLANES_INLIERS,
+ * RIDGE_MIN_LENGTH_FT) stays as a secondary check. Constants frozen.
  *
- * No Pipeline A touch.  No new Modal flag (reuses RR.1's emit_plane_inlier_points).
- * Hips, valleys, gables, garage wings → Session 2.
+ * No Pipeline A touch.  No new Modal flag.  No new lib.
  */
 
 import polygonClipping from "polygon-clipping";
@@ -31,9 +29,11 @@ const RIDGE_MATCH_DIST_FT = 0.5;      // edge-to-ridge tolerance for G4 audit
 const RIDGE_Z_AGREE_FT = 0.5;         // |Δz| at ridge endpoints between adjacent pieces
 const TIE_RATIO = 0.10;               // top-2 inlier counts within 10% → centroid tiebreak
 const MIN_PIECE_AREA_SQFT = 25;       // drop slivers (matches RR.1's MIN_CLUSTER_AREA_SQFT)
-const RIDGE_INLIER_NEAR_FT = 4.0;     // adjacency filter: inlier xy-distance to ridge line must be < this
-const RIDGE_MIN_BOTH_PLANES_INLIERS = 6; // ridge requires ≥N inliers from EACH plane near the line
-const RIDGE_MIN_LENGTH_FT = 5.0;      // drop ridge if usable extent < this after inlier-overlap clip
+const RIDGE_INLIER_NEAR_FT = 4.0;     // S1 inlier-support filter: inlier xy-distance to ridge line must be < this
+const RIDGE_MIN_BOTH_PLANES_INLIERS = 6; // S1 inlier-support filter: ridge requires ≥N inliers from EACH plane near the line
+const RIDGE_MIN_LENGTH_FT = 5.0;      // S1 inlier-support filter: drop ridge if usable extent < this after inlier-overlap clip
+const PLANE_ADJACENCY_GAP_FT = 4.0;   // RR.3 §3.1: hull-vs-hull max xy gap to count two planes as adjacent
+const RIDGE_EDGE_MATCH_FT = RIDGE_MATCH_DIST_FT; // RR.3 §3.2: piece edge → ridge match tolerance for border_set assembly
 
 // ───────────────────────────── vector helpers ─────────────────────────────
 function dot3(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
@@ -223,6 +223,86 @@ function supportExtentOnLine(seg, inliersA, inliersB) {
   return { seg: newSeg, lengthFt: (t2 - t1) * L };
 }
 
+/**
+ * Convex hull (Andrew's monotone chain) of 2D points.
+ * Returns hull vertices in CCW order, NOT closed (no repeated first vertex).
+ * Returns empty array on <2 unique points.
+ */
+function convexHull2D(points) {
+  if (!points || points.length < 2) return [];
+  const pts = points
+    .map((p) => [p[0], p[1]])
+    .sort((a, b) => (a[0] === b[0] ? a[1] - b[1] : a[0] - b[0]));
+  // dedupe
+  const uniq = [];
+  for (const p of pts) {
+    const last = uniq[uniq.length - 1];
+    if (!last || last[0] !== p[0] || last[1] !== p[1]) uniq.push(p);
+  }
+  if (uniq.length < 2) return uniq;
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower = [];
+  for (const p of uniq) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = uniq.length - 1; i >= 0; i--) {
+    const p = uniq[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+/** Min distance from a point to any edge of a hull (open ring). 0 if inside. */
+function pointToHullDist(p, hull) {
+  if (hull.length === 0) return Infinity;
+  if (hull.length === 1) return Math.hypot(p[0] - hull[0][0], p[1] - hull[0][1]);
+  // inside test (only for hull.length >= 3): use closed-ring point-in-poly
+  if (hull.length >= 3) {
+    const ring = hull.concat([hull[0]]);
+    if (pointInRing(p, ring)) return 0;
+  }
+  let m = Infinity;
+  for (let i = 0; i < hull.length; i++) {
+    const a = hull[i], b = hull[(i + 1) % hull.length];
+    const d = pointToSegmentDist2D(p, a, b);
+    if (d < m) m = d;
+  }
+  return m;
+}
+
+/**
+ * Hulls considered adjacent if they overlap (intersection non-empty) OR the
+ * minimum xy distance between them is <= gapFt. Convex-hull case only — RR.3 §3.1.
+ */
+function hullsAdjacent(hullA, hullB, gapFt) {
+  if (!hullA.length || !hullB.length) return false;
+  // Overlap test via polygon-clipping intersection on closed rings.
+  if (hullA.length >= 3 && hullB.length >= 3) {
+    const ringA = hullA.concat([hullA[0]]);
+    const ringB = hullB.concat([hullB[0]]);
+    const inter = polygonClipping.intersection([[ringA]], [[ringB]]);
+    if (inter && inter.length > 0) return true;
+  }
+  // Min vertex-to-edge distance both directions.
+  let m = Infinity;
+  for (const p of hullA) {
+    const d = pointToHullDist(p, hullB);
+    if (d < m) m = d;
+    if (m === 0) return true;
+  }
+  for (const p of hullB) {
+    const d = pointToHullDist(p, hullA);
+    if (d < m) m = d;
+    if (m === 0) return true;
+  }
+  return m <= gapFt;
+}
+
 function closeRing(ring) {
   const out = ring.map((p) => [p[0], p[1]]);
   const first = out[0], last = out[out.length - 1];
@@ -271,10 +351,26 @@ export function partition(tier3, opts = {}) {
     pitch_degrees: s.pitch_degrees,
   }));
 
-  // 3.1.1a — plane-pair intersections, ridges only
+  // RR.3 §3.1 — plane-adjacency graph (convex hull of inlier xy + hull-vs-hull proximity)
+  // Build per-plane convex hull once; gate plane-pair work on adjacency.
+  const planeHulls = planes.map((p) => convexHull2D((p.inliers || []).map((pt) => [pt[0], pt[1]])));
+  let pairsTotal = 0, pairsAdjacent = 0, pairsDropped = 0;
+  const adjacent = []; // boolean matrix flattened: adjacent[i*N+j]
+  for (let i = 0; i < planes.length; i++) {
+    for (let j = i + 1; j < planes.length; j++) {
+      pairsTotal++;
+      const ok = hullsAdjacent(planeHulls[i], planeHulls[j], PLANE_ADJACENCY_GAP_FT);
+      if (ok) { pairsAdjacent++; adjacent[i * planes.length + j] = true; }
+      else pairsDropped++;
+    }
+  }
+  log(`[partition] adjacency: ${pairsTotal} pairs · ${pairsAdjacent} adjacent · ${pairsDropped} dropped (method=hull, gap=${PLANE_ADJACENCY_GAP_FT}ft)`);
+
+  // 3.1.1a — plane-pair intersections, adjacent-only, ridges only
   const ridgeLines = [];
   for (let i = 0; i < planes.length; i++) {
     for (let j = i + 1; j < planes.length; j++) {
+      if (!adjacent[i * planes.length + j]) continue;
       const pi = planes[i], pj = planes[j];
       if (Math.abs(dot3(pi.normal, pj.normal)) > NORMAL_PARALLEL_DOT) continue;
       const line = planeIntersectionLine(pi, pj);
@@ -283,7 +379,7 @@ export function partition(tier3, opts = {}) {
       ridgeLines.push({ a: i, b: j, line });
     }
   }
-  log(`[partition] ${planes.length} planes → ${ridgeLines.length} ridge lines`);
+  log(`[partition] ${planes.length} planes → ${ridgeLines.length} ridge lines (adjacency-gated)`);
 
   // 3.1.1b — clip each ridge line to footprint bbox + overshoot, then keep only
   // ridges supported by inliers from BOTH planes (adjacency filter — RR.1 had this
@@ -310,6 +406,7 @@ export function partition(tier3, opts = {}) {
       ...makeFailure({ reason: "no ridge intersections crossed footprint" }),
       audit: emptyAudit(),
       auditEmitted: true,
+      adjacency: { pairs_total: pairsTotal, pairs_adjacent: pairsAdjacent, pairs_dropped_non_adjacent: pairsDropped, method: "hull" },
     };
   }
 
@@ -336,45 +433,112 @@ export function partition(tier3, opts = {}) {
       ridges: ridges2D.map(toRidgeOut),
       audit: emptyAudit({ ridgeCount: ridges2D.length }),
       auditEmitted: true,
+      adjacency: { pairs_total: pairsTotal, pairs_adjacent: pairsAdjacent, pairs_dropped_non_adjacent: pairsDropped, method: "hull" },
     };
   }
 
-  // 3.1.1d — plane assignment per piece (inlier vote, tie → nearest centroid)
+  // RR.3 §3.2 — constrained inlier-vote: restrict candidates to piece's border_set
+  // (planes whose intersection produced the piece's ridge edges). Fall back to
+  // S1 global inlier-vote when border_set is empty or yields zero inliers.
   const assigned = [];
   let unassignedCount = 0;
+  let assignedViaBorderSet = 0;
+  let assignedViaGlobalFallback = 0;
   for (let pi = 0; pi < pieceRings.length; pi++) {
     const ring = pieceRings[pi];
-    const counts = new Array(planes.length).fill(0);
-    for (const plane of planes) {
-      for (const ip of plane.inliers) {
-        if (pointInRing([ip[0], ip[1]], ring)) counts[plane.idx]++;
+
+    // Build border_set: scan each piece edge; if it lies along a ridge bladeSeg,
+    // add that ridge's two planes (a, b) to the set.
+    const borderSet = new Set();
+    for (let i = 0; i < ring.length - 1; i++) {
+      const a2 = ring[i], b2 = ring[i + 1];
+      for (const r of ridges2D) {
+        const dA = pointToSegmentDist2D(a2, r.bladeSeg[0], r.bladeSeg[1]);
+        const dB = pointToSegmentDist2D(b2, r.bladeSeg[0], r.bladeSeg[1]);
+        if (dA < RIDGE_EDGE_MATCH_FT && dB < RIDGE_EDGE_MATCH_FT) {
+          borderSet.add(r.a);
+          borderSet.add(r.b);
+        }
       }
     }
-    let topIdx = -1, topCount = 0, secondCount = 0;
-    for (let k = 0; k < counts.length; k++) {
-      if (counts[k] > topCount) { secondCount = topCount; topCount = counts[k]; topIdx = k; }
-      else if (counts[k] > secondCount) { secondCount = counts[k]; }
-    }
-    let plane = topIdx >= 0 && topCount > 0 ? planes[topIdx] : null;
+
+    const inlierCount = (planeIdx) => {
+      let n = 0;
+      for (const ip of planes[planeIdx].inliers) {
+        if (pointInRing([ip[0], ip[1]], ring)) n++;
+      }
+      return n;
+    };
+
+    // Pick from border_set first. Tie-break (within border_set) by nearest centroid.
+    let plane = null;
+    let topCount = 0;
+    let assignmentMode = null;
     let tiebreak = false;
-    if (plane && secondCount > 0 && (topCount - secondCount) / topCount < TIE_RATIO) {
-      const c = ringCentroid(ring);
-      let best = -1, bd = Infinity;
-      for (let k = 0; k < planes.length; k++) {
-        const cd = (planes[k].centroid[0] - c[0]) ** 2 + (planes[k].centroid[1] - c[1]) ** 2;
-        if (cd < bd) { bd = cd; best = k; }
+    if (borderSet.size > 0) {
+      const candidates = [...borderSet];
+      const counts = candidates.map(inlierCount);
+      let topIdx = -1, secondCount = 0;
+      for (let k = 0; k < counts.length; k++) {
+        if (counts[k] > topCount) { secondCount = topCount; topCount = counts[k]; topIdx = k; }
+        else if (counts[k] > secondCount) { secondCount = counts[k]; }
       }
-      plane = planes[best];
-      tiebreak = true;
+      if (topIdx >= 0 && topCount > 0) {
+        plane = planes[candidates[topIdx]];
+        assignmentMode = "border_set";
+        if (secondCount > 0 && (topCount - secondCount) / topCount < TIE_RATIO) {
+          const c = ringCentroid(ring);
+          let best = candidates[0], bd = Infinity;
+          for (const k of candidates) {
+            const cd = (planes[k].centroid[0] - c[0]) ** 2 + (planes[k].centroid[1] - c[1]) ** 2;
+            if (cd < bd) { bd = cd; best = k; }
+          }
+          plane = planes[best];
+          tiebreak = true;
+        }
+      }
     }
+
+    // Fallback: S1 global inlier-vote across all planes.
+    if (!plane) {
+      const counts = new Array(planes.length).fill(0);
+      for (const p of planes) {
+        for (const ip of p.inliers) {
+          if (pointInRing([ip[0], ip[1]], ring)) counts[p.idx]++;
+        }
+      }
+      let topIdx = -1, secondCount = 0;
+      topCount = 0;
+      for (let k = 0; k < counts.length; k++) {
+        if (counts[k] > topCount) { secondCount = topCount; topCount = counts[k]; topIdx = k; }
+        else if (counts[k] > secondCount) { secondCount = counts[k]; }
+      }
+      if (topIdx >= 0 && topCount > 0) {
+        plane = planes[topIdx];
+        assignmentMode = "global_fallback";
+        if (secondCount > 0 && (topCount - secondCount) / topCount < TIE_RATIO) {
+          const c = ringCentroid(ring);
+          let best = -1, bd = Infinity;
+          for (let k = 0; k < planes.length; k++) {
+            const cd = (planes[k].centroid[0] - c[0]) ** 2 + (planes[k].centroid[1] - c[1]) ** 2;
+            if (cd < bd) { bd = cd; best = k; }
+          }
+          plane = planes[best];
+          tiebreak = true;
+        }
+      }
+    }
+
     if (!plane) {
       unassignedCount++;
-      assigned.push({ ring, plane: null, area: ringArea(ring), pieceIdx: pi });
+      assigned.push({ ring, plane: null, area: ringArea(ring), pieceIdx: pi, assignmentMode: null });
       continue;
     }
-    assigned.push({ ring, plane, area: ringArea(ring), pieceIdx: pi, inlierCount: topCount, tiebreak });
+    if (assignmentMode === "border_set") assignedViaBorderSet++;
+    else if (assignmentMode === "global_fallback") assignedViaGlobalFallback++;
+    assigned.push({ ring, plane, area: ringArea(ring), pieceIdx: pi, inlierCount: topCount, tiebreak, assignmentMode });
   }
-  log(`[partition] plane-assigned ${assigned.length - unassignedCount}/${assigned.length} pieces (${unassignedCount} unassigned)`);
+  log(`[partition] plane-assigned ${assigned.length - unassignedCount}/${assigned.length} (border_set=${assignedViaBorderSet} global_fallback=${assignedViaGlobalFallback} unassigned=${unassignedCount})`);
 
   // 3.1.1e — 3D lift
   const liftedPieces = [];
@@ -398,10 +562,15 @@ export function partition(tier3, opts = {}) {
   }
   log(`[partition] lifted ${liftedPieces.length} pieces (${liftFails} lift fails)`);
 
-  // 3.1.1f — sanity + audit (audit emits regardless — fixes RR.1 deferred item 9)
+  // RR.3 §3.3 — sanity reference field swapped to structure_footprint_sqft (stable Pipeline A field).
+  // Audit emits regardless — fixes RR.1 deferred item 9.
   const audit = meshAudit(liftedPieces, ridges2D);
+  audit.pieces_assigned_via_border_set = assignedViaBorderSet;
+  audit.pieces_assigned_via_global_fallback = assignedViaGlobalFallback;
+  audit.pieces_unassigned = unassignedCount;
   const totalArea = liftedPieces.reduce((acc, p) => acc + p.sqft, 0);
-  const refArea = tier3.roof_horiz_sqft || 0;
+  const refField = "structure_footprint_sqft";
+  const refArea = tier3.structure_footprint_sqft || 0;
   const drift = refArea > 0 ? Math.abs(totalArea - refArea) / refArea : null;
   const sane = sanityCheck({ unassignedCount, liftFails, drift, refArea, pieceCount: liftedPieces.length });
 
@@ -415,6 +584,18 @@ export function partition(tier3, opts = {}) {
     auditEmitted: true,
     totalArea,
     drift,
+    adjacency: {
+      pairs_total: pairsTotal,
+      pairs_adjacent: pairsAdjacent,
+      pairs_dropped_non_adjacent: pairsDropped,
+      method: "hull",
+    },
+    sanity: {
+      reference_field: refField,
+      reference_value: refArea || null,
+      mesh_area_sqft: totalArea,
+      drift_pct: drift != null ? +(drift * 100).toFixed(2) : null,
+    },
   };
 }
 

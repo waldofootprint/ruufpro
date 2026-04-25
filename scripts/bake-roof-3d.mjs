@@ -179,8 +179,8 @@ function centerAndProject(tier3, recon) {
       inlierRatio: tier3.inlierRatio,
       reconstruction: useRecon ? {
         enabled: true,
-        algorithm: "rr2-footprint-partition",
-        session: 1,
+        algorithm: "rr3-adjacency-graph",
+        session: "rr3",
         pieceCount: recon.pieces.length,
         ridgeCount: (recon.ridges || []).length,
         sanityOk: recon.sane?.ok ?? null,
@@ -189,6 +189,8 @@ function centerAndProject(tier3, recon) {
         auditEmitted: recon.auditEmitted ?? false,
         totalArea: recon.totalArea ?? null,
         drift: recon.drift ?? null,
+        adjacency: recon.adjacency ?? null, // RR.3 §3.1
+        sanity: recon.sanity ?? null,       // RR.3 §3.3
       } : { enabled: false },
     },
   };
