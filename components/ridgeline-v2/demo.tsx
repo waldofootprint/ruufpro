@@ -43,7 +43,7 @@ type Phase =
   | "pricing"
   | "done";
 
-function useInView(ref: React.RefObject<HTMLDivElement>, rootMargin = "-20%") {
+function useInView(ref: React.RefObject<HTMLDivElement | null>, rootMargin = "-20%") {
   const [inView, setInView] = useState(false);
   useEffect(() => {
     const node = ref.current;
