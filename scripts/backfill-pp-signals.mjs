@@ -22,6 +22,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { normalizeAddressLine } from "../lib/property-pipeline/address.mjs";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
@@ -52,14 +53,6 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false },
 });
-
-function normalizeAddr(s) {
-  return (s || "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9 ]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 function parseDateMMDDYYYY(s) {
   const m = (s || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -98,7 +91,7 @@ async function main() {
     if (iso) saleYearByParcel.set(parcelId, Number(iso.slice(0, 4)));
 
     const zip = String(r.SITUS_POSTAL_ZIP || "").trim();
-    const situs = normalizeAddr(r.SITUS_ADDRESS);
+    const situs = normalizeAddressLine(r.SITUS_ADDRESS);
     if (zip && situs) {
       const key = `${zip}|${situs}`;
       if (parcelByAddrKey.has(key)) dupeAddrKeys++;
@@ -138,7 +131,7 @@ async function main() {
       continue;
     }
     const zip = zipMatch[1];
-    const beforeZip = normalizeAddr(fullAddr.slice(0, fullAddr.indexOf(zipMatch[0])));
+    const beforeZip = normalizeAddressLine(fullAddr.slice(0, fullAddr.indexOf(zipMatch[0])));
 
     // Try progressively longer suffix-strips for the city word(s).
     // Most Manatee cities are 1 word (BRADENTON, PALMETTO, ELLENTON, PARRISH);

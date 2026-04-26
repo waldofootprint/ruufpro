@@ -32,6 +32,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { normalizeAddressFull } from "../lib/property-pipeline/address.mjs";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
@@ -68,27 +69,6 @@ const supabase = DRY_RUN
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-// ---------------------------------------------------------------------------
-// Address normalization — must match the logic used at suppression-write time.
-// Single source of truth: this function. If you change it, also update
-// /lib/property-pipeline/address.ts (when that exists).
-// ---------------------------------------------------------------------------
-const SUFFIX_REPLACEMENTS = [
-  [" STREET", " ST"], [" AVENUE", " AVE"], [" BOULEVARD", " BLVD"],
-  [" DRIVE", " DR"],  [" ROAD", " RD"],    [" COURT", " CT"],
-  [" CIRCLE", " CIR"],[" LANE", " LN"],    [" PLACE", " PL"],
-  [" TERRACE", " TER"],[" TRAIL", " TRL"], [" PARKWAY", " PKWY"],
-  [" HIGHWAY", " HWY"],[" SQUARE", " SQ"],
-];
-
-function normalizeAddress(situs, city, zip) {
-  let s = `${situs ?? ""} ${city ?? ""} ${zip ?? ""}`.toUpperCase().trim();
-  s = s.replace(/[.,]/g, "");
-  s = s.replace(/\s+/g, " ");
-  for (const [long, short] of SUFFIX_REPLACEMENTS) s = s.replaceAll(long, short);
-  return s;
-}
-
 function sha256(s) {
   return crypto.createHash("sha256").update(s).digest("hex");
 }
@@ -97,7 +77,7 @@ function rowToCandidate(row) {
   const situs = row.SITUS_ADDRESS;
   const city = row.SITUS_POSTAL_CITY;
   const zip = row.SITUS_POSTAL_ZIP;
-  const normalized = normalizeAddress(situs, city, zip);
+  const normalized = normalizeAddressFull(situs, city, zip);
   const yb = parseInt(row.BLDG1_YEAR_BUILT, 10);
   const av = row.JUST_VALUE ? Number(row.JUST_VALUE) : null;
   return {
