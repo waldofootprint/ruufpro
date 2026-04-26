@@ -1,8 +1,22 @@
-# Property Pipeline — Research → Planning Handoff
+> # 🗄️ ARCHIVED — research input only
+>
+> **Status as of 2026-04-26 PM:** Original research drop. Useful for *context* on the
+> market, competitor landscape, and FL legal background. Strategic recommendations and
+> implementation specifics here have been **superseded** by the simplified MVP path.
+>
+> **Active spec:** [`decisions/property-pipeline-mvp-source-of-truth.md`](../decisions/property-pipeline-mvp-source-of-truth.md)
+>
+> Read this doc only when you need market context, competitor (Lead-Spy) detail, or
+> FL §489.119/§489.147 background. Do NOT enforce its "Locked decisions" or
+> "MVP destination" sections — those are obsolete.
+
+---
+
+# Property Pipeline — Research → Planning Handoff [ARCHIVED]
 
 **Date:** 2026-04-26
-**Status:** Research complete. Planning Round 3 in progress.
-**Prepared for:** Planning agent (next session)
+**Status:** ARCHIVED — superseded by MVP source-of-truth same day
+**Original purpose:** Research input for planning agent
 
 > **AMENDMENT 2026-04-26:** First-county MVP pivoted from Sarasota to **Manatee**. Sarasota deferred to Week 2 expansion. Reasoning + cascading implications: see `decisions/property-pipeline-geography-pivot.md`. The Sarasota references throughout this doc are preserved for reasoning context but **superseded** for the MVP build.
 

@@ -1,8 +1,26 @@
-# Property Pipeline — Build Plan (Synthesis)
+> # 🗄️ ARCHIVED — DO NOT FOLLOW
+>
+> **Status as of 2026-04-26 PM:** This 35-day plan is **NO LONGER THE SOURCE OF TRUTH.**
+> Hannah explicitly chose the simplified MVP path. This doc is preserved as backup
+> in case the simplified path proves insufficient.
+>
+> **Active spec:** [`decisions/property-pipeline-mvp-source-of-truth.md`](../decisions/property-pipeline-mvp-source-of-truth.md)
+> **Active checklist (Notion):** https://www.notion.so/34ed45a63c798106a579c098e627442f
+>
+> **Do NOT enforce from this doc:** sniff-test gate, Phase 1/2/3 discipline, Track A–I,
+> Round 4 leaves, the 19 R1.x/R2.x/R3.x locked decisions wholesale, the 3-touch cadence,
+> the trust-ramp approval screen, DMAchoice, the design-partner Common Paper agreement,
+> attorney pre-launch review, sniff test, multi-creative angle production, etc.
+>
+> See the source-of-truth doc for the full diff (what survived vs what was cut).
+
+---
+
+# Property Pipeline — Build Plan (Synthesis) [ARCHIVED]
 
 **Date:** 2026-04-26
-**Status:** Planning Rounds 1–3 complete. Round 4 (leaf decisions) pending.
-**Prepared for:** Build kickoff handoff
+**Status:** ARCHIVED — superseded by MVP source-of-truth same day
+**Original purpose:** Planning Rounds 1–3 synthesis, Round 4 leaves pending
 **Source rounds:** Conversation transcript 2026-04-26 (Hannah + Claude planning session)
 
 > **How to read this doc**
