@@ -62,6 +62,7 @@ If a session proposes any of these, push back — they were explicitly cut.
 | NCOA pre-scrub job | Lob runs NCOA per piece automatically on send |
 | Marketing demo (no-auth ZIP form) | Can ship later. Not gating revenue |
 | 3 creative angles (insurance / MSFH / hurricane) | One generic creative. Iterate copy after first 50 mailings |
+| Glossy / premium paper upgrade | Defer to v1.1. Standard 6×11 stock for all postcards at MVP. Different Lob SKU; separate bundle math when added. |
 | Cross-contractor 180-day lockout | Only one contractor. Add when customer #2 lands |
 | 5-year audit-trail tables (full R3.14 set) | `mailing_history` + `direct_mail_authorization_versions` alone is sufficient at one-customer scale |
 | Common Paper Design Partner Agreement | Roofer signs ToS w/ direct-mail clause. Same legal cover |
@@ -72,6 +73,21 @@ If a session proposes any of these, push back — they were explicitly cut.
 | Trust-ramp Batch 1/2/3 progression | One-at-a-time send removes the concept entirely |
 | Tier-toggle creative chips on approval screen | No approval screen = no chips |
 | Hurricane cone overlay scoring | Score = year_built only at MVP. Add inputs when proving signal |
+
+---
+
+## Postcard creative — single template, optional team photo (decided 2026-04-26)
+
+- **One generic creative** at MVP — homeowner-targeted "your roof may be aging" angle (works year-round in FL, includes hurricane-prep undertone without explicit storm framing)
+- **Per-contractor branded** — roofer logo + license # + phone + mailing address pulled from `contractors` table at send time
+- **Format:** 6×11 standard-class on standard stock. Lob's cheapest tier; $0.646/card at Growth volume tier
+- **Optional team photo** — roofer can upload at signup. **FREE for all customers, no upcharge.** Verified 2026-04-26: Lob prices postcards by size + class + volume tier only — design content (photo vs text) does NOT affect per-card cost. "We don't markup your mail" anchor stays clean.
+- **Two Lob templates:** with-photo and no-photo. Both submitted for first-piece approval in step 4 → 5 (parallel review, ~3-6 day wall-clock)
+- **Image validation at upload:** min resolution 1800×3300 (300 DPI × 6×11), JPEG/PNG only, ≤10MB. Hannah eyeballs photo once per contractor at signup until volume forces automation.
+- **No homeowner personalization tokens** beyond mailed-to address + name (Lob standard). NO "your home built in 1998" cute personalization — creepy threshold + we already cut touch-aware Riley opener.
+- **Roofer-uploaded full designs:** ❌ NOT supported at MVP. Forces compliance review on every upload, breaks "we handle compliance for you" story. Defer to v1.1.
+
+**Differentiation vs Lead-Spy:** their creative is publicly opaque (no samples on lead-spy.com). Ours will be shown on the marketing site as proof. Compliance moat: we print SB 76 verbatim + license # by default; Lead-Spy reportedly doesn't.
 
 ---
 
@@ -136,6 +152,28 @@ These survived the simplification, mostly because they're cheap:
 - **Per-roofer + global opt-out** in `mail_suppressions` (was R3.11, simpler implementation)
 - **Versioned authorization text** in `direct_mail_authorization_versions` for ESIGN reproducibility (was R3.13 minus the S3 object-lock)
 - **`contractors.service_area_zips`** drives dashboard scope (was R2.4)
+
+---
+
+## Cross-contractor lockout (designed 2026-04-26, build at customer #2)
+
+Two distinct locks. Design now, ship 5-line stub in step 4 (always returns "not locked" at N=1), build full enforcement when second contractor onboards.
+
+| Lock type | Trigger | Duration | Rationale |
+|---|---|---|---|
+| **Mail-lock** | Contractor A sends postcard to property | **180 days** | Cooldown — protects homeowner UX (no double-mailing same address from different RuufPro-mailed roofers within 6 months). Brand protection for RuufPro, not just contractor. |
+| **Lead-lock** | Homeowner scans QR → becomes lead in A's CRM | **Permanent** (until A archives the lead) | That's A's customer. No one else on RuufPro can target an actively-engaged homeowner. |
+
+**Implementation outline (for customer #2 build):**
+- `/api/pipeline/send` queries `mailing_history` for any row matching `candidate_id` from ANY contractor where `sent_at >= NOW() - INTERVAL '180 days'`. If found → reject with "Available [date]"
+- Lead-lock check joins `mailing_history` → `leads` where `leads.contractor_id != current` AND lead is not archived
+- Dashboard row shows lock icon + tooltip "Locked until [date]" or "Engaged with another contractor"
+- Optional filter: "Hide locked properties" (default ON)
+- Schema sufficient — no new tables needed
+
+**Step-4 stub:** add `isPropertyLocked(candidateId, contractorId)` helper that returns `{ locked: false }` always. Wire into `/api/pipeline/send` so the call site exists. Real implementation drops in at customer #2 without route refactor.
+
+**Reopen trigger:** when 2nd paying contractor signs up OR when first contractor flags a "another roofer mailed this lead" complaint.
 
 ---
 

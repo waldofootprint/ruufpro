@@ -1,9 +1,36 @@
 # Property Pipeline — Step 4 Handoff (Real Lob send + Riley QR landing + /stop)
 
 **Date written:** 2026-04-26 (end of step 3 session)
+**Updated:** 2026-04-26 (post Tier-2 prereq commit `474385a` + deploy `dpl_DeycaLNRT8xe7nxzAM8mkfAxogCo`)
 **For:** Next session, fresh context
 **Skill to invoke:** `/property-pipeline-build`
-**Estimated effort:** ~6-8 hours Claude + ~3 business days wall-clock (Lob first-piece approval is the only true blocker)
+**Estimated effort:** ~5-6 hours Claude + ~3 business days wall-clock (Lob first-piece approval is the only true blocker)
+
+---
+
+## ⚡ What changed since this handoff was first written
+
+**Tier-2 prereqs are DONE** (committed `474385a`, deployed `dpl_DeycaLNRT8xe7nxzAM8mkfAxogCo`):
+
+- ✅ Canonical address normalizer at `lib/property-pipeline/address.mjs` — both scripts import it
+- ✅ Migration `089_property_pipeline_excluded_recent_permit.sql` applied — added `excluded_recent_permit` to status enum
+- ✅ 52 real recent-permit rows flipped from `active` → `excluded_recent_permit` (NOT a normalizer artifact — they were genuine matches the upstream universe-build CSV missed)
+- ✅ Defensive UI filter in `lib/property-pipeline/queries.ts` removed; rows excluded by `status='active'`
+- ✅ DB state verified: 28,868 active candidates (zero w/ permit in last 7yr) + 52 excluded
+- ✅ Prod smoke: `/dashboard/pipeline` returns 200
+
+**Skip the Pre-requisite section below** — it's preserved for audit only. Jump straight to "What this session ships."
+
+---
+
+## 🛑 Hannah-blocker before any code
+
+**Question to ask Hannah at session start:** "Do you have a Lob account already (sandbox + production keys), or do we need to spin one up?"
+
+- If account exists → wire env vars + start coding immediately
+- If not → 5 min sign up at lob.com, capture sandbox + production keys to `.env.local`, then code
+
+Either way: submit the first piece for Lob ops review **as early in the session as possible** since approval is ~3 business days wall-clock and is the only true blocker on smoke-testing (step 7).
 
 ---
 
@@ -37,16 +64,16 @@
   - Sort: `last_roof_permit_date NULLS FIRST, year_built DESC` (no-permit homes lead, then ~2010 sweet-spot)
   - Defensive UI filter hides rows with permit ≤ 10 years old (bug-protection)
 
-**Verify before starting step 4:**
+**Verify before starting step 4 (post Tier-2):**
 
 ```bash
 # DB sanity
-# (Use mcp__supabase__execute_sql)
-SELECT count(*) FROM property_pipeline_candidates WHERE status='active';      -- 28,920
+SELECT status, count(*) FROM property_pipeline_candidates GROUP BY status;
+-- expect: active=28868 · excluded_recent_permit=52
+
 SELECT count(*) FROM property_pipeline_candidates
- WHERE last_roof_permit_date IS NULL;                                          -- ~28,512
-SELECT count(*) FROM property_pipeline_candidates
- WHERE last_roof_permit_date >= (CURRENT_DATE - INTERVAL '7 years');            -- ~52 (the bug rows)
+ WHERE status='active' AND last_roof_permit_date >= (CURRENT_DATE - INTERVAL '7 years');
+-- expect: 0
 
 # Production smoke
 curl -s -o /dev/null -w "%{http_code}\n" https://ruufpro.com/dashboard/pipeline   # 200
@@ -66,6 +93,7 @@ The Send button currently calls `/api/pipeline/send` which returns 501 "Coming s
 2. **`POST /api/pipeline/send`** — real implementation:
    - Look up candidate
    - Check global `mail_suppressions` (block if matched)
+   - **Cross-contractor lockout stub** (added 2026-04-26): call `isPropertyLocked(candidateId, contractorId)` helper. At N=1 contractor, stub always returns `{ locked: false }`. Real implementation drops in at customer #2 without route refactor. See source-of-truth doc "Cross-contractor lockout" section for full design (180-day mail-lock + permanent lead-lock).
    - Check per-roofer monthly bundle usage (free or overage?)
    - Generate 6-char base32-Crockford QR/mention code
    - Render postcard via Lob API (HTML template — see step 5 for full template; for step 4, ship a minimal but legally-compliant template)
@@ -82,28 +110,33 @@ The Send button currently calls `/api/pipeline/send` which returns 501 "Coming s
 
 ### Out of scope (defer to later steps)
 
-- ❌ Full postcard template w/ branding, photos, multi-creative variants — step 5
+- ❌ Full postcard template w/ branding, photos, multi-creative variants — step 5 (ships TWO templates: with-photo + no-photo)
+- ❌ Team photo upload UI — step 5 or 6
 - ❌ SB 76 disclosure verbatim styling pass — step 6
 - ❌ Riley landing page tweaks (touch-aware copy, etc.) — step 5+
 - ❌ Returned-mail suppression UI button on the row — step 7 punch list
 - ❌ Engaged-row "→ View as Lead" cross-tab link — fires when QR scan creates lead row, but the link itself is step 5+
 - ❌ Marketing site / pricing-page copy update — separate task
+- ❌ Real cross-contractor lockout enforcement — stub only at step 4; full build at customer #2
 
 ---
 
-## Pre-requisite work BEFORE step 4 (Tier-2 from step 3 review)
+## Pre-requisite work — ✅ DONE 2026-04-26 (preserved for audit)
 
-These are debt items from step 3 that should land in this session before Lob wiring. They're cheap and protect step 4 quality.
+Tier-2 prereq landed in commit `474385a` + deploy `dpl_DeycaLNRT8xe7nxzAM8mkfAxogCo`. Original investigation:
 
-### A. Unify address normalizers (~45 min)
+### A. Unify address normalizers — ✅ DONE
 
-**Root cause of step 3's bug:** `load-pp-universe.mjs` does `AVENUE→AVE` suffix replacement; `backfill-pp-signals.mjs` doesn't. 52 candidates got false-positive recent-permit dates re-attached.
+**Original diagnosis (incorrect):** "load-pp-universe.mjs does AVENUE→AVE; backfill-pp-signals.mjs doesn't. 52 false-positive permit rows."
 
-Action:
-1. Create `lib/property-pipeline/address.ts` — single canonical `normalizeAddress(situs, city, zip)` function
-2. Refactor both scripts to import it
-3. Re-run `node scripts/backfill-pp-signals.mjs` — false positives should drop near-zero
-4. Remove the defensive UI filter in `lib/property-pipeline/queries.ts` (the `last_roof_permit_date >= NOW() - 10 years` exclusion) — no longer needed once root cause is fixed
+**Actual finding:** Backfill never reads loader's stored normalized address — both sides of the join inside backfill used the same function, so no divergence. The 52 rows are real permit-candidate matches that upstream universe-build CSV missed (likely because the scrape ran before those Accela permits existed, or used a coarser address-match scheme).
+
+**What shipped:**
+- New `lib/property-pipeline/address.mjs` with `normalizeAddressLine()` + `normalizeAddressFull()` — single source of truth (suffix-replace + aggressive non-alphanumeric strip)
+- Both scripts refactored to import (−46 LOC net)
+- Migration `089` widened `ppc_status_check` enum with `excluded_recent_permit` + flipped the 52 rows in same transaction
+- Defensive UI filter in `queries.ts` removed
+- TS type-check clean
 
 ### B. Optional: bump permit threshold for v1.2 (NOT this session)
 
@@ -119,13 +152,14 @@ Lead-Spy's headline UX is map-first. 1.5-2 day build. Genuinely defer to v1.2.
 
 | File | Action | Why |
 |---|---|---|
-| `lib/property-pipeline/address.ts` | NEW | Canonical address normalizer |
-| `scripts/load-pp-universe.mjs` | EDIT | Use canonical normalizer |
-| `scripts/backfill-pp-signals.mjs` | EDIT | Use canonical normalizer |
-| `lib/property-pipeline/queries.ts` | EDIT | Remove defensive 10yr filter once root cause fixed |
+| ~~`lib/property-pipeline/address.ts`~~ | ~~NEW~~ | ✅ DONE as `address.mjs` in `474385a` |
+| ~~`scripts/load-pp-universe.mjs`~~ | ~~EDIT~~ | ✅ DONE in `474385a` |
+| ~~`scripts/backfill-pp-signals.mjs`~~ | ~~EDIT~~ | ✅ DONE in `474385a` |
+| ~~`lib/property-pipeline/queries.ts`~~ | ~~EDIT~~ | ✅ DONE in `474385a` (defensive filter removed; rows now excluded by status='active') |
 | `lib/lob/client.ts` | NEW | Lob SDK client wrapper |
 | `lib/property-pipeline/qr-code.ts` | NEW | 6-char base32-Crockford generator + decoder (regex match `mh_qr_short_code_format_check` constraint) |
-| `lib/property-pipeline/postcard-template.tsx` | NEW (minimal) | HTML postcard template — minimal but legal-compliant for step 4; full design in step 5 |
+| `lib/property-pipeline/postcard-template.tsx` | NEW (minimal) | HTML postcard template — minimal but legal-compliant for step 4; full design in step 5. **Note:** step 5 ships TWO templates (with-photo + no-photo); both submitted to Lob for first-piece approval in parallel. Photo upload UI lands in step 5 or 6. |
+| `lib/property-pipeline/locks.ts` | NEW (stub) | `isPropertyLocked(candidateId, contractorId)` always returns `{ locked: false }` at MVP. Real impl at customer #2. |
 | `lib/property-pipeline/bundle-usage.ts` | NEW | `getMonthlyUsage(contractorId)` → `{ used, bundled, overage }` |
 | `app/api/pipeline/send/route.ts` | REWRITE | Real Lob send + bundle/overage logic + mailing_history insert |
 | `app/m/[code]/route.ts` | NEW | QR scan landing — decode + log + redirect to Riley chat |
