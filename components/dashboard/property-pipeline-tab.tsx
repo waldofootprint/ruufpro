@@ -103,11 +103,13 @@ export function PropertyPipelineTab() {
           Property Pipeline
         </h1>
         <p className="neu-muted text-sm max-w-3xl">
-          In-market homeowners in your service area — older homes with no
-          recent re-roof permit on file. Pick a row, click{" "}
-          <span className="font-semibold">Send postcard</span>, and we'll mail
-          one personalized postcard with a QR code that lands the homeowner
-          on your Riley chat.
+          Homes in your service area with{" "}
+          <span className="font-semibold">no recent re-roof permit on file</span>{" "}
+          — the ones statistically overdue for a replacement. Highest-signal
+          rows show first (no permit on record, newer-build sweet spot).
+          Click <span className="font-semibold">Send postcard</span> on any
+          row to mail one with a QR code that lands the homeowner on your
+          Riley chat.
         </p>
       </header>
 
