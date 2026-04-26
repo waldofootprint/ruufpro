@@ -10,7 +10,7 @@ import type {
   PipelineCandidate,
   ZipAggregate,
 } from "@/lib/property-pipeline/types";
-import { Send, Home, Loader2, MapPin, X, AlertTriangle } from "lucide-react";
+import { Send, Home, Loader2, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 100;
@@ -27,6 +27,22 @@ export function PropertyPipelineTab() {
   const [toast, setToast] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<PipelineCandidate | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [usage, setUsage] = useState<{
+    used: number;
+    bundled: number;
+    remaining: number;
+    is_overage: boolean;
+    next_card_cost_cents: number;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/pipeline/usage")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((u) => u && setUsage(u))
+      .catch(() => {
+        /* non-fatal */
+      });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,14 +91,31 @@ export function PropertyPipelineTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ candidateId: candidate.id }),
       });
-      const json = (await res.json()) as { message?: string };
-      setToast(json.message ?? "Stub response");
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setToast(
+          json.bundle?.is_overage
+            ? `Sent. Overage: $${(json.cost_cents / 100).toFixed(2)} at our cost.`
+            : `Sent. ${json.bundle?.remaining ?? 0} of ${json.bundle?.bundled ?? 0} left this month.`
+        );
+        if (json.bundle) {
+          setUsage({
+            used: json.bundle.used,
+            bundled: json.bundle.bundled,
+            remaining: json.bundle.remaining,
+            is_overage: json.bundle.is_overage,
+            next_card_cost_cents: json.bundle.is_overage ? json.cost_cents : 0,
+          });
+        }
+      } else {
+        setToast(json.error ?? json.warning ?? "Send failed");
+      }
     } catch {
       setToast("Network error — try again");
     } finally {
       setSendingId(null);
       setConfirming(null);
-      setTimeout(() => setToast(null), 4000);
+      setTimeout(() => setToast(null), 5000);
     }
   }
 
@@ -300,6 +333,7 @@ export function PropertyPipelineTab() {
         <ConfirmSendDialog
           candidate={confirming}
           sending={sendingId === confirming.id}
+          usage={usage}
           onCancel={() => setConfirming(null)}
           onConfirm={() => confirmSend(confirming)}
         />
@@ -347,14 +381,27 @@ function ChipButton({
 function ConfirmSendDialog({
   candidate,
   sending,
+  usage,
   onCancel,
   onConfirm,
 }: {
   candidate: PipelineCandidate;
   sending: boolean;
+  usage: {
+    used: number;
+    bundled: number;
+    remaining: number;
+    is_overage: boolean;
+    next_card_cost_cents: number;
+  } | null;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const priceLine = !usage
+    ? "Loading bundle status…"
+    : usage.is_overage
+      ? `$${(usage.next_card_cost_cents / 100).toFixed(2)} — at our cost + processing (bundle of ${usage.bundled} used this month, $0 profit on extras)`
+      : `Free — included in your Pro plan (${usage.remaining} of ${usage.bundled} postcards left this month)`;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -416,28 +463,9 @@ function ConfirmSendDialog({
           </li>
           <li className="flex gap-2">
             <span style={{ color: "var(--neu-accent)" }}>•</span>
-            <span>
-              Pricing per postcard: <span className="italic">TBD at step 4</span>
-            </span>
+            <span>{priceLine}</span>
           </li>
         </ul>
-
-        <div
-          className="flex items-start gap-2 mb-5 p-2.5 rounded-lg"
-          style={{
-            background: "rgba(245, 158, 11, 0.08)",
-            border: "1px solid rgba(245, 158, 11, 0.2)",
-          }}
-        >
-          <AlertTriangle
-            className="h-3.5 w-3.5 flex-shrink-0 mt-0.5"
-            style={{ color: "#f59e0b" }}
-          />
-          <p className="text-[11px] leading-relaxed" style={{ color: "#92400e" }}>
-            Beta: real Lob send wires next session (step 4). Today this just
-            confirms the flow.
-          </p>
-        </div>
 
         <div className="flex items-center gap-2 justify-end">
           <button
