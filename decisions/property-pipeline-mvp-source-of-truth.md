@@ -35,7 +35,7 @@ Companion: Notion page `🏠 Property Pipeline — MVP Checklist (strict minimum
 |---|---|---|
 | 1 | External setup (Manatee parcel + Accela permit data) | ✅ DONE 2026-04-26 |
 | 2 | Database migrations + 28,920-row data load | ✅ DONE 2026-04-26 |
-| 3 | Dashboard UI (one new tab, table, "Send postcard" button) | ⬜ NEXT — see `research/property-pipeline-step-3-dashboard-handoff.md` |
+| 3 | Dashboard UI (one new tab, table, "Send postcard" button) | ✅ DONE 2026-04-26 — `4e02e8d` (after planning base `b06fd16`) |
 | 4 | Send + landing routes (real Lob + Riley QR landing + /stop) | ⬜ |
 | 5 | Postcard template (single creative, single Lob first-piece approval) | ⬜ |
 | 6 | Legal floor wiring (SB 76 disclosure, license #, opt-out URL, signup checkbox) | ⬜ |
