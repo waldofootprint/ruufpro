@@ -9,6 +9,7 @@ import {
   Star,
   Zap,
   CreditCard,
+  MapPin,
 } from "lucide-react";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { RileyTab } from "./tabs/RileyTab";
@@ -16,11 +17,20 @@ import { EstimatesTab } from "./tabs/EstimatesTab";
 import { ReviewsTab } from "./tabs/ReviewsTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { BillingTab } from "./tabs/BillingTab";
+import { ServiceAreaTab } from "./tabs/ServiceAreaTab";
 
-type TabId = "profile" | "riley" | "estimates" | "reviews" | "integrations" | "billing";
+type TabId =
+  | "profile"
+  | "service-area"
+  | "riley"
+  | "estimates"
+  | "reviews"
+  | "integrations"
+  | "billing";
 
 const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "profile", label: "Profile", icon: User },
+  { id: "service-area", label: "Service Area", icon: MapPin },
   { id: "riley", label: "Riley", icon: MessageSquare },
   { id: "estimates", label: "Estimates", icon: Calculator },
   { id: "reviews", label: "Reviews", icon: Star },
@@ -107,6 +117,7 @@ function SettingsShell() {
       {/* Active tab */}
       <div>
         {activeTab === "profile" && <ProfileTab />}
+        {activeTab === "service-area" && <ServiceAreaTab />}
         {activeTab === "riley" && <RileyTab />}
         {activeTab === "estimates" && <EstimatesTab />}
         {activeTab === "reviews" && <ReviewsTab />}

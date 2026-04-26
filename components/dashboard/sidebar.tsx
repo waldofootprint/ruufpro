@@ -11,6 +11,7 @@ import {
   Menu,
   Sun,
   Moon,
+  Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -28,6 +29,7 @@ interface SidebarProps {
 
 const MAIN_NAV = [
   { href: "/dashboard", label: "Leads", icon: Users, showBadge: true },
+  { href: "/dashboard/pipeline", label: "Property Pipeline", icon: Home },
   { href: "/dashboard/insights", label: "Insights", icon: TrendingUp },
 ];
 
