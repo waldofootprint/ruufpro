@@ -90,6 +90,41 @@ Plus three more legal-floor items that are cheap and worth keeping:
 
 ---
 
+## Pricing model (locked 2026-04-26 after Lead-Spy head-to-head)
+
+**Pattern:** bundled small + at-cost overage. NOT pure metered, NOT tiered.
+
+- $149/mo Pro = **50-75 postcards bundled/mo** (final number locks after step 4 Lob first-piece quote — see below)
+- Overage: **Lob actual cost + $0.10/card processing fee** (covers Stripe 2.9%, no postage profit)
+- Soft cap: **500/mo at-cost**, manual-override convo above
+- Marketing anchor: **"We don't markup your mail"**
+
+**Bundle number lookup (after Lob quote):**
+
+| Lob first-piece quote | Bundle in $149 |
+|---|---|
+| ≤ $1.05 | 75/mo |
+| $1.06 – $1.29 | 60/mo |
+| ≥ $1.30 | 50/mo |
+| ≥ $1.50 | revisit — raise Pro to $169 OR drop bundle to 30 |
+
+**Step 4 implementation requirements:**
+- Replace `Pricing per postcard: TBD at step 4` line in confirm dialog with bundle-aware copy
+- Track per-roofer per-month bundle usage (aggregate `mailing_history` by month)
+- Stripe metered billing on top of $149 base subscription
+- TOS clause: pass-through pricing at Lob rates, with 30-day notice on rate hikes
+- Homepage / pricing page must surface "75 postcards/mo included · additional at our cost"
+
+**Why this beats Lead-Spy's $1.70-flat model:**
+- Their $1.70 = $0.85 Lob cost + ~$0.85 markup = ~50% of their revenue. They cannot copy at-cost overage without gutting their P&L.
+- Our $149 SaaS is the margin engine — postage is a feature, not a product line.
+- Per-send friction (their model) kills SaaS engagement; our model removes it past the bundle.
+- Hormozi Value Equation lens: ↓↓↓ effort, ↑ dream outcome, ↑ perceived likelihood, ↓ time delay vs Lead-Spy.
+
+Full rationale + scenario math + risk-watch in `project_pp_pricing_model_2026-04-26` memory.
+
+---
+
 ## Decisions from the old plan that DO still apply
 
 These survived the simplification, mostly because they're cheap:
