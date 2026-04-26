@@ -103,11 +103,11 @@ export function PropertyPipelineTab() {
           Property Pipeline
         </h1>
         <p className="neu-muted text-sm max-w-3xl">
-          Homes 15+ years old in your service ZIPs with no re-roof permit on
-          file in the last 7+ years. Click{" "}
-          <span className="font-semibold">Send postcard</span> on any row —
-          we'll mail one personalized postcard with a QR code that lands the
-          homeowner on your Riley chat.
+          In-market homeowners in your service area — older homes with no
+          recent re-roof permit on file. Pick a row, click{" "}
+          <span className="font-semibold">Send postcard</span>, and we'll mail
+          one personalized postcard with a QR code that lands the homeowner
+          on your Riley chat.
         </p>
       </header>
 
@@ -166,8 +166,9 @@ export function PropertyPipelineTab() {
               style={{ borderBottom: "1px solid var(--neu-border)" }}
             >
               <th className="px-4 py-3">Address</th>
-              <th className="px-4 py-3 w-32">Built / Roof age</th>
-              <th className="px-4 py-3 w-28">Est. value</th>
+              <th className="px-4 py-3 w-28">Roof age</th>
+              <th className="px-4 py-3 w-28">Last sale</th>
+              <th className="px-4 py-3 w-32">Last permit</th>
               <th className="px-4 py-3 w-20">ZIP</th>
               <th className="px-4 py-3 w-40 text-right">Action</th>
             </tr>
@@ -175,7 +176,7 @@ export function PropertyPipelineTab() {
           <tbody>
             {loading && rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center neu-muted">
+                <td colSpan={6} className="px-4 py-12 text-center neu-muted">
                   <Loader2 className="inline-block h-4 w-4 animate-spin mr-2" />
                   Loading homes...
                 </td>
@@ -183,7 +184,7 @@ export function PropertyPipelineTab() {
             ) : error ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-4 py-8 text-center"
                   style={{ color: "#ef4444" }}
                 >
@@ -192,7 +193,7 @@ export function PropertyPipelineTab() {
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center neu-muted">
+                <td colSpan={6} className="px-4 py-8 text-center neu-muted">
                   No homes in this filter.
                 </td>
               </tr>
@@ -216,17 +217,32 @@ export function PropertyPipelineTab() {
                     </div>
                   </td>
                   <td className="px-4 py-3 tabular-nums">
-                    <div style={{ color: "var(--neu-text)" }}>
-                      {r.year_built}
+                    <div
+                      className="font-semibold"
+                      style={{ color: "var(--neu-text)" }}
+                    >
+                      ~{CURRENT_YEAR - r.year_built} yr
                     </div>
                     <div className="text-[11px] neu-muted">
-                      ~{CURRENT_YEAR - r.year_built} yr roof
+                      Built {r.year_built}
                     </div>
                   </td>
                   <td className="px-4 py-3 tabular-nums neu-muted">
-                    {r.assessed_value
-                      ? `$${Math.round(r.assessed_value / 1000)}k`
-                      : "—"}
+                    {r.last_sale_year ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums">
+                    {r.last_roof_permit_date ? (
+                      <span style={{ color: "var(--neu-text)" }}>
+                        {new Date(r.last_roof_permit_date).getFullYear()}
+                      </span>
+                    ) : (
+                      <span
+                        className="text-[11px] italic"
+                        style={{ color: "var(--neu-accent)" }}
+                      >
+                        None on file
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 tabular-nums neu-muted">{r.zip}</td>
                   <td className="px-4 py-3 text-right">

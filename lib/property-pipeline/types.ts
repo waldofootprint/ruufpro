@@ -9,6 +9,8 @@ export interface PipelineCandidate {
   zip: string;
   year_built: number;
   assessed_value: number | null;
+  last_sale_year: number | null;
+  last_roof_permit_date: string | null;
   status: PipelineStatus;
   score: number | null;
   tier: PipelineTier;

@@ -14,7 +14,7 @@ export async function fetchPipelineCandidates(
   let query = supabase
     .from("property_pipeline_candidates")
     .select(
-      "id, parcel_id, address_raw, city, zip, year_built, assessed_value, status, score, tier, score_factors",
+      "id, parcel_id, address_raw, city, zip, year_built, assessed_value, last_sale_year, last_roof_permit_date, status, score, tier, score_factors",
       { count: "exact" }
     )
     .eq("status", "active")
