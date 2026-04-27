@@ -37,9 +37,9 @@ Companion: Notion page `🏠 Property Pipeline — MVP Checklist (strict minimum
 | 2 | Database migrations + 28,920-row data load | ✅ DONE 2026-04-26 |
 | 3 | Dashboard UI (one new tab, table, "Send postcard" button) | ✅ DONE 2026-04-26 — `4e02e8d` (after planning base `b06fd16`) |
 | 4 | Send + landing routes (real Lob + Riley QR landing + /stop) | ✅ DONE 2026-04-26 — `cf7f031` + preview `2893b85` · deploy `dpl_7oXYhWtM8GjfAi41ZPCCUjyyTPUJ` |
-| 5 | Postcard template (single creative, single Lob first-piece approval) | ⬜ |
-| 6 | Legal floor wiring (SB 76 disclosure, license #, opt-out URL, signup checkbox) | ⬜ |
-| 7 | Smoke test (mail one to your own address) | ⬜ |
+| 5 | Postcard template (single creative, single Lob first-piece approval) | ⬜ PARKED — 12 tones in `.tmp/postcard-mockup/index.html`, none locked |
+| 6 | Legal floor wiring (SB 76 disclosure, license #, opt-out URL, signup checkbox) | ✅ DONE 2026-04-26 — `212337b` (SB 76) + `b78ecd0` (license # + ZIPs + DM auth clickwrap) |
+| 7 | Smoke test (mail one to your own address) | ⬜ unblocks once step 5 picks a creative OR we smoke-test pipeline only |
 
 **Estimate:** ~2 days Claude build + ~1 week wall-clock (Lob first-piece approval is the only true blocker on the critical path).
 
@@ -76,18 +76,36 @@ If a session proposes any of these, push back — they were explicitly cut.
 
 ---
 
-## Postcard creative — single template, optional team photo (decided 2026-04-26)
+## Postcard creative — Insurer-flags v5 + roof-evidence photo (decided 2026-04-26 PM)
 
-- **One generic creative** at MVP — homeowner-targeted "your roof may be aging" angle (works year-round in FL, includes hurricane-prep undertone without explicit storm framing)
+**Headline (locked):** *"Florida insurers are looking harder at roofs built before 2010."*
+**Lede (locked):** *"Three things they're flagging on homes from this era — and what we'd check before your next renewal."*
+
+**The three flags (locked, sourced, on the back of every card):**
+1. **Remaining roof life under 5 years** — FL UV ages shingles 5-7 yrs faster than warranty assumes; carriers rarely renew past year 15 (Citizens 4-Point form + SB 4-D §627.7011)
+2. **No secondary water barrier (SWR)** — required by FBC only after 2009; pre-2009 roofs miss the OIR-B1-1802 wind-mit discount worth hundreds-thousands/yr (FBC R4402.7)
+3. **Roof-deck nail pattern** — pre-2002 6"/12" nailing gets the lowest wind-mit rating unless verified (FBC §1606 + OIR-B1-1802 §2)
+
+**Why this beat earlier directions** (Curiosity v2 + Civic-calm v1 + Data-position v3 + MSFH v4): Curiosity was passive, no FL-coded urgency, didn't survive trash-bin reflex. Insurance-education frame is the only one a research-agent role-playing as a 14-yr Bradenton roofer (Mike Calloway) said he'd put his license # on. Citizens already created the urgency; we don't have to manufacture it.
+
+**Legal defensibility verified by unbiased research agent 2026-04-26:**
+- Headline says *"looking harder"* not *"dropping you"* → clears FL §627.7011 (25-yr rule barring age-only refusal). A 2010 roof is still 9 yrs from the cliff.
+- Footer microcopy carries `"We're a licensed roofer, not your insurer — final policy decisions are theirs."` → clears FL §626.854 implied-insurance-expertise line
+- All three flags are on the actual Citizens 4-Point form + OIR-B1-1802 → defensible under §501.171 deceptive trade
+- §489.147 storm-chaser line not crossed (no storm names, no claim inducement)
+
+**Production rules:**
 - **Per-contractor branded** — roofer logo + license # + phone + mailing address pulled from `contractors` table at send time
 - **Format:** 6×11 standard-class on standard stock. Lob's cheapest tier; $0.646/card at Growth volume tier
-- **Optional team photo** — roofer can upload at signup. **FREE for all customers, no upcharge.** Verified 2026-04-26: Lob prices postcards by size + class + volume tier only — design content (photo vs text) does NOT affect per-card cost. "We don't markup your mail" anchor stays clean.
-- **Two Lob templates:** with-photo and no-photo. Both submitted for first-piece approval in step 4 → 5 (parallel review, ~3-6 day wall-clock)
+- **Photo direction: roof-mid-inspection** (NOT team headshot). "Evidence over identity" — boots/shingles/tape-measure reads as work, team headshot reads as ad. Cheaper too — contractor uploads one job photo of their own work vs branded headshot session.
+- **Photo upload required at signup** (used to be optional team photo). Roofer must supply ≥1 inspection photo before first send. Ships with a stock fallback if the design partner doesn't have one ready.
+- **Two Lob templates:** `with-photo` and `no-photo`. Both submitted for first-piece approval in step 5 (parallel review, ~3-6 day wall-clock)
 - **Image validation at upload:** min resolution 1800×3300 (300 DPI × 6×11), JPEG/PNG only, ≤10MB. Hannah eyeballs photo once per contractor at signup until volume forces automation.
-- **No homeowner personalization tokens** beyond mailed-to address + name (Lob standard). NO "your home built in 1998" cute personalization — creepy threshold + we already cut touch-aware Riley opener.
+- **Per-home facts rule (clarified 2026-04-26):** *anti-creepy-granularity, not zero per-home facts.* Cohort/decade-level OK ("homes from the 2000s", "pre-2009 roofs"). Neighborhood/city/area-name OK (already on address block). BANNED: "your roof is 23 years old", "last permit pulled 2003", "your home built in 1998". The three flags themselves ARE per-home-relevant because the universe filter (year_built ≤ 2010) makes them cohort-true.
+- **Banned phrases on the postcard** (per Mike-agent + legal): "free estimate", "limited time", "act now", "storm damage specialist", "we work with all insurance companies", "100% financing available", any exclamation point, "your insurer is dropping you", "FL law requires roof replacement at 15 years", any specific premium-savings dollar figure
 - **Roofer-uploaded full designs:** ❌ NOT supported at MVP. Forces compliance review on every upload, breaks "we handle compliance for you" story. Defer to v1.1.
 
-**Differentiation vs Lead-Spy:** their creative is publicly opaque (no samples on lead-spy.com). Ours will be shown on the marketing site as proof. Compliance moat: we print SB 76 verbatim + license # by default; Lead-Spy reportedly doesn't.
+**Differentiation vs Lead-Spy:** their creative is publicly opaque (no samples on lead-spy.com). Ours will be shown on the marketing site as proof. Compliance moat: we print SB 76 verbatim + license # by default + carry sourced insurer-flag claims; Lead-Spy reportedly doesn't.
 
 ---
 
@@ -138,6 +156,27 @@ Plus three more legal-floor items that are cheap and worth keeping:
 - Hormozi Value Equation lens: ↓↓↓ effort, ↑ dream outcome, ↑ perceived likelihood, ↓ time delay vs Lead-Spy.
 
 Full rationale + scenario math + risk-watch in `project_pp_pricing_model_2026-04-26` memory.
+
+---
+
+## Storm-data integration — parking lot (decided 2026-04-26 PM)
+
+**Status:** scoped, NOT yet built. Build as a separate step after step 7 ships.
+
+**MVP scope (own session, ~1 day):**
+- Ingest NOAA Storm Events Database (free, county-level + lat/long, monthly bulk CSV) for Manatee FIPS 12081 + 6 adjacent counties, last 10 yrs
+- Ingest NOAA HURDAT2 hurricane best-track (free, 6-hr fixes, 1851-present) for last 20 yrs Atlantic
+- Ingest FEMA OpenFEMA Disaster Declarations (free REST API) for FL state, last 10 yrs
+- Materialize `parcel_storm_exposure` view: parcel_id → last_hurricane_within_50mi, storm_event_count_10yr, fema_declared_disasters_10yr, storm_score 0-100
+- Surface as **internal "Sort by storm exposure" filter only** in PP dashboard. NOT on postcard creative.
+
+**Why NOT on the postcard at MVP:** §489.147 prohibits inducing claim filing. Public NOAA data on a postcard ≠ inducement, BUT the optics ("your home was hit by [storm]") cross into storm-chaser territory, and one-contractor MVP scale doesn't justify FL counsel review (~$500 one-time) needed to thread that needle safely.
+
+**v2 (post-counsel-review):** factual storm context on Riley landing — *"Hurricane Ian's eye passed within 35 miles of this address on Sep 28, 2022 (NOAA HURDAT2). Roofs from this era often show wind-related issues we can inspect."* Homeowner-initiated, not solicitation surface.
+
+**Skip:** paid hail-swath APIs (HailTrace, CoreLogic, LiveEYE — $500-5K/mo). Manatee = hurricane country, not hail country. Reopen at customer #20+ if expanding to TX/CO/OK.
+
+**Why this matters:** unlocks Mike-agent's *"timing is the offer"* insight without legal exposure. Surfacing storm-touched homes first in the dashboard = the contractor naturally picks them = the postcard arrives in the renewal-anxiety window without us claiming insurance expertise. Same effect, defensible mechanism.
 
 ---
 
