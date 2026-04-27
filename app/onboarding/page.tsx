@@ -1,5 +1,5 @@
-// Onboarding — 4-screen Riley setup.
-// Screen 1: Basics  →  Screen 2: URL crawl  →  Screen 3: Sound check  →  Screen 4: Ship.
+// Onboarding — 3-phase Riley setup.
+// Phase 1: Basics  →  Phase 2: Sound check (URL crawl + review/manual fill)  →  Phase 3: Ship.
 // Output: configured Riley + embed snippet + standalone /chat/[slug] URL.
 // We do NOT build websites. The roofer brings their own site; Riley embeds.
 
@@ -9,23 +9,36 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CrawlReview, { type CrawlPayload } from "@/components/onboarding/CrawlReview";
+import type { CrawlStateField } from "@/lib/scrape-to-chatbot-config";
 
 type Screen =
   | "basics"
   | "crawl_url"
   | "crawl_scanning"
-  | "crawl_review"
-  | "fine-tune"
+  | "sound_check"
   | "ship";
 
 // Map sub-screens to progress-dot phases.
-const PHASE_ORDER = ["basics", "crawl", "fine-tune", "ship"] as const;
+const PHASE_ORDER = ["basics", "sound-check", "ship"] as const;
 type Phase = (typeof PHASE_ORDER)[number];
 function screenToPhase(s: Screen): Phase {
   if (s === "basics") return "basics";
-  if (s === "fine-tune") return "fine-tune";
   if (s === "ship") return "ship";
-  return "crawl";
+  return "sound-check";
+}
+
+// Empty payload for manual-fill mode (user skipped crawl or it failed soft).
+function emptyCrawlPayload(): CrawlPayload {
+  return {
+    patch: {
+      chatbotConfig: {},
+      sites: {},
+      contractors: {},
+    },
+    crawlState: [] as CrawlStateField[],
+    pagesCrawled: [],
+    generatedFaqCount: 0,
+  };
 }
 
 const US_STATES = [
@@ -178,7 +191,7 @@ export default function OnboardingPage() {
             return;
           } else if (eventName === "complete") {
             setCrawlPayload(data as CrawlPayload);
-            setScreen("crawl_review");
+            setScreen("sound_check");
             return;
           }
         }
@@ -202,14 +215,15 @@ export default function OnboardingPage() {
     // Stash for handlePublish in §6.4 — no DB writes yet (contractor row doesn't exist).
     setCrawlPayload(edited);
     setCrawlOwnerName(ownerNameInput);
-    setScreen("fine-tune");
+    setScreen("ship");
   }
 
   function handleCrawlSkip() {
-    setCrawlPayload(null);
+    // Skip crawl → manual-fill mode in CrawlReview with empty payload.
+    setCrawlPayload(emptyCrawlPayload());
     setCrawlOwnerName(null);
     setCrawlError("");
-    setScreen("fine-tune");
+    setScreen("sound_check");
   }
 
   if (!authReady || !userId) {
@@ -220,16 +234,18 @@ export default function OnboardingPage() {
     );
   }
 
-  // Crawl review uses a wider surface — render with its own wrapper.
-  if (screen === "crawl_review" && crawlPayload) {
+  // Sound check uses a wider surface — render with its own wrapper.
+  if (screen === "sound_check" && crawlPayload) {
+    const isManual = crawlPayload.pagesCrawled.length === 0;
     return (
       <main className="neu-dashboard min-h-screen px-4 py-10">
-        <div style={{ maxWidth: 880, margin: "0 auto" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <ProgressDots current={screen} />
           <CrawlReview
             payload={crawlPayload}
+            manualMode={isManual}
             onSave={handleCrawlReviewSave}
-            onSkip={handleCrawlSkip}
+            onSkip={isManual ? undefined : handleCrawlSkip}
           />
         </div>
       </main>
@@ -282,23 +298,15 @@ export default function OnboardingPage() {
           />
         )}
 
-        {screen === "fine-tune" && (
-          <PlaceholderScreen
-            title="Sound check — coming in §6.3"
-            body={
-              crawlPayload
-                ? `Crawl complete. Captured ${crawlPayload.pagesCrawled.length} page(s)${crawlOwnerName ? ` and owner name “${crawlOwnerName}”` : ""}. Fine-tune editor lands in §6.3.`
-                : "Manual fine-tune. Owner name, warranty, financing, differentiators."
-            }
-            onBack={() => setScreen("crawl_url")}
-          />
-        )}
-
         {screen === "ship" && (
           <PlaceholderScreen
             title="Ship it — coming in §6.4"
-            body="Embed snippet + standalone Riley URL + Open dashboard."
-            onBack={() => setScreen("fine-tune")}
+            body={
+              crawlPayload && crawlPayload.pagesCrawled.length > 0
+                ? `Sound check complete. ${crawlPayload.pagesCrawled.length} page(s) captured${crawlOwnerName ? `, owner “${crawlOwnerName}”` : ""}. Embed snippet + standalone Riley URL + dashboard handoff land in §6.4.`
+                : "Manual fill complete. Embed snippet + standalone Riley URL + dashboard handoff land in §6.4."
+            }
+            onBack={() => setScreen("sound_check")}
           />
         )}
       </div>
