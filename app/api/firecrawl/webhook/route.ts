@@ -85,7 +85,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "bad json" }, { status: 400 });
   }
 
-  const eventType = (payload.type ?? payload.event) as FirecrawlEvent | undefined;
+  // Firecrawl sends event names with or without a "crawl." prefix depending on
+  // dashboard config. Normalize so the switch matches either form.
+  const rawEvent = (payload.type ?? payload.event) as string | undefined;
+  const eventType = (rawEvent && !rawEvent.includes(".")
+    ? (`crawl.${rawEvent}` as FirecrawlEvent)
+    : (rawEvent as FirecrawlEvent | undefined));
   const jobId = payload.id ?? payload.jobId;
 
   if (!jobId) {

@@ -88,11 +88,56 @@ export function chunkMarkdown(markdown: string): Chunk[] {
 
 // Quick filter for obvious junk pages — applied before chunking to avoid
 // embedding worthless content.
-export function isLikelyJunkPage(markdown: string): boolean {
+export function isLikelyJunkPage(markdown: string, sourceUrl?: string): boolean {
   const t = markdown.trim().toLowerCase();
   if (t.length < 100) return true;
   if (t.includes("404") && t.length < 500) return true;
   if (t.includes("page not found") && t.length < 500) return true;
   if (t.startsWith("thank you for your submission") && t.length < 800) return true;
+  // Tag/category archive pages — link soup, no real prose.
+  if (sourceUrl && /\/(tag|category|author|archive)\//i.test(sourceUrl)) return true;
+  return false;
+}
+
+// Post-chunk filter: drops chunks that are nav/footer/cookie-banner/link-soup
+// even when the surrounding page is real. Empirical from session-8 Q&A: cookie
+// boilerplate, "skip to content" nav, image-filename URL soup, and pure cart
+// links repeatedly outranked real content at sim 0.40-0.50.
+export function isLikelyJunkChunk(text: string): boolean {
+  const t = text.trim();
+  if (t.length < 80) return true;
+
+  const lower = t.toLowerCase();
+
+  // Cookie-banner boilerplate.
+  if (
+    lower.includes("receive-cookie-deprecation") ||
+    /cookie[^.]{0,80}duration[^.]{0,40}\d/.test(lower) ||
+    (lower.includes("cookie") && lower.includes("consent") && t.length < 600)
+  ) {
+    return true;
+  }
+
+  // Pure navigation chunks.
+  if (lower.includes("skip to content") && t.length < 400) return true;
+
+  // Strip markdown links/images and ask: is there any real prose left?
+  // [text](url) → text · ![alt](url) → "" · raw urls → ""
+  const stripped = t
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, " ") // images
+    .replace(/\[([^\]]*)\]\([^)]+\)/g, "$1") // links → keep visible text
+    .replace(/https?:\/\/\S+/g, " ") // bare urls
+    .replace(/\s+/g, " ")
+    .trim();
+  // If <40% of original chars survive after stripping URLs/images, it was URL soup.
+  if (stripped.length < t.length * 0.4) return true;
+  // After stripping, must have enough real prose to be useful.
+  if (stripped.length < 120) return true;
+
+  // Image-filename garbage signature: "down-net_http20251016-160-e3gnfr-768x432.jpg"
+  // Many hyphenated image-style tokens with no spaces.
+  const imgFilenameMatches = t.match(/[a-z0-9]+[-_]\d{6,}[-_a-z0-9]*\.(jpg|jpeg|png|webp|gif)/gi);
+  if (imgFilenameMatches && imgFilenameMatches.length >= 3) return true;
+
   return false;
 }

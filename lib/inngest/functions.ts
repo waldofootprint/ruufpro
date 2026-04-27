@@ -2120,11 +2120,11 @@ export const chunkAndEmbedPage = inngest.createFunction(
       return { skipped: true, reason: "missing_fields" };
     }
 
-    const { chunkMarkdown, isLikelyJunkPage } = await import("@/lib/knowledge-chunker");
+    const { chunkMarkdown, isLikelyJunkPage, isLikelyJunkChunk } = await import("@/lib/knowledge-chunker");
     const { embedTexts, toPgVectorLiteral } = await import("@/lib/voyage-embed");
     const { createClient } = await import("@supabase/supabase-js");
 
-    if (isLikelyJunkPage(markdown)) {
+    if (isLikelyJunkPage(markdown, sourceUrl)) {
       return { skipped: true, reason: "junk_page", sourceUrl };
     }
 
@@ -2183,7 +2183,10 @@ export const chunkAndEmbedPage = inngest.createFunction(
       return { skipped: true, reason: "already_indexed", sourceUrl };
     }
 
-    const chunks = chunkMarkdown(markdown);
+    const rawChunks = chunkMarkdown(markdown);
+    const chunks = rawChunks
+      .filter((c) => !isLikelyJunkChunk(c.text))
+      .map((c, i) => ({ ...c, index: i }));
     if (chunks.length === 0) {
       return { skipped: true, reason: "no_chunks_after_split", sourceUrl };
     }
