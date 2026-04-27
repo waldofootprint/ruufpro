@@ -40,7 +40,12 @@ export async function triggerFullSiteCrawl(input: CrawlTriggerInput): Promise<Cr
       formats: ["markdown"],
       onlyMainContent: true,
     },
-    webhook: webhookUrl.toString(),
+    // Object form is required to subscribe to per-page events. The bare URL
+    // form silently delivers nothing on v1 — found 2026-04-27 session 6.
+    webhook: {
+      url: webhookUrl.toString(),
+      events: ["started", "page", "completed", "failed"],
+    },
     excludePaths: [
       "/blog/.*",
       "/wp-admin/.*",

@@ -204,10 +204,20 @@ export async function POST(request: NextRequest) {
 
       if (events.length > 0) {
         try {
-          await inngest.send(events);
+          const sendResult = await inngest.send(events);
+          console.log("[firecrawl/webhook] inngest.send ok:", {
+            jobId,
+            count: events.length,
+            ids: Array.isArray(sendResult?.ids) ? sendResult.ids.length : "n/a",
+          });
         } catch (err) {
           console.error("[firecrawl/webhook] inngest.send failed:", err);
         }
+      } else {
+        console.warn("[firecrawl/webhook] no events to send", {
+          jobId,
+          rawPagesCount: pages.length,
+        });
       }
 
       // Increment counter — best-effort.
