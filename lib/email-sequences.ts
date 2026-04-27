@@ -83,19 +83,18 @@ export async function processPendingEmails() {
       continue;
     }
 
-    // Get the site slug for URLs
-    const { data: site } = await supabase
-      .from("sites")
+    // Get the slug for URLs (lives on contractors — no sites row in current onboarding).
+    const { data: contractorSlug } = await supabase
+      .from("contractors")
       .select("slug")
-      .eq("contractor_id", event.contractor_id)
-      .eq("published", true)
+      .eq("id", event.contractor_id)
       .single();
 
-    const slug = site?.slug || "";
+    const slug = contractorSlug?.slug || "";
     const baseData: EmailData = {
       businessName: contractor.business_name,
       city: contractor.city,
-      siteUrl: `https://${slug}.ruufpro.com`,
+      siteUrl: slug ? `https://ruufpro.com/chat/${slug}` : "https://ruufpro.com",
       dashboardUrl: "https://ruufpro.com/dashboard",
       unsubscribeUrl: `https://ruufpro.com/api/email/unsubscribe?cid=${event.contractor_id}`,
     };

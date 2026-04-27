@@ -9,7 +9,10 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CrawlReview, { type CrawlPayload } from "@/components/onboarding/CrawlReview";
-import type { CrawlStateField } from "@/lib/scrape-to-chatbot-config";
+import {
+  buildCrawlStateJson,
+  type CrawlStateField,
+} from "@/lib/scrape-to-chatbot-config";
 
 type Screen =
   | "basics"
@@ -212,10 +215,132 @@ export default function OnboardingPage() {
   }
 
   function handleCrawlReviewSave(edited: CrawlPayload, ownerNameInput: string | null) {
-    // Stash for handlePublish in §6.4 — no DB writes yet (contractor row doesn't exist).
+    // Stash for handlePublish — no DB writes yet (contractor row doesn't exist).
     setCrawlPayload(edited);
     setCrawlOwnerName(ownerNameInput);
     setScreen("ship");
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Publish — Screen 4 "Open dashboard" handler
+  // Writes: contractors row + chatbot_config row. NO sites row (per §6.0).
+  // Fires: /api/email/schedule + /api/notifications. Then redirects to /dashboard.
+  // 14-day trial = trial_ends_at = now()+14d (no Stripe customer yet — checkout
+  // runs later when user upgrades or trial expires).
+  // ──────────────────────────────────────────────────────────────────────
+  const [publishing, setPublishing] = useState(false);
+  const computedSlug = generateSlug(businessName);
+
+  async function handlePublish() {
+    setError("");
+    setPublishing(true);
+
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const userEmail = authData.user?.email || "";
+      if (!authData.user) {
+        router.push("/signup");
+        return;
+      }
+
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const cc = crawlPayload?.patch.chatbotConfig ?? {};
+      const cp = crawlPayload?.patch.contractors ?? {};
+
+      const cities =
+        (cp.service_area_cities && cp.service_area_cities.length > 0)
+          ? cp.service_area_cities
+          : [city];
+
+      // 1. Insert contractor row.
+      const { data: contractor, error: cErr } = await supabase
+        .from("contractors")
+        .insert({
+          user_id: authData.user.id,
+          email: userEmail,
+          business_name: businessName,
+          phone,
+          city,
+          state,
+          slug: computedSlug,
+          owner_name: crawlOwnerName ?? null,
+          business_type: "residential",
+          service_area_cities: cities,
+          trial_ends_at: trialEndsAt,
+        })
+        .select("id, slug")
+        .single();
+
+      if (cErr || !contractor) {
+        const msg = cErr?.message ?? "Could not create your account.";
+        if (msg.toLowerCase().includes("duplicate") && msg.toLowerCase().includes("slug")) {
+          setError(`The URL ruufpro.com/chat/${computedSlug} is taken. Try a slightly different business name.`);
+        } else if (msg.toLowerCase().includes("duplicate")) {
+          // Existing contractor row — bounce to dashboard.
+          router.push("/dashboard");
+          return;
+        } else {
+          setError(msg);
+        }
+        setPublishing(false);
+        return;
+      }
+
+      // 2. Upsert chatbot_config (only if we have a crawl payload OR manual fields).
+      if (crawlPayload) {
+        const crawlStateJson = buildCrawlStateJson(
+          crawlPayload.crawlState,
+          crawlPayload.pagesCrawled.length,
+        );
+        const { error: cfgErr } = await supabase.from("chatbot_config").upsert({
+          contractor_id: contractor.id,
+          team_description: cc.team_description ?? null,
+          differentiators: cc.differentiators ?? null,
+          warranty_description: cc.warranty_description ?? null,
+          financing_provider: cc.financing_provider ?? null,
+          payment_methods: cc.payment_methods ?? null,
+          emergency_available: cc.emergency_available ?? null,
+          emergency_description: cc.emergency_description ?? null,
+          business_hours: cc.business_hours ?? null,
+          service_area_cities: cc.service_area_cities ?? null,
+          custom_faqs: cc.custom_faqs ?? null,
+          materials_brands: cc.materials_brands ?? null,
+          offers_free_inspection: cc.offers_free_inspection ?? null,
+          does_insurance_work: cc.does_insurance_work ?? null,
+          insurance_description: cc.insurance_description ?? null,
+          process_steps: cc.process_steps ?? null,
+          source_website_url: cc.source_website_url ?? crawlUrl ?? null,
+          last_crawled_at: crawlPayload.pagesCrawled.length > 0 ? new Date().toISOString() : null,
+          crawl_state: crawlStateJson,
+        });
+        if (cfgErr) {
+          // Non-fatal — Riley still works, roofer can re-crawl from RileyTab.
+          console.warn("chatbot_config upsert failed:", cfgErr);
+        }
+      }
+
+      // 3. Schedule onboarding emails (fire-and-forget).
+      fetch("/api/email/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contractorId: contractor.id }),
+      }).catch(() => {});
+
+      // 4. Slack notify.
+      fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "signup",
+          data: { businessName, city, state, slug: contractor.slug },
+        }),
+      }).catch(() => {});
+
+      router.push("/dashboard");
+    } catch (e: any) {
+      setError(e?.message ?? "Something went wrong. Try again.");
+      setPublishing(false);
+    }
   }
 
   function handleCrawlSkip() {
@@ -299,13 +424,11 @@ export default function OnboardingPage() {
         )}
 
         {screen === "ship" && (
-          <PlaceholderScreen
-            title="Ship it — coming in §6.4"
-            body={
-              crawlPayload && crawlPayload.pagesCrawled.length > 0
-                ? `Sound check complete. ${crawlPayload.pagesCrawled.length} page(s) captured${crawlOwnerName ? `, owner “${crawlOwnerName}”` : ""}. Embed snippet + standalone Riley URL + dashboard handoff land in §6.4.`
-                : "Manual fill complete. Embed snippet + standalone Riley URL + dashboard handoff land in §6.4."
-            }
+          <ShipScreen
+            slug={computedSlug}
+            error={error}
+            publishing={publishing}
+            onPublish={handlePublish}
             onBack={() => setScreen("sound_check")}
           />
         )}
@@ -747,38 +870,224 @@ function SleekCta({ label, onClick }: { label: string; onClick: () => void }) {
   );
 }
 
-function PlaceholderScreen({
-  title,
-  body,
+// ──────────────────────────────────────────────────────────────────────
+// Screen 4 — Ship (embed snippet + standalone link + Open dashboard)
+// ──────────────────────────────────────────────────────────────────────
+
+function ShipScreen({
+  slug,
+  error,
+  publishing,
+  onPublish,
   onBack,
 }: {
-  title: string;
-  body: string;
+  slug: string;
+  error: string;
+  publishing: boolean;
+  onPublish: () => void;
   onBack: () => void;
 }) {
+  const standaloneUrl = `https://ruufpro.com/chat/${slug}`;
+  const embedSnippet =
+    `<!-- Riley — paste before </body> on every page -->\n` +
+    `<script src="https://ruufpro.com/riley.js" data-slug="${slug}" async></script>`;
+
   return (
-    <div className="neu-raised" style={{ padding: 32, textAlign: "center" }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, marginTop: 0, marginBottom: 12 }}>
-        {title}
-      </h2>
-      <p style={{ color: "var(--neu-text-muted)", fontSize: 15, marginBottom: 24 }}>
-        {body}
-      </p>
+    <>
+      <header style={{ textAlign: "center", marginBottom: 32 }}>
+        <h1
+          style={{
+            fontSize: 32,
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
+            color: "var(--neu-text)",
+            margin: 0,
+            marginBottom: 12,
+          }}
+        >
+          Riley&apos;s ready.
+        </h1>
+        <p
+          style={{
+            fontSize: 18,
+            color: "var(--neu-text-muted)",
+            lineHeight: 1.5,
+            margin: 0,
+          }}
+        >
+          Two ways to put Riley to work right now.
+        </p>
+      </header>
+
+      {error && <ErrorBanner message={error} />}
+
+      <CopyCard
+        title="Add Riley to your website"
+        subtitle="Paste this once. Riley appears on every page."
+        copyValue={embedSnippet}
+        display={embedSnippet}
+        mono
+      />
+
+      <CopyCard
+        title="Or share your Riley link"
+        subtitle="Use it on Facebook, Google Business, your phone's auto-reply — anywhere."
+        copyValue={standaloneUrl}
+        display={standaloneUrl}
+        externalHref={standaloneUrl}
+        externalLabel="Test Riley →"
+      />
+
+      <div style={{ marginTop: 24 }}>
+        <SleekCta
+          label={publishing ? "Opening dashboard…" : "Open dashboard"}
+          onClick={publishing ? () => {} : onPublish}
+        />
+        <p
+          style={{
+            textAlign: "center",
+            fontSize: 11,
+            color: "var(--neu-text-dim)",
+            margin: "10px 0 0 0",
+            letterSpacing: "0.01em",
+          }}
+        >
+          Your 14-day trial starts now. No credit card required.
+        </p>
+      </div>
+
       <button
+        type="button"
         onClick={onBack}
+        disabled={publishing}
         style={{
-          padding: "10px 16px",
-          fontSize: 14,
-          fontWeight: 600,
-          color: "var(--neu-text)",
+          marginTop: 12,
+          width: "100%",
+          padding: "8px 0",
+          fontSize: 13,
+          color: "var(--neu-text-muted)",
           background: "transparent",
-          border: "1px solid var(--neu-border)",
-          borderRadius: 10,
-          cursor: "pointer",
+          border: "none",
+          cursor: publishing ? "not-allowed" : "pointer",
+          fontFamily: "inherit",
+          opacity: publishing ? 0.5 : 1,
         }}
       >
-        ← Back
+        ← Back to Sound check
       </button>
+    </>
+  );
+}
+
+function CopyCard({
+  title,
+  subtitle,
+  copyValue,
+  display,
+  mono,
+  externalHref,
+  externalLabel,
+}: {
+  title: string;
+  subtitle: string;
+  copyValue: string;
+  display: string;
+  mono?: boolean;
+  externalHref?: string;
+  externalLabel?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  function copy() {
+    navigator.clipboard?.writeText(copyValue).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      },
+      () => {},
+    );
+  }
+
+  return (
+    <div className="neu-raised" style={{ padding: 22, marginBottom: 14 }}>
+      <h3
+        style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: "var(--neu-text)",
+          margin: 0,
+          marginBottom: 4,
+          letterSpacing: "-0.01em",
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        style={{
+          fontSize: 12,
+          color: "var(--neu-text-muted)",
+          margin: "0 0 12px 0",
+        }}
+      >
+        {subtitle}
+      </p>
+      <div
+        style={{
+          padding: "12px 14px",
+          background: "var(--neu-bg)",
+          border: "1px solid var(--neu-border)",
+          borderRadius: 10,
+          boxShadow:
+            "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+          fontSize: mono ? 12 : 13,
+          fontFamily: mono ? "ui-monospace, 'JetBrains Mono', monospace" : "inherit",
+          color: "var(--neu-text)",
+          wordBreak: "break-all",
+          whiteSpace: mono ? "pre-wrap" : "normal",
+          lineHeight: 1.5,
+        }}
+      >
+        {display}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <button
+          type="button"
+          onClick={copy}
+          style={{
+            padding: "8px 14px",
+            fontSize: 12,
+            fontWeight: 600,
+            color: copied ? "#fff" : "var(--neu-text)",
+            background: copied ? "var(--neu-accent)" : "transparent",
+            border: `1px solid ${copied ? "var(--neu-accent)" : "var(--neu-border)"}`,
+            borderRadius: 8,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            transition: "all 0.15s ease",
+          }}
+        >
+          {copied ? "Copied ✓" : "Copy"}
+        </button>
+        {externalHref && (
+          <a
+            href={externalHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: "8px 14px",
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--neu-text-muted)",
+              border: "1px solid var(--neu-border)",
+              borderRadius: 8,
+              textDecoration: "none",
+              fontFamily: "inherit",
+            }}
+          >
+            {externalLabel ?? "Open →"}
+          </a>
+        )}
+      </div>
     </div>
   );
 }
