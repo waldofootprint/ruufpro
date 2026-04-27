@@ -1,13 +1,16 @@
 // Riley AI Chatbot — embed script for external websites.
-// Usage: <script src="https://ruufpro.com/riley.js" data-contractor-id="YOUR_ID"></script>
+// Usage: <script src="https://ruufpro.com/riley.js" data-slug="your-business" async></script>
+// Legacy:  <script src="https://ruufpro.com/riley.js" data-contractor-id="YOUR_ID"></script>
 // Optional: data-accent-color="#D4880F" to match your brand color.
 // Creates a floating chat bubble in the bottom-right corner.
 
 (function () {
   var script = document.currentScript;
-  var contractorId = script && script.getAttribute("data-contractor-id");
-  if (!contractorId) {
-    console.warn("Riley: missing data-contractor-id attribute");
+  var identifier =
+    (script && script.getAttribute("data-slug")) ||
+    (script && script.getAttribute("data-contractor-id"));
+  if (!identifier) {
+    console.warn("Riley: missing data-slug (or data-contractor-id) attribute");
     return;
   }
 
@@ -38,7 +41,7 @@
     "z-index:99998;display:none;border:1px solid #e5e7eb;";
 
   var iframe = document.createElement("iframe");
-  iframe.src = host + "/chat/" + contractorId;
+  iframe.src = host + "/chat/" + identifier;
   iframe.style.cssText = "width:100%;height:100%;border:none;";
   iframe.allow = "clipboard-write";
   container.appendChild(iframe);

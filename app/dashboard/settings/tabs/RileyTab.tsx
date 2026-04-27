@@ -174,16 +174,20 @@ export function RileyTab() {
   const [showTest, setShowTest] = useState(false);
   const [showEmbedDetails, setShowEmbedDetails] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [slug, setSlug] = useState<string | null>(null);
 
   useEffect(() => {
     if (!contractorId) return;
     (async () => {
       const [cfgRes, contrRes] = await Promise.all([
         supabase.from("chatbot_config").select("*").eq("contractor_id", contractorId).maybeSingle(),
-        supabase.from("contractors").select("has_ai_chatbot").eq("id", contractorId).single(),
+        supabase.from("contractors").select("has_ai_chatbot, slug").eq("id", contractorId).single(),
       ]);
       if (cfgRes.data) setConfig(normalizeFromDb(cfgRes.data));
-      if (contrRes.data) setIsEnabled(contrRes.data.has_ai_chatbot || false);
+      if (contrRes.data) {
+        setIsEnabled(contrRes.data.has_ai_chatbot || false);
+        setSlug(contrRes.data.slug || null);
+      }
       setLoading(false);
     })();
   }, [contractorId]);
@@ -282,8 +286,12 @@ export function RileyTab() {
 
   const progressGradient = "linear-gradient(90deg, #ef4444 0%, #f97316 50%, #f59e0b 100%)";
 
-  const embedCode = `<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}"></script>`;
-  const chatPageUrl = `https://ruufpro.com/chat/${contractorId}`;
+  // Prefer slug for shareable + embed URLs (resolver supports both UUID and slug).
+  const identifier = slug || contractorId;
+  const embedCode = slug
+    ? `<script src="https://ruufpro.com/riley.js" data-slug="${slug}" async></script>`
+    : `<script src="https://ruufpro.com/riley.js" data-contractor-id="${contractorId}"></script>`;
+  const chatPageUrl = `https://ruufpro.com/chat/${identifier}`;
 
   return (
     <div className="space-y-5">
