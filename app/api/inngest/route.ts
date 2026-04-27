@@ -20,6 +20,7 @@ import {
   outreachAutoSend,
   staleLeadDetection,
   chunkAndEmbedPage,
+  pollCrawlCompletion,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -44,5 +45,6 @@ export const { GET, POST, PUT } = serve({
     outreachAutoSend,
     staleLeadDetection,
     chunkAndEmbedPage,
+    pollCrawlCompletion,
   ],
 });

@@ -14,6 +14,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { triggerFullSiteCrawl } from "@/lib/firecrawl-crawl";
+import { inngest } from "@/lib/inngest/client";
 
 export const runtime = "nodejs";
 
@@ -127,6 +128,17 @@ export async function POST(request: NextRequest) {
   if (insertErr) {
     console.error("[full-crawl] failed to insert job row:", insertErr);
     // Don't fail the whole request — webhook will create row if needed.
+  }
+
+  // Schedule the poll-completion safety net. Firecrawl's `crawl.completed`
+  // webhook is unreliable — polling /v1/crawl/{id} is the source of truth.
+  try {
+    await inngest.send({
+      name: "firecrawl/crawl.poll",
+      data: { jobId: trigger.jobId, contractorId: auth.contractorId },
+    });
+  } catch (err) {
+    console.error("[full-crawl] failed to schedule poll:", err);
   }
 
   return NextResponse.json({ ok: true, jobId: trigger.jobId });

@@ -2221,3 +2221,152 @@ export const chunkAndEmbedPage = inngest.createFunction(
     };
   },
 );
+
+// ---------------------------------------------------------------------------
+// Chain: Poll Firecrawl Crawl Completion
+// Trigger: "firecrawl/crawl.poll" — emitted from /api/onboarding/full-crawl
+// after a crawl is successfully kicked off.
+//
+// Why this exists: Firecrawl's `crawl.completed` webhook is unreliable (never
+// arrived in §7+§8 testing) and `crawl.page` events drop ~10-40% on the wire.
+// Webhook is best-effort. Polling the REST status endpoint is the source of
+// truth — flips the job row to completed/failed and reconciles missing pages
+// by fanning out `firecrawl/page.crawled` events for any URL we never saw.
+//
+// chunkAndEmbedPage is idempotent (dedupe-check by URL+batch), so re-firing
+// page events for already-indexed URLs is a no-op.
+// ---------------------------------------------------------------------------
+export const pollCrawlCompletion = inngest.createFunction(
+  {
+    id: "poll-crawl-completion",
+    retries: 1,
+    // Dedupe: at most one poll loop per jobId.
+    idempotency: "event.data.jobId",
+    triggers: [{ event: "firecrawl/crawl.poll" }],
+  },
+  async ({ event, step }) => {
+    const { jobId, contractorId } = event.data as {
+      jobId: string;
+      contractorId: string;
+    };
+
+    if (!jobId || !contractorId) {
+      return { ok: false, reason: "missing_fields" };
+    }
+
+    const POLL_INTERVAL = "30s";
+    const MAX_ATTEMPTS = 40; // 40 * 30s = 20 min ceiling
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      await step.sleep(`wait-${attempt}`, POLL_INTERVAL);
+
+      const upstream = await step.run(`poll-${attempt}`, async () => {
+        const r = await fetch(`https://api.firecrawl.dev/v1/crawl/${jobId}`, {
+          headers: { Authorization: `Bearer ${process.env.FIRECRAWL_API_KEY}` },
+        });
+        if (!r.ok) return { ok: false as const, status: r.status };
+        const j = (await r.json()) as {
+          status?: string;
+          total?: number;
+          completed?: number;
+          data?: Array<{
+            markdown?: string;
+            url?: string;
+            metadata?: { sourceURL?: string; title?: string };
+          }>;
+        };
+        return {
+          ok: true as const,
+          status: j.status,
+          total: j.total ?? null,
+          completed: j.completed ?? null,
+          data: j.data ?? [],
+        };
+      });
+
+      if (!upstream.ok) continue;
+      if (upstream.status !== "completed" && upstream.status !== "failed") continue;
+
+      // Terminal — reconcile DB + fan out missing pages.
+      const reconcile = await step.run("reconcile", async () => {
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        );
+
+        const { data: job } = await supabase
+          .from("chatbot_knowledge_crawl_jobs")
+          .select("crawl_batch_id, status")
+          .eq("firecrawl_job_id", jobId)
+          .maybeSingle();
+
+        const batchId = (job?.crawl_batch_id as string | undefined) ?? null;
+
+        const existingUrls = new Set<string>();
+        if (batchId) {
+          const { data: existing } = await supabase
+            .from("chatbot_knowledge_chunks")
+            .select("source_url")
+            .eq("contractor_id", contractorId)
+            .eq("crawl_batch_id", batchId);
+          for (const row of existing ?? []) {
+            const url = (row as { source_url?: string }).source_url;
+            if (url) existingUrls.add(url);
+          }
+        }
+
+        const upstreamPages = (upstream.data ?? []).filter(
+          (p) => p?.markdown && (p?.metadata?.sourceURL || p?.url),
+        );
+        const missing = upstreamPages.filter((p) => {
+          const url = p?.metadata?.sourceURL ?? p?.url;
+          return url && !existingUrls.has(url);
+        });
+
+        if (missing.length > 0) {
+          await inngest.send(
+            missing.map((p) => ({
+              name: "firecrawl/page.crawled" as const,
+              data: {
+                contractorId,
+                jobId,
+                crawlBatchId: batchId,
+                sourceUrl: p?.metadata?.sourceURL ?? p?.url!,
+                pageTitle: p?.metadata?.title ?? null,
+                markdown: p?.markdown!,
+              },
+            })),
+          );
+        }
+
+        await supabase
+          .from("chatbot_knowledge_crawl_jobs")
+          .update({
+            status: upstream.status === "failed" ? "failed" : "completed",
+            pages_total: upstream.total,
+            pages_completed: upstream.completed,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("firecrawl_job_id", jobId);
+
+        return {
+          batchId,
+          totalUpstream: upstreamPages.length,
+          alreadyIndexed: existingUrls.size,
+          fannedOut: missing.length,
+        };
+      });
+
+      return {
+        ok: true,
+        jobId,
+        upstreamStatus: upstream.status,
+        attempts: attempt + 1,
+        reconcile,
+      };
+    }
+
+    return { ok: false, jobId, reason: "poll_timeout", attempts: MAX_ATTEMPTS };
+  },
+);
