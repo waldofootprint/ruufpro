@@ -75,27 +75,45 @@ export default async function PipelineSetupPage() {
   if (setupComplete) redirect("/dashboard/pipeline");
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-2xl px-4 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Property Pipeline — One-time setup
-          </h1>
-          <p className="text-sm text-gray-600 mt-2">
-            Three things we need before mailing on your behalf. Takes a minute.
-            All three are required by Florida law (§489.119 + §489.147) — we print
-            them on every postcard so your mail is compliant out of the box.
-          </p>
-        </div>
-
-        <SetupForm
-          zipOptions={MANATEE_ZIPS_DISPLAY}
-          authText={AUTH_TEXT}
-          authVersion={AUTH_VERSION}
-          initialLicense={contractor.license_number ?? ""}
-          initialZips={contractor.service_area_zips ?? []}
+    <div className="max-w-[880px] mx-auto space-y-6">
+      <div className="relative">
+        <span
+          className="neu-glow-orange"
+          style={{ width: 420, height: 220, top: -70, left: -100 }}
+          aria-hidden
         />
+        <div className="neu-eyebrow mb-3 relative z-[1]">
+          Property Pipeline
+        </div>
+        <h1
+          className="font-bold mb-2 relative z-[1]"
+          style={{
+            color: "var(--neu-text)",
+            fontSize: 44,
+            lineHeight: 1.02,
+            letterSpacing: "-0.04em",
+          }}
+        >
+          One-time <em className="neu-em">setup</em>.
+        </h1>
+        <p
+          className="text-[15px] leading-relaxed relative z-[1]"
+          style={{ color: "var(--neu-text-muted)" }}
+        >
+          Three things we need before mailing on your behalf. Takes a minute.
+          All three are required by Florida law (§489.119 + §489.147) — we
+          print them on every postcard so your mail is compliant out of the
+          box.
+        </p>
       </div>
-    </main>
+
+      <SetupForm
+        zipOptions={MANATEE_ZIPS_DISPLAY}
+        authText={AUTH_TEXT}
+        authVersion={AUTH_VERSION}
+        initialLicense={contractor.license_number ?? ""}
+        initialZips={contractor.service_area_zips ?? []}
+      />
+    </div>
   );
 }

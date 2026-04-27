@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2, Check } from "lucide-react";
+import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
+import { NeuButton } from "@/components/dashboard/settings/NeuButton";
+import { NeuInput } from "@/components/dashboard/settings/NeuInput";
 
 interface ZipOption {
   zip: string;
@@ -78,112 +82,147 @@ export function SetupForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* License # */}
-      <section className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="text-base font-semibold text-gray-900">
-          1. Your Florida roofing license number
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          Required on every postcard by Fla. Stat. §489.119. Format: CCC, CGC,
-          CRC, CB, RR, or RC followed by 6–7 digits.
-        </p>
-        <input
+      {/* Step 1 — License # */}
+      <SettingsSection
+        title="Florida roofing license number"
+        description="Required on every postcard by Fla. Stat. §489.119. Format: CCC, CGC, CRC, CB, RR, or RC followed by 6–7 digits."
+      >
+        <NeuInput
+          label="License number"
           type="text"
           value={license}
           onChange={(e) => setLicense(e.target.value.toUpperCase())}
           placeholder="CCC1330842"
           autoCapitalize="characters"
           spellCheck={false}
-          className="mt-3 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
+          className="font-mono tracking-wider"
+          error={
+            license && !licenseValid
+              ? "Format looks off — expected something like CCC1330842 or RR1234567."
+              : undefined
+          }
         />
-        {license && !licenseValid && (
-          <p className="mt-2 text-xs text-red-600">
-            Format looks off — expected something like CCC1330842 or RR1234567.
+        {licenseValid && (
+          <p
+            className="inline-flex items-center gap-1 text-[12px] font-semibold"
+            style={{ color: "var(--neu-accent)" }}
+          >
+            <Check className="h-3.5 w-3.5" /> Format valid
           </p>
         )}
-        {licenseValid && (
-          <p className="mt-2 text-xs text-green-600">✓ Format valid.</p>
-        )}
-      </section>
+      </SettingsSection>
 
-      {/* Service-area ZIPs */}
-      <section className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="text-base font-semibold text-gray-900">
-          2. Manatee County ZIPs you serve
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          Pick the ZIPs where you want to mail. Only homes in these ZIPs show up
-          in your Property Pipeline tab. Pick at least one. ({zips.size}/25
-          selected)
-        </p>
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
+      {/* Step 2 — Service-area ZIPs */}
+      <SettingsSection
+        title="Manatee County ZIPs you serve"
+        description="Pick the ZIPs where you want to mail. Only homes in these ZIPs show up in your Property Pipeline tab. Pick at least one."
+        action={
+          <span
+            className="neu-eyebrow tabular-nums shrink-0"
+            style={{ fontSize: 10.5 }}
+          >
+            {zips.size} / 25 selected
+          </span>
+        }
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
           {zipOptions.map((opt) => {
             const checked = zips.has(opt.zip);
             return (
               <label
                 key={opt.zip}
-                className={`flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-sm ${
-                  checked
-                    ? "border-indigo-500 bg-indigo-50"
-                    : "border-gray-200 bg-white hover:border-gray-300"
+                className={`flex items-center gap-2 rounded-full px-3.5 py-2 cursor-pointer text-[13px] font-semibold transition-all ${
+                  checked ? "neu-inset-deep" : "neu-flat hover:opacity-90"
                 }`}
+                style={{
+                  color: checked
+                    ? "var(--neu-accent)"
+                    : "var(--neu-text)",
+                }}
               >
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => toggleZip(opt.zip)}
-                  className="shrink-0"
+                  className="shrink-0 accent-current"
                 />
                 <span className="flex-1 truncate">{opt.label}</span>
-                <span className="text-xs text-gray-400 shrink-0">
+                <span
+                  className="text-[11px] tabular-nums shrink-0"
+                  style={{
+                    color: checked
+                      ? "var(--neu-accent)"
+                      : "var(--neu-text-muted)",
+                    opacity: checked ? 0.7 : 1,
+                  }}
+                >
                   {opt.n.toLocaleString()}
                 </span>
               </label>
             );
           })}
         </div>
-      </section>
+      </SettingsSection>
 
-      {/* Authorization clickwrap */}
-      <section className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="text-base font-semibold text-gray-900">
-          3. Direct-mail authorization
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          Read this once. We hash this exact text and store the version with
-          your account so we can prove what you agreed to (ESIGN-compliant audit
-          trail).
-        </p>
-        <pre className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-md border border-gray-200 bg-gray-50 p-4 text-xs leading-relaxed text-gray-800 font-sans">
+      {/* Step 3 — Authorization clickwrap */}
+      <SettingsSection
+        title="Direct-mail authorization"
+        description="Read this once. We hash this exact text and store the version with your account so we can prove what you agreed to (ESIGN-compliant audit trail)."
+      >
+        <pre
+          className="neu-inset-deep max-h-64 overflow-y-auto whitespace-pre-wrap p-4 text-[13px] leading-relaxed font-sans rounded-[14px]"
+          style={{
+            color: "var(--neu-text)",
+            background: "transparent",
+          }}
+        >
           {authText}
         </pre>
-        <label className="mt-4 flex items-start gap-3 cursor-pointer">
+        <label className="flex items-start gap-3 cursor-pointer pt-1">
           <input
             type="checkbox"
             checked={authorized}
             onChange={(e) => setAuthorized(e.target.checked)}
-            className="mt-1 shrink-0"
+            className="mt-1 shrink-0 accent-current"
+            style={{ color: "var(--neu-accent)" }}
           />
-          <span className="text-sm text-gray-700">
+          <span
+            className="text-[14px] leading-relaxed"
+            style={{ color: "var(--neu-text)" }}
+          >
             I have read and agree to the direct-mail authorization above.{" "}
-            <span className="text-xs text-gray-400">({authVersion})</span>
+            <span
+              className="neu-eyebrow tabular-nums"
+              style={{ fontSize: 10.5 }}
+            >
+              {authVersion}
+            </span>
           </span>
         </label>
-      </section>
+      </SettingsSection>
 
       {err && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+        <p className="text-[12px] font-medium" style={{ color: "#ef4444" }}>
           {err}
-        </div>
+        </p>
       )}
 
-      <button
-        type="submit"
-        disabled={!canSubmit}
-        className="w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {submitting ? "Saving…" : "Save and open Property Pipeline"}
-      </button>
+      <div className="flex items-center gap-3">
+        <NeuButton
+          type="submit"
+          variant="accent"
+          disabled={!canSubmit}
+        >
+          {submitting ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Saving…
+            </>
+          ) : (
+            "Save and open Property Pipeline"
+          )}
+        </NeuButton>
+      </div>
     </form>
   );
 }
