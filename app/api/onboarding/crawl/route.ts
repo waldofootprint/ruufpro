@@ -25,8 +25,8 @@ import {
 } from "@/lib/scrape-to-chatbot-config";
 import { generateRileyFaqs } from "@/lib/riley-faq-generator";
 
-// Importing the .mjs from a .ts route is supported by Next/SWC. The module itself
-// uses dynamic Playwright launch so it stays out of the build's static analysis.
+// Importing the .mjs from a .ts route is supported by Next/SWC. Backed by
+// Firecrawl REST (FIRECRAWL_API_KEY) since 2026-04-27 — no chromium binary needed.
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — .mjs has no .d.ts; types are loose at the boundary
 import { crawlRooferSite } from "@/tools/crawl-roofer-site.mjs";
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
         send("progress", { stage: "fetching", message: "Reading your homepage..." });
 
         // Step 3 wrapper. Hard budget enforced inside, but we also race here
-        // so an unresponsive Playwright doesn't outlive the route timeout.
+        // so an unresponsive Firecrawl call doesn't outlive the route timeout.
         const crawlPromise = crawlRooferSite(targetUrl, { timeoutMs: HARD_BUDGET_MS });
         const crawlResult: { ok: boolean; reason?: string; scrape?: ScraperOutput; partial?: boolean } =
           await Promise.race([
