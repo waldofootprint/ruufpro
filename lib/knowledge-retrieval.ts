@@ -7,7 +7,12 @@ import { createClient } from "@supabase/supabase-js";
 import { embedTexts, toPgVectorLiteral } from "@/lib/voyage-embed";
 
 const DEFAULT_K = 3;
-const MIN_SIMILARITY = 0.55;
+// 2026-04-27 session 6: lowered 0.55 → 0.40. Empirical probe across 4
+// real-roofer sites showed correct chunks consistently scoring 0.45–0.55
+// with voyage-3-large on marketing-content vs question pairs. At 0.55,
+// even the literal "Financing is available" chunk (sim 0.548) was filtered
+// out. Per Hannah: prefer keeping marginal chunks over losing real answers.
+const MIN_SIMILARITY = 0.40;
 const MAX_TOTAL_CHARS = 8000; // ~2000 tokens
 
 export type RetrievedChunk = {
