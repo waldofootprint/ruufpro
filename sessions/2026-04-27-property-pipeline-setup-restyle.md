@@ -36,12 +36,10 @@ Restyled the `/dashboard/pipeline/setup` page so it matches the rest of the dash
 
 ## Status
 
-- ⬜ Not yet committed
-- ⬜ Not yet deployed
-- ✅ Handoff doc moved to `research/_archive/property-pipeline-step6-restyle-handoff.md`
+- ✅ Committed as `66d5ac8`
+- ✅ Deployed `dpl_8axEsi4Qjbn1QsKsSJ3tYQNPxBuA` → ruufpro.com
+- ✅ Handoff doc archived to `research/_archive/property-pipeline-step6-restyle-handoff.md`
 
 ## Next step
 
-Hannah to eyeball + decide whether to commit. Suggested commit message: `PP step 6 — restyle setup page to match dashboard design system`. Then standard ask-before-deploy.
-
-PP MVP status unchanged — step 5 still parked, step 7 (smoke test) still unblocked from a wiring perspective. This was a polish pass on already-shipped step-6 surface.
+PP MVP status unchanged — step 5 (creative) still parked, step 7 (smoke test) still unblocked from a wiring perspective. This was a polish pass on already-shipped step-6 surface; doesn't change MVP critical path.
