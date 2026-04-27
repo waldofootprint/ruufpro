@@ -50,7 +50,7 @@ function parseArgs() {
  * Extract structured business data from a webpage.
  * Uses DOM queries + text pattern matching to find common roofer site elements.
  */
-async function extractSiteData(page) {
+export async function extractSiteData(page) {
   return await page.evaluate(() => {
     const result = {
       tagline: null,
@@ -881,7 +881,7 @@ async function detectContactForm(page, verbose = false) {
 /**
  * Scrape a single prospect URL and return structured data.
  */
-async function scrapeSite(browser, url, verbose = false) {
+export async function scrapeSite(browser, url, verbose = false) {
   const page = await browser.newPage();
 
   // Block images/fonts/media to speed up scraping
@@ -1062,7 +1062,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+// Only run main() when invoked directly via CLI — guards against side effects when
+// this module is imported (e.g. by tools/crawl-roofer-site.mjs).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error("Fatal error:", err);
+    process.exit(1);
+  });
+}
