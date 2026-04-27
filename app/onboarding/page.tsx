@@ -246,17 +246,47 @@ function BasicsScreen(props: {
 
         <button
           onClick={props.onSubmit}
-          className="neu-accent-btn"
+          onMouseDown={(e) => (e.currentTarget.style.transform = "translateY(0.5px)")}
+          onMouseUp={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
           style={{
             width: "100%",
-            marginTop: 24,
-            padding: "14px 20px",
-            fontSize: 15,
-            fontWeight: 600,
+            marginTop: 28,
+            padding: "13px 18px",
+            fontSize: 14,
+            fontWeight: 500,
+            letterSpacing: "-0.005em",
+            color: "#fff",
+            background:
+              "linear-gradient(180deg, #FB8A3C 0%, #F97316 55%, #EA6A0E 100%)",
+            border: "none",
+            borderRadius: 10,
             cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.22), 0 1px 1px rgba(180, 90, 20, 0.22), 0 6px 14px -8px rgba(180, 90, 20, 0.45)",
+            transition: "transform 0.12s ease, box-shadow 0.18s ease, filter 0.18s ease",
+            fontFamily: "inherit",
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.04)")}
+          onMouseOut={(e) => (e.currentTarget.style.filter = "brightness(1)")}
         >
-          Continue → Scan my site
+          <span>Continue</span>
+          <span
+            aria-hidden
+            style={{
+              fontSize: 13,
+              opacity: 0.9,
+              fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+              transform: "translateY(-0.5px)",
+            }}
+          >
+            →
+          </span>
+          <span style={{ opacity: 0.85 }}>Scan my site</span>
         </button>
       </div>
 
