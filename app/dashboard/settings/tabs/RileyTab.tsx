@@ -26,12 +26,33 @@ import { SettingsSection } from "@/components/dashboard/settings/SettingsSection
 import { NeuInput, NeuTextarea } from "@/components/dashboard/settings/NeuInput";
 import { NeuToggle } from "@/components/dashboard/settings/NeuToggle";
 import { NeuButton } from "@/components/dashboard/settings/NeuButton";
+import CrawlReview, { type CrawlPayload, type ExistingFieldState } from "@/components/onboarding/CrawlReview";
+import type { MappedFieldName } from "@/lib/scrape-to-chatbot-config";
+
+// Shape of chatbot_config.crawl_state jsonb (built by buildCrawlStateJson).
+type CrawlStateBlob = {
+  fields?: Record<string, { source_url: string | null; confidence: "high" | "med" | "low"; auto_filled: boolean; manually_edited: boolean; raw_excerpt: string | null }>;
+  scrape_completed_at?: string;
+  scrape_pages_crawled?: number;
+};
+
+const FIELD_NAME_TO_STATE_KEY: Partial<Record<keyof ChatbotConfigState, MappedFieldName>> = {
+  team_description: "team_description",
+  differentiators: "differentiators",
+  warranty_description: "warranty_description",
+  financing_provider: "financing_provider",
+  emergency_description: "emergency_description",
+  insurance_description: "insurance_description",
+  materials_brands: "materials_brands",
+  payment_methods: "payment_methods",
+  process_steps: "process_steps",
+  custom_faqs: "custom_faqs",
+};
 
 // ------- Types -------
 
 interface ChatbotConfigState {
   greeting_message: string;
-  owner_name: string;
   offers_free_inspection: boolean;
   materials_brands: string;
   process_steps: string;
@@ -50,7 +71,6 @@ interface ChatbotConfigState {
 
 const EMPTY_CONFIG: ChatbotConfigState = {
   greeting_message: "",
-  owner_name: "",
   offers_free_inspection: false,
   materials_brands: "",
   process_steps: "",
@@ -119,7 +139,6 @@ function getRelevantFieldCount(c: ChatbotConfigState): number {
 function normalizeFromDb(data: Record<string, unknown>): ChatbotConfigState {
   return {
     greeting_message: (data.greeting_message as string) ?? "",
-    owner_name: (data.owner_name as string) ?? "",
     offers_free_inspection: (data.offers_free_inspection as boolean) ?? false,
     materials_brands: Array.isArray(data.materials_brands) ? (data.materials_brands as string[]).join(", ") : "",
     process_steps: (data.process_steps as string) ?? "",
@@ -140,7 +159,6 @@ function normalizeFromDb(data: Record<string, unknown>): ChatbotConfigState {
 function prepareForDb(c: ChatbotConfigState) {
   return {
     greeting_message: c.greeting_message.trim() || null,
-    owner_name: c.owner_name.trim() || null,
     offers_free_inspection: c.offers_free_inspection,
     materials_brands: c.materials_brands.trim()
       ? c.materials_brands.split(",").map((s) => s.trim()).filter(Boolean)
@@ -174,7 +192,13 @@ export function RileyTab() {
   const [showTest, setShowTest] = useState(false);
   const [showEmbedDetails, setShowEmbedDetails] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [crawlState, setCrawlState] = useState<CrawlStateBlob | null>(null);
+  const [sourceWebsiteUrl, setSourceWebsiteUrl] = useState<string | null>(null);
+  const [crawlBannerDismissed, setCrawlBannerDismissed] = useState(false);
+  const [recrawlOpen, setRecrawlOpen] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
+  // Field names the user has edited this session — flips manually_edited=true on save (gotcha #8)
+  const [editedFields, setEditedFields] = useState<Set<MappedFieldName>>(() => new Set());
 
   useEffect(() => {
     if (!contractorId) return;
@@ -183,10 +207,15 @@ export function RileyTab() {
         supabase.from("chatbot_config").select("*").eq("contractor_id", contractorId).maybeSingle(),
         supabase.from("contractors").select("has_ai_chatbot, slug").eq("id", contractorId).single(),
       ]);
-      if (cfgRes.data) setConfig(normalizeFromDb(cfgRes.data));
+      if (cfgRes.data) {
+        setConfig(normalizeFromDb(cfgRes.data));
+        const cs = (cfgRes.data as Record<string, unknown>).crawl_state as CrawlStateBlob | null;
+        setCrawlState(cs ?? null);
+        setSourceWebsiteUrl((cfgRes.data as Record<string, unknown>).source_website_url as string ?? null);
+      }
       if (contrRes.data) {
         setIsEnabled(contrRes.data.has_ai_chatbot || false);
-        setSlug(contrRes.data.slug || null);
+        setSlug((contrRes.data as { slug?: string | null }).slug || null);
       }
       setLoading(false);
     })();
@@ -195,25 +224,121 @@ export function RileyTab() {
   const update = useCallback(
     <K extends keyof ChatbotConfigState>(key: K, value: ChatbotConfigState[K]) => {
       setConfig((prev) => ({ ...prev, [key]: value }));
+      const stateKey = FIELD_NAME_TO_STATE_KEY[key];
+      if (stateKey) {
+        setEditedFields((prev) => {
+          if (prev.has(stateKey)) return prev;
+          const next = new Set(prev);
+          next.add(stateKey);
+          return next;
+        });
+      }
     },
     []
   );
+
+  function fieldBadge(key: keyof ChatbotConfigState) {
+    const stateKey = FIELD_NAME_TO_STATE_KEY[key];
+    if (!stateKey) return null;
+    const f = crawlState?.fields?.[stateKey];
+    if (!f?.auto_filled) return null;
+    return (
+      <span
+        className="ml-1.5 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+        style={{ background: "rgba(16,185,129,0.12)", color: "#059669" }}
+        title={f.source_url ? `Auto-filled from ${f.source_url}` : "Auto-filled from your site"}
+      >
+        <Check className="h-2.5 w-2.5" />
+        From your site
+      </span>
+    );
+  }
+
+  function showCrawlBanner(): boolean {
+    if (crawlBannerDismissed) return false;
+    return !crawlState || !crawlState.fields || Object.keys(crawlState.fields).length === 0;
+  }
+
+  async function handleRecrawlSave(edited: CrawlPayload) {
+    if (!contractorId) return;
+    const cc = edited.patch.chatbotConfig;
+    // Merge edited.crawlState back into a jsonb blob
+    const fields: CrawlStateBlob["fields"] = {};
+    for (const f of edited.crawlState) {
+      const { field, ...rest } = f;
+      fields[field] = rest;
+    }
+    const newCrawlStateJson: CrawlStateBlob = {
+      fields,
+      scrape_completed_at: new Date().toISOString(),
+      scrape_pages_crawled: edited.pagesCrawled.length,
+    };
+
+    await supabase.from("chatbot_config").upsert(
+      {
+        contractor_id: contractorId,
+        team_description: cc.team_description ?? null,
+        differentiators: cc.differentiators ?? null,
+        warranty_description: cc.warranty_description ?? null,
+        financing_provider: cc.financing_provider ?? null,
+        payment_methods: cc.payment_methods ?? null,
+        emergency_description: cc.emergency_description ?? null,
+        business_hours: cc.business_hours ?? null,
+        custom_faqs: cc.custom_faqs ?? null,
+        materials_brands: cc.materials_brands ?? null,
+        offers_free_inspection: cc.offers_free_inspection ?? null,
+        does_insurance_work: cc.does_insurance_work ?? null,
+        insurance_description: cc.insurance_description ?? null,
+        process_steps: cc.process_steps ?? null,
+        source_website_url: cc.source_website_url ?? sourceWebsiteUrl ?? null,
+        last_crawled_at: new Date().toISOString(),
+        crawl_state: newCrawlStateJson,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "contractor_id" },
+    );
+    setCrawlState(newCrawlStateJson);
+    setConfig(normalizeFromDb({ ...cc, custom_faqs: cc.custom_faqs ?? [] } as Record<string, unknown>));
+    setRecrawlOpen(false);
+  }
 
   async function handleSave() {
     if (!contractorId) return;
     setSaving(true);
     setSaved(false);
     setErr("");
+
+    // Merge manually_edited flags into crawl_state.fields so re-crawl conflict UI
+    // can surface "you changed this on your own" diffs (gotcha #8).
+    let nextCrawlState: CrawlStateBlob | null = crawlState;
+    if (editedFields.size > 0 && crawlState?.fields) {
+      const fields = { ...crawlState.fields };
+      editedFields.forEach((fieldName) => {
+        if (fields[fieldName]) {
+          fields[fieldName] = { ...fields[fieldName], manually_edited: true };
+        }
+      });
+      nextCrawlState = { ...crawlState, fields };
+    }
+
+    const dbPayload: Record<string, unknown> = {
+      contractor_id: contractorId,
+      ...prepareForDb(config),
+      updated_at: new Date().toISOString(),
+    };
+    if (nextCrawlState !== crawlState) {
+      dbPayload.crawl_state = nextCrawlState;
+    }
+
     const { error } = await supabase
       .from("chatbot_config")
-      .upsert(
-        { contractor_id: contractorId, ...prepareForDb(config), updated_at: new Date().toISOString() },
-        { onConflict: "contractor_id" }
-      );
+      .upsert(dbPayload, { onConflict: "contractor_id" });
     setSaving(false);
     if (error) setErr("Failed to save. Try again.");
     else {
       setSaved(true);
+      if (nextCrawlState !== crawlState) setCrawlState(nextCrawlState);
+      setEditedFields(new Set());
       setTimeout(() => setSaved(false), 2500);
     }
   }
@@ -295,6 +420,49 @@ export function RileyTab() {
 
   return (
     <div className="space-y-5">
+      {/* Crawl-state banner (decision #4 — push, not poll) */}
+      {showCrawlBanner() && (
+        <div className="neu-flat px-4 py-3 flex items-center gap-3" style={{ borderRadius: 12, background: "rgba(99,102,241,0.06)" }}>
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" style={{ color: "#6366f1" }} />
+          <div className="flex-1 text-[12px]" style={{ color: "var(--neu-text)" }}>
+            <strong>Skip the typing.</strong> Paste your site URL and Riley will fill this in for you.
+          </div>
+          <button
+            onClick={() => setRecrawlOpen(true)}
+            className="neu-flat px-3 py-1.5 text-[11px] font-semibold hover:opacity-90"
+            style={{ borderRadius: 10, color: "var(--neu-accent)" }}
+          >
+            Scan my site
+          </button>
+          <button
+            onClick={() => setCrawlBannerDismissed(true)}
+            className="text-[11px] neu-muted hover:opacity-70 px-1"
+            aria-label="Dismiss"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Re-crawl button when crawl_state exists */}
+      {crawlState?.fields && Object.keys(crawlState.fields).length > 0 && sourceWebsiteUrl && (
+        <div className="neu-flat px-4 py-2.5 flex items-center justify-between gap-3" style={{ borderRadius: 12 }}>
+          <div className="text-[11px] neu-muted">
+            Last scanned <strong style={{ color: "var(--neu-text)" }}>{sourceWebsiteUrl}</strong>
+            {crawlState.scrape_completed_at && (
+              <> on {new Date(crawlState.scrape_completed_at).toLocaleDateString()}</>
+            )}
+          </div>
+          <button
+            onClick={() => setRecrawlOpen(true)}
+            className="neu-flat px-3 py-1.5 text-[11px] font-semibold hover:opacity-90"
+            style={{ borderRadius: 10, color: "var(--neu-accent)" }}
+          >
+            Re-crawl now
+          </button>
+        </div>
+      )}
+
       {/* Status card */}
       <SettingsSection
         title="Riley Status"
@@ -374,19 +542,6 @@ export function RileyTab() {
         />
       </SettingsSection>
 
-      {/* Owner name */}
-      <SettingsSection
-        title="Owner's First Name"
-        description="When set, Riley can reference you by name (e.g. “Mike and the crew”). Leave blank and Riley stays generic (“our team”)."
-      >
-        <NeuInput
-          placeholder="Mike"
-          maxLength={40}
-          value={config.owner_name}
-          onChange={(e) => update("owner_name", e.target.value)}
-        />
-      </SettingsSection>
-
       {/* Collapsibles */}
       <CollapsibleNeu
         number={1}
@@ -458,22 +613,30 @@ export function RileyTab() {
             />
           )}
 
-          <NeuInput
-            label="Financing provider"
-            hint="Riley will mention the provider and direct homeowners to your team for current rates and terms."
-            placeholder="Acorn Finance, GreenSky, Hearth"
-            value={config.financing_provider}
-            onChange={(e) => update("financing_provider", e.target.value)}
-          />
-          <NeuTextarea
-            label="Warranty details"
-            rows={2}
-            maxLength={MAX_TEXT_LENGTH}
-            placeholder="10-year workmanship + 50-year GAF manufacturer warranty"
-            value={config.warranty_description}
-            onChange={(e) => update("warranty_description", e.target.value)}
-            hint={`${config.warranty_description.length}/${MAX_TEXT_LENGTH}`}
-          />
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
+              Financing provider {fieldBadge("financing_provider")}
+            </label>
+            <NeuInput
+              hint="Riley will mention the provider and direct homeowners to your team for current rates and terms."
+              placeholder="Acorn Finance, GreenSky, Hearth"
+              value={config.financing_provider}
+              onChange={(e) => update("financing_provider", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
+              Warranty details {fieldBadge("warranty_description")}
+            </label>
+            <NeuTextarea
+              rows={2}
+              maxLength={MAX_TEXT_LENGTH}
+              placeholder="10-year workmanship + 50-year GAF manufacturer warranty"
+              value={config.warranty_description}
+              onChange={(e) => update("warranty_description", e.target.value)}
+              hint={`${config.warranty_description.length}/${MAX_TEXT_LENGTH}`}
+            />
+          </div>
 
           <NeuToggle
             checked={config.emergency_available}
@@ -552,24 +715,32 @@ export function RileyTab() {
             )}
           </div>
 
-          <NeuTextarea
-            label="What sets you apart?"
-            rows={2}
-            maxLength={MAX_TEXT_LENGTH}
-            placeholder="Family-owned 15 years, same crew every job, only roofer in Tampa with in-house sheet metal"
-            value={config.differentiators}
-            onChange={(e) => update("differentiators", e.target.value)}
-            hint={`${config.differentiators.length}/${MAX_TEXT_LENGTH}`}
-          />
-          <NeuTextarea
-            label="About your team"
-            rows={2}
-            maxLength={MAX_TEXT_LENGTH}
-            placeholder="Locally owned. Same crew on every job — no subs, no surprises. You'll meet the owner at your inspection."
-            value={config.team_description}
-            onChange={(e) => update("team_description", e.target.value)}
-            hint={`${config.team_description.length}/${MAX_TEXT_LENGTH}`}
-          />
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
+              What sets you apart? {fieldBadge("differentiators")}
+            </label>
+            <NeuTextarea
+              rows={2}
+              maxLength={MAX_TEXT_LENGTH}
+              placeholder="Family-owned 15 years, same crew every job, only roofer in Tampa with in-house sheet metal"
+              value={config.differentiators}
+              onChange={(e) => update("differentiators", e.target.value)}
+              hint={`${config.differentiators.length}/${MAX_TEXT_LENGTH}`}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
+              About your team {fieldBadge("team_description")}
+            </label>
+            <NeuTextarea
+              rows={2}
+              maxLength={MAX_TEXT_LENGTH}
+              placeholder="Locally owned. Same crew on every job — no subs, no surprises. You'll meet the owner at your inspection."
+              value={config.team_description}
+              onChange={(e) => update("team_description", e.target.value)}
+              hint={`${config.team_description.length}/${MAX_TEXT_LENGTH}`}
+            />
+          </div>
 
           <div>
             <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
@@ -734,6 +905,15 @@ export function RileyTab() {
           onClose={() => setShowTest(false)}
         />
       )}
+
+      {/* Re-crawl modal */}
+      {recrawlOpen && (
+        <RecrawlModal
+          existingCrawlState={crawlState}
+          onClose={() => setRecrawlOpen(false)}
+          onSave={handleRecrawlSave}
+        />
+      )}
     </div>
   );
 }
@@ -800,6 +980,143 @@ function CollapsibleNeu({
         </div>
       )}
     </section>
+  );
+}
+
+// ------- Re-crawl Modal -------
+
+function RecrawlModal({
+  existingCrawlState,
+  onClose,
+  onSave,
+}: {
+  existingCrawlState: CrawlStateBlob | null;
+  onClose: () => void;
+  onSave: (edited: CrawlPayload) => Promise<void>;
+}) {
+  const [stage, setStage] = useState<"scanning" | "review" | "error">("scanning");
+  const [progress, setProgress] = useState("Reading your site…");
+  const [error, setError] = useState("");
+  const [payload, setPayload] = useState<CrawlPayload | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 50_000);
+
+    (async () => {
+      try {
+        const res = await fetch("/api/dashboard/riley/recrawl", {
+          method: "POST",
+          signal: controller.signal,
+        });
+        if (!res.ok || !res.body) {
+          const errBody = await res.json().catch(() => ({}));
+          setError(errBody.error || "Couldn't start re-crawl.");
+          setStage("error");
+          return;
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const events = buf.split("\n\n");
+          buf = events.pop() ?? "";
+          for (const ev of events) {
+            if (!ev.trim()) continue;
+            const lines = ev.split("\n");
+            const eventName = lines.find((l) => l.startsWith("event: "))?.slice(7).trim();
+            const dataLine = lines.find((l) => l.startsWith("data: "))?.slice(6) ?? "{}";
+            let data: { message?: string; stage?: string; [k: string]: unknown } = {};
+            try { data = JSON.parse(dataLine); } catch {}
+            if (eventName === "progress" && data.message) {
+              setProgress(data.message);
+            } else if (eventName === "error") {
+              setError(typeof data.message === "string" ? data.message : "Something went wrong.");
+              setStage("error");
+              return;
+            } else if (eventName === "complete") {
+              setPayload(data as unknown as CrawlPayload);
+              setStage("review");
+              return;
+            }
+          }
+        }
+        setError("Stream ended unexpectedly.");
+        setStage("error");
+      } catch (err: unknown) {
+        if ((err as { name?: string })?.name === "AbortError") {
+          setError("Took too long — try again.");
+        } else {
+          setError("Couldn't reach your site.");
+        }
+        setStage("error");
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    })();
+
+    return () => {
+      abortRef.current?.abort();
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // Build the existing-field-state map so CrawlReview can show conflict diffs
+  const existingMap: Partial<Record<MappedFieldName, ExistingFieldState>> = {};
+  if (existingCrawlState?.fields) {
+    for (const [k, v] of Object.entries(existingCrawlState.fields)) {
+      existingMap[k as MappedFieldName] = { manually_edited: !!v.manually_edited };
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6"
+        style={{ borderRadius: 18, background: "var(--neu-bg)", boxShadow: "0 24px 60px -12px rgba(0,0,0,0.35)" }}
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold" style={{ color: "var(--neu-text)" }}>Re-crawl your site</h2>
+            <p className="text-[12px] neu-muted">Scan again and pull in anything new.</p>
+          </div>
+          <button onClick={onClose} className="neu-muted hover:opacity-70">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {stage === "scanning" && (
+          <div className="text-center py-12">
+            <div className="inline-flex items-center justify-center w-12 h-12 mb-4">
+              <div className="h-10 w-10 rounded-full border-2 border-gray-200 border-t-gray-900 animate-spin" />
+            </div>
+            <p className="text-sm font-medium" style={{ color: "var(--neu-text)" }}>{progress}</p>
+          </div>
+        )}
+
+        {stage === "error" && (
+          <div className="py-8 text-center space-y-4">
+            <p className="text-sm text-red-500">{error}</p>
+            <NeuButton variant="flat" onClick={onClose}>Close</NeuButton>
+          </div>
+        )}
+
+        {stage === "review" && payload && (
+          <CrawlReview
+            payload={payload}
+            existing={existingMap}
+            onSave={async (edited) => { await onSave(edited); }}
+            onSkip={onClose}
+          />
+        )}
+      </div>
+    </div>
   );
 }
 
