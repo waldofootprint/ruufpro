@@ -336,6 +336,15 @@ export default function OnboardingPage() {
         }),
       }).catch(() => {});
 
+      // 5. Background full-site crawl for Riley RAG (fire-and-forget).
+      // Only if the narrow onboarding crawl produced a source URL.
+      if (crawlPayload && (crawlPayload.patch.chatbotConfig?.source_website_url || crawlUrl)) {
+        fetch("/api/onboarding/full-crawl", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }).catch(() => {});
+      }
+
       router.push("/dashboard");
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong. Try again.");

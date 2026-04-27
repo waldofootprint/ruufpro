@@ -2090,3 +2090,131 @@ export const staleLeadDetection = inngest.createFunction(
     return results;
   }
 );
+
+// ---------------------------------------------------------------------------
+// Chain: Chunk + Embed Crawled Page
+// Trigger: "firecrawl/page.crawled" — emitted from /api/firecrawl/webhook
+// Steps: junk filter → chunk → embed via Voyage → insert into pgvector table
+// Idempotency: skip if chunks already exist for (contractor_id, source_url, batch).
+// Old-batch cleanup: on first chunk of a new batch, delete all chunks for
+// contractor_id where crawl_batch_id != new_id.
+// ---------------------------------------------------------------------------
+export const chunkAndEmbedPage = inngest.createFunction(
+  {
+    id: "chunk-and-embed-page",
+    retries: 3,
+    concurrency: { limit: 5 },
+    triggers: [{ event: "firecrawl/page.crawled" }],
+  },
+  async ({ event, step }) => {
+    const { contractorId, crawlBatchId, sourceUrl, pageTitle, markdown } = event.data as {
+      contractorId: string;
+      jobId: string;
+      crawlBatchId: string | null;
+      sourceUrl: string;
+      pageTitle: string | null;
+      markdown: string;
+    };
+
+    if (!contractorId || !sourceUrl || !markdown) {
+      return { skipped: true, reason: "missing_fields" };
+    }
+
+    const { chunkMarkdown, isLikelyJunkPage } = await import("@/lib/knowledge-chunker");
+    const { embedTexts, toPgVectorLiteral } = await import("@/lib/voyage-embed");
+    const { createClient } = await import("@supabase/supabase-js");
+
+    if (isLikelyJunkPage(markdown)) {
+      return { skipped: true, reason: "junk_page", sourceUrl };
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    // Resolve batch id from job row if webhook didn't include it.
+    const batchId = await step.run("resolve-batch-id", async () => {
+      if (crawlBatchId) return crawlBatchId;
+      const { data: job } = await supabase
+        .from("chatbot_knowledge_crawl_jobs")
+        .select("crawl_batch_id")
+        .eq("contractor_id", contractorId)
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return (job?.crawl_batch_id as string) ?? null;
+    });
+
+    if (!batchId) {
+      return { skipped: true, reason: "no_batch_id" };
+    }
+
+    // Old-batch cleanup: only runs when this is the first chunk insert for
+    // the new batch. Best-effort; safe to repeat.
+    await step.run("cleanup-old-batches", async () => {
+      const { count } = await supabase
+        .from("chatbot_knowledge_chunks")
+        .select("id", { count: "exact", head: true })
+        .eq("contractor_id", contractorId)
+        .eq("crawl_batch_id", batchId);
+      if ((count ?? 0) === 0) {
+        // Delete chunks from any other batch for this contractor.
+        await supabase
+          .from("chatbot_knowledge_chunks")
+          .delete()
+          .eq("contractor_id", contractorId)
+          .neq("crawl_batch_id", batchId);
+      }
+    });
+
+    // Idempotency: skip if this URL+batch already has chunks.
+    const alreadyDone = await step.run("dedupe-check", async () => {
+      const { count } = await supabase
+        .from("chatbot_knowledge_chunks")
+        .select("id", { count: "exact", head: true })
+        .eq("contractor_id", contractorId)
+        .eq("crawl_batch_id", batchId)
+        .eq("source_url", sourceUrl);
+      return (count ?? 0) > 0;
+    });
+
+    if (alreadyDone) {
+      return { skipped: true, reason: "already_indexed", sourceUrl };
+    }
+
+    const chunks = chunkMarkdown(markdown);
+    if (chunks.length === 0) {
+      return { skipped: true, reason: "no_chunks_after_split", sourceUrl };
+    }
+
+    const embedResult = await step.run("voyage-embed", async () => {
+      const r = await embedTexts(chunks.map((c) => c.text), "document");
+      if (!r.ok) throw new Error(`voyage_embed_failed:${r.reason}`);
+      return r;
+    });
+
+    await step.run("insert-chunks", async () => {
+      const rows = chunks.map((c, i) => ({
+        contractor_id: contractorId,
+        source_url: sourceUrl,
+        page_title: pageTitle,
+        chunk_index: c.index,
+        chunk_text: c.text,
+        embedding: toPgVectorLiteral(embedResult.vectors[i]),
+        token_count: c.estimatedTokens,
+        crawl_batch_id: batchId,
+      }));
+
+      const { error } = await supabase.from("chatbot_knowledge_chunks").insert(rows);
+      if (error) throw new Error(`insert_failed:${error.message}`);
+    });
+
+    return {
+      success: true,
+      sourceUrl,
+      chunks: chunks.length,
+      tokens: embedResult.tokenCount,
+    };
+  },
+);

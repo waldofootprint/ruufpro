@@ -19,6 +19,7 @@ import {
   batchAutoEnrich,
   outreachAutoSend,
   staleLeadDetection,
+  chunkAndEmbedPage,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -42,5 +43,6 @@ export const { GET, POST, PUT } = serve({
     batchAutoEnrich,
     outreachAutoSend,
     staleLeadDetection,
+    chunkAndEmbedPage,
   ],
 });

@@ -197,6 +197,14 @@ export function RileyTab() {
   const [crawlBannerDismissed, setCrawlBannerDismissed] = useState(false);
   const [recrawlOpen, setRecrawlOpen] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
+  const [bgCrawl, setBgCrawl] = useState<{
+    status: "none" | "queued" | "running" | "completed" | "failed";
+    pagesTotal: number | null;
+    pagesCompleted: number | null;
+    indexedPages: number | null;
+    errorMessage: string | null;
+  } | null>(null);
+  const [bgCrawlTriggering, setBgCrawlTriggering] = useState(false);
   // Field names the user has edited this session — flips manually_edited=true on save (gotcha #8)
   const [editedFields, setEditedFields] = useState<Set<MappedFieldName>>(() => new Set());
 
@@ -220,6 +228,50 @@ export function RileyTab() {
       setLoading(false);
     })();
   }, [contractorId]);
+
+  // Background full-site crawl status polling.
+  // Polls every 10s while the job is queued/running; one fetch on mount otherwise.
+  useEffect(() => {
+    if (!contractorId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function poll() {
+      try {
+        const res = await fetch("/api/dashboard/riley/crawl-status", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (cancelled) return;
+        setBgCrawl(json);
+        if (json.status === "queued" || json.status === "running") {
+          timer = setTimeout(poll, 10000);
+        }
+      } catch {
+        /* swallow */
+      }
+    }
+    poll();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [contractorId]);
+
+  const triggerFullCrawl = useCallback(async () => {
+    setBgCrawlTriggering(true);
+    try {
+      const res = await fetch("/api/onboarding/full-crawl", { method: "POST" });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.warn("[RileyTab] full-crawl trigger failed:", text);
+      }
+      // Re-poll status immediately.
+      const statusRes = await fetch("/api/dashboard/riley/crawl-status", { cache: "no-store" });
+      if (statusRes.ok) setBgCrawl(await statusRes.json());
+    } finally {
+      setBgCrawlTriggering(false);
+    }
+  }, []);
 
   const update = useCallback(
     <K extends keyof ChatbotConfigState>(key: K, value: ChatbotConfigState[K]) => {
@@ -440,6 +492,69 @@ export function RileyTab() {
             aria-label="Dismiss"
           >
             <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Background full-site crawl status banner */}
+      {bgCrawl && bgCrawl.status !== "none" && (
+        <div
+          className="neu-flat px-4 py-2.5 flex items-center justify-between gap-3"
+          style={{ borderRadius: 12 }}
+        >
+          <div className="text-[12px] flex items-center gap-2" style={{ color: "var(--neu-text)" }}>
+            {(bgCrawl.status === "queued" || bgCrawl.status === "running") && (
+              <>
+                <span aria-hidden>🟡</span>
+                <span>
+                  Riley is still learning your site
+                  {typeof bgCrawl.pagesCompleted === "number"
+                    ? ` — ${bgCrawl.pagesCompleted}${bgCrawl.pagesTotal ? `/${bgCrawl.pagesTotal}` : ""} pages indexed`
+                    : "…"}
+                </span>
+              </>
+            )}
+            {bgCrawl.status === "completed" && (
+              <>
+                <span aria-hidden>🟢</span>
+                <span>
+                  Trained on {bgCrawl.indexedPages ?? bgCrawl.pagesTotal ?? "?"} pages from your site
+                </span>
+              </>
+            )}
+            {bgCrawl.status === "failed" && (
+              <>
+                <span aria-hidden>🔴</span>
+                <span>Crawl failed{bgCrawl.errorMessage ? `: ${bgCrawl.errorMessage}` : ""}</span>
+              </>
+            )}
+          </div>
+          {(bgCrawl.status === "completed" || bgCrawl.status === "failed") && sourceWebsiteUrl && (
+            <button
+              onClick={triggerFullCrawl}
+              disabled={bgCrawlTriggering}
+              className="neu-flat px-3 py-1.5 text-[11px] font-semibold hover:opacity-90 disabled:opacity-50"
+              style={{ borderRadius: 10, color: "var(--neu-accent)" }}
+            >
+              {bgCrawlTriggering ? "Starting…" : bgCrawl.status === "failed" ? "Retry" : "Re-crawl full site"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* If no background crawl yet but we have a source URL, offer one. */}
+      {(!bgCrawl || bgCrawl.status === "none") && sourceWebsiteUrl && (
+        <div className="neu-flat px-4 py-2.5 flex items-center justify-between gap-3" style={{ borderRadius: 12 }}>
+          <div className="text-[12px]" style={{ color: "var(--neu-text)" }}>
+            Train Riley on every page of your website (3–8 min, runs in the background).
+          </div>
+          <button
+            onClick={triggerFullCrawl}
+            disabled={bgCrawlTriggering}
+            className="neu-flat px-3 py-1.5 text-[11px] font-semibold hover:opacity-90 disabled:opacity-50"
+            style={{ borderRadius: 10, color: "var(--neu-accent)" }}
+          >
+            {bgCrawlTriggering ? "Starting…" : "Train Riley on full site"}
           </button>
         </div>
       )}

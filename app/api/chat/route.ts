@@ -10,6 +10,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
+import { retrieveKnowledgeChunks, formatChunksForPrompt } from "@/lib/knowledge-retrieval";
 import { detectIntent } from "@/lib/intent-detection";
 import { runChatEstimate } from "@/lib/chat-estimate";
 import { getTierFromContractor } from "@/lib/types";
@@ -323,7 +324,28 @@ export async function POST(request: NextRequest) {
     const intent = detectIntent(messages, { leadCaptured });
 
     // Build system prompt (with intent signals for context)
-    const systemPrompt = buildChatSystemPrompt(templateData, messageCount, leadCaptured, chatbotConfig ?? null, hasEstimateWidget, intent);
+    let systemPrompt = buildChatSystemPrompt(templateData, messageCount, leadCaptured, chatbotConfig ?? null, hasEstimateWidget, intent);
+
+    // RAG: pull top-3 chunks from the contractor's site for the latest question.
+    // Fail silently — Riley still works without retrieval.
+    try {
+      const questionText = (() => {
+        if (typeof lastContent === "string" && lastContent.trim()) return lastContent;
+        const parts = (lastMsg as { parts?: Array<{ type?: string; text?: string }> })?.parts ?? [];
+        const text = parts.filter((p) => p.type === "text").map((p) => p.text ?? "").join(" ").trim();
+        return text;
+      })();
+
+      if (questionText.length >= 3) {
+        const chunks = await retrieveKnowledgeChunks(contractorId, questionText, 3);
+        if (chunks.length > 0) {
+          const knowledgeBlock = formatChunksForPrompt(chunks, contractor.business_name);
+          systemPrompt = `${systemPrompt}\n\n${knowledgeBlock}`;
+        }
+      }
+    } catch (err) {
+      console.warn("[chat] RAG retrieval failed:", err instanceof Error ? err.message : err);
+    }
 
     // Stream response using Claude Haiku — with estimate tool when available
     const result = streamText({
