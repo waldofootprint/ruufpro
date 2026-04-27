@@ -7,8 +7,10 @@
 //      `firecrawl/page.crawled` so chunking + embedding runs out-of-band.
 //
 // Why query-param auth: Firecrawl's webhook signing schemes vary; the secret
-// in the URL gives a deterministic guarantee. We still check the header if
-// present for defense in depth.
+// in the URL gives a deterministic guarantee. Firecrawl signs the body with
+// its own dashboard-configured secret which we don't share, so we cannot
+// validate `x-firecrawl-signature` here — query-param secret is the trust
+// anchor.
 //
 // Must respond <10s or Firecrawl retries. Do NOT chunk/embed inline — enqueue
 // to Inngest.
@@ -54,28 +56,6 @@ type FirecrawlWebhookPayload = {
   error?: string;
 };
 
-function timingSafeEqualHex(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  try {
-    return crypto.timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
-  } catch {
-    return false;
-  }
-}
-
-function verifySignatureHeader(req: NextRequest, rawBody: string, secret: string): boolean {
-  // Firecrawl's HMAC header (when present) — accept any of these names.
-  const headerNames = ["x-firecrawl-signature", "x-webhook-signature"];
-  for (const name of headerNames) {
-    const sig = req.headers.get(name);
-    if (!sig) continue;
-    const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-    const presented = sig.replace(/^sha256=/, "");
-    if (timingSafeEqualHex(expected, presented)) return true;
-  }
-  return false;
-}
-
 export async function POST(request: NextRequest) {
   const url = new URL(request.url);
   const contractorId = url.searchParams.get("contractor_id");
@@ -97,13 +77,6 @@ export async function POST(request: NextRequest) {
   }
 
   const rawBody = await request.text();
-
-  // Header HMAC is optional — if Firecrawl sends one, validate it; if not,
-  // the URL secret is the trust anchor.
-  const sigHeader = request.headers.get("x-firecrawl-signature") ?? request.headers.get("x-webhook-signature");
-  if (sigHeader && !verifySignatureHeader(request, rawBody, expectedSecret)) {
-    return NextResponse.json({ error: "bad signature" }, { status: 401 });
-  }
 
   let payload: FirecrawlWebhookPayload;
   try {
