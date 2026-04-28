@@ -15,6 +15,7 @@ export interface PipelineCandidate {
   score: number | null;
   tier: PipelineTier;
   score_factors: Record<string, unknown>;
+  requested_at: string | null;
 }
 
 export interface ZipAggregate {
