@@ -7,6 +7,7 @@ import {
   renderPostcardBack,
   type PostcardData,
 } from "@/lib/property-pipeline/postcard-template";
+import { generateQrPngDataUrl } from "@/lib/property-pipeline/qr-code";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,8 @@ export default async function PostcardPreviewPage() {
     .eq("user_id", user.id)
     .single();
 
+  const qrUrl = "https://ruufpro.com/m/2A3B4C";
+  const qrDataUrl = await generateQrPngDataUrl(qrUrl);
   const data: PostcardData = {
     homeownerName: null,
     propertyAddress: SAMPLE_HOMEOWNER_ADDRESS,
@@ -59,7 +62,8 @@ export default async function PostcardPreviewPage() {
     contractorPhone: contractor?.phone ?? "(555) 555-5555",
     contractorLicenseNumber: contractor?.license_number ?? "[Set in Settings]",
     qrShortCode: "2A3B4C",
-    qrUrl: "https://ruufpro.com/m/2A3B4C",
+    qrUrl,
+    qrDataUrl,
     optOutUrl: "https://ruufpro.com/stop/2A3B4C",
   };
 

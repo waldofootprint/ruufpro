@@ -26,6 +26,10 @@ export interface PostcardData {
   contractorLicenseNumber: string;
   qrShortCode: string;
   qrUrl: string;
+  // Inline base64 PNG data URL for the QR image. Generated server-side at send
+  // time so Lob's HTML→PDF renderer never has to reach a third-party host —
+  // that fetch failing would ship a blank QR and silently kill the lead.
+  qrDataUrl: string;
   optOutUrl: string;
   publicSiteUrl?: string;
 }
@@ -107,7 +111,7 @@ export function renderPostcardBack(data: PostcardData): string {
     <p><strong>${escape(data.contractorBusinessName)}</strong><br/>FL License ${escape(data.contractorLicenseNumber)}<br/>${escape(data.contractorPhone)}</p>
   </div>
   <div class="qr-block">
-    <img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=560x560&amp;data=${encodeURIComponent(data.qrUrl)}" alt="Scan to chat" />
+    <img class="qr-img" src="${data.qrDataUrl}" alt="Scan to chat" />
     <div class="scan-cta">Scan or visit</div>
     <div class="code">${escape(data.qrShortCode)}</div>
     <div style="font-size:14px;color:#666;">ruufpro.com/m/${escape(data.qrShortCode)}</div>

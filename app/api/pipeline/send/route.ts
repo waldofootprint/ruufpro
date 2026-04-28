@@ -5,7 +5,10 @@ import { cookies } from "next/headers";
 import { createHash } from "crypto";
 
 import { getPostcardsApi, isLobLive } from "@/lib/lob/client";
-import { generateQrShortCode } from "@/lib/property-pipeline/qr-code";
+import {
+  generateQrShortCode,
+  generateQrPngDataUrl,
+} from "@/lib/property-pipeline/qr-code";
 import { isPropertyLocked } from "@/lib/property-pipeline/locks";
 import {
   getMonthlyUsage,
@@ -171,6 +174,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 8. Render postcard HTML
+    const qrUrl = `${SITE_URL}/m/${qrShortCode}`;
+    const qrDataUrl = await generateQrPngDataUrl(qrUrl);
     const postcardData: PostcardData = {
       homeownerName: null,
       propertyAddress: `${candidate.address_raw}, ${candidate.city} ${candidate.zip}`,
@@ -178,7 +183,8 @@ export async function POST(request: NextRequest) {
       contractorPhone: contractor.phone,
       contractorLicenseNumber: contractor.license_number!,
       qrShortCode,
-      qrUrl: `${SITE_URL}/m/${qrShortCode}`,
+      qrUrl,
+      qrDataUrl,
       optOutUrl: `${SITE_URL}/stop/${qrShortCode}`,
     };
     const front = renderPostcardFront(postcardData);
