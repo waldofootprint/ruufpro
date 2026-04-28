@@ -37,11 +37,11 @@ Companion: Notion page `🏠 Property Pipeline — MVP Checklist (strict minimum
 | 2 | Database migrations + 28,920-row data load | ✅ DONE 2026-04-26 |
 | 3 | Dashboard UI (one new tab, table, "Send postcard" button) | ✅ DONE 2026-04-26 — `4e02e8d` (after planning base `b06fd16`) |
 | 4 | Send + landing routes (real Lob + Riley QR landing + /stop) | ✅ DONE 2026-04-26 — `cf7f031` + preview `2893b85` · deploy `dpl_7oXYhWtM8GjfAi41ZPCCUjyyTPUJ` |
-| 5 | Postcard template (single creative, single Lob first-piece approval) | ⬜ PARKED — 12 tones in `.tmp/postcard-mockup/index.html`, none locked |
+| 5 | Postcard template (single creative, production HTML built) | ⬜ PARKED — 12 tones in `.tmp/postcard-mockup/index.html`, none locked. Insurer-flags v5 direction decided 2026-04-26 PM but production HTML not yet built. |
 | 6 | Legal floor wiring (SB 76 disclosure, license #, opt-out URL, signup checkbox) | ✅ DONE 2026-04-26 — `212337b` (SB 76) + `b78ecd0` (license # + ZIPs + DM auth clickwrap) |
 | 7 | Smoke test (mail one to your own address) | ⬜ unblocks once step 5 picks a creative OR we smoke-test pipeline only |
 
-**Estimate:** ~2 days Claude build + ~1 week wall-clock (Lob first-piece approval is the only true blocker on the critical path).
+**Estimate:** ~2 days Claude build. NO Lob review wall-clock — verified 2026-04-28: API postcards require no pre-approval (only Informed Delivery campaigns do; we don't use those). Critical path is now: step 5 creative locked → real FL roofer license # signed → `LOB_API_KEY_LIVE` set → smoke send same day.
 
 ---
 
@@ -99,7 +99,7 @@ If a session proposes any of these, push back — they were explicitly cut.
 - **Format:** 6×11 standard-class on standard stock. Lob's cheapest tier; $0.646/card at Growth volume tier
 - **Photo direction: roof-mid-inspection** (NOT team headshot). "Evidence over identity" — boots/shingles/tape-measure reads as work, team headshot reads as ad. Cheaper too — contractor uploads one job photo of their own work vs branded headshot session.
 - **Photo upload required at signup** (used to be optional team photo). Roofer must supply ≥1 inspection photo before first send. Ships with a stock fallback if the design partner doesn't have one ready.
-- **Two Lob templates:** `with-photo` and `no-photo`. Both submitted for first-piece approval in step 5 (parallel review, ~3-6 day wall-clock)
+- **Two creative variants:** `with-photo` and `no-photo`. No Lob pre-approval required (verified 2026-04-28).
 - **Image validation at upload:** min resolution 1800×3300 (300 DPI × 6×11), JPEG/PNG only, ≤10MB. Hannah eyeballs photo once per contractor at signup until volume forces automation.
 - **Per-home facts rule (clarified 2026-04-26):** *anti-creepy-granularity, not zero per-home facts.* Cohort/decade-level OK ("homes from the 2000s", "pre-2009 roofs"). Neighborhood/city/area-name OK (already on address block). BANNED: "your roof is 23 years old", "last permit pulled 2003", "your home built in 1998". The three flags themselves ARE per-home-relevant because the universe filter (year_built ≤ 2010) makes them cohort-true.
 - **Banned phrases on the postcard** (per Mike-agent + legal): "free estimate", "limited time", "act now", "storm damage specialist", "we work with all insurance companies", "100% financing available", any exclamation point, "your insurer is dropping you", "FL law requires roof replacement at 15 years", any specific premium-savings dollar figure
