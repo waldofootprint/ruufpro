@@ -2254,8 +2254,8 @@ export const pollCrawlCompletion = inngest.createFunction(
       return { ok: false, reason: "missing_fields" };
     }
 
-    const POLL_INTERVAL = "30s";
-    const MAX_ATTEMPTS = 40; // 40 * 30s = 20 min ceiling
+    const POLL_INTERVAL = "15s";
+    const MAX_ATTEMPTS = 80; // 80 * 15s = 20 min ceiling
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       await step.sleep(`wait-${attempt}`, POLL_INTERVAL);
