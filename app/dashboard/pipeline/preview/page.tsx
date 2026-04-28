@@ -14,14 +14,27 @@ export const dynamic = "force-dynamic";
 
 const SAMPLE_HOMEOWNER_ADDRESS = "8734 54th Ave E, Bradenton 34211";
 
-const VARIANT_LABELS: Record<FrontVariant, string> = {
-  A: "A · Storm-led",
-  B: "B · Public-records-led",
-  C: "C · Block-comparison",
-  D: "D · Permit-honesty (PRIMARY — sends default to this)",
+type VariantMeta = { name: string; tagline: string; backStatus: "ready" | "pending" };
+const VARIANT_LABELS: Record<FrontVariant, VariantMeta> = {
+  A: { name: "A · Press Bulletin",      tagline: "PRIMARY — sends default to this · broadsheet · charcoal metal photo · ember accent", backStatus: "ready" },
+  B: { name: "B · Tool Catalog",        tagline: "industrial hardware · black + safety yellow · diagonal stripe · vertical sidebar", backStatus: "ready" },
+  C: { name: "C · Material Catalog",    tagline: "Pantone-style swatch card · cream + clay + ink · 3 material samples · BACK PENDING", backStatus: "pending" },
+  D: { name: "D · Forensic Specimen",   tagline: "case-file specimen box · graph paper + ink + steel blue · BACK PENDING", backStatus: "pending" },
+  E: { name: "E · Italian Editorial",   tagline: "Vogue-style full-bleed tile macro · italic display · BACK PENDING", backStatus: "pending" },
+  F: { name: "F · Blueprint",           tagline: "engineering-document wireframe · navy + cyan + ember · SVG roof drawing · BACK PENDING", backStatus: "pending" },
+  G: { name: "G · Trade Card",          tagline: "19th-century woodblock heritage · cream + brick red · double-rule frame · BACK PENDING", backStatus: "pending" },
 };
+const VARIANT_ORDER: FrontVariant[] = ["A", "B", "C", "D", "E", "F", "G"];
 
-export default async function PostcardPreviewPage() {
+export default async function PostcardPreviewPage({
+  searchParams,
+}: {
+  searchParams?: { v?: string };
+}) {
+  const requestedVariant = (searchParams?.v ?? "A").toUpperCase();
+  const activeVariant: FrontVariant = (
+    VARIANT_ORDER.includes(requestedVariant as FrontVariant) ? requestedVariant : "A"
+  ) as FrontVariant;
   const cookieStore = cookies();
   const authSupabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -80,14 +93,10 @@ export default async function PostcardPreviewPage() {
     optOutUrl: "https://ruufpro.com/stop/2A3B4C",
   };
 
-  // Order: D first (primary), then A/B/C as alternates.
-  const variants: FrontVariant[] = ["D", "A", "B", "C"];
-  const fronts = variants.map((v) => ({
-    variant: v,
-    label: VARIANT_LABELS[v],
-    html: renderPostcardFront(data, { variant: v }),
-  }));
-  const backHtml = renderPostcardBack(data);
+  // Render only the active variant's front + back.
+  const activeMeta = VARIANT_LABELS[activeVariant];
+  const activeFront = renderPostcardFront(data, { variant: activeVariant });
+  const activeBack = renderPostcardBack(data, { variant: activeVariant });
 
   return (
     <main
@@ -100,14 +109,15 @@ export default async function PostcardPreviewPage() {
     >
       <header style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>
-          Postcard preview — 3D-Discovery v6
+          Postcard preview — Press Bulletin / Tool Catalog
         </h1>
         <p style={{ color: "#666", marginTop: 8, fontSize: 14, lineHeight: 1.5, maxWidth: 820 }}>
           Live render with your business data + sample homeowner address.
-          Format: 6×11 in (1125×625 px). Four front variants ship and round-robin
-          in production until performance data picks the winner; one back is
-          shared. SB 76 disclosure + half-rule font cap (32px max, 16px floor)
-          locked.
+          Format: 6×11 in (1125×625 px). Two locked design directions — each
+          owns its own front + back. Shared headline copy: <em>&ldquo;The
+          worst roof damage is the kind you don&rsquo;t see coming.&rdquo;</em>
+          {" "}SB 76 §489.147(1)(a) verbatim disclosure + half-rule font cap
+          (32px max, 16px floor) compliant on both variants.
         </p>
         {!contractor?.license_number && (
           <div
@@ -127,10 +137,97 @@ export default async function PostcardPreviewPage() {
         )}
       </header>
 
-      <section style={{ marginBottom: 40 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>
-          Front variants (pick one or ship all four)
+      {/* Tabs nav */}
+      <nav
+        style={{
+          display: "flex",
+          gap: 4,
+          flexWrap: "wrap",
+          borderBottom: "2px solid #1a1a1a",
+          marginBottom: 28,
+        }}
+      >
+        {VARIANT_ORDER.map((v) => {
+          const meta = VARIANT_LABELS[v];
+          const isActive = v === activeVariant;
+          return (
+            <a
+              key={v}
+              href={`?v=${v}`}
+              style={{
+                padding: "10px 16px",
+                fontFamily: "'Courier New', monospace",
+                fontSize: 12,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                fontWeight: 700,
+                textDecoration: "none",
+                color: isActive ? "#fff" : "#555",
+                background: isActive ? "#1a1a1a" : "transparent",
+                border: isActive ? "2px solid #1a1a1a" : "2px solid transparent",
+                borderBottom: "none",
+                borderRadius: "8px 8px 0 0",
+                marginBottom: -2,
+                position: "relative",
+              }}
+            >
+              {meta.name.split(" · ")[0]}
+              {meta.backStatus === "pending" && (
+                <span
+                  style={{
+                    marginLeft: 6,
+                    fontSize: 9,
+                    padding: "2px 5px",
+                    background: isActive ? "#f5b014" : "#f0d488",
+                    color: "#1a1a1a",
+                    borderRadius: 3,
+                    letterSpacing: "0.12em",
+                  }}
+                >
+                  WIP
+                </span>
+              )}
+            </a>
+          );
+        })}
+      </nav>
+
+      {/* Active variant section */}
+      <section style={{ marginBottom: 48 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px" }}>
+          {activeMeta.name}
         </h2>
+        <p
+          style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "#888",
+            margin: "0 0 18px",
+          }}
+        >
+          {activeMeta.tagline}
+        </p>
+
+        {activeMeta.backStatus === "pending" && (
+          <div
+            style={{
+              padding: "10px 14px",
+              background: "#fff7ed",
+              border: "1px solid #f5b014",
+              borderLeft: "3px solid #f5b014",
+              borderRadius: 6,
+              fontSize: 13,
+              lineHeight: 1.5,
+              marginBottom: 18,
+              color: "#5a3e0a",
+            }}
+          >
+            <strong>Back design pending.</strong> Front is wired and previewable; matching back will be built in a follow-up session. This variant is not selectable for live sends until the back is complete.
+          </div>
+        )}
+
         <div
           style={{
             display: "grid",
@@ -138,17 +235,12 @@ export default async function PostcardPreviewPage() {
             gap: 24,
           }}
         >
-          {fronts.map((f) => (
-            <Card key={f.variant} title={f.label} html={f.html} />
-          ))}
+          <Card title="Front" html={activeFront} />
+          <Card
+            title={activeMeta.backStatus === "ready" ? "Back" : "Back · placeholder"}
+            html={activeBack}
+          />
         </div>
-      </section>
-
-      <section style={{ marginBottom: 32 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>
-          Back (shared across all variants)
-        </h2>
-        <Card title="Back · question trio + QR" html={backHtml} fullWidth />
       </section>
     </main>
   );

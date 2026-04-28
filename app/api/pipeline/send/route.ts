@@ -189,11 +189,10 @@ export async function POST(request: NextRequest) {
       qrDataUrl,
       optOutUrl: `${SITE_URL}/stop/${qrShortCode}`,
     };
-    // Variant selection: defaults to "D" (Hannah's pick after Lead-Spy
-    // competitive read) until round-robin logic lands. See decision log
-    // at decisions/2026-04-28-pp-step5-creative-pivot-3d-discovery.md.
-    const front = renderPostcardFront(postcardData, { variant: "D" });
-    const back = renderPostcardBack(postcardData);
+    // Variant default: "A" (Press Bulletin). Roofer-pick UI lands later.
+    // Back must receive the same variant so front + back stay paired.
+    const front = renderPostcardFront(postcardData, { variant: "A" });
+    const back = renderPostcardBack(postcardData, { variant: "A" });
 
     // 9. Lob send
     const postcardsApi = getPostcardsApi();
