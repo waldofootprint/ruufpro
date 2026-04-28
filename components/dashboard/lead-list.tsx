@@ -313,9 +313,11 @@ function CopilotStrip({ lead }: { lead: LeadWithDetails }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...copilotMessages, userMsg].map((m) => ({
+          sessionId: `copilot-${lead.id}`,
+          messages: [...copilotMessages, userMsg].map((m, i) => ({
+            id: `m${i}`,
             role: m.role,
-            content: m.content,
+            parts: [{ type: "text", text: m.content }],
           })),
         }),
       });
