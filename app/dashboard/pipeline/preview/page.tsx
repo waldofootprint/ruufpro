@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   renderPostcardFront,
   renderPostcardBack,
+  type FrontVariant,
   type PostcardData,
 } from "@/lib/property-pipeline/postcard-template";
 import { generateQrPngDataUrl } from "@/lib/property-pipeline/qr-code";
@@ -12,6 +13,13 @@ import { generateQrPngDataUrl } from "@/lib/property-pipeline/qr-code";
 export const dynamic = "force-dynamic";
 
 const SAMPLE_HOMEOWNER_ADDRESS = "8734 54th Ave E, Bradenton 34211";
+
+const VARIANT_LABELS: Record<FrontVariant, string> = {
+  A: "A · Storm-led",
+  B: "B · Public-records-led",
+  C: "C · Block-comparison",
+  D: "D · Permit-honesty (PRIMARY — sends default to this)",
+};
 
 export default async function PostcardPreviewPage() {
   const cookieStore = cookies();
@@ -49,9 +57,13 @@ export default async function PostcardPreviewPage() {
 
   const { data: contractor } = await supabase
     .from("contractors")
-    .select("business_name, phone, license_number")
+    .select("business_name, phone, license_number, address, city, state, zip")
     .eq("user_id", user.id)
     .single();
+
+  const mailingAddress = contractor?.address && contractor?.city && contractor?.state && contractor?.zip
+    ? `${contractor.address} · ${contractor.city} ${contractor.state} ${contractor.zip}`
+    : null;
 
   const qrUrl = "https://ruufpro.com/m/2A3B4C";
   const qrDataUrl = await generateQrPngDataUrl(qrUrl);
@@ -61,13 +73,20 @@ export default async function PostcardPreviewPage() {
     contractorBusinessName: contractor?.business_name ?? "Your Roofing Co.",
     contractorPhone: contractor?.phone ?? "(555) 555-5555",
     contractorLicenseNumber: contractor?.license_number ?? "[Set in Settings]",
+    contractorMailingAddress: mailingAddress,
     qrShortCode: "2A3B4C",
     qrUrl,
     qrDataUrl,
     optOutUrl: "https://ruufpro.com/stop/2A3B4C",
   };
 
-  const frontHtml = renderPostcardFront(data);
+  // Order: D first (primary), then A/B/C as alternates.
+  const variants: FrontVariant[] = ["D", "A", "B", "C"];
+  const fronts = variants.map((v) => ({
+    variant: v,
+    label: VARIANT_LABELS[v],
+    html: renderPostcardFront(data, { variant: v }),
+  }));
   const backHtml = renderPostcardBack(data);
 
   return (
@@ -79,19 +98,16 @@ export default async function PostcardPreviewPage() {
         fontFamily: "system-ui, -apple-system, sans-serif",
       }}
     >
-      <header style={{ marginBottom: 24 }}>
+      <header style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>
-          Postcard preview (step 4 minimal template)
+          Postcard preview — 3D-Discovery v6
         </h1>
-        <p style={{ color: "#666", marginTop: 8, fontSize: 14, lineHeight: 1.5 }}>
+        <p style={{ color: "#666", marginTop: 8, fontSize: 14, lineHeight: 1.5, maxWidth: 820 }}>
           Live render with your business data + sample homeowner address.
-          Format: 6×11 in (1125×625 px). Front and back shown below at scaled
-          size. The full creative + with-photo variant land in step 5; the
-          verbatim SB 76 disclosure (currently a flagged{" "}
-          <code style={{ background: "#fee", padding: "2px 4px" }}>
-            [PLACEHOLDER]
-          </code>{" "}
-          on the back) wires in step 6.
+          Format: 6×11 in (1125×625 px). Four front variants ship and round-robin
+          in production until performance data picks the winner; one back is
+          shared. SB 76 disclosure + half-rule font cap (32px max, 16px floor)
+          locked.
         </p>
         {!contractor?.license_number && (
           <div
@@ -111,21 +127,59 @@ export default async function PostcardPreviewPage() {
         )}
       </header>
 
-      <Side title="Front" html={frontHtml} />
-      <Side title="Back" html={backHtml} />
+      <section style={{ marginBottom: 40 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>
+          Front variants (pick one or ship all four)
+        </h2>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 24,
+          }}
+        >
+          {fronts.map((f) => (
+            <Card key={f.variant} title={f.label} html={f.html} />
+          ))}
+        </div>
+      </section>
+
+      <section style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>
+          Back (shared across all variants)
+        </h2>
+        <Card title="Back · question trio + QR" html={backHtml} fullWidth />
+      </section>
     </main>
   );
 }
 
-function Side({ title, html }: { title: string; html: string }) {
-  // Scale 1125×625 down to fit ~880×489 (≈78%) for on-screen viewing.
-  const scaledW = 880;
+function Card({
+  title,
+  html,
+  fullWidth = false,
+}: {
+  title: string;
+  html: string;
+  fullWidth?: boolean;
+}) {
+  // Front grid: 2-col → ~620px wide. Back full-width: 880px.
+  const scaledW = fullWidth ? 880 : 620;
   const scaledH = Math.round((625 / 1125) * scaledW);
   return (
-    <section style={{ marginBottom: 32 }}>
-      <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>
+    <div>
+      <div
+        style={{
+          fontFamily: "'Courier New', monospace",
+          fontSize: 11,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: "#666",
+          marginBottom: 8,
+        }}
+      >
         {title}
-      </h2>
+      </div>
       <div
         style={{
           width: scaledW,
@@ -153,6 +207,6 @@ function Side({ title, html }: { title: string; html: string }) {
           }}
         />
       </div>
-    </section>
+    </div>
   );
 }

@@ -76,36 +76,53 @@ If a session proposes any of these, push back — they were explicitly cut.
 
 ---
 
-## Postcard creative — Insurer-flags v5 + roof-evidence photo (decided 2026-04-26 PM)
+## Postcard creative — 3D-Discovery v6 (decided 2026-04-28, supersedes Insurer-flags v5)
 
-**Headline (locked):** *"Florida insurers are looking harder at roofs built before 2010."*
-**Lede (locked):** *"Three things they're flagging on homes from this era — and what we'd check before your next renewal."*
+**Concept shift:** the postcard's job is to make the homeowner scan, not to deliver the message. The QR landing page is the actual product — a 3D render of their home + neighborhood with floating age cards, NOAA storm-survival count, and roofer branding. Postcard = curiosity tease. Landing page = the "how did they know this?" moment.
 
-**The three flags (locked, sourced, on the back of every card):**
-1. **Remaining roof life under 5 years** — FL UV ages shingles 5-7 yrs faster than warranty assumes; carriers rarely renew past year 15 (Citizens 4-Point form + SB 4-D §627.7011)
-2. **No secondary water barrier (SWR)** — required by FBC only after 2009; pre-2009 roofs miss the OIR-B1-1802 wind-mit discount worth hundreds-thousands/yr (FBC R4402.7)
-3. **Roof-deck nail pattern** — pre-2002 6"/12" nailing gets the lowest wind-mit rating unless verified (FBC §1606 + OIR-B1-1802 §2)
+**Why this beat Insurer-flags v5** (which was the lock on 2026-04-26):
+- Insurer-flags is a buy-now emotional pitch; QR scan is a "show me something cool" intent. Mismatch.
+- The 3D + storm-count + neighborhood comparison is *real personalization data RuufPro already has*, not a generic compliance scare.
+- Discovery primes the landing page rather than blowing the surprise on the postcard.
+- The insurer angle still survives as a footnote / secondary microcopy on the landing page itself; not on the postcard front.
 
-**Why this beat earlier directions** (Curiosity v2 + Civic-calm v1 + Data-position v3 + MSFH v4): Curiosity was passive, no FL-coded urgency, didn't survive trash-bin reflex. Insurance-education frame is the only one a research-agent role-playing as a 14-yr Bradenton roofer (Mike Calloway) said he'd put his license # on. Citizens already created the urgency; we don't have to manufacture it.
+**Front headlines (4 LOCKED variants — all four ship and round-robin in production until performance data picks the winner):**
+- **A · Storm-led:** *"47 named storms have hit Florida since 2009."* → sub: *"Most pre-2010 roofs have weathered every one of them. Scan to see your home in 3D — your roof's age, your block's roof history, and how it stacks up."*
+- **B · Discovery:** *"Your roof has stories. We pulled them."* → sub: *"Scan for a 3D view of your home — roof age, storm history, and how your block compares."*
+- **C · Block-comparison:** *"Three roofs on your block were replaced last year. Was yours?"* → sub: *"Scan for a 3D view of your home, your roof's likely age, and every named storm it's outlasted."*
+- **D · Permit-honesty:** *"We couldn't find a roof permit on your address."* → sub: *"Scan to see your home in 3D — likely roof age, storms survived, and how your block compares."*
 
-**Legal defensibility verified by unbiased research agent 2026-04-26:**
-- Headline says *"looking harder"* not *"dropping you"* → clears FL §627.7011 (25-yr rule barring age-only refusal). A 2010 roof is still 9 yrs from the cliff.
-- Footer microcopy carries `"We're a licensed roofer, not your insurer — final policy decisions are theirs."` → clears FL §626.854 implied-insurance-expertise line
-- All three flags are on the actual Citizens 4-Point form + OIR-B1-1802 → defensible under §501.171 deceptive trade
-- §489.147 storm-chaser line not crossed (no storm names, no claim inducement)
+**Back trio (locked — what they'll see on the landing page, framed as questions):**
+1. *How old is your roof, really?*
+2. *How many storms has it been through?*
+3. *Whose roofs on your block have already been replaced?*
+
+**Front footer microcopy (locked):** *"We're a licensed Florida roofer. No call. No pitch. Just a look at your roof."* (Replaces the Insurer-flags v5 footer because there's no insurer reference on the front anymore.)
+
+**Eyebrow / meta strip:** none. Headline carries.
+
+**Per-home facts rule (RELAXED 2026-04-28 mid-session 14):** per-home claims are OK on the postcard IF they're **attributed to a verifiable source**. Acceptable framings: "Public records show...", "We couldn't find a roof permit on your address", "Records suggest...", "Permit data indicates...". The attribution is what removes the creepiness — we're transparent about what we know and where we got it, not pretending to know things we don't. STILL BANNED: bare assertions of per-home facts without source attribution ("your roof is 23 years old", "your home was built in 1998", "your roof was last replaced in 2003"). Cohort/decade-level claims (e.g. "47 named storms since 2009", "most pre-2010 roofs") don't need attribution because they're true at the population level. **Why relaxed:** the prior anti-creepy-granularity rule was holding back personalization in ways that didn't serve the original goal — the goal was to avoid stating things as fact that we don't know, not to avoid all per-home framing. Attributed framing solves both.
+
+**Free inspection CTA (clarified 2026-04-28):** "free inspection" / "free roof inspection" is **OK** on the postcard. The banned phrase from earlier is "free estimate" — estimates imply a pricing/scope commitment we're not in a position to make on a homeowner's behalf. Inspections are just a look. Use "free roof inspection" as the standard CTA, NOT "free estimate."
+
+**Legal defensibility (re-verified 2026-04-28 by unbiased read of the new copy):**
+- "47 named storms" is publicly verifiable NOAA data, cohort-bucketed, not per-home → no §501.171 deceptive trade exposure
+- No mention of insurance / insurer / claims / coverage on the postcard front → §626.854 implied-insurance-expertise line not at risk
+- Headline D ("we couldn't find a roof permit") is factually true per the universe filter (the pipeline only mails homes with no permit in 7-20 yrs) → defensible
+- §489.147 storm-chaser line: borderline — "storms have hit Florida" is ambient weather context, not a claim inducement, and we're soliciting a roof check-in, not insurance work. Defensible but watch the framing if Hannah ever wants to attach a storm name.
+- All four headlines avoid banned phrases ("free estimate", "limited time", "act now", "storm damage specialist", any !)
 
 **Production rules:**
-- **Per-contractor branded** — roofer logo + license # + phone + mailing address pulled from `contractors` table at send time
-- **Format:** 6×11 standard-class on standard stock. Lob's cheapest tier; $0.646/card at Growth volume tier
-- **Photo direction: roof-mid-inspection** (NOT team headshot). "Evidence over identity" — boots/shingles/tape-measure reads as work, team headshot reads as ad. Cheaper too — contractor uploads one job photo of their own work vs branded headshot session.
-- **Photo upload required at signup** (used to be optional team photo). Roofer must supply ≥1 inspection photo before first send. Ships with a stock fallback if the design partner doesn't have one ready.
-- **Two creative variants:** `with-photo` and `no-photo`. No Lob pre-approval required (verified 2026-04-28).
-- **Image validation at upload:** min resolution 1800×3300 (300 DPI × 6×11), JPEG/PNG only, ≤10MB. Hannah eyeballs photo once per contractor at signup until volume forces automation.
-- **Per-home facts rule (clarified 2026-04-26):** *anti-creepy-granularity, not zero per-home facts.* Cohort/decade-level OK ("homes from the 2000s", "pre-2009 roofs"). Neighborhood/city/area-name OK (already on address block). BANNED: "your roof is 23 years old", "last permit pulled 2003", "your home built in 1998". The three flags themselves ARE per-home-relevant because the universe filter (year_built ≤ 2010) makes them cohort-true.
-- **Banned phrases on the postcard** (per Mike-agent + legal): "free estimate", "limited time", "act now", "storm damage specialist", "we work with all insurance companies", "100% financing available", any exclamation point, "your insurer is dropping you", "FL law requires roof replacement at 15 years", any specific premium-savings dollar figure
-- **Roofer-uploaded full designs:** ❌ NOT supported at MVP. Forces compliance review on every upload, breaks "we handle compliance for you" story. Defer to v1.1.
+- **Per-contractor branded** — roofer logo + license # + phone + mailing address pulled from `contractors` at send time
+- **Format:** 6×11 standard-class on standard stock. Lob's cheapest tier
+- **Photo:** ❌ NOT used in v6. The 3D landing page IS the visual asset; a stock roof-inspection photo on the postcard cheapens the reveal. Photo concept saved for a later campaign. (Removes `with-photo` variant + photo upload requirement at signup.)
+- **No Lob pre-approval required** (verified 2026-04-28)
+- **Banned phrases (carried over from v5):** "free estimate", "limited time", "act now", "storm damage specialist", "we work with all insurance companies", "100% financing available", any !, "your insurer is dropping you", "FL law requires roof replacement at 15 years", any specific premium-savings dollar figure
+- **Roofer-uploaded full designs:** ❌ NOT supported. Defer to v1.1.
 
-**Differentiation vs Lead-Spy:** their creative is publicly opaque (no samples on lead-spy.com). Ours will be shown on the marketing site as proof. Compliance moat: we print SB 76 verbatim + license # by default + carry sourced insurer-flag claims; Lead-Spy reportedly doesn't.
+**Differentiation vs Lead-Spy:** their creative is publicly opaque. Ours will be shown on the marketing site as proof of the QR landing page. Compliance moat unchanged: SB 76 verbatim + license # by default.
+
+**Insurer-flags v5 archive:** the prior locked direction (insurer pressure headline + 3 flags on the back) is preserved in git history at commit before this edit. If 3D-Discovery v6 underperforms in production we have a tested fallback to revert to.
 
 ---
 

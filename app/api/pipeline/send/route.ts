@@ -176,18 +176,23 @@ export async function POST(request: NextRequest) {
     // 8. Render postcard HTML
     const qrUrl = `${SITE_URL}/m/${qrShortCode}`;
     const qrDataUrl = await generateQrPngDataUrl(qrUrl);
+    const contractorMailingAddress = `${contractor.address} · ${contractor.city} ${contractor.state} ${contractor.zip}`;
     const postcardData: PostcardData = {
       homeownerName: null,
       propertyAddress: `${candidate.address_raw}, ${candidate.city} ${candidate.zip}`,
       contractorBusinessName: contractor.business_name,
       contractorPhone: contractor.phone,
       contractorLicenseNumber: contractor.license_number!,
+      contractorMailingAddress,
       qrShortCode,
       qrUrl,
       qrDataUrl,
       optOutUrl: `${SITE_URL}/stop/${qrShortCode}`,
     };
-    const front = renderPostcardFront(postcardData);
+    // Variant selection: defaults to "D" (Hannah's pick after Lead-Spy
+    // competitive read) until round-robin logic lands. See decision log
+    // at decisions/2026-04-28-pp-step5-creative-pivot-3d-discovery.md.
+    const front = renderPostcardFront(postcardData, { variant: "D" });
     const back = renderPostcardBack(postcardData);
 
     // 9. Lob send
