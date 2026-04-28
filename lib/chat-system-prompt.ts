@@ -203,7 +203,7 @@ You have a tool that generates satellite-measured roofing estimates for any addr
 
 [CONTEXT: Stage: ${intent?.stage || "greeting"}. Situation: ${intent?.situation || "just_browsing"}. Latest: ${intent?.latestQuestionType || "none"}.${intent?.captureSignals.length ? ` Signals: ${intent.captureSignals.join(", ")}.` : ""} Lead captured: ${leadCaptured}.]
 
-${buildStageGuidance(intent?.stage || "greeting", leadCaptured, biz)}`;
+${buildStageGuidance(intent?.stage || "greeting", leadCaptured, biz, data.phone)}`;
 }
 
 // Builds additional knowledge sections from chatbot_config data.
@@ -330,9 +330,14 @@ Tone: friendly, brief, low-key. Match their energy — they're just looking arou
 }
 
 // Stage-aware lead capture guidance — replaces message-count triggers.
-function buildStageGuidance(stage: ConversationStage, leadCaptured: boolean, biz: string): string {
+function buildStageGuidance(stage: ConversationStage, leadCaptured: boolean, biz: string, bizPhone: string): string {
   if (leadCaptured) {
-    return "The homeowner has already shared their contact info. Continue being helpful but there's no need to ask for info again.";
+    return `The homeowner has already shared their contact info. Don't ask for info again.
+
+**Post-capture behavior (do this ONCE, naturally, after capture):**
+- Ask what times generally work for them: "What days/times generally work best for you?" — accept any answer (specific time, range, "weekday afternoons", "evenings only", whatever). Do NOT push for a specific slot.
+- Then pre-prime the handoff: "Got it. ${biz} will text you from ${bizPhone} within the next hour to lock in a time. Save that number so you don't miss it."
+- After this, just be helpful for any remaining questions. Don't re-ask about timing.`;
   }
 
   switch (stage) {
