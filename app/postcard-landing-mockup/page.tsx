@@ -114,13 +114,19 @@ export default function PostcardLandingMockup() {
         camera.position.set(0, 130, 220);
         camera.lookAt(0, 0, 0);
 
-        // Shift the rendered view so the home anchors on the LEFT,
-        // out from under the right-rail card.
-        const VIEW_OFFSET_X_PCT = 0.2; // 20% rightward window offset → subject appears left
+        // Shift the rendered view so the home anchors on the LEFT on
+        // desktop (out from under the right-rail card). On mobile the
+        // card is a bottom sheet, so we center the home instead.
+        const DESKTOP_OFFSET_X_PCT = 0.2;
         const applyViewOffset = () => {
           const fw = container.clientWidth;
           const fh = container.clientHeight;
-          camera.setViewOffset(fw, fh, fw * VIEW_OFFSET_X_PCT, 0, fw, fh);
+          const isMobile = window.innerWidth < 768;
+          if (isMobile) {
+            camera.clearViewOffset();
+          } else {
+            camera.setViewOffset(fw, fh, fw * DESKTOP_OFFSET_X_PCT, 0, fw, fh);
+          }
         };
         applyViewOffset();
 
@@ -236,8 +242,11 @@ export default function PostcardLandingMockup() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#0c0a08] text-stone-100 antialiased">
-      {/* 3D scene — fills the viewport */}
-      <div ref={containerRef} className="absolute inset-0" />
+      {/* 3D scene — full viewport on desktop, top 58vh on mobile */}
+      <div
+        ref={containerRef}
+        className="absolute left-0 right-0 top-0 h-[58vh] md:inset-0 md:h-auto"
+      />
 
       {/* Loading + attribution */}
       {!tilesReady && !error && (
@@ -260,13 +269,12 @@ export default function PostcardLandingMockup() {
         <div className="relative flex flex-col items-center">
           {/* Card */}
           <div
-            className="relative px-5 py-4 rounded-xl border border-white/[0.09] shadow-[0_12px_36px_-12px_rgba(0,0,0,0.65)]"
+            className="relative px-3.5 py-3 md:px-5 md:py-4 rounded-xl border border-white/[0.09] shadow-[0_12px_36px_-12px_rgba(0,0,0,0.65)] min-w-[170px] md:min-w-[220px]"
             style={{
               background:
                 "linear-gradient(180deg, rgba(40,34,28,0.48) 0%, rgba(20,16,12,0.62) 100%)",
               backdropFilter: "blur(18px) saturate(150%)",
               WebkitBackdropFilter: "blur(18px) saturate(150%)",
-              minWidth: 220,
             }}
           >
             <div className="absolute -top-px left-5 right-5 h-px bg-gradient-to-r from-transparent via-[#b13d1a]/55 to-transparent" />
@@ -303,11 +311,14 @@ export default function PostcardLandingMockup() {
         </div>
       </div>
 
-      {/* Right-edge fade so the card has contrast without darkening the house */}
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-[480px] bg-gradient-to-l from-black/60 via-black/20 to-transparent" />
+      {/* Right-edge fade so the card has contrast without darkening the house — desktop only */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-[480px] bg-gradient-to-l from-black/60 via-black/20 to-transparent hidden md:block" />
 
-      {/* Top-left address sliver */}
-      <div className="absolute top-6 left-6 flex flex-col gap-0.5 text-stone-300">
+      {/* Bottom-edge fade — mobile only, gives the bottom sheet visual lift off the 3D */}
+      <div className="pointer-events-none absolute left-0 right-0 bottom-[44vh] h-24 bg-gradient-to-t from-[#0c0a08] via-[#0c0a08]/30 to-transparent md:hidden z-20" />
+
+      {/* Top-left address sliver — desktop layout */}
+      <div className="absolute top-6 left-6 hidden md:flex flex-col gap-0.5 text-stone-300">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-stone-400">
           <span className="block w-1.5 h-1.5 rounded-full bg-[#b13d1a]" />
           Your home
@@ -323,8 +334,8 @@ export default function PostcardLandingMockup() {
         Imagery © Google · Photorealistic 3D Tiles
       </div>
 
-      {/* Floating premium card — right-side rail, glassmorphic, leaves house visible */}
-      <div className="absolute right-6 top-1/2 -translate-y-1/2 w-[380px] max-w-[calc(100vw-32px)] z-10 max-h-[calc(100vh-48px)] overflow-y-auto">
+      {/* Floating premium card — DESKTOP right-side rail, glassmorphic, leaves house visible */}
+      <div className="hidden md:block absolute right-6 top-1/2 -translate-y-1/2 w-[380px] max-w-[calc(100vw-32px)] z-10 max-h-[calc(100vh-48px)] overflow-y-auto">
         <div
           className="relative rounded-2xl border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]"
           style={{
@@ -424,6 +435,117 @@ export default function PostcardLandingMockup() {
                 ruufpro.com/stop
               </span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MOBILE bottom sheet — peek state shows contractor + CTA, scroll up for the rest */}
+      <div
+        className="md:hidden absolute left-0 right-0 bottom-0 h-[44vh] z-30 rounded-t-3xl overflow-hidden border-t border-white/10 shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.85)]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(28,24,20,0.92) 0%, rgba(14,12,10,0.97) 30%, rgba(14,12,10,1) 100%)",
+          backdropFilter: "blur(24px) saturate(140%)",
+          WebkitBackdropFilter: "blur(24px) saturate(140%)",
+        }}
+      >
+        {/* Hairline rust accent at top edge */}
+        <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-[#b13d1a]/60 to-transparent" />
+
+        {/* Drag handle nub */}
+        <div className="flex justify-center pt-2.5 pb-1">
+          <div className="w-9 h-1 rounded-full bg-stone-600/70" />
+        </div>
+
+        {/* Scrollable inner — peek shows down to CTA, swipe-scroll for rest */}
+        <div className="h-full overflow-y-auto overscroll-contain px-5 pt-3 pb-8">
+          {/* Roofer eyebrow */}
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-stone-400">
+            <span className="block w-1 h-1 rounded-full bg-[#b13d1a]" />
+            FL Licensed Roofer
+          </div>
+          <h1 className="mt-1.5 font-serif text-[24px] leading-[1.1] text-stone-50 tracking-tight">
+            {STUB.contractor.name}
+          </h1>
+          <div className="mt-1.5 flex items-center gap-2 text-[12px] flex-wrap">
+            <span className="text-[#e8a87c]">{STUB.contractor.rating} ★</span>
+            <span className="text-stone-500">·</span>
+            <span className="text-stone-400">
+              {STUB.contractor.reviews} Google reviews
+            </span>
+            <span className="text-stone-500">·</span>
+            <span className="text-stone-400 font-mono text-[11px]">
+              {STUB.contractor.license}
+            </span>
+          </div>
+
+          {/* Primary CTA — kept high so it's visible in peek state */}
+          <button
+            className="group mt-4 w-full px-5 py-3.5 rounded-xl bg-stone-50 text-stone-950 font-medium text-[15px] tracking-tight active:bg-white transition-colors flex items-center justify-between"
+            onClick={() => alert("Riley chat would open here")}
+          >
+            <span>Chat with {STUB.contractor.name}</span>
+            <span className="text-stone-400 text-xs">→</span>
+          </button>
+          <div className="mt-1.5 text-center text-[10px] uppercase tracking-[0.18em] text-stone-500">
+            Powered by Riley AI · answers in seconds
+          </div>
+
+          {/* Subtle "more below" affordance — peek-state cue */}
+          <div className="mt-3 mb-1 flex items-center justify-center gap-2 text-[9px] uppercase tracking-[0.22em] text-stone-500">
+            <span className="block h-px w-6 bg-stone-700" />
+            Swipe up for details
+            <span className="block h-px w-6 bg-stone-700" />
+          </div>
+
+          {/* Why you got the postcard */}
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-stone-500 mb-2">
+              Why you got the postcard
+            </div>
+            <p className="text-[14px] leading-relaxed text-stone-200">
+              Your roof at {TEST_ADDRESS} has stood through{" "}
+              <span className="text-[#e8a87c]">
+                {STUB.roofAgeYears} Florida summers
+              </span>{" "}
+              and {STUB.majorHurricanesSinceBuilt} major hurricanes. After two decades, it's earned a closer look.
+            </p>
+          </div>
+
+          {/* Fact grid */}
+          <div className="mt-4 grid grid-cols-3 border-t border-b border-white/10 divide-x divide-white/10">
+            <Fact label="Built" value={String(STUB.yearBuilt)} />
+            <Fact
+              label="Roof permit"
+              value={permitText}
+              accent={!STUB.lastPermitYear}
+            />
+            <Fact label="Flood zone" value={STUB.femaZone} />
+          </div>
+
+          {/* Chips */}
+          <div className="flex flex-wrap gap-1.5 mt-4">
+            {[
+              `Does ${STUB.contractor.name} handle insurance claims?`,
+              `What's their warranty?`,
+              `How soon can someone come out?`,
+              `How much do they charge for a roof this size?`,
+            ].map((q) => (
+              <button
+                key={q}
+                className="text-[11px] px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-stone-300 active:bg-white/10 transition-colors text-left"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+
+          {/* SB 76 footer */}
+          <div className="mt-4 pt-4 border-t border-white/10 text-[10px] text-stone-500 leading-relaxed">
+            We don't door-knock. We don't pressure insurance claims. SB 76 compliant. Stop these mailings:{" "}
+            <span className="underline decoration-stone-700">
+              ruufpro.com/stop
+            </span>
           </div>
         </div>
       </div>
