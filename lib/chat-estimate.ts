@@ -13,7 +13,7 @@ import {
 } from "@/lib/estimate";
 import { getWeatherSurge } from "@/lib/weather-surge";
 
-const MATERIAL_LABELS: Record<string, string> = {
+const DEFAULT_MATERIAL_LABELS: Record<string, string> = {
   asphalt: "Asphalt Shingles",
   metal: "Standing Seam Metal",
   tile: "Tile (Clay/Concrete)",
@@ -69,6 +69,14 @@ export async function runChatEstimate(
         "I can't generate an estimate right now because pricing hasn't been configured yet. But I can get the team to give you a personalized quote — want to leave your info?",
     };
   }
+
+  const materialLabels: Record<string, string> = {
+    asphalt: settings.asphalt_label || DEFAULT_MATERIAL_LABELS.asphalt,
+    metal: settings.metal_label || DEFAULT_MATERIAL_LABELS.metal,
+    tile: settings.tile_label || DEFAULT_MATERIAL_LABELS.tile,
+    flat: settings.flat_label || DEFAULT_MATERIAL_LABELS.flat,
+  };
+  const showRoofDetails = settings.show_roof_details ?? true;
 
   const rates: ContractorRates = {
     asphalt_low: settings.asphalt_low || 0,
@@ -201,7 +209,7 @@ export async function runChatEstimate(
 
       return {
         material: mat,
-        label: MATERIAL_LABELS[mat] || mat,
+        label: materialLabels[mat] || mat,
         priceLow: result.priceLow,
         priceHigh: result.priceHigh,
         rangeDisplay: `${low} – ${high}`,
@@ -218,7 +226,9 @@ export async function runChatEstimate(
   // Build summary for Riley to reference in conversation
   const primaryEst = estimates[0];
   const summary = [
-    `Satellite-measured roof: ${roofAreaSqft.toLocaleString()} sqft, ${pitchRatio}/12 pitch, ${roofData.numSegments} segments.`,
+    showRoofDetails
+      ? `Satellite-measured roof: ${roofAreaSqft.toLocaleString()} sqft, ${pitchRatio}/12 pitch, ${roofData.numSegments} segments.`
+      : "",
     `${estimates.length} material option${estimates.length > 1 ? "s" : ""} available.`,
     `Most affordable: ${primaryEst.label} at ${primaryEst.rangeDisplay}.`,
     estimates.length > 1

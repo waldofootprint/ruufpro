@@ -263,6 +263,7 @@ interface EstimateResponse {
     alerts: string[];
     severity: string;
   } | null;
+  show_roof_details?: boolean;
 }
 
 // ----- STEP TRANSITION (enhanced with scale for 3D feel) -----
@@ -1179,14 +1180,16 @@ export default function EstimateWidgetV4({
         {/* ===== STEP 8: Good/Better/Best Results ===== */}
         {step === 8 && estimateData && !manualQuote && (
           <div className="space-y-5 py-2">
-            <div className="text-center">
-              <p className="text-[12px] font-semibold uppercase mb-2" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>
-                {estimateData.roof_data.is_satellite ? "Satellite-Measured" : "Estimated"} Roof Analysis
-              </p>
-              <p className="text-[12px]" style={{ color: C.textTertiary }}>
-                {estimateData.roof_data.detail_display}
-              </p>
-            </div>
+            {estimateData.show_roof_details !== false && (
+              <div className="text-center">
+                <p className="text-[12px] font-semibold uppercase mb-2" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>
+                  {estimateData.roof_data.is_satellite ? "Satellite-Measured" : "Estimated"} Roof Analysis
+                </p>
+                <p className="text-[12px]" style={{ color: C.textTertiary }}>
+                  {estimateData.roof_data.detail_display}
+                </p>
+              </div>
+            )}
 
             {/* Weather surge notice — shown when roofer has enabled storm pricing */}
             {estimateData.weather_surge?.active && (
