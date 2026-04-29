@@ -71,6 +71,13 @@ const MATERIAL_META: Record<string, { label: string; warranty: string; windRatin
   },
 };
 
+const DEFAULT_LABELS: Record<string, string> = {
+  asphalt: MATERIAL_META.asphalt.label,
+  metal: MATERIAL_META.metal.label,
+  tile: MATERIAL_META.tile.label,
+  flat: MATERIAL_META.flat.label,
+};
+
 // Mode B (Session AZ): when a guardrail refuses the measurement, we still
 // write a lead so the roofer can follow up with an on-site quote instead of
 // the homeowner dead-ending at a "contact us" message.
@@ -199,6 +206,15 @@ export async function POST(request: NextRequest) {
         flat_high: loaded.flat_high || 0,
       };
     }
+
+    // Custom tier labels — fall back to hardcoded defaults when null.
+    const materialLabels: Record<string, string> = {
+      asphalt: settings?.asphalt_label || DEFAULT_LABELS.asphalt,
+      metal: settings?.metal_label || DEFAULT_LABELS.metal,
+      tile: settings?.tile_label || DEFAULT_LABELS.tile,
+      flat: settings?.flat_label || DEFAULT_LABELS.flat,
+    };
+    const showRoofDetails: boolean = settings?.show_roof_details ?? true;
 
     // Step 2: Get roof data + weather surge (parallel to avoid latency)
     let roofData = null;
@@ -386,7 +402,7 @@ export async function POST(request: NextRequest) {
         const meta = MATERIAL_META[mat];
         return {
           material: mat,
-          label: meta.label,
+          label: materialLabels[mat] || meta.label,
           description: meta.description,
           warranty: meta.warranty,
           wind_rating: meta.windRating,
@@ -577,6 +593,7 @@ export async function POST(request: NextRequest) {
     // calculateEstimate (not just telemetry winner).
     return NextResponse.json({
       estimates,
+      show_roof_details: showRoofDetails,
       roof_data: {
         roof_area_sqft: firstEst.roof_area_sqft,
         pitch_degrees: firstEst.pitch_degrees,
