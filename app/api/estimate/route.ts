@@ -189,8 +189,11 @@ export async function POST(request: NextRequest) {
 
       if (settingsErr || !loaded) {
         return NextResponse.json(
-          { error: "Contractor estimate settings not found. Please configure pricing first." },
-          { status: 404 }
+          {
+            error: "Estimates aren't available yet.",
+            error_code: "setup_incomplete",
+          },
+          { status: 400 }
         );
       }
       settings = loaded;
