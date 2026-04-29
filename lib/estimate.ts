@@ -205,7 +205,7 @@ export function resolveShapeClass(
   if (alphaFlagsComplex || compactFlagsComplex) {
     return { shapeClass: "complex_multiplane", source: "auto_complex" };
   }
-  return { shapeClass: "hip", source: "auto_hip_default" };
+  return { shapeClass: "simple_gable", source: "auto_hip_default" };
 }
 
 // Waste factor: more complex roofs (more segments) need more extra material
