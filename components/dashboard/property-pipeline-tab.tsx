@@ -12,7 +12,28 @@ import {
   Pause,
   X as XIcon,
   ArrowUpRight,
+  Calendar,
+  Wind,
+  Mailbox,
+  Inbox,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+
+type Variant = "A" | "B" | "C" | "D" | "E" | "F" | "G";
+const VARIANT_ORDER: Variant[] = ["A", "B", "C", "D", "E", "F", "G"];
+const VARIANT_LABELS: Record<Variant, string> = {
+  A: "Press Bulletin",
+  B: "Tool Catalog",
+  C: "Material Catalog",
+  D: "Forensic Specimen",
+  E: "Italian Editorial",
+  F: "Blueprint",
+  G: "Trade Card",
+};
+const VARIANTS_WITH_BACK: ReadonlySet<Variant> = new Set<Variant>(["A", "B"]);
+import { StatCard, StatCardGrid } from "@/components/dashboard/stat-cards";
+import { getCountyStormStats } from "@/lib/property-pipeline/storm-stats";
 
 const QUEUE_FETCH = 12; // hero + 5 up next + buffer
 
@@ -51,6 +72,8 @@ export function PropertyPipelineTab() {
   const [blockInput, setBlockInput] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
   const [blockBusy, setBlockBusy] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<Variant>("A");
+  const [previewSide, setPreviewSide] = useState<"front" | "back">("front");
 
   // ---- Initial loads -------------------------------------------------------
 
@@ -113,7 +136,7 @@ export function PropertyPipelineTab() {
       const r = await fetch("/api/pipeline/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId: hero.id }),
+        body: JSON.stringify({ candidateId: hero.id, variant: selectedVariant }),
       });
       const json = await r.json();
       if (r.ok && json.success) {
@@ -231,7 +254,7 @@ export function PropertyPipelineTab() {
   if (!loading && total === 0) return <EmptyState />;
 
   return (
-    <div className="max-w-[920px] mx-auto space-y-7">
+    <div className="max-w-[1200px] mx-auto space-y-7">
       <Heading />
 
       {prefs?.auto_approve ? (
@@ -251,6 +274,13 @@ export function PropertyPipelineTab() {
           sending={sending}
           onApprove={approve}
           onSkip={skip}
+          variant={selectedVariant}
+          onVariantChange={(v) => {
+            setSelectedVariant(v);
+            if (!VARIANTS_WITH_BACK.has(v)) setPreviewSide("front");
+          }}
+          previewSide={previewSide}
+          onSideChange={setPreviewSide}
         />
       ) : (
         <div className="neu-flat p-10 text-center" style={{ borderRadius: 18 }}>
@@ -264,7 +294,11 @@ export function PropertyPipelineTab() {
 
       <SectionDivider label="This Month" />
 
-      <StatsStrip usage={usage} dailyCap={prefs?.daily_cap ?? 5} />
+      <StatsStrip
+        usage={usage}
+        dailyCap={prefs?.daily_cap ?? 5}
+        inQueue={Math.max(0, total - skipped.size)}
+      />
 
       <SectionDivider label="Address Controls" />
 
@@ -486,14 +520,23 @@ function HeroCard({
   sending,
   onApprove,
   onSkip,
+  variant,
+  onVariantChange,
+  previewSide,
+  onSideChange,
 }: {
   candidate: PipelineCandidate;
   sending: boolean;
   onApprove: () => void;
   onSkip: () => void;
+  variant: Variant;
+  onVariantChange: (v: Variant) => void;
+  previewSide: "front" | "back";
+  onSideChange: (s: "front" | "back") => void;
 }) {
   const roofAge = CURRENT_YEAR - candidate.year_built;
   const isRequested = !!candidate.requested_at;
+  const storm = getCountyStormStats("manatee", candidate.year_built);
 
   return (
     <div className="neu-flat" style={{ padding: 28, borderRadius: 18 }}>
@@ -532,11 +575,48 @@ function HeroCard({
             </div>
           </div>
 
-          {/* Three facts */}
+          {/* Six facts — DB stats + NOAA/FEMA county-level since year_built */}
           <div className="grid grid-cols-3 gap-2.5">
-            <Fact label="Roof Age" value={`${roofAge}`} unit="yrs" sub={`built ${candidate.year_built}`} />
-            <Fact label="Last Sale" value={candidate.last_sale_year ? `${candidate.last_sale_year}` : "—"} sub={candidate.last_sale_year ? `${CURRENT_YEAR - candidate.last_sale_year} yrs ago` : "no record"} />
-            <Fact label="Assessed" value={candidate.assessed_value ? `$${Math.round(candidate.assessed_value / 1000)}k` : "—"} sub="county record" />
+            <Fact
+              label="Roof Age"
+              value={`${roofAge}`}
+              unit="yrs"
+              sub={`built ${candidate.year_built}`}
+            />
+            <Fact
+              label="Major Hurricanes"
+              value={storm ? `${storm.majorHurricanesSinceBuild}` : "—"}
+              sub={storm ? `Cat 3+ within 100 mi · NOAA` : "since build"}
+            />
+            <Fact
+              label="Closest Approach"
+              value={storm?.closestMajorSinceBuild ? `${Math.round(storm.closestMajorSinceBuild.milesAtClosest)}` : "—"}
+              unit="mi"
+              sub={
+                storm?.closestMajorSinceBuild
+                  ? `${storm.closestMajorSinceBuild.name}, ${storm.closestMajorSinceBuild.year}`
+                  : "no record"
+              }
+            />
+            <Fact
+              label="Last Sale"
+              value={candidate.last_sale_year ? `${candidate.last_sale_year}` : "—"}
+              sub={
+                candidate.last_sale_year
+                  ? `${CURRENT_YEAR - candidate.last_sale_year} yrs ago`
+                  : "no record"
+              }
+            />
+            <Fact
+              label="Assessed"
+              value={candidate.assessed_value ? `$${Math.round(candidate.assessed_value / 1000)}k` : "—"}
+              sub="county record"
+            />
+            <Fact
+              label="FEMA Declarations"
+              value={storm ? `${storm.federalDisastersSinceBuild}` : "—"}
+              sub={storm ? "hurricane disasters · FEMA" : "since build"}
+            />
           </div>
 
           {/* Actions */}
@@ -581,12 +661,18 @@ function HeroCard({
               borderTop: "1px dashed var(--neu-border)",
             }}
           >
-            Mailing under your FL roofing license · postage at Lob cost · Variant A
+            Mailing under your FL roofing license · postage at Lob cost · Variant {variant} — {VARIANT_LABELS[variant]}
           </div>
         </div>
 
         {/* Right column — postcard preview */}
-        <PostcardPreview candidate={candidate} />
+        <PostcardPreview
+          candidate={candidate}
+          variant={variant}
+          onVariantChange={onVariantChange}
+          previewSide={previewSide}
+          onSideChange={onSideChange}
+        />
       </div>
     </div>
   );
@@ -650,7 +736,33 @@ function Fact({
   );
 }
 
-function PostcardPreview({ candidate }: { candidate: PipelineCandidate }) {
+function PostcardPreview({
+  candidate,
+  variant,
+  onVariantChange,
+  previewSide,
+  onSideChange,
+}: {
+  candidate: PipelineCandidate;
+  variant: Variant;
+  onVariantChange: (v: Variant) => void;
+  previewSide: "front" | "back";
+  onSideChange: (s: "front" | "back") => void;
+}) {
+  const idx = VARIANT_ORDER.indexOf(variant);
+  const total = VARIANT_ORDER.length;
+  const hasBack = VARIANTS_WITH_BACK.has(variant);
+  const effectiveSide = hasBack ? previewSide : "front";
+
+  function step(dir: -1 | 1) {
+    const next = VARIANT_ORDER[(idx + dir + total) % total];
+    onVariantChange(next);
+  }
+
+  const previewSrc = `/api/pipeline/postcard-preview?candidateId=${encodeURIComponent(
+    candidate.id
+  )}&variant=${variant}&side=${effectiveSide}`;
+
   return (
     <div
       style={{
@@ -664,118 +776,188 @@ function PostcardPreview({ candidate }: { candidate: PipelineCandidate }) {
         gap: 12,
       }}
     >
-      <div className="flex gap-1.5">
-        <span
-          className="uppercase"
+      {/* Variant carousel header */}
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => step(-1)}
+          aria-label="Previous variant"
+          className="inline-flex items-center justify-center"
           style={{
-            fontSize: 10,
-            letterSpacing: "0.12em",
-            padding: "6px 12px",
+            width: 28,
+            height: 28,
             borderRadius: 999,
-            background: "var(--neu-ink-2)",
-            color: "#faf8f4",
-            fontFamily: "var(--font-mono)",
+            background: "var(--neu-bg)",
+            boxShadow:
+              "2px 2px 4px var(--neu-shadow-dark), -2px -2px 4px var(--neu-shadow-light)",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--neu-text)",
           }}
         >
-          Front
-        </span>
-        <span
-          className="uppercase"
-          style={{
-            fontSize: 10,
-            letterSpacing: "0.12em",
-            padding: "6px 12px",
-            borderRadius: 999,
-            color: "var(--neu-text-muted)",
-            border: "1px solid var(--neu-border)",
-            fontFamily: "var(--font-mono)",
-          }}
-        >
-          Back
-        </span>
-      </div>
-
-      <div
-        style={{
-          aspectRatio: "6 / 4.25",
-          borderRadius: 10,
-          background: "linear-gradient(140deg, #2a231e 0%, #1a1512 100%)",
-          color: "#faf8f4",
-          padding: 22,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "4px 4px 12px rgba(0,0,0,0.18)",
-        }}
-      >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
         <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(circle at 80% 20%, rgba(249,115,22,0.18), transparent 55%)",
-          }}
-        />
-        <div
-          className="uppercase"
-          style={{
-            fontSize: 9.5,
-            letterSpacing: "0.22em",
-            color: "rgba(250,248,244,0.55)",
-            fontFamily: "var(--font-mono)",
-            position: "relative",
-            zIndex: 1,
-          }}
+          className="flex flex-col items-center text-center"
+          style={{ flex: 1, minWidth: 0 }}
         >
-          A note about your roof — {candidate.address_raw}
-        </div>
-        <div
-          className="font-extrabold italic"
-          style={{
-            fontFamily: "var(--font-display, var(--font-sans))",
-            fontSize: 22,
-            lineHeight: 1.05,
-            letterSpacing: "-0.02em",
-            position: "relative",
-            zIndex: 1,
-            maxWidth: "92%",
-          }}
-        >
-          The worst roof damage is the kind you don&apos;t see coming.
-        </div>
-        <div
-          className="flex justify-between items-end uppercase"
-          style={{
-            position: "relative",
-            zIndex: 1,
-            fontFamily: "var(--font-mono)",
-            fontSize: 9.5,
-            color: "rgba(250,248,244,0.7)",
-            letterSpacing: "0.1em",
-          }}
-        >
-          <div>
-            {CURRENT_YEAR - candidate.year_built} yrs old
-            <br />
-            scan to see yours
+          <div
+            className="uppercase tabular-nums"
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 9.5,
+              letterSpacing: "0.18em",
+              color: "var(--neu-text-dim)",
+            }}
+          >
+            Variant {variant} · {idx + 1} of {total}
           </div>
           <div
+            className="font-bold"
             style={{
-              width: 44,
-              height: 44,
-              background: "#faf8f4",
-              borderRadius: 4,
-              backgroundImage:
-                "linear-gradient(45deg, #1a1512 25%, transparent 25%), linear-gradient(-45deg, #1a1512 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1512 75%), linear-gradient(-45deg, transparent 75%, #1a1512 75%)",
-              backgroundSize: "8px 8px",
-              backgroundPosition: "0 0, 0 4px, 4px -4px, -4px 0",
+              fontFamily: "var(--font-display, var(--font-sans))",
+              fontSize: 14,
+              letterSpacing: "-0.01em",
+              color: "var(--neu-text)",
+              lineHeight: 1.1,
+              marginTop: 2,
             }}
-          />
+          >
+            {VARIANT_LABELS[variant]}
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => step(1)}
+          aria-label="Next variant"
+          className="inline-flex items-center justify-center"
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 999,
+            background: "var(--neu-bg)",
+            boxShadow:
+              "2px 2px 4px var(--neu-shadow-dark), -2px -2px 4px var(--neu-shadow-light)",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--neu-text)",
+          }}
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </div>
+
+      {/* Front / Back pills */}
+      <div className="flex gap-1.5">
+        <SidePill
+          label="Front"
+          active={effectiveSide === "front"}
+          onClick={() => onSideChange("front")}
+        />
+        <SidePill
+          label={hasBack ? "Back" : "Back · pending"}
+          active={effectiveSide === "back"}
+          disabled={!hasBack}
+          onClick={() => hasBack && onSideChange("back")}
+        />
+      </div>
+
+      {/* Iframe — Lob HTML at 1125×625, scaled into the container width */}
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          aspectRatio: "1125 / 625",
+          borderRadius: 10,
+          overflow: "hidden",
+          background: "#fff",
+          boxShadow: "4px 4px 12px rgba(0,0,0,0.18)",
+          border: "1px solid var(--neu-border)",
+        }}
+      >
+        <iframe
+          key={previewSrc}
+          src={previewSrc}
+          title={`Postcard ${variant} ${effectiveSide}`}
+          style={{
+            width: 1125,
+            height: 625,
+            border: "none",
+            transformOrigin: "0 0",
+            transform: "scale(0.34)",
+            position: "absolute",
+            top: 0,
+            left: 0,
+          }}
+          ref={(el) => {
+            if (!el) return;
+            const parent = el.parentElement;
+            if (!parent) return;
+            const setScale = () => {
+              const w = parent.clientWidth;
+              el.style.transform = `scale(${w / 1125})`;
+            };
+            setScale();
+            const ro = new ResizeObserver(setScale);
+            ro.observe(parent);
+          }}
+        />
+      </div>
+
+      {!hasBack && (
+        <div
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            letterSpacing: "0.06em",
+            color: "var(--neu-text-dim)",
+            lineHeight: 1.4,
+          }}
+        >
+          Back design pending for variant {variant}. Front works; back is locked
+          for A and B.
+        </div>
+      )}
     </div>
+  );
+}
+
+function SidePill({
+  label,
+  active,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="uppercase"
+      style={{
+        fontSize: 10,
+        letterSpacing: "0.12em",
+        padding: "6px 12px",
+        borderRadius: 999,
+        background: active ? "var(--neu-ink-2)" : "transparent",
+        color: active
+          ? "#faf8f4"
+          : disabled
+            ? "var(--neu-text-dim)"
+            : "var(--neu-text-muted)",
+        border: active ? "1px solid var(--neu-ink-2)" : "1px solid var(--neu-border)",
+        fontFamily: "var(--font-mono)",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.55 : 1,
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -870,85 +1052,45 @@ function UpNext({
 function StatsStrip({
   usage,
   dailyCap,
+  inQueue,
 }: {
   usage: Usage | null;
   dailyCap: number;
+  inQueue: number;
 }) {
   return (
-    <div className="grid grid-cols-3 gap-3.5">
-      <Stat label="Daily Cap" value={String(dailyCap)} unit="/ day" sub="paces your bundle across the month" />
-      <Stat
+    <StatCardGrid>
+      <StatCard
+        label="Daily Cap"
+        value={String(dailyCap)}
+        subtitle="per day"
+        icon={Calendar}
+      />
+      <StatCard
         label="Bundle Used"
-        value={usage ? String(usage.used) : "—"}
-        unit={usage ? `/ ${usage.bundled}` : ""}
-        sub={
+        value={usage ? `${usage.used}/${usage.bundled}` : "—"}
+        subtitle={
           usage?.is_overage
             ? "overage at Lob cost + $0.10"
             : usage
               ? `${usage.remaining} left this month`
               : "loading…"
         }
+        icon={Mailbox}
       />
-      <Stat
+      <StatCard
         label="In Queue"
-        value={usage ? String(Math.max(0, usage.bundled - usage.used)) : "—"}
-        unit="ready"
-        sub="approve or auto-approve to send"
+        value={String(inQueue)}
+        subtitle="waiting for approval"
+        icon={Inbox}
       />
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  unit,
-  sub,
-}: {
-  label: string;
-  value: string;
-  unit?: string;
-  sub: string;
-}) {
-  return (
-    <div className="neu-flat" style={{ padding: 18, borderRadius: 16 }}>
-      <div
-        className="uppercase"
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          letterSpacing: "0.16em",
-          color: "var(--neu-text-dim)",
-          marginBottom: 10,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        className="font-bold tabular-nums"
-        style={{
-          fontFamily: "var(--font-display, var(--font-sans))",
-          fontSize: 22,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        {value}
-        {unit && (
-          <span
-            className="ml-1 font-medium"
-            style={{ fontSize: 12, color: "var(--neu-text-muted)" }}
-          >
-            {unit}
-          </span>
-        )}
-      </div>
-      <div
-        className="mt-1.5"
-        style={{ fontSize: 11.5, color: "var(--neu-text-muted)" }}
-      >
-        {sub}
-      </div>
-    </div>
+      <StatCard
+        label="QR Scans"
+        value="—"
+        subtitle="tracking soon"
+        icon={Wind}
+      />
+    </StatCardGrid>
   );
 }
 

@@ -17,8 +17,11 @@ import {
 import {
   renderPostcardFront,
   renderPostcardBack,
+  type FrontVariant,
   type PostcardData,
 } from "@/lib/property-pipeline/postcard-template";
+
+const VALID_VARIANTS: readonly FrontVariant[] = ["A", "B", "C", "D", "E", "F", "G"];
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ruufpro.com";
 
@@ -36,6 +39,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const variantRaw = typeof body?.variant === "string" ? body.variant.toUpperCase() : "A";
+    const variant: FrontVariant = (
+      VALID_VARIANTS.includes(variantRaw as FrontVariant) ? variantRaw : "A"
+    ) as FrontVariant;
 
     // 1. Auth
     const cookieStore = cookies();
@@ -189,10 +196,8 @@ export async function POST(request: NextRequest) {
       qrDataUrl,
       optOutUrl: `${SITE_URL}/stop/${qrShortCode}`,
     };
-    // Variant default: "A" (Press Bulletin). Roofer-pick UI lands later.
-    // Back must receive the same variant so front + back stay paired.
-    const front = renderPostcardFront(postcardData, { variant: "A" });
-    const back = renderPostcardBack(postcardData, { variant: "A" });
+    const front = renderPostcardFront(postcardData, { variant });
+    const back = renderPostcardBack(postcardData, { variant });
 
     // 9. Lob send
     const postcardsApi = getPostcardsApi();

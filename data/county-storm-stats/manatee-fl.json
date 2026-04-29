@@ -1,0 +1,628 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-04-29T13:07:43.820Z",
+  "county": {
+    "key": "manatee",
+    "displayName": "Manatee County, FL",
+    "state": "FL",
+    "fipsState": "12",
+    "fipsCounty": "081",
+    "centroidLat": 27.4783,
+    "centroidLng": -82.3452
+  },
+  "sources": [
+    {
+      "name": "NOAA HURDAT2",
+      "description": "Atlantic hurricane best-track database, 1851–present.",
+      "url": "https://www.nhc.noaa.gov/data/hurdat/hurdat2-1851-2024-040425.txt"
+    },
+    {
+      "name": "FEMA OpenFEMA Disaster Declarations Summaries v2",
+      "description": "Federal disaster declarations.",
+      "url": "https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries?%24filter=state+eq+%27FL%27+and+fipsCountyCode+eq+%27081%27+and+incidentType+eq+%27Hurricane%27&%24select=disasterNumber%2CdeclarationDate%2CdeclarationTitle%2CincidentBeginDate%2CincidentEndDate%2CincidentType&%24top=1000&%24orderby=incidentBeginDate+desc"
+    }
+  ],
+  "notes": [
+    "Major-hurricane count = storms whose track passed within 100 mi of the county centroid (27.4783, -82.3452) AND whose peak lifetime intensity was Saffir-Simpson Cat 3 or higher.",
+    "HURDAT2 covers through 2024. Storms after 2024 are missing until NOAA publishes the next HURDAT2 release.",
+    "FEMA declarations use county FIPS 12081 (Manatee County, FL) and incident type 'Hurricane'. Multiple declarations per disaster number are deduped."
+  ],
+  "hurdat2": {
+    "sourceUrl": "https://www.nhc.noaa.gov/data/hurdat/hurdat2-1851-2024-040425.txt",
+    "lastYearCovered": 2024,
+    "radiusMiles": 100,
+    "centroid": {
+      "lat": 27.4783,
+      "lng": -82.3452
+    },
+    "allNamedStormsWithinRadius": 128,
+    "majorsWithinRadius": [
+      {
+        "id": "AL031871",
+        "name": "UNNAMED",
+        "year": 1871,
+        "closestApproach": {
+          "miles": 69.1,
+          "date": "18710817"
+        },
+        "peakWindAtClosestApproachKt": 70,
+        "peakWindAtClosestApproachMph": 81,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 100,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL041871",
+        "name": "UNNAMED",
+        "year": 1871,
+        "closestApproach": {
+          "miles": 85.4,
+          "date": "18710825"
+        },
+        "peakWindAtClosestApproachKt": 70,
+        "peakWindAtClosestApproachMph": 81,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 100,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL051873",
+        "name": "UNNAMED",
+        "year": 1873,
+        "closestApproach": {
+          "miles": 68.2,
+          "date": "18731007"
+        },
+        "peakWindAtClosestApproachKt": 100,
+        "peakWindAtClosestApproachMph": 115,
+        "categoryAtClosestApproach": 3,
+        "peakLifetimeWindKt": 100,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL031888",
+        "name": "UNNAMED",
+        "year": 1888,
+        "closestApproach": {
+          "miles": 64.3,
+          "date": "18880817"
+        },
+        "peakWindAtClosestApproachKt": 70,
+        "peakWindAtClosestApproachMph": 81,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 110,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL041894",
+        "name": "UNNAMED",
+        "year": 1894,
+        "closestApproach": {
+          "miles": 40.4,
+          "date": "18940926"
+        },
+        "peakWindAtClosestApproachKt": 75,
+        "peakWindAtClosestApproachMph": 86,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 105,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL081906",
+        "name": "UNNAMED",
+        "year": 1906,
+        "closestApproach": {
+          "miles": 41.5,
+          "date": "19061022"
+        },
+        "peakWindAtClosestApproachKt": 30,
+        "peakWindAtClosestApproachMph": 35,
+        "categoryAtClosestApproach": 0,
+        "peakLifetimeWindKt": 105,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL051910",
+        "name": "UNNAMED",
+        "year": 1910,
+        "closestApproach": {
+          "miles": 27.3,
+          "date": "19101018"
+        },
+        "peakWindAtClosestApproachKt": 70,
+        "peakWindAtClosestApproachMph": 81,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 130,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL061921",
+        "name": "UNNAMED",
+        "year": 1921,
+        "closestApproach": {
+          "miles": 51.2,
+          "date": "19211025"
+        },
+        "peakWindAtClosestApproachKt": 100,
+        "peakWindAtClosestApproachMph": 115,
+        "categoryAtClosestApproach": 3,
+        "peakLifetimeWindKt": 120,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL071926",
+        "name": "UNNAMED",
+        "year": 1926,
+        "closestApproach": {
+          "miles": 47.8,
+          "date": "19260919"
+        },
+        "peakWindAtClosestApproachKt": 100,
+        "peakWindAtClosestApproachMph": 115,
+        "categoryAtClosestApproach": 3,
+        "peakLifetimeWindKt": 130,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL041928",
+        "name": "UNNAMED",
+        "year": 1928,
+        "closestApproach": {
+          "miles": 30.7,
+          "date": "19280917"
+        },
+        "peakWindAtClosestApproachKt": 85,
+        "peakWindAtClosestApproachMph": 98,
+        "categoryAtClosestApproach": 2,
+        "peakLifetimeWindKt": 140,
+        "peakLifetimeCategory": 5
+      },
+      {
+        "id": "AL021930",
+        "name": "UNNAMED",
+        "year": 1930,
+        "closestApproach": {
+          "miles": 21.8,
+          "date": "19300909"
+        },
+        "peakWindAtClosestApproachKt": 40,
+        "peakWindAtClosestApproachMph": 46,
+        "categoryAtClosestApproach": 0,
+        "peakLifetimeWindKt": 135,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL111933",
+        "name": "UNNAMED",
+        "year": 1933,
+        "closestApproach": {
+          "miles": 48.1,
+          "date": "19330904"
+        },
+        "peakWindAtClosestApproachKt": 65,
+        "peakWindAtClosestApproachMph": 75,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 120,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL031935",
+        "name": "UNNAMED",
+        "year": 1935,
+        "closestApproach": {
+          "miles": 38.3,
+          "date": "19350904"
+        },
+        "peakWindAtClosestApproachKt": 115,
+        "peakWindAtClosestApproachMph": 132,
+        "categoryAtClosestApproach": 4,
+        "peakLifetimeWindKt": 160,
+        "peakLifetimeCategory": 5
+      },
+      {
+        "id": "AL051941",
+        "name": "UNNAMED",
+        "year": 1941,
+        "closestApproach": {
+          "miles": 53.9,
+          "date": "19411006"
+        },
+        "peakWindAtClosestApproachKt": 60,
+        "peakWindAtClosestApproachMph": 69,
+        "categoryAtClosestApproach": 0,
+        "peakLifetimeWindKt": 105,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL131944",
+        "name": "UNNAMED",
+        "year": 1944,
+        "closestApproach": {
+          "miles": 21.4,
+          "date": "19441019"
+        },
+        "peakWindAtClosestApproachKt": 90,
+        "peakWindAtClosestApproachMph": 104,
+        "categoryAtClosestApproach": 2,
+        "peakLifetimeWindKt": 125,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL091945",
+        "name": "UNNAMED",
+        "year": 1945,
+        "closestApproach": {
+          "miles": 33.5,
+          "date": "19450916"
+        },
+        "peakWindAtClosestApproachKt": 75,
+        "peakWindAtClosestApproachMph": 86,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 115,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL041947",
+        "name": "UNNAMED",
+        "year": 1947,
+        "closestApproach": {
+          "miles": 67.7,
+          "date": "19470918"
+        },
+        "peakWindAtClosestApproachKt": 85,
+        "peakWindAtClosestApproachMph": 98,
+        "categoryAtClosestApproach": 2,
+        "peakLifetimeWindKt": 125,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL021949",
+        "name": "UNNAMED",
+        "year": 1949,
+        "closestApproach": {
+          "miles": 50.6,
+          "date": "19490827"
+        },
+        "peakWindAtClosestApproachKt": 65,
+        "peakWindAtClosestApproachMph": 75,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 115,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL051950",
+        "name": "EASY",
+        "year": 1950,
+        "closestApproach": {
+          "miles": 52.1,
+          "date": "19500906"
+        },
+        "peakWindAtClosestApproachKt": 60,
+        "peakWindAtClosestApproachMph": 69,
+        "categoryAtClosestApproach": 0,
+        "peakLifetimeWindKt": 105,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL111950",
+        "name": "KING",
+        "year": 1950,
+        "closestApproach": {
+          "miles": 86.6,
+          "date": "19501018"
+        },
+        "peakWindAtClosestApproachKt": 80,
+        "peakWindAtClosestApproachMph": 92,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 115,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL051960",
+        "name": "DONNA",
+        "year": 1960,
+        "closestApproach": {
+          "miles": 30,
+          "date": "19600911"
+        },
+        "peakWindAtClosestApproachKt": 85,
+        "peakWindAtClosestApproachMph": 98,
+        "categoryAtClosestApproach": 2,
+        "peakLifetimeWindKt": 125,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL011966",
+        "name": "ALMA",
+        "year": 1966,
+        "closestApproach": {
+          "miles": 64.7,
+          "date": "19660609"
+        },
+        "peakWindAtClosestApproachKt": 90,
+        "peakWindAtClosestApproachMph": 104,
+        "categoryAtClosestApproach": 2,
+        "peakLifetimeWindKt": 100,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL131998",
+        "name": "MITCH",
+        "year": 1998,
+        "closestApproach": {
+          "miles": 88.4,
+          "date": "19981105"
+        },
+        "peakWindAtClosestApproachKt": 55,
+        "peakWindAtClosestApproachMph": 63,
+        "categoryAtClosestApproach": 0,
+        "peakLifetimeWindKt": 155,
+        "peakLifetimeCategory": 5
+      },
+      {
+        "id": "AL032004",
+        "name": "CHARLEY",
+        "year": 2004,
+        "closestApproach": {
+          "miles": 42.7,
+          "date": "20040813"
+        },
+        "peakWindAtClosestApproachKt": 125,
+        "peakWindAtClosestApproachMph": 144,
+        "categoryAtClosestApproach": 4,
+        "peakLifetimeWindKt": 130,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL062004",
+        "name": "FRANCES",
+        "year": 2004,
+        "closestApproach": {
+          "miles": 43,
+          "date": "20040906"
+        },
+        "peakWindAtClosestApproachKt": 55,
+        "peakWindAtClosestApproachMph": 63,
+        "categoryAtClosestApproach": 0,
+        "peakLifetimeWindKt": 125,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL112004",
+        "name": "JEANNE",
+        "year": 2004,
+        "closestApproach": {
+          "miles": 48.1,
+          "date": "20040926"
+        },
+        "peakWindAtClosestApproachKt": 75,
+        "peakWindAtClosestApproachMph": 86,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 105,
+        "peakLifetimeCategory": 3
+      },
+      {
+        "id": "AL112017",
+        "name": "IRMA",
+        "year": 2017,
+        "closestApproach": {
+          "miles": 50.6,
+          "date": "20170911"
+        },
+        "peakWindAtClosestApproachKt": 65,
+        "peakWindAtClosestApproachMph": 75,
+        "categoryAtClosestApproach": 1,
+        "peakLifetimeWindKt": 155,
+        "peakLifetimeCategory": 5
+      },
+      {
+        "id": "AL292020",
+        "name": "ETA",
+        "year": 2020,
+        "closestApproach": {
+          "miles": 76.4,
+          "date": "20201112"
+        },
+        "peakWindAtClosestApproachKt": 55,
+        "peakWindAtClosestApproachMph": 63,
+        "categoryAtClosestApproach": 0,
+        "peakLifetimeWindKt": 130,
+        "peakLifetimeCategory": 4
+      },
+      {
+        "id": "AL092022",
+        "name": "IAN",
+        "year": 2022,
+        "closestApproach": {
+          "miles": 44,
+          "date": "20220929"
+        },
+        "peakWindAtClosestApproachKt": 100,
+        "peakWindAtClosestApproachMph": 115,
+        "categoryAtClosestApproach": 3,
+        "peakLifetimeWindKt": 140,
+        "peakLifetimeCategory": 5
+      },
+      {
+        "id": "AL142024",
+        "name": "MILTON",
+        "year": 2024,
+        "closestApproach": {
+          "miles": 16.5,
+          "date": "20241010"
+        },
+        "peakWindAtClosestApproachKt": 100,
+        "peakWindAtClosestApproachMph": 115,
+        "categoryAtClosestApproach": 3,
+        "peakLifetimeWindKt": 155,
+        "peakLifetimeCategory": 5
+      }
+    ]
+  },
+  "fema": {
+    "sourceUrl": "https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries?%24filter=state+eq+%27FL%27+and+fipsCountyCode+eq+%27081%27+and+incidentType+eq+%27Hurricane%27&%24select=disasterNumber%2CdeclarationDate%2CdeclarationTitle%2CincidentBeginDate%2CincidentEndDate%2CincidentType&%24top=1000&%24orderby=incidentBeginDate+desc",
+    "declarations": [
+      {
+        "disasterNumber": 252,
+        "title": "HURRICANE GLADYS",
+        "declarationDate": "1968-11-07T00:00:00.000Z",
+        "incidentBeginDate": "1968-11-07T00:00:00.000Z",
+        "incidentEndDate": "1968-11-07T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 743,
+        "title": "HURRICANE ELENA",
+        "declarationDate": "1985-09-12T00:00:00.000Z",
+        "incidentBeginDate": "1985-08-29T00:00:00.000Z",
+        "incidentEndDate": "1985-09-02T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3131,
+        "title": "HURRICANE GRORGES",
+        "declarationDate": "1998-09-25T00:00:00.000Z",
+        "incidentBeginDate": "1998-09-25T00:00:00.000Z",
+        "incidentEndDate": "1998-10-02T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3150,
+        "title": "TROPICAL STORM IRENE - FLORIDA",
+        "declarationDate": "1999-10-15T00:00:00.000Z",
+        "incidentBeginDate": "1999-10-14T00:00:00.000Z",
+        "incidentEndDate": "1999-10-19T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 1539,
+        "title": "TROPICAL STORM BONNIE AND HURRICANE CHARLEY",
+        "declarationDate": "2004-08-13T00:00:00.000Z",
+        "incidentBeginDate": "2004-08-11T00:00:00.000Z",
+        "incidentEndDate": "2004-08-30T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 1545,
+        "title": "HURRICANE FRANCES",
+        "declarationDate": "2004-09-04T00:00:00.000Z",
+        "incidentBeginDate": "2004-09-03T00:00:00.000Z",
+        "incidentEndDate": "2004-10-08T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 1551,
+        "title": "HURRICANE IVAN",
+        "declarationDate": "2004-09-16T00:00:00.000Z",
+        "incidentBeginDate": "2004-09-13T00:00:00.000Z",
+        "incidentEndDate": "2004-11-17T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 1561,
+        "title": "HURRICANE JEANNE",
+        "declarationDate": "2004-09-26T00:00:00.000Z",
+        "incidentBeginDate": "2004-09-24T00:00:00.000Z",
+        "incidentEndDate": "2004-11-17T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3220,
+        "title": "HURRICANE KATRINA EVACUATION",
+        "declarationDate": "2005-09-05T00:00:00.000Z",
+        "incidentBeginDate": "2005-08-29T00:00:00.000Z",
+        "incidentEndDate": "2005-10-01T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 4280,
+        "title": "HURRICANE HERMINE",
+        "declarationDate": "2016-09-28T00:00:00.000Z",
+        "incidentBeginDate": "2016-08-31T00:00:00.000Z",
+        "incidentEndDate": "2016-09-11T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3385,
+        "title": "HURRICANE IRMA",
+        "declarationDate": "2017-09-05T00:00:00.000Z",
+        "incidentBeginDate": "2017-09-04T00:00:00.000Z",
+        "incidentEndDate": "2017-10-18T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 4337,
+        "title": "HURRICANE IRMA",
+        "declarationDate": "2017-09-10T00:00:00.000Z",
+        "incidentBeginDate": "2017-09-04T00:00:00.000Z",
+        "incidentEndDate": "2017-10-18T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3405,
+        "title": "HURRICANE MICHAEL",
+        "declarationDate": "2018-10-09T00:00:00.000Z",
+        "incidentBeginDate": "2018-10-07T00:00:00.000Z",
+        "incidentEndDate": "2018-10-19T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3419,
+        "title": "HURRICANE DORIAN ",
+        "declarationDate": "2019-08-30T00:00:00.000Z",
+        "incidentBeginDate": "2019-08-28T00:00:00.000Z",
+        "incidentEndDate": "2019-09-09T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3551,
+        "title": "HURRICANE ETA",
+        "declarationDate": "2020-11-11T00:00:00.000Z",
+        "incidentBeginDate": "2020-11-07T00:00:00.000Z",
+        "incidentEndDate": "2020-11-12T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3562,
+        "title": "TROPICAL STORM FRED",
+        "declarationDate": "2021-08-16T00:00:00.000Z",
+        "incidentBeginDate": "2021-08-13T00:00:00.000Z",
+        "incidentEndDate": "2021-08-19T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3584,
+        "title": "TROPICAL STORM IAN",
+        "declarationDate": "2022-09-24T00:00:00.000Z",
+        "incidentBeginDate": "2022-09-23T00:00:00.000Z",
+        "incidentEndDate": "2022-11-04T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 4673,
+        "title": "HURRICANE IAN",
+        "declarationDate": "2022-09-29T00:00:00.000Z",
+        "incidentBeginDate": "2022-09-23T00:00:00.000Z",
+        "incidentEndDate": "2022-11-04T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 4680,
+        "title": "HURRICANE NICOLE",
+        "declarationDate": "2022-12-13T00:00:00.000Z",
+        "incidentBeginDate": "2022-11-07T00:00:00.000Z",
+        "incidentEndDate": "2022-11-30T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 4734,
+        "title": "HURRICANE IDALIA",
+        "declarationDate": "2023-08-31T00:00:00.000Z",
+        "incidentBeginDate": "2023-08-27T00:00:00.000Z",
+        "incidentEndDate": "2023-09-04T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 4828,
+        "title": "HURRICANE HELENE",
+        "declarationDate": "2024-09-28T00:00:00.000Z",
+        "incidentBeginDate": "2024-09-23T00:00:00.000Z",
+        "incidentEndDate": "2024-10-07T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 3622,
+        "title": "HURRICANE MILTON",
+        "declarationDate": "2024-10-07T00:00:00.000Z",
+        "incidentBeginDate": "2024-10-05T00:00:00.000Z",
+        "incidentEndDate": "2024-11-02T00:00:00.000Z"
+      },
+      {
+        "disasterNumber": 4834,
+        "title": "HURRICANE MILTON ",
+        "declarationDate": "2024-10-11T00:00:00.000Z",
+        "incidentBeginDate": "2024-10-05T00:00:00.000Z",
+        "incidentEndDate": "2024-11-02T00:00:00.000Z"
+      }
+    ]
+  }
+}
