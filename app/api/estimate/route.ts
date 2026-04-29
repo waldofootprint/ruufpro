@@ -537,7 +537,7 @@ export async function POST(request: NextRequest) {
               const meta = MATERIAL_META[mat];
               return {
                 material: mat,
-                label: meta.label,
+                label: materialLabels[mat] || meta.label,
                 description: meta.description,
                 warranty: meta.warranty,
                 wind_rating: meta.windRating,
