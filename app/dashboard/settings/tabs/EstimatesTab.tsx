@@ -82,6 +82,10 @@ export function EstimatesTab() {
   const [buffer, setBuffer] = useState(10);
   const [minJobPrice, setMinJobPrice] = useState("");
   const [serviceZips, setServiceZips] = useState("");
+  const [labels, setLabels] = useState<Record<string, string>>({
+    asphalt: "", metal: "", tile: "", flat: "",
+  });
+  const [showRoofDetails, setShowRoofDetails] = useState(true);
 
   const [surgeEnabled, setSurgeEnabled] = useState(false);
   const [surgeMultiplier, setSurgeMultiplier] = useState("1.20");
@@ -144,6 +148,13 @@ export function EstimatesTab() {
         setSurgeDurationDays(settings.weather_surge_duration_days?.toString() || "7");
         setSurgeAutoExpire(settings.weather_surge_auto_expire ?? true);
         setSurgeExpiresAt(settings.weather_surge_expires_at || null);
+        setLabels({
+          asphalt: settings.asphalt_label || "",
+          metal: settings.metal_label || "",
+          tile: settings.tile_label || "",
+          flat: settings.flat_label || "",
+        });
+        setShowRoofDetails(settings.show_roof_details ?? true);
       } else {
         // Pre-fill metro defaults
         const defaults = getMetroDefaults(contractor.state || "TX", contractor.city || undefined).rates;
@@ -246,6 +257,11 @@ export function EstimatesTab() {
         surgeEnabled && surgeAutoExpire && !surgeExpiresAt
           ? new Date(Date.now() + (parseInt(surgeDurationDays) || 7) * 86400000).toISOString()
           : surgeExpiresAt,
+      asphalt_label: labels.asphalt || null,
+      metal_label: labels.metal || null,
+      tile_label: labels.tile || null,
+      flat_label: labels.flat || null,
+      show_roof_details: showRoofDetails,
     });
 
     // Save addons (replace all for this contractor)
@@ -375,6 +391,14 @@ export function EstimatesTab() {
                     onChange={(e) => updateRate(`${mat.key}_high` as keyof Rates, e.target.value)}
                   />
                 </div>
+                <NeuInput
+                  label="Display name (optional)"
+                  placeholder={mat.label}
+                  value={labels[mat.key]}
+                  onChange={(e) =>
+                    setLabels((prev) => ({ ...prev, [mat.key]: e.target.value }))
+                  }
+                />
               </div>
             );
           })}
@@ -430,6 +454,23 @@ export function EstimatesTab() {
           placeholder="75201, 75202, 75203"
           value={serviceZips}
           onChange={(e) => setServiceZips(e.target.value)}
+        />
+      </SettingsSection>
+
+      {/* Display Options */}
+      <SettingsSection
+        title="Display Options"
+        description="Control what homeowners see on your estimate widget."
+      >
+        <NeuToggle
+          checked={showRoofDetails}
+          onChange={setShowRoofDetails}
+          label="Show roof details to homeowners"
+          description={
+            showRoofDetails
+              ? "Homeowners see roof sqft, pitch, and measurement source."
+              : "Homeowners see only the price range and material name."
+          }
         />
       </SettingsSection>
 
