@@ -2370,3 +2370,125 @@ export const pollCrawlCompletion = inngest.createFunction(
     return { ok: false, jobId, reason: "poll_timeout", attempts: MAX_ATTEMPTS };
   },
 );
+
+// ---------------------------------------------------------------------------
+// Review Push Prompt
+// Trigger: "review.push-prompt" — emitted from /api/leads/status when a lead
+// flips to won/completed. Sleeps per contractor preference, then sends a push
+// notification with the prefilled SMS deep link so the roofer can text from
+// their own SIM with one tap.
+// ---------------------------------------------------------------------------
+export const reviewPushPrompt = inngest.createFunction(
+  {
+    id: "review-push-prompt",
+    retries: 2,
+    triggers: [{ event: "review.push-prompt" }],
+  },
+  async ({ event, step }) => {
+    const { contractorId, leadId, delay, origin } = event.data as {
+      contractorId: string;
+      leadId: string;
+      delay?: string;
+      origin?: string;
+    };
+
+    if (!origin) {
+      return { success: true, skipped: true, reason: "no origin" };
+    }
+
+    if (delay && delay !== "immediate") {
+      const delayMap: Record<string, string> = {
+        "1_hour": "1h",
+        "1_day": "1d",
+        "3_days": "3d",
+      };
+      const sleepFor = delayMap[delay];
+      if (sleepFor) await step.sleep("review-push-delay", sleepFor);
+    }
+
+    const payload = await step.run("build-payload", async () => {
+      const { createClient } = await import("@supabase/supabase-js");
+      const { buildReviewSms, firstNameOf } = await import("@/lib/review-sms");
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("id, name, phone, status, contractor_id")
+        .eq("id", leadId)
+        .single();
+
+      if (!lead) return { skip: true as const, reason: "lead missing" };
+      if (lead.contractor_id !== contractorId)
+        return { skip: true as const, reason: "owner mismatch" };
+      if (!["won", "completed"].includes(lead.status || ""))
+        return { skip: true as const, reason: "status changed" };
+      if (!lead.phone)
+        return { skip: true as const, reason: "no phone" };
+
+      const { data: contractor } = await supabase
+        .from("contractors")
+        .select("business_name, google_review_url")
+        .eq("id", contractorId)
+        .single();
+
+      if (!contractor?.google_review_url)
+        return { skip: true as const, reason: "no review url" };
+
+      // Don't re-prompt if the roofer already sent or skipped.
+      const { data: existing } = await supabase
+        .from("review_requests")
+        .select("id, status")
+        .eq("lead_id", leadId)
+        .eq("contractor_id", contractorId)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) return { skip: true as const, reason: `already ${existing.status}` };
+
+      const { href } = buildReviewSms({
+        customerName: lead.name,
+        businessName: contractor.business_name,
+        googleReviewUrl: contractor.google_review_url,
+      });
+
+      return {
+        skip: false as const,
+        firstName: firstNameOf(lead.name),
+        smsHref: href(lead.phone),
+        leadId,
+      };
+    });
+
+    if (payload.skip) {
+      return { success: true, skipped: true, reason: payload.reason };
+    }
+
+    await step.run("send-push", async () => {
+      const res = await fetch(`${origin}/api/push/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-internal-secret": process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        },
+        body: JSON.stringify({
+          contractor_id: contractorId,
+          title: "Review request ready",
+          body: `Tap to text ${payload.firstName} a review request`,
+          type: "review_prompt",
+          leadId: payload.leadId,
+          smsHref: payload.smsHref,
+          url: `/review-prompt/${payload.leadId}`,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Push send failed: ${res.status}`);
+      }
+    });
+
+    return { success: true };
+  }
+);

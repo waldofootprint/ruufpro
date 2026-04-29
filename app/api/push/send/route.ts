@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { contractor_id, title, body, url } = await request.json();
+    const { contractor_id, title, body, url, type, leadId, smsHref } =
+      await request.json();
 
     if (!contractor_id) {
       return NextResponse.json({ error: "contractor_id required" }, { status: 400 });
@@ -46,6 +47,9 @@ export async function POST(request: NextRequest) {
       title: title || "New Lead — RuufPro",
       body: body || "You have a new lead. Tap to view.",
       url: url || "/dashboard",
+      type: type || "lead",
+      leadId: leadId || null,
+      smsHref: smsHref || null,
     });
 
     let sent = 0;

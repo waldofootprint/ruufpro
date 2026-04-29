@@ -242,15 +242,15 @@ export default function DashboardHome() {
 
     if (isDemo) return; // Demo mode: local state only, no DB write
 
-    const { error } = await supabase
-      .from("leads")
-      .update({ status: newStatus })
-      .eq("id", leadId)
-      .eq("contractor_id", contractorId);
+    // Server-side path so won/completed transitions can fan out push prompts.
+    const res = await fetch("/api/leads/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId, status: newStatus }),
+    });
 
-    if (error) {
-      console.error("Failed to update status:", error);
-      // Revert on failure
+    if (!res.ok) {
+      console.error("Failed to update status:", await res.text());
       loadLeads();
     }
   }

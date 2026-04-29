@@ -21,6 +21,7 @@ import {
   staleLeadDetection,
   chunkAndEmbedPage,
   pollCrawlCompletion,
+  reviewPushPrompt,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -46,5 +47,6 @@ export const { GET, POST, PUT } = serve({
     staleLeadDetection,
     chunkAndEmbedPage,
     pollCrawlCompletion,
+    reviewPushPrompt,
   ],
 });

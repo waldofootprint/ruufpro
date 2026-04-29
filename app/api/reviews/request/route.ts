@@ -117,8 +117,12 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      const firstName = (lead.name || "").split(" ")[0] || "there";
-      const smsBody = `Hey ${firstName}, thanks again for choosing ${contractor.business_name}! If you've got a minute, would you mind leaving us a quick Google review? ${contractor.google_review_url}`;
+      const { buildReviewSms } = await import("@/lib/review-sms");
+      const { body: smsBody } = buildReviewSms({
+        customerName: lead.name,
+        businessName: contractor.business_name,
+        googleReviewUrl: contractor.google_review_url,
+      });
       return NextResponse.json({
         success: true,
         channel: "sms",
