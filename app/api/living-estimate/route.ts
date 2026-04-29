@@ -112,6 +112,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Estimate not found" }, { status: 404 });
   }
 
+  // Honor the contractor's current show_roof_details toggle.
+  const { data: settings } = await supabase
+    .from("estimate_settings")
+    .select("show_roof_details")
+    .eq("contractor_id", data.contractor_id)
+    .single();
+  const show_roof_details = settings?.show_roof_details ?? true;
+
   // Mark as viewed on first access
   if (data.status === "sent" && !data.viewed_at) {
     await supabase
@@ -120,5 +128,5 @@ export async function GET(request: NextRequest) {
       .eq("id", data.id);
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({ ...data, show_roof_details });
 }

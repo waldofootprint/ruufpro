@@ -58,6 +58,7 @@ interface LivingEstimate {
   pitch_degrees: number;
   num_segments: number;
   is_satellite: boolean;
+  show_roof_details: boolean;
   estimates: MaterialEstimate[];
   available_addons: Addon[];
   selected_material: string;
@@ -342,27 +343,29 @@ export default function LivingEstimatePage() {
         </div>
 
         {/* Roof data */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-3">Roof Measurements</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <p className="text-2xl font-bold text-slate-800">{data.roof_area_sqft?.toLocaleString()}</p>
-              <p className="text-xs text-slate-400">sq ft</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-800">{pitchDisplay}</p>
-              <p className="text-xs text-slate-400">pitch</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-800">{data.num_segments}</p>
-              <p className="text-xs text-slate-400">segments</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-800">{data.is_satellite ? "Satellite" : "Manual"}</p>
-              <p className="text-xs text-slate-400">source</p>
+        {data.show_roof_details !== false && (
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-3">Roof Measurements</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <p className="text-2xl font-bold text-slate-800">{data.roof_area_sqft?.toLocaleString()}</p>
+                <p className="text-xs text-slate-400">sq ft</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-800">{pitchDisplay}</p>
+                <p className="text-xs text-slate-400">pitch</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-800">{data.num_segments}</p>
+                <p className="text-xs text-slate-400">segments</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-800">{data.is_satellite ? "Satellite" : "Manual"}</p>
+                <p className="text-xs text-slate-400">source</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* G/B/B Material Cards */}
         <div>
