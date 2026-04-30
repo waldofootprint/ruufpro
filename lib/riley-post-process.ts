@@ -52,6 +52,9 @@ const ROBOTIC_DEFLECTION: { pattern: RegExp; replacement: string }[] = [
   { pattern: /I'm just an AI/gi, replacement: "that's outside what I have info on" },
   { pattern: /I'm only an AI/gi, replacement: "that's beyond what I can pull up" },
   { pattern: /as an AI,? I (?:can't|cannot|don't|do not) [^.!?]*/gi, replacement: "I don't have the details on that, but the team can help" },
+  // Permission-asking lead-form offers: "you can (also) let me pull up..." → "want me to pull up..."
+  { pattern: /you can (?:also )?let me pull up a (?:quick )?form(?:\s+(?:for you|so [^.!?]*))?/gi, replacement: "want me to pull up a quick form for you" },
+  { pattern: /(?:if you'?d (?:like|prefer),?\s+)?you can (?:also )?let me\b/gi, replacement: "want me to" },
 ];
 
 // ── Projected skepticism (banned everywhere) ─────────────────────────────────
