@@ -1,0 +1,43 @@
+name: Alias ruufpro.com to latest prod deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  alias:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      PROJECT_ID: prj_D7WcD0VokPh90BQ7pLlBLoQbuYv3
+      TEAM_ID: team_hBWWQLWN2IhG1cORqaKtN2GG
+    steps:
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Wait for matching production deploy
+        id: wait
+        run: |
+          set -e
+          for i in $(seq 1 60); do
+            resp=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v6/deployments?projectId=$PROJECT_ID&teamId=$TEAM_ID&target=production&limit=20")
+            url=$(echo "$resp" | jq -r --arg sha "$GITHUB_SHA" \
+              '.deployments[] | select(.meta.githubCommitSha==$sha and .state=="READY") | .url' | head -1)
+            if [ -n "$url" ]; then
+              echo "Found Ready deploy: $url"
+              echo "url=$url" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Attempt $i/60 — no Ready deploy yet for $GITHUB_SHA, sleeping 15s"
+            sleep 15
+          done
+          echo "::error::Timed out after 15 min waiting for Ready prod deploy of $GITHUB_SHA"
+          exit 1
+
+      - name: Alias root domain
+        run: vercel alias set "${{ steps.wait.outputs.url }}" ruufpro.com --token=$VERCEL_TOKEN --scope=$TEAM_ID
+
+      - name: Alias www subdomain
+        run: vercel alias set "${{ steps.wait.outputs.url }}" www.ruufpro.com --token=$VERCEL_TOKEN --scope=$TEAM_ID
