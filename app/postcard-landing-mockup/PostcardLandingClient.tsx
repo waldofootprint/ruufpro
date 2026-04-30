@@ -299,6 +299,9 @@ export default function PostcardLandingClient({ data: STUB }: { data: PostcardLa
   const ageNarrative = STUB.lastPermitYear
     ? `Last reroof permit on file: ${STUB.lastPermitYear}${STUB.lastPermitDescription ? ` (${STUB.lastPermitDescription.toLowerCase()})` : ""}. That's ${STUB.roofAgeYears} Florida summers and ${STUB.majorHurricanesSinceBuilt} major hurricanes since.`
     : `Your roof at ${TEST_ADDRESS} has stood through ${STUB.roofAgeYears} Florida summers and ${STUB.majorHurricanesSinceBuilt} major hurricanes. No reroof on record — if it's the original, it's earned a closer look.`;
+  // Label suffix on the floating roof-card: "since reroof" reads more honestly when
+  // we have a permit; falls back to "since built" when we're inferring from year_built.
+  const hurricaneSinceLabel = STUB.lastPermitYear ? "since reroof" : "since built";
 
   return (
     <div className="relative bg-[#0c0a08] text-stone-100 antialiased min-h-screen md:w-screen md:h-screen md:overflow-hidden">
@@ -371,7 +374,7 @@ export default function PostcardLandingClient({ data: STUB }: { data: PostcardLa
               <div className="h-px bg-white/[0.07]" />
               <RoofStatRow
                 label="Major hurricanes"
-                value={`${STUB.majorHurricanesSinceBuilt} since built`}
+                value={`${STUB.majorHurricanesSinceBuilt} ${hurricaneSinceLabel}`}
               />
               <div className="h-px bg-white/[0.07]" />
               <RoofStatRow

@@ -17,6 +17,8 @@ import {
   getLastRoofPermitForParts,
   deriveRoofAge,
 } from "@/lib/property-pipeline/permits";
+import { getStormStatsByPoint } from "@/lib/property-pipeline/storm-stats-by-point";
+import { getFemaFloodZone } from "@/lib/property-pipeline/fema-flood-zone";
 
 export const dynamic = "force-dynamic";
 
@@ -50,8 +52,18 @@ export default async function PostcardLandingPage({
   const lat = Number(sp.lat ?? DEFAULTS.lat);
   const lng = Number(sp.lng ?? DEFAULTS.lng);
 
+  // Fan out the three independent lookups in parallel.
+  // Storm window: prefer permit year (current roof's exposure window) over
+  // year_built when a reroof is on file — the new roof has only weathered
+  // storms since it was installed.
   const permit = await getLastRoofPermitForParts(street, city, zip);
   const age = deriveRoofAge(permit, yearBuilt);
+  const stormSinceYear = permit?.permitYear ?? yearBuilt;
+
+  const [storm, femaZoneResult] = await Promise.all([
+    Promise.resolve(getStormStatsByPoint(lat, lng, stormSinceYear)),
+    getFemaFloodZone(lat, lng),
+  ]);
 
   const data: PostcardLandingData = {
     address: street,
@@ -63,11 +75,13 @@ export default async function PostcardLandingPage({
     lastPermitYear: permit?.permitYear ?? null,
     lastPermitDescription: permit?.description ?? null,
     roofAgeSource: age.source,
-    // Storm + FEMA fields stay stubbed for now — separate wiring task.
-    femaZone: "X",
-    msfhEligible: true,
-    majorHurricanesSinceBuilt: 3,
-    peakWind: { mph: 98, stormName: "Milton", year: 2024 },
+    // FEMA NFHL S_FLD_HAZ_AR — falls back to "X" if endpoint times out.
+    femaZone: femaZoneResult ?? "X",
+    // MSFH (My Safe FL Home) eligibility heuristic — non-X flood zones generally
+    // have other priorities; keep simple here, refine in a separate task.
+    msfhEligible: !femaZoneResult || femaZoneResult === "X",
+    majorHurricanesSinceBuilt: storm.majorHurricanesSinceBuilt,
+    peakWind: storm.peakWind ?? { mph: 0, stormName: "—", year: stormSinceYear },
     contractor: {
       name: "Stormline Roofing",
       license: "CCC1330842",
