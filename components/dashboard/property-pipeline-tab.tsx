@@ -534,9 +534,19 @@ function HeroCard({
   previewSide: "front" | "back";
   onSideChange: (s: "front" | "back") => void;
 }) {
-  const roofAge = CURRENT_YEAR - candidate.year_built;
+  // Roof-anchored math, never house-anchored.
+  // - Reroof on file → "this roof" = the reroof; storm window starts at permit year.
+  // - No permit on file → "this roof" = original install; window starts at year_built.
+  // PP universe excludes <=7yr permits, so a present permit is always old enough to matter.
+  const lastRoofYear = candidate.last_roof_permit_date
+    ? new Date(candidate.last_roof_permit_date).getFullYear()
+    : candidate.year_built;
+  const roofAge = CURRENT_YEAR - lastRoofYear;
   const isRequested = !!candidate.requested_at;
-  const storm = getCountyStormStats("manatee", candidate.year_built);
+  const storm = getCountyStormStats("manatee", lastRoofYear);
+  const roofAgeSub = candidate.last_roof_permit_date
+    ? `last reroof ${lastRoofYear}`
+    : `built ${candidate.year_built} · no reroof on file`;
 
   return (
     <div className="neu-flat" style={{ padding: 28, borderRadius: 18 }}>
@@ -575,18 +585,18 @@ function HeroCard({
             </div>
           </div>
 
-          {/* Six facts — DB stats + NOAA/FEMA county-level since year_built */}
+          {/* Six facts — DB stats + NOAA/FEMA county-level, scoped to this roof's life */}
           <div className="grid grid-cols-3 gap-2.5">
             <Fact
               label="Roof Age"
               value={`${roofAge}`}
               unit="yrs"
-              sub={`built ${candidate.year_built}`}
+              sub={roofAgeSub}
             />
             <Fact
               label="Major Hurricanes"
               value={storm ? `${storm.majorHurricanesSinceBuild}` : "—"}
-              sub={storm ? `Cat 3+ within 100 mi · NOAA` : "since build"}
+              sub={storm ? `Cat 3+ within 100 mi · since this roof` : "since this roof"}
             />
             <Fact
               label="Closest Approach"
@@ -615,7 +625,7 @@ function HeroCard({
             <Fact
               label="FEMA Declarations"
               value={storm ? `${storm.federalDisastersSinceBuild}` : "—"}
-              sub={storm ? "hurricane disasters · FEMA" : "since build"}
+              sub={storm ? "hurricane disasters · since this roof" : "since this roof"}
             />
           </div>
 
