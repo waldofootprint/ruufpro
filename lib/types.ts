@@ -206,6 +206,9 @@ export interface ChatbotConfig {
   team_description: string | null;
   payment_methods: string[] | null;
   referral_program: string | null;
+
+  // Phone scraped from contractor website. Riley prefers this over contractors.phone.
+  business_phone: string | null;
 }
 
 export interface EstimateSettings {

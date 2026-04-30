@@ -72,6 +72,7 @@ export type MappedFieldName =
   | "service_area_cities"
   | "custom_faqs"
   | "services" // NOTE: lives on sites, not chatbot_config — see SitesPatch
+  | "business_phone"
   | "materials_brands"
   | "offers_free_inspection"
   | "does_insurance_work"
@@ -102,6 +103,10 @@ export type ChatbotConfigPatch = {
   insurance_description?: string | null;
   process_steps?: string | null;
   source_website_url?: string | null;
+  // Phone scraped from contractor website. Riley prefers this over contractors.phone
+  // (which may be a personal number the roofer entered at signup that doesn't match
+  // their public site). Always sourced from the live website.
+  business_phone?: string | null;
 };
 
 // Patch for `sites` row (1:1 with contractor). Caller routes these.
@@ -197,6 +202,17 @@ export function mapScrapeToConfig(scrape: ScraperOutput): MapResult {
   if (scrape.hero_headline) sites.hero_headline = scrape.hero_headline;
   if (scrape.about_text) sites.about_text = scrape.about_text;
   if (scrape.reviews?.length) sites.reviews = scrape.reviews;
+
+  // business_phone -> chatbot_config.business_phone. The website is the source of truth
+  // for the phone Riley shares with homeowners — contractors.phone may hold a personal
+  // number from signup that doesn't match the public site.
+  if (scrape.phone) {
+    const cleaned = scrape.phone.trim();
+    if (cleaned.length >= 7) {
+      chatbotConfig.business_phone = cleaned;
+      log("business_phone", "high", true, cleaned);
+    }
+  }
 
   // service_area_cities -> BOTH contractors (source of truth) AND chatbot_config (denormalized for prompt).
   if (scrape.service_areas && scrape.service_areas.length >= 2) {

@@ -20,6 +20,11 @@ export function buildChatSystemPrompt(
     .replace(/\s*(LLC|Inc\.?|Corp\.?|L\.?L\.?C\.?|PLLC)\s*$/i, "")
     .trim();
 
+  // Phone hierarchy: scraped website phone wins over the account-form phone.
+  // contractors.phone may be a personal number the roofer typed at signup that
+  // doesn't match their public website — Riley should always share the public number.
+  const phone = config?.business_phone?.trim() || data.phone;
+
   // Owner first name — optional. When present, Riley can reference the owner by
   // name naturally. When absent, Riley stays generic with "our team".
   const ownerName = config?.owner_name?.replace(/[`<>]/g, "").trim() || null;
@@ -81,7 +86,7 @@ export function buildChatSystemPrompt(
 ## About ${biz}
 
 **Headquarters:** ${data.city}, ${data.state}${data.address ? ` (${data.address})` : ""} (this is where we're based — service area may extend further; check Knowledge excerpts below for actual cities served)
-**Phone:** ${data.phone}
+**Phone:** ${phone}
 **Hours:** ${hoursText}
 ${ownerName ? `**Owner:** ${ownerName} (you can reference ${ownerName} by name naturally when it fits — e.g. "${ownerName} and the crew", "${ownerName} runs things here" — but "we/our/us" remains the default voice for the business)` : ""}
 
@@ -148,7 +153,7 @@ ${hasEstimateWidget ? `4. NEVER quote generic price ranges from memory. When ask
 11b. If someone says their roof was recently done BY ${biz} and has a problem: "I'm sorry to hear that — if your roof was done by us, there may be warranty coverage. Let me pull up a quick form so we can follow up with you."
 
 **Legal Threats:**
-11c. If someone mentions suing, lawyers, legal action, or threatens to report the business: DO NOT apologize, DO NOT promise resolution, DO NOT discuss the merits of their complaint. Say: "I understand this is a serious concern. For anything like this, you'll need to speak with us directly. Our number is ${data.phone}. We can discuss the details with you." Then stop engaging on the topic.
+11c. If someone mentions suing, lawyers, legal action, or threatens to report the business: DO NOT apologize, DO NOT promise resolution, DO NOT discuss the merits of their complaint. Say: "I understand this is a serious concern. For anything like this, you'll need to speak with us directly. Our number is ${phone}. We can discuss the details with you." Then stop engaging on the topic.
 
 **Lead Capture Method:**
 11d. When you need to collect contact info (name, phone, address), trigger the lead capture popup form. Do NOT ask the homeowner to type their name, phone number, or address into the chat — that's what the form is for.
@@ -171,7 +176,7 @@ ${hasEstimateWidget ? `4. NEVER quote generic price ranges from memory. When ask
 18. If someone quotes a specific price they heard from someone else ("my neighbor said...", "I heard...", "someone told me..."): NEVER confirm or deny the number. Say: "Every roof is different — size, materials, pitch, and condition all affect the price. The best way to get accurate numbers for YOUR roof is a free inspection. Want me to set that up?"
 
 **Non-English Messages:**
-19. If the homeowner writes in Spanish or another non-English language, respond with: "I'm Riley — I currently only speak English, but our team may be able to help in your preferred language! Call ${data.phone} or leave your info and someone will reach out. / Llame al ${data.phone} o deje su información y alguien se comunicará con usted."
+19. If the homeowner writes in Spanish or another non-English language, respond with: "I'm Riley — I currently only speak English, but our team may be able to help in your preferred language! Call ${phone} or leave your info and someone will reach out. / Llame al ${phone} o deje su información y alguien se comunicará con usted."
 
 **Repetitive Questions:**
 20. If the homeowner asks a question you've already answered (even in different words), acknowledge it naturally: "As I mentioned..." and then add something new — a different angle, a follow-up question, or a push toward the next step. Never give an identical response twice.
@@ -208,7 +213,7 @@ You have a tool that generates satellite-measured roofing estimates for any addr
 
 [CONTEXT: Stage: ${intent?.stage || "greeting"}. Situation: ${intent?.situation || "just_browsing"}. Latest: ${intent?.latestQuestionType || "none"}.${intent?.captureSignals.length ? ` Signals: ${intent.captureSignals.join(", ")}.` : ""} Lead captured: ${leadCaptured}.]
 
-${buildStageGuidance(intent?.stage || "greeting", leadCaptured, biz, data.phone)}`;
+${buildStageGuidance(intent?.stage || "greeting", leadCaptured, biz, phone)}`;
 }
 
 // Builds additional knowledge sections from chatbot_config data.
