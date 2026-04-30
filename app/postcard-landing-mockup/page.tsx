@@ -31,9 +31,55 @@ const STUB = {
 
 export default function PostcardLandingMockup() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
   const roofLabelRef = useRef<HTMLDivElement>(null);
+  const inFlowCtaRef = useRef<HTMLButtonElement>(null);
   const [tilesReady, setTilesReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ctaScrolledPast, setCtaScrolledPast] = useState(false);
+
+  // Show the sticky CTA only when the in-flow CTA has fully scrolled out of view.
+  // IntersectionObserver is the right primitive — works regardless of doc height.
+  useEffect(() => {
+    const target = inFlowCtaRef.current;
+    if (!target) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setCtaScrolledPast(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    io.observe(target);
+    return () => io.disconnect();
+  }, []);
+
+  // Mobile scroll-driven card fade. Hero height stays constant (72vh) — animating
+  // it creates a feedback loop with sticky positioning + doc scroll height. Cards
+  // fade out instead, and the content section covers the hero as it rises.
+  useEffect(() => {
+    const FADE_RANGE = 220;
+    const root = document.documentElement;
+
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const isMobile = window.innerWidth < 768;
+        if (!isMobile) {
+          root.style.setProperty("--hero-fade", "1");
+          return;
+        }
+        const t = Math.min(window.scrollY / FADE_RANGE, 1);
+        root.style.setProperty("--hero-fade", String(1 - t));
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
@@ -118,12 +164,15 @@ export default function PostcardLandingMockup() {
         // desktop (out from under the right-rail card). On mobile the
         // card is a bottom sheet, so we center the home instead.
         const DESKTOP_OFFSET_X_PCT = 0.2;
+        // On mobile, push the house ~12% down in the frame so the roof-anchored card
+        // has guaranteed room above it (negative y offset = scene shifts down on screen).
+        const MOBILE_OFFSET_Y_PCT = -0.12;
         const applyViewOffset = () => {
           const fw = container.clientWidth;
           const fh = container.clientHeight;
           const isMobile = window.innerWidth < 768;
           if (isMobile) {
-            camera.clearViewOffset();
+            camera.setViewOffset(fw, fh, 0, fh * MOBILE_OFFSET_Y_PCT, fw, fh);
           } else {
             camera.setViewOffset(fw, fh, fw * DESKTOP_OFFSET_X_PCT, 0, fw, fh);
           }
@@ -215,9 +264,14 @@ export default function PostcardLandingMockup() {
           renderer.setSize(container.clientWidth, container.clientHeight);
         };
         window.addEventListener("resize", onResize);
+        // ResizeObserver picks up scroll-driven hero compression (CSS var changes
+        // height of the container without firing window.resize).
+        const ro = new ResizeObserver(onResize);
+        ro.observe(container);
 
         cleanup = () => {
           window.removeEventListener("resize", onResize);
+          ro.disconnect();
           tiles.dispose();
           renderer.dispose();
           if (renderer.domElement.parentElement === container) {
@@ -241,12 +295,24 @@ export default function PostcardLandingMockup() {
     : "None on file";
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#0c0a08] text-stone-100 antialiased">
-      {/* 3D scene — full viewport on desktop, top 58vh on mobile */}
+    <div className="relative bg-[#0c0a08] text-stone-100 antialiased min-h-screen md:w-screen md:h-screen md:overflow-hidden">
+      {/* HERO wrapper — sticky on mobile (compresses on scroll), full-viewport on desktop */}
       <div
-        ref={containerRef}
-        className="absolute left-0 right-0 top-0 h-[58vh] md:inset-0 md:h-auto"
-      />
+        ref={heroRef}
+        className="sticky top-0 z-0 w-full overflow-hidden md:static md:overflow-visible h-[72vh] md:h-screen"
+      >
+        {/* 3D scene — fills hero on mobile, full viewport on desktop */}
+        <div
+          ref={containerRef}
+          className="absolute inset-0 md:fixed md:left-0 md:right-0 md:top-0 md:bottom-0"
+        />
+
+        {/* Google attribution (3D Tiles ToS) — pinned to hero so it stays visible
+            with the imagery on mobile as page scrolls underneath the sticky hero */}
+        <div className="absolute bottom-3 left-5 md:left-6 text-[9px] uppercase tracking-[0.18em] text-stone-500 z-10 pointer-events-none">
+          Imagery © Google · Photorealistic 3D Tiles
+        </div>
+      </div>
 
       {/* Loading + attribution */}
       {!tilesReady && !error && (
@@ -260,10 +326,17 @@ export default function PostcardLandingMockup() {
         </div>
       )}
 
-      {/* Floating roof-anchored micro-card — projects from world space */}
+      {/* Floating roof-anchored micro-card — projects from world space.
+          Wrapper adds mobile scroll-fade via --hero-fade (multiplies with JS-set opacity). */}
+      <div
+        className="pointer-events-none absolute top-0 left-0 z-20 will-change-transform"
+        style={{
+          opacity: "var(--hero-fade, 1)",
+        }}
+      >
       <div
         ref={roofLabelRef}
-        className="pointer-events-none absolute top-0 left-0 z-20 will-change-transform"
+        className="pointer-events-none absolute top-0 left-0 will-change-transform"
         style={{ transition: "opacity 240ms ease-out" }}
       >
         <div className="relative flex flex-col items-center">
@@ -272,7 +345,7 @@ export default function PostcardLandingMockup() {
             className="relative px-3.5 py-3 md:px-5 md:py-4 rounded-xl border border-white/[0.09] shadow-[0_12px_36px_-12px_rgba(0,0,0,0.65)] min-w-[170px] md:min-w-[220px]"
             style={{
               background:
-                "linear-gradient(180deg, rgba(40,34,28,0.48) 0%, rgba(20,16,12,0.62) 100%)",
+                "linear-gradient(180deg, rgba(40,34,28,0.58) 0%, rgba(20,16,12,0.72) 100%)",
               backdropFilter: "blur(18px) saturate(150%)",
               WebkitBackdropFilter: "blur(18px) saturate(150%)",
             }}
@@ -310,12 +383,12 @@ export default function PostcardLandingMockup() {
           />
         </div>
       </div>
+      </div>
 
       {/* Right-edge fade so the card has contrast without darkening the house — desktop only */}
       <div className="pointer-events-none absolute inset-y-0 right-0 w-[480px] bg-gradient-to-l from-black/60 via-black/20 to-transparent hidden md:block" />
 
-      {/* Bottom-edge fade — mobile only, gives the bottom sheet visual lift off the 3D */}
-      <div className="pointer-events-none absolute left-0 right-0 bottom-[44vh] h-24 bg-gradient-to-t from-[#0c0a08] via-[#0c0a08]/30 to-transparent md:hidden z-20" />
+      {/* (mobile bottom-edge fade removed — replaced by normal-flow content section below) */}
 
       {/* Top-left address sliver — desktop layout */}
       <div className="absolute top-6 left-6 hidden md:flex flex-col gap-0.5 text-stone-300">
@@ -327,11 +400,6 @@ export default function PostcardLandingMockup() {
           {TEST_ADDRESS}
         </div>
         <div className="text-[11px] text-stone-400">{TEST_CITY}</div>
-      </div>
-
-      {/* Google attribution (required by 3D Tiles ToS) */}
-      <div className="absolute bottom-3 left-6 text-[9px] uppercase tracking-[0.18em] text-stone-500">
-        Imagery © Google · Photorealistic 3D Tiles
       </div>
 
       {/* Floating premium card — DESKTOP right-side rail, glassmorphic, leaves house visible */}
@@ -439,115 +507,120 @@ export default function PostcardLandingMockup() {
         </div>
       </div>
 
-      {/* MOBILE bottom sheet — peek state shows contractor + CTA, scroll up for the rest */}
-      <div
-        className="md:hidden absolute left-0 right-0 bottom-0 h-[44vh] z-30 rounded-t-3xl overflow-hidden border-t border-white/10 shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.85)]"
+      {/* MOBILE content — normal-flow section below the sticky hero. No bottom sheet,
+          no internal scroll, no drag handle. Native page scroll. */}
+      <section
+        className="md:hidden relative z-10 px-5 pt-7 pb-28"
         style={{
           background:
-            "linear-gradient(180deg, rgba(28,24,20,0.92) 0%, rgba(14,12,10,0.97) 30%, rgba(14,12,10,1) 100%)",
-          backdropFilter: "blur(24px) saturate(140%)",
-          WebkitBackdropFilter: "blur(24px) saturate(140%)",
+            "linear-gradient(180deg, rgba(14,12,10,0.95) 0%, rgba(12,10,8,1) 18%, rgba(12,10,8,1) 100%)",
         }}
       >
-        {/* Hairline rust accent at top edge */}
+        {/* Hairline rust accent — same language as v1 sheet, no drag handle */}
         <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-[#b13d1a]/60 to-transparent" />
 
-        {/* Drag handle nub */}
-        <div className="flex justify-center pt-2.5 pb-1">
-          <div className="w-9 h-1 rounded-full bg-stone-600/70" />
+        {/* Roofer eyebrow */}
+        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-stone-400">
+          <span className="block w-1 h-1 rounded-full bg-[#b13d1a]" />
+          FL Licensed Roofer
+        </div>
+        <h1 className="mt-1.5 font-serif text-[24px] leading-[1.1] text-stone-50 tracking-tight">
+          {STUB.contractor.name}
+        </h1>
+        <div className="mt-1.5 flex items-center gap-2 text-[12px] flex-wrap">
+          <span className="text-[#e8a87c]">{STUB.contractor.rating} ★</span>
+          <span className="text-stone-500">·</span>
+          <span className="text-stone-400">
+            {STUB.contractor.reviews} Google reviews
+          </span>
+          <span className="text-stone-500">·</span>
+          <span className="text-stone-400 font-mono text-[11px]">
+            {STUB.contractor.license}
+          </span>
         </div>
 
-        {/* Scrollable inner — peek shows down to CTA, swipe-scroll for rest */}
-        <div className="h-full overflow-y-auto overscroll-contain px-5 pt-3 pb-8">
-          {/* Roofer eyebrow */}
-          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-stone-400">
-            <span className="block w-1 h-1 rounded-full bg-[#b13d1a]" />
-            FL Licensed Roofer
-          </div>
-          <h1 className="mt-1.5 font-serif text-[24px] leading-[1.1] text-stone-50 tracking-tight">
-            {STUB.contractor.name}
-          </h1>
-          <div className="mt-1.5 flex items-center gap-2 text-[12px] flex-wrap">
-            <span className="text-[#e8a87c]">{STUB.contractor.rating} ★</span>
-            <span className="text-stone-500">·</span>
-            <span className="text-stone-400">
-              {STUB.contractor.reviews} Google reviews
-            </span>
-            <span className="text-stone-500">·</span>
-            <span className="text-stone-400 font-mono text-[11px]">
-              {STUB.contractor.license}
-            </span>
-          </div>
-
-          {/* Primary CTA — kept high so it's visible in peek state */}
-          <button
-            className="group mt-4 w-full px-5 py-3.5 rounded-xl bg-stone-50 text-stone-950 font-medium text-[15px] tracking-tight active:bg-white transition-colors flex items-center justify-between"
-            onClick={() => alert("Riley chat would open here")}
-          >
-            <span>Chat with {STUB.contractor.name}</span>
-            <span className="text-stone-400 text-xs">→</span>
-          </button>
-          <div className="mt-1.5 text-center text-[10px] uppercase tracking-[0.18em] text-stone-500">
-            Powered by Riley AI · answers in seconds
-          </div>
-
-          {/* Subtle "more below" affordance — peek-state cue */}
-          <div className="mt-3 mb-1 flex items-center justify-center gap-2 text-[9px] uppercase tracking-[0.22em] text-stone-500">
-            <span className="block h-px w-6 bg-stone-700" />
-            Swipe up for details
-            <span className="block h-px w-6 bg-stone-700" />
-          </div>
-
-          {/* Why you got the postcard */}
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-stone-500 mb-2">
-              Why you got the postcard
-            </div>
-            <p className="text-[14px] leading-relaxed text-stone-200">
-              Your roof at {TEST_ADDRESS} has stood through{" "}
-              <span className="text-[#e8a87c]">
-                {STUB.roofAgeYears} Florida summers
-              </span>{" "}
-              and {STUB.majorHurricanesSinceBuilt} major hurricanes. After two decades, it's earned a closer look.
-            </p>
-          </div>
-
-          {/* Fact grid */}
-          <div className="mt-4 grid grid-cols-3 border-t border-b border-white/10 divide-x divide-white/10">
-            <Fact label="Built" value={String(STUB.yearBuilt)} />
-            <Fact
-              label="Roof permit"
-              value={permitText}
-              accent={!STUB.lastPermitYear}
-            />
-            <Fact label="Flood zone" value={STUB.femaZone} />
-          </div>
-
-          {/* Chips */}
-          <div className="flex flex-wrap gap-1.5 mt-4">
-            {[
-              `Does ${STUB.contractor.name} handle insurance claims?`,
-              `What's their warranty?`,
-              `How soon can someone come out?`,
-              `How much do they charge for a roof this size?`,
-            ].map((q) => (
-              <button
-                key={q}
-                className="text-[11px] px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-stone-300 active:bg-white/10 transition-colors text-left"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-
-          {/* SB 76 footer */}
-          <div className="mt-4 pt-4 border-t border-white/10 text-[10px] text-stone-500 leading-relaxed">
-            We don't door-knock. We don't pressure insurance claims. SB 76 compliant. Stop these mailings:{" "}
-            <span className="underline decoration-stone-700">
-              ruufpro.com/stop
-            </span>
-          </div>
+        {/* Primary CTA */}
+        <button
+          ref={inFlowCtaRef}
+          className="group mt-4 w-full px-5 py-3.5 rounded-xl bg-stone-50 text-stone-950 font-medium text-[15px] tracking-tight active:bg-white transition-colors flex items-center justify-between"
+          onClick={() => alert("Riley chat would open here")}
+        >
+          <span>Chat with {STUB.contractor.name}</span>
+          <span className="text-stone-400 text-xs">→</span>
+        </button>
+        <div className="mt-1.5 text-center text-[10px] uppercase tracking-[0.18em] text-stone-500">
+          Powered by Riley AI · answers in seconds
         </div>
+
+        {/* Why you got the postcard */}
+        <div className="mt-6 pt-5 border-t border-white/10">
+          <div className="text-[10px] uppercase tracking-[0.16em] text-stone-500 mb-2">
+            Why you got the postcard
+          </div>
+          <p className="text-[14px] leading-relaxed text-stone-200">
+            Your roof at {TEST_ADDRESS} has stood through{" "}
+            <span className="text-[#e8a87c]">
+              {STUB.roofAgeYears} Florida summers
+            </span>{" "}
+            and {STUB.majorHurricanesSinceBuilt} major hurricanes. After two decades, it's earned a closer look.
+          </p>
+        </div>
+
+        {/* Fact grid */}
+        <div className="mt-5 grid grid-cols-3 border-t border-b border-white/10 divide-x divide-white/10">
+          <Fact label="Built" value={String(STUB.yearBuilt)} />
+          <Fact
+            label="Roof permit"
+            value={permitText}
+            accent={!STUB.lastPermitYear}
+          />
+          <Fact label="Flood zone" value={STUB.femaZone} />
+        </div>
+
+        {/* Chips */}
+        <div className="flex flex-wrap gap-1.5 mt-5">
+          {[
+            `Does ${STUB.contractor.name} handle insurance claims?`,
+            `What's their warranty?`,
+            `How soon can someone come out?`,
+            `How much do they charge for a roof this size?`,
+          ].map((q) => (
+            <button
+              key={q}
+              className="text-[11px] px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-stone-300 active:bg-white/10 transition-colors text-left"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+
+        {/* SB 76 footer */}
+        <div className="mt-6 pt-4 border-t border-white/10 text-[10px] text-stone-500 leading-relaxed">
+          We don't door-knock. We don't pressure insurance claims. SB 76 compliant. Stop these mailings:{" "}
+          <span className="underline decoration-stone-700">
+            ruufpro.com/stop
+          </span>
+        </div>
+      </section>
+
+      {/* Sticky mobile CTA — appears once user has scrolled past the in-flow CTA */}
+      <div
+        className="md:hidden fixed left-0 right-0 bottom-0 z-40 px-4 pb-4 pt-3 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(12,10,8,0) 0%, rgba(12,10,8,0.85) 45%, rgba(12,10,8,0.96) 100%)",
+          opacity: ctaScrolledPast ? 1 : 0,
+          transform: ctaScrolledPast ? "translateY(0)" : "translateY(16px)",
+          transition: "opacity 240ms ease-out, transform 240ms ease-out",
+        }}
+      >
+        <button
+          className="pointer-events-auto w-full px-5 py-3.5 rounded-xl bg-stone-50 text-stone-950 font-medium text-[15px] tracking-tight active:bg-white transition-colors flex items-center justify-between shadow-[0_10px_30px_-8px_rgba(0,0,0,0.7)]"
+          onClick={() => alert("Riley chat would open here")}
+        >
+          <span>Chat with {STUB.contractor.name}</span>
+          <span className="text-stone-400 text-xs">→</span>
+        </button>
       </div>
     </div>
   );
