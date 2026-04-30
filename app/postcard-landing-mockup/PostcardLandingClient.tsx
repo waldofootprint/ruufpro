@@ -295,13 +295,13 @@ export default function PostcardLandingClient({ data: STUB }: { data: PostcardLa
     ? `${new Date().getFullYear() - STUB.lastPermitYear} yr ago`
     : "None on file";
 
-  // Copy adapts to whether we have a real permit or are inferring from year_built.
+  // All hurricane / wind / age framing is anchored to the ROOF, never the house.
+  // When a permit is on file, "this roof" = the reroof. When no permit, "this roof"
+  // = the original install (year_built). Either way, the count + copy reads honestly.
   const ageNarrative = STUB.lastPermitYear
-    ? `Last reroof permit on file: ${STUB.lastPermitYear}${STUB.lastPermitDescription ? ` (${STUB.lastPermitDescription.toLowerCase()})` : ""}. That's ${STUB.roofAgeYears} Florida summers and ${STUB.majorHurricanesSinceBuilt} major hurricanes since.`
-    : `Your roof at ${TEST_ADDRESS} has stood through ${STUB.roofAgeYears} Florida summers and ${STUB.majorHurricanesSinceBuilt} major hurricanes. No reroof on record — if it's the original, it's earned a closer look.`;
-  // Label suffix on the floating roof-card: "since reroof" reads more honestly when
-  // we have a permit; falls back to "since built" when we're inferring from year_built.
-  const hurricaneSinceLabel = STUB.lastPermitYear ? "since reroof" : "since built";
+    ? `Last reroof permit on file: ${STUB.lastPermitYear}${STUB.lastPermitDescription ? ` (${STUB.lastPermitDescription.toLowerCase()})` : ""}. That's ${STUB.roofAgeYears} Florida summers and ${STUB.majorHurricanesSinceBuilt} major hurricanes this roof has weathered.`
+    : `No reroof on record — if it's the original, this roof has weathered ${STUB.roofAgeYears} Florida summers and ${STUB.majorHurricanesSinceBuilt} major hurricanes. Earned a closer look.`;
+  const hurricaneSinceLabel = "since this roof";
 
   return (
     <div className="relative bg-[#0c0a08] text-stone-100 antialiased min-h-screen md:w-screen md:h-screen md:overflow-hidden">
