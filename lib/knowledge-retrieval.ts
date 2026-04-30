@@ -88,7 +88,7 @@ export function formatChunksForPrompt(chunks: RetrievedChunk[], businessName: st
 
   const lines = [
     `## Knowledge from ${businessName}'s website`,
-    `The following excerpts come from the contractor's actual website. Use them to answer the homeowner's question with specifics. If a relevant excerpt is below, prefer its facts over generic answers. Do NOT fabricate details that aren't here.`,
+    `The following excerpts come from the contractor's actual website. Use them to answer the homeowner's question with specifics. If a relevant excerpt is below, prefer its facts over generic answers. If an excerpt below conflicts with the structured fields above (services list, service area, location), the excerpt wins — it was scraped from the live site and is the source of truth. Do NOT fabricate details that aren't here.`,
     "",
   ];
 

@@ -36,19 +36,25 @@ export function buildChatSystemPrompt(
   if (data.warrantyYears) creds.push(`${data.warrantyYears}-year workmanship warranty`);
   if (data.offersFinancing) creds.push("Financing options available");
 
-  // Build services list
+  // Build services list — only include the structured block when we actually
+  // have services. Empty fallback "General roofing services" was poisoning
+  // RAG-grounded answers (Claude echoed the vague structured line over the
+  // specific scraped chunks). When empty, omit the section entirely so
+  // Riley relies on the Knowledge excerpts injected from the website.
   const servicesList = data.services.length > 0
     ? data.services.map((s) => `- ${s}`).join("\n")
-    : "- General roofing services";
+    : null;
 
-  // Build service area (cap at 10 cities to avoid prompt bloat)
+  // Build service area — same hierarchy fix. When we don't have a city list,
+  // omit the structured "Service Area" line so RAG-retrieved service-areas
+  // chunks aren't overridden by a generic "<city>, <state> area" claim.
   const citiesForPrompt = data.serviceAreaCities.slice(0, 10);
   const extraCities = data.serviceAreaCities.length > 10
     ? ` and ${data.serviceAreaCities.length - 10} more areas`
     : "";
   const serviceArea = citiesForPrompt.length > 0
     ? `${data.city}, ${data.state} and surrounding areas including ${citiesForPrompt.join(", ")}${extraCities}`
-    : `${data.city}, ${data.state} area`;
+    : null;
 
   // Build reviews snippet (top 3 by rating)
   const topReviews = [...data.reviews]
@@ -79,10 +85,8 @@ export function buildChatSystemPrompt(
 **Hours:** ${hoursText}
 ${ownerName ? `**Owner:** ${ownerName} (you can reference ${ownerName} by name naturally when it fits — e.g. "${ownerName} and the crew", "${ownerName} runs things here" — but "we/our/us" remains the default voice for the business)` : ""}
 
-**Services:**
-${servicesList}
-
-**Service Area:** ${serviceArea}
+${servicesList ? `**Services:**\n${servicesList}\n` : ""}
+${serviceArea ? `**Service Area:** ${serviceArea}` : ""}
 
 ${creds.length > 0 ? `**Credentials & Trust Signals:**\n${creds.map((c) => `- ${c}`).join("\n")}` : ""}
 
