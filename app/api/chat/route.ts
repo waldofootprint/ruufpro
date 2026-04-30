@@ -337,7 +337,7 @@ export async function POST(request: NextRequest) {
       })();
 
       if (questionText.length >= 3) {
-        const chunks = await retrieveKnowledgeChunks(contractorId, questionText, 3);
+        const chunks = await retrieveKnowledgeChunks(contractorId, questionText, 8);
         if (chunks.length > 0) {
           const knowledgeBlock = formatChunksForPrompt(chunks, contractor.business_name);
           systemPrompt = `${systemPrompt}\n\n${knowledgeBlock}`;

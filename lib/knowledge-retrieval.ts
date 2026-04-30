@@ -6,7 +6,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { embedTexts, toPgVectorLiteral } from "@/lib/voyage-embed";
 
-const DEFAULT_K = 3;
+const DEFAULT_K = 8;
 // 2026-04-27 session 6: lowered 0.55 → 0.40. Empirical probe across 4
 // real-roofer sites showed correct chunks consistently scoring 0.45–0.55
 // with voyage-3-large on marketing-content vs question pairs. At 0.55,
