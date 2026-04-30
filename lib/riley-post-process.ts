@@ -55,6 +55,12 @@ const ROBOTIC_DEFLECTION: { pattern: RegExp; replacement: string }[] = [
   // Permission-asking lead-form offers: "you can (also) let me pull up..." → "want me to pull up..."
   { pattern: /you can (?:also )?let me pull up a (?:quick )?form(?:\s+(?:for you|so [^.!?]*))?/gi, replacement: "want me to pull up a quick form for you" },
   { pattern: /(?:if you'?d (?:like|prefer),?\s+)?you can (?:also )?let me\b/gi, replacement: "want me to" },
+  // Generic open-ended invitations — only "What can I help you with?" is acceptable.
+  { pattern: /what'?s on your mind(?:\s+about\s+[^.!?]*)?[.?]?/gi, replacement: "What can I help you with?" },
+  { pattern: /anything (?:else )?on your mind[.?]?/gi, replacement: "What else can I help with?" },
+  { pattern: /what brought you (?:here|to [^.!?]*?)(?:\s+today)?[.?]?/gi, replacement: "What can I help you with?" },
+  { pattern: /tell me what'?s going on[^.!?]*[.!?]?/gi, replacement: "What can I help you with?" },
+  { pattern: /what'?s going on with (?:your|the) roof[^.!?]*[.!?]?/gi, replacement: "What can I help you with?" },
 ];
 
 // ── Projected skepticism (banned everywhere) ─────────────────────────────────
