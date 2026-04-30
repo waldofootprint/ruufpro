@@ -17,7 +17,6 @@ import {
   Star,
   Trash2,
   X,
-  AlertTriangle,
   ExternalLink,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -194,7 +193,9 @@ export function RileyTab() {
   const [copied, setCopied] = useState(false);
   const [crawlState, setCrawlState] = useState<CrawlStateBlob | null>(null);
   const [sourceWebsiteUrl, setSourceWebsiteUrl] = useState<string | null>(null);
-  const [crawlBannerDismissed, setCrawlBannerDismissed] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [urlSaving, setUrlSaving] = useState(false);
+  const [urlError, setUrlError] = useState("");
   const [recrawlOpen, setRecrawlOpen] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
   const [bgCrawl, setBgCrawl] = useState<{
@@ -219,7 +220,9 @@ export function RileyTab() {
         setConfig(normalizeFromDb(cfgRes.data));
         const cs = (cfgRes.data as Record<string, unknown>).crawl_state as CrawlStateBlob | null;
         setCrawlState(cs ?? null);
-        setSourceWebsiteUrl((cfgRes.data as Record<string, unknown>).source_website_url as string ?? null);
+        const savedUrl = (cfgRes.data as Record<string, unknown>).source_website_url as string ?? null;
+        setSourceWebsiteUrl(savedUrl);
+        setUrlInput(savedUrl ?? "");
       }
       if (contrRes.data) {
         setIsEnabled(contrRes.data.has_ai_chatbot || false);
@@ -256,6 +259,52 @@ export function RileyTab() {
       if (timer) clearTimeout(timer);
     };
   }, [contractorId]);
+
+  const isValidUrl = useCallback((value: string): boolean => {
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    try {
+      const u = new URL(trimmed);
+      return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const saveSourceUrl = useCallback(
+    async (alsoScan: boolean) => {
+      if (!contractorId) return;
+      const trimmed = urlInput.trim();
+      if (!isValidUrl(trimmed)) {
+        setUrlError("Enter a full URL starting with https://");
+        return;
+      }
+      setUrlSaving(true);
+      setUrlError("");
+      try {
+        const { error } = await supabase.from("chatbot_config").upsert(
+          {
+            contractor_id: contractorId,
+            source_website_url: trimmed,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "contractor_id" },
+        );
+        if (error) {
+          setUrlError("Couldn't save — try again.");
+          return;
+        }
+        setSourceWebsiteUrl(trimmed);
+        setUrlInput(trimmed);
+        if (alsoScan) {
+          setRecrawlOpen(true);
+        }
+      } finally {
+        setUrlSaving(false);
+      }
+    },
+    [contractorId, urlInput, isValidUrl],
+  );
 
   const triggerFullCrawl = useCallback(async () => {
     setBgCrawlTriggering(true);
@@ -304,11 +353,6 @@ export function RileyTab() {
         From your site
       </span>
     );
-  }
-
-  function showCrawlBanner(): boolean {
-    if (crawlBannerDismissed) return false;
-    return !crawlState || !crawlState.fields || Object.keys(crawlState.fields).length === 0;
   }
 
   async function handleRecrawlSave(edited: CrawlPayload) {
@@ -472,29 +516,62 @@ export function RileyTab() {
 
   return (
     <div className="space-y-5">
-      {/* Crawl-state banner (decision #4 — push, not poll) */}
-      {showCrawlBanner() && (
-        <div className="neu-flat px-4 py-3 flex items-center gap-3" style={{ borderRadius: 12, background: "rgba(99,102,241,0.06)" }}>
-          <AlertTriangle className="h-4 w-4 flex-shrink-0" style={{ color: "#6366f1" }} />
-          <div className="flex-1 text-[12px]" style={{ color: "var(--neu-text)" }}>
-            <strong>Skip the typing.</strong> Paste your site URL and Riley will fill this in for you.
+      {/* Source Website URL — Riley's training source (Option C) */}
+      <SettingsSection
+        title="Source Website URL"
+        description="Riley learns from this site. Update if your URL changes."
+      >
+        <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row items-stretch gap-2">
+            <NeuInput
+              type="url"
+              inputMode="url"
+              autoComplete="url"
+              placeholder="https://yourroofingbiz.com"
+              value={urlInput}
+              onChange={(e) => {
+                setUrlInput(e.target.value);
+                if (urlError) setUrlError("");
+              }}
+              className="flex-1"
+            />
+            {urlInput.trim() !== (sourceWebsiteUrl ?? "") && (
+              <div className="flex gap-2">
+                <NeuButton
+                  variant="flat"
+                  type="button"
+                  onClick={() => saveSourceUrl(false)}
+                  disabled={urlSaving || !isValidUrl(urlInput)}
+                >
+                  {urlSaving ? "Saving…" : "Save"}
+                </NeuButton>
+                <NeuButton
+                  variant="accent"
+                  type="button"
+                  onClick={() => saveSourceUrl(true)}
+                  disabled={urlSaving || !isValidUrl(urlInput)}
+                >
+                  {urlSaving ? "Saving…" : "Save & Scan"}
+                </NeuButton>
+              </div>
+            )}
           </div>
-          <button
-            onClick={() => setRecrawlOpen(true)}
-            className="neu-flat px-3 py-1.5 text-[11px] font-semibold hover:opacity-90"
-            style={{ borderRadius: 10, color: "var(--neu-accent)" }}
-          >
-            Scan my site
-          </button>
-          <button
-            onClick={() => setCrawlBannerDismissed(true)}
-            className="text-[11px] neu-muted hover:opacity-70 px-1"
-            aria-label="Dismiss"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          {urlError && (
+            <p className="text-[12px]" style={{ color: "#ef4444" }}>
+              {urlError}
+            </p>
+          )}
+          <p className="text-[12px] neu-muted">
+            {!sourceWebsiteUrl
+              ? "Paste your website URL so Riley can learn it (3–8 min, runs in the background)."
+              : crawlState?.scrape_completed_at
+              ? `Last scanned ${new Date(crawlState.scrape_completed_at).toLocaleDateString()}${
+                  bgCrawl?.indexedPages ? ` · ${bgCrawl.indexedPages} pages indexed` : ""
+                }.`
+              : "Click Save & Scan to train Riley on this site."}
+          </p>
         </div>
-      )}
+      </SettingsSection>
 
       {/* Background full-site crawl status banner */}
       {bgCrawl && bgCrawl.status !== "none" && (
@@ -1118,7 +1195,12 @@ function RecrawlModal({
   useEffect(() => {
     const controller = new AbortController();
     abortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 50_000);
+    let cancelled = false;
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 50_000);
 
     (async () => {
       try {
@@ -1126,8 +1208,10 @@ function RecrawlModal({
           method: "POST",
           signal: controller.signal,
         });
+        if (cancelled) return;
         if (!res.ok || !res.body) {
           const errBody = await res.json().catch(() => ({}));
+          if (cancelled) return;
           setError(errBody.error || "Couldn't start re-crawl.");
           setStage("error");
           return;
@@ -1137,6 +1221,7 @@ function RecrawlModal({
         let buf = "";
         while (true) {
           const { value, done } = await reader.read();
+          if (cancelled) return;
           if (done) break;
           buf += decoder.decode(value, { stream: true });
           const events = buf.split("\n\n");
@@ -1161,10 +1246,13 @@ function RecrawlModal({
             }
           }
         }
+        if (cancelled) return;
         setError("Stream ended unexpectedly.");
         setStage("error");
       } catch (err: unknown) {
+        if (cancelled) return;
         if ((err as { name?: string })?.name === "AbortError") {
+          if (!timedOut) return;
           setError("Took too long — try again.");
         } else {
           setError("Couldn't reach your site.");
@@ -1176,6 +1264,7 @@ function RecrawlModal({
     })();
 
     return () => {
+      cancelled = true;
       abortRef.current?.abort();
       clearTimeout(timeoutId);
     };
