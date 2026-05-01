@@ -15,6 +15,85 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 100;
 const CURRENT_YEAR = new Date().getFullYear();
+const OLD_PERMIT_YEARS = 7;
+const RECENT_SALE_YEARS = 2;
+
+interface StormByCounty {
+  [county: string]: {
+    valid_at: string;
+    typecode: string;
+    magnitude: number | null;
+    city: string | null;
+    count: number;
+  };
+}
+
+interface SignalTag {
+  code: "OLD_PERMIT" | "RECENT_SALE" | "STORM";
+  emoji: string;
+  label: string;
+  date: string | null;
+}
+
+function computeTags(
+  c: PipelineCandidate,
+  storms: StormByCounty
+): SignalTag[] {
+  const out: SignalTag[] = [];
+  const now = Date.now();
+
+  if (!c.last_roof_permit_date) {
+    out.push({
+      code: "OLD_PERMIT",
+      emoji: "🔨",
+      label: "No permit on file",
+      date: null,
+    });
+  } else {
+    const yrs =
+      (now - new Date(c.last_roof_permit_date).getTime()) /
+      (365.25 * 86_400_000);
+    if (yrs >= OLD_PERMIT_YEARS) {
+      out.push({
+        code: "OLD_PERMIT",
+        emoji: "🔨",
+        label: `Permit ${c.last_roof_permit_date.slice(0, 4)}`,
+        date: c.last_roof_permit_date,
+      });
+    }
+  }
+
+  if (
+    c.last_sale_year &&
+    CURRENT_YEAR - c.last_sale_year <= RECENT_SALE_YEARS
+  ) {
+    out.push({
+      code: "RECENT_SALE",
+      emoji: "🏠",
+      label: `Sold ${c.last_sale_year}`,
+      date: `${c.last_sale_year}-01-01T00:00:00Z`,
+    });
+  }
+
+  const storm = storms[(c.county ?? "manatee").toLowerCase()];
+  if (storm) {
+    const mag = storm.magnitude ? ` ${storm.magnitude}` : "";
+    out.push({
+      code: "STORM",
+      emoji: "⛈️",
+      label: `${storm.typecode}${mag} ${storm.valid_at.slice(0, 10)}`,
+      date: storm.valid_at,
+    });
+  }
+
+  return out;
+}
+
+function latestSignalDate(tags: SignalTag[]): string | null {
+  const real = tags.map((t) => t.date).filter((d): d is string => !!d);
+  if (real.length === 0) return null;
+  return real.sort().at(-1) ?? null;
+}
 
 export function PropertyPipelineTab() {
   const [rows, setRows] = useState<PipelineCandidate[]>([]);
@@ -34,6 +113,16 @@ export function PropertyPipelineTab() {
     is_overage: boolean;
     next_card_cost_cents: number;
   } | null>(null);
+  const [storms, setStorms] = useState<StormByCounty>({});
+
+  useEffect(() => {
+    fetch("/api/pipeline/storm-signals")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => s?.counties && setStorms(s.counties))
+      .catch(() => {
+        /* non-fatal — tags just won't show storm */
+      });
+  }, []);
 
   useEffect(() => {
     fetch("/api/pipeline/usage")
@@ -122,6 +211,20 @@ export function PropertyPipelineTab() {
   const topZips = useMemo(() => zipAggs.slice(0, 5), [zipAggs]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const enrichedRows = useMemo(() => {
+    return rows
+      .map((r) => {
+        const tags = computeTags(r, storms);
+        return { row: r, tags, latest: latestSignalDate(tags) };
+      })
+      .sort((a, b) => {
+        if (a.latest && b.latest) return b.latest.localeCompare(a.latest);
+        if (a.latest) return -1;
+        if (b.latest) return 1;
+        return 0;
+      });
+  }, [rows, storms]);
+
   if (!loading && !error && total === 0 && zipAggs.length === 0 && !zipFilter) {
     return <EmptyState />;
   }
@@ -201,9 +304,8 @@ export function PropertyPipelineTab() {
               style={{ borderBottom: "1px solid var(--neu-border)" }}
             >
               <th className="px-4 py-3">Address</th>
-              <th className="px-4 py-3 w-28">Roof age</th>
-              <th className="px-4 py-3 w-28">Last sale</th>
-              <th className="px-4 py-3 w-32">Last permit</th>
+              <th className="px-4 py-3 w-72">Signals</th>
+              <th className="px-4 py-3 w-24">Roof age</th>
               <th className="px-4 py-3 w-20">ZIP</th>
               <th className="px-4 py-3 w-40 text-right">Action</th>
             </tr>
@@ -211,7 +313,7 @@ export function PropertyPipelineTab() {
           <tbody>
             {loading && rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center neu-muted">
+                <td colSpan={5} className="px-4 py-12 text-center neu-muted">
                   <Loader2 className="inline-block h-4 w-4 animate-spin mr-2" />
                   Loading homes...
                 </td>
@@ -219,7 +321,7 @@ export function PropertyPipelineTab() {
             ) : error ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="px-4 py-8 text-center"
                   style={{ color: "#ef4444" }}
                 >
@@ -228,12 +330,12 @@ export function PropertyPipelineTab() {
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center neu-muted">
+                <td colSpan={5} className="px-4 py-8 text-center neu-muted">
                   No homes in this filter.
                 </td>
               </tr>
             ) : (
-              rows.map((r) => (
+              enrichedRows.map(({ row: r, tags }) => (
                 <tr
                   key={r.id}
                   className="transition-colors hover:bg-black/[0.02]"
@@ -251,6 +353,27 @@ export function PropertyPipelineTab() {
                       {r.city}
                     </div>
                   </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      {tags.length === 0 ? (
+                        <span className="text-[11px] italic neu-muted">
+                          No signal
+                        </span>
+                      ) : (
+                        tags.map((t) => (
+                          <span
+                            key={t.code}
+                            title={t.label}
+                            className="neu-flat inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                            style={{ color: "var(--neu-text)" }}
+                          >
+                            <span>{t.emoji}</span>
+                            <span>{t.label}</span>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 tabular-nums">
                     <div
                       className="font-semibold"
@@ -261,23 +384,6 @@ export function PropertyPipelineTab() {
                     <div className="text-[11px] neu-muted">
                       Built {r.year_built}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 tabular-nums neu-muted">
-                    {r.last_sale_year ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">
-                    {r.last_roof_permit_date ? (
-                      <span style={{ color: "var(--neu-text)" }}>
-                        {new Date(r.last_roof_permit_date).getFullYear()}
-                      </span>
-                    ) : (
-                      <span
-                        className="text-[11px] italic"
-                        style={{ color: "var(--neu-accent)" }}
-                      >
-                        None on file
-                      </span>
-                    )}
                   </td>
                   <td className="px-4 py-3 tabular-nums neu-muted">{r.zip}</td>
                   <td className="px-4 py-3 text-right">

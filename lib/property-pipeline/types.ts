@@ -11,6 +11,7 @@ export interface PipelineCandidate {
   assessed_value: number | null;
   last_sale_year: number | null;
   last_roof_permit_date: string | null;
+  county: string;
   status: PipelineStatus;
   score: number | null;
   tier: PipelineTier;
