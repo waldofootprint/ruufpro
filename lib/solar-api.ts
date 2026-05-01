@@ -32,7 +32,7 @@ export interface RoofData {
     pitchDegrees: number;
     azimuthDegrees: number; // compass direction the segment faces
   }[];
-  source: "google_solar" | "cache";
+  source: "google_solar" | "cache" | "ms_footprints";
   // Confidence signals from Google Solar API (present only on fresh fetches).
   imageryQuality?: "HIGH" | "MEDIUM" | "LOW";
   imageryDate?: string; // ISO YYYY-MM-DD when imagery was captured

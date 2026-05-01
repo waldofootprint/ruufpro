@@ -415,18 +415,18 @@ export function EstimatesTab() {
         </div>
       </SettingsSection>
 
-      {/* Buffer */}
+      {/* Range */}
       <SettingsSection
-        title="Estimate Buffer"
-        description="Widens the high end to cover unknowns found during inspection. Most roofers use 10–15%."
+        title="Estimate Range"
+        description="How tight your homeowner-facing range is. ±10% is industry standard."
       >
         <PillGroup
-          options={BUFFERS.map((p) => ({ value: String(p), label: p === 0 ? "None" : `+${p}%` }))}
+          options={BUFFERS.map((p) => ({ value: String(p), label: p === 0 ? "Exact" : `±${p}%` }))}
           value={String(buffer)}
           onChange={(v) => setBuffer(parseInt(v))}
         />
         <p className="text-[11px] neu-muted">
-          Example: with +15%, $10,000–$14,000 becomes $10,000–$16,100.
+          With ±10%, a $20,000 base estimate displays as $18,000–$22,000.
         </p>
       </SettingsSection>
 

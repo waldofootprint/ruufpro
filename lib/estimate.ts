@@ -7,10 +7,10 @@
 // How it works:
 // 1. Compute a midpoint estimate using the average of low/high rates
 // 2. Apply itemized adjustments (waste, accessories, pitch, tear-off, penetrations)
-// 3. Display as midpoint ±15% (or ±10% when contractor has set their own rate)
+// 3. Display as midpoint ± a roofer-set symmetric range (default 10%)
 //
 // This approach avoids the "low-everything vs high-everything" compounding
-// problem that made the old range 85% wide. The ±band is tight enough to be
+// problem that made the old range 85% wide. The ±range is tight enough to be
 // useful to homeowners while honest about inspection-level unknowns.
 
 // Shared disclaimer — used across estimate widget, chat estimate card, PDFs, and system prompt.
@@ -209,8 +209,15 @@ export function resolveShapeClass(
 }
 
 // Waste factor: more complex roofs (more segments) need more extra material
-// because of cuts at hips, valleys, and edges
-export function getWasteFactor(numSegments: number): number {
+// because of cuts at hips, valleys, and edges. When the roof area came from
+// the MS Footprints fallback (no segment count available — synthesized from
+// a polygon × pitch factor), pick the middle 18% so we don't systematically
+// under-price complex roofs that the Footprints path can't see.
+export function getWasteFactor(
+  numSegments: number,
+  source?: RoofData["source"]
+): number {
+  if (source === "ms_footprints") return 1.18;
   if (numSegments <= 2) return 1.1; // Simple gable: 10% waste
   if (numSegments <= 4) return 1.15; // Moderate: 15%
   if (numSegments <= 6) return 1.18; // Complex: 18%
@@ -237,12 +244,6 @@ const STARTER_STRIP_RATE = 2.0;
 // their overhead and profit. Adding a markup on top would double-count.
 // The add-ons (waste, accessories, penetrations, pitch) are quantity-based
 // adjustments, not pricing markups.
-
-// Default uncertainty band: ±10% for regional defaults, ±8% for contractor-set rates.
-// Old values (15/10) produced ranges too wide vs competitors (Roofr ±5%, Instant Roofer ±9%).
-// ±10% matches industry standard for satellite estimates per insurance/contractor surveys.
-const DEFAULT_BAND_PERCENT = 10;
-const CONTRACTOR_BAND_PERCENT = 8;
 
 // V1 fallback: estimate home sqft from bedroom count
 const BEDROOM_SQFT_MAP: Record<number, number> = {
@@ -290,7 +291,7 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
 
   // Get all multipliers
   const pitchMultiplier = getPitchMultiplier(pitchDegrees);
-  const wasteFactor = getWasteFactor(numSegments);
+  const wasteFactor = getWasteFactor(numSegments, input.roofData?.source);
   const penetrationCost = getPenetrationCost(roofAreaSqft);
   const weatherSurge = input.weatherSurgeMultiplier || 1.0;
 
@@ -312,8 +313,9 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   // A contractor who KNOWS their pricing sets a tight spread (e.g. $3.10-$3.30 = 1.065 ratio).
   // Regional defaults have wider spreads (1.15-1.33 ratio).
   // Threshold 1.15: tighter = contractor-configured (itemized), wider = defaults (bundled).
+  // (Phase-2 deferred per decisions/2026-05-01-phase-1-shippable-calculator.md:
+  //  replace this heuristic with an explicit pricing_mode setting.)
   const isContractorConfigured = rateHigh > 0 && rateLow > 0 && (rateHigh / rateLow) < 1.15;
-  const bandPercent = isContractorConfigured ? CONTRACTOR_BAND_PERCENT : DEFAULT_BAND_PERCENT;
 
   // In BUNDLED MODE the $/sqft rate is already an all-in installed price that
   // typical waste and typical pitch are baked into. Applying the multipliers on
@@ -398,9 +400,11 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   const floor = input.minimumJobPrice || 0;
   const midEstimate = floor > 0 && rawMid < floor ? floor : rawMid;
 
-  // Apply ±band to get the range
-  const priceLow = Math.round(midEstimate * (1 - bandPercent / 100));
-  const priceHigh = Math.round(midEstimate * (1 + bandPercent / 100));
+  // Apply roofer-set symmetric range (Phase 1 collapse: was buffer + band,
+  // now a single ± value owned by the contractor in Settings → Estimates).
+  const range = input.bufferPercent ?? 10;
+  const priceLow = Math.round(midEstimate * (1 - range / 100));
+  const priceHigh = Math.round(midEstimate * (1 + range / 100));
 
   return {
     priceLow,
@@ -414,7 +418,7 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
       materialCostHigh: Math.round(materialCost), // same — midpoint-based now
       pitchMultiplier: effectivePitchMultiplier,
       wasteFactor: effectiveWasteFactor,
-      bufferPercent: bandPercent,
+      bufferPercent: range,
       accessoryCost: Math.round(accessoryCost),
       tearoffCost: Math.round(tearoffCost),
       penetrationCost: Math.round(effectivePenetrationCost),

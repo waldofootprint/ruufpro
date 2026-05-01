@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getRoofData, type RoofData } from "@/lib/solar-api";
+import { getBuildingFootprintArea } from "@/lib/footprints-api";
 import {
   runMeasurementPipeline,
   prodAdapters,
@@ -31,6 +32,22 @@ import {
   type RoofShapeClass,
 } from "@/lib/estimate";
 import { getWeatherSurge } from "@/lib/weather-surge";
+
+// Pitch-category → multiplier on horizontal footprint area to get installed
+// roof area. Mirrors the values used in the V1 fallback elsewhere; consumed
+// by the Footprints-direct branch when Solar returns null.
+const FOOTPRINT_PITCH_MULT: Record<string, number> = {
+  flat: 1.02,
+  low: 1.10,
+  moderate: 1.20,
+  steep: 1.35,
+};
+const FOOTPRINT_PITCH_DEGREES: Record<string, number> = {
+  flat: 5,
+  low: 18,
+  moderate: 22,
+  steep: 38,
+};
 
 function getSupabase() {
   return createClient(
@@ -78,9 +95,13 @@ const DEFAULT_LABELS: Record<string, string> = {
   flat: MATERIAL_META.flat.label,
 };
 
-// Mode B (Session AZ): when a guardrail refuses the measurement, we still
-// write a lead so the roofer can follow up with an on-site quote instead of
-// the homeowner dead-ending at a "contact us" message.
+// Mode B (Session AZ, extended Phase 1 2026-05-01): when a guardrail or
+// upstream measurement source refuses the address, write a lead anyway so
+// the roofer can follow up. Phase 1 dropped the name+email gate per
+// decisions/2026-05-01-phase-1-shippable-calculator.md Step 6 — every
+// estimate request that reaches this function produces a leads row.
+// When contact info is missing, status flips to 'address_only_followup' so
+// the kanban dashboard can sort those into their own queue.
 async function writeManualQuoteLead(
   supabase: ReturnType<typeof getSupabase>,
   contractor_id: string,
@@ -95,17 +116,17 @@ async function writeManualQuoteLead(
     trip_reason: string;
   }
 ) {
-  if (!fields.name || !fields.email) return; // require at least name+email
+  const hasContact = Boolean(fields.name) && Boolean(fields.email);
   const { error } = await supabase.from("leads").insert({
     contractor_id,
-    name: fields.name,
-    email: fields.email,
+    name: fields.name || null,
+    email: fields.email || null,
     phone: fields.phone || null,
     address: fields.address || null,
     source: "estimate_widget",
-    status: "new",
+    status: hasContact ? "new" : "address_only_followup",
     measurement_status: "needs_manual_quote",
-    message: `Satellite measurement refused by guardrail (${fields.trip_reason}). Homeowner needs an on-site quote.`,
+    message: `Satellite measurement refused (${fields.trip_reason}). Homeowner needs an on-site quote.`,
     timeline: fields.timeline || null,
     financing_interest: fields.financing_interest || null,
     sms_consent: fields.sms_consent ?? false,
@@ -220,18 +241,68 @@ export async function POST(request: NextRequest) {
     const showRoofDetails: boolean = settings?.show_roof_details ?? true;
 
     // Step 2: Get roof data + weather surge (parallel to avoid latency)
-    let roofData = null;
+    let roofData: RoofData | null = null;
     let geometry = null;
 
     const preCoords = lat && lng ? { lat, lng } : undefined;
     const getRoofDataStart = Date.now();
     const [roofResult, weatherSurge] = await Promise.all([
-      address ? getRoofData(address, preCoords) : Promise.resolve({ data: null, invalid: undefined as string | undefined }),
+      address ? getRoofData(address, preCoords) : Promise.resolve({ data: null, geocoded: null, invalid: undefined as string | undefined }),
       getWeatherSurge(lat, lng),
     ]);
     const getRoofDataElapsedMs = Date.now() - getRoofDataStart;
 
     roofData = roofResult.data;
+
+    // Resolved coordinates: explicit body lat/lng, else whatever
+    // getRoofData's geocoder produced. Used by the Footprints fallback so
+    // requests without preCoords (e.g., the bench curl loop) still hit the
+    // fallback path.
+    const resolvedLat = lat ?? roofResult.geocoded?.lat ?? null;
+    const resolvedLng = lng ?? roofResult.geocoded?.lng ?? null;
+
+    // Phase 1 (2026-05-01): per-response confidence flag, surfaced separately
+    // from the trip/refusal system. "high" by default; downgrades on signals
+    // that historically caused refusals (LOW Solar imagery, ≥12 segments,
+    // Footprints-derived synthesis) — those now flag instead of refuse.
+    let confidence: "high" | "low" = "high";
+
+    // Phase 1 / Step 7: Footprints-direct fallback when Solar returns null.
+    // Solar is the primary measurement source; when it has no buildingInsights
+    // for an address (often newer FL construction missing from Google's
+    // satellite-derived dataset), we previously fell through to V1 manual
+    // estimates from bedroom counts. That path was inaccurate and homeowners
+    // got a generic "couldn't measure" error. Now we synthesize a roof area
+    // from the MS Footprints polygon × pitch factor and feed it into the
+    // same calculateEstimate path with confidence flagged "low".
+    if (
+      roofData == null &&
+      resolvedLat != null &&
+      resolvedLng != null &&
+      !roofResult.invalid
+    ) {
+      try {
+        const footprint = await getBuildingFootprintArea(resolvedLat, resolvedLng);
+        if (footprint && footprint.areaSqft > 0) {
+          const pitchFactor =
+            FOOTPRINT_PITCH_MULT[pitch_category] ?? 1.20;
+          const synthSqft = Math.round(footprint.areaSqft * pitchFactor);
+          roofData = {
+            roofAreaSqft: synthSqft,
+            pitchDegrees: FOOTPRINT_PITCH_DEGREES[pitch_category] ?? 22,
+            numSegments: 2,
+            segments: [],
+            source: "ms_footprints" as const,
+          };
+          confidence = "low";
+          console.log(
+            `[estimate] footprints fallback hit: ${footprint.areaSqft}sqft footprint × ${pitchFactor} = ${synthSqft}sqft synth (building_id=${footprint.buildingId ?? "?"})`
+          );
+        }
+      } catch (err) {
+        console.warn("[estimate] footprints fallback errored:", err);
+      }
+    }
 
     // Track D.5 Option-A 2026-04-23: promote measurement pipeline from
     // waitUntil (telemetry-only) to in-band await so LiDAR output can feed
@@ -295,7 +366,7 @@ export async function POST(request: NextRequest) {
         pitchDegrees: lidarPitchDegrees,
         numSegments: pipelineResult.segmentCount!,
         segments: roofData?.segments ?? [],
-        source: roofData?.source ?? "google_solar",
+        source: roofData?.source ?? ("google_solar" as const),
         imageryQuality: roofData?.imageryQuality,
         imageryDate: roofData?.imageryDate,
         imageryProcessedDate: roofData?.imageryProcessedDate,
@@ -320,20 +391,62 @@ export async function POST(request: NextRequest) {
 
     // Geocoding sanity: reject non-residential place types (park, bare
     // route, intersection, commercial POIs) before running cost/guardrail.
+    // Phase 1 (Step 5): differentiated error codes so the widget can show
+    // the right copy. `commercial_or_high_rise` covers parks/schools/malls/
+    // hospitals/etc. that aren't residential rooftops; `address_unrecognized`
+    // covers intersections and missing-street-number geocodes the homeowner
+    // can fix by re-typing the address.
     if (roofResult.invalid) {
       console.warn(
         `[estimate] geocode rejected (${roofResult.invalid}) for "${address}"`
       );
+      const invalidStr = roofResult.invalid;
+      const isCommercial =
+        invalidStr.startsWith("non_residential_place:") &&
+        /(?:^|,|:)(?:park|natural_feature|airport|cemetery|church|school|university|hospital|shopping_mall|stadium)(?:,|$)/.test(
+          invalidStr
+        );
+      const errorCode = isCommercial
+        ? "commercial_or_high_rise"
+        : "address_unrecognized";
       await writeManualQuoteLead(supabase, contractor_id, {
         name, email, phone, address, timeline, financing_interest, sms_consent,
-        trip_reason: `geocode_${roofResult.invalid}`,
+        trip_reason: `geocode_${invalidStr}`,
       });
       return NextResponse.json(
         {
           error:
-            "We couldn't get an exact satellite measurement on this roof. Your details were sent over for a free on-site quote.",
-          error_code: "couldnt_measure_accurately",
+            isCommercial
+              ? "This address looks like a commercial property or high-rise — our calculator only handles single-family roofs. Your details were sent over for a free on-site quote."
+              : "We couldn't recognize that address. Try re-typing the full street address, or your details were sent over for a free on-site quote.",
+          error_code: errorCode,
           measurement_status: "needs_manual_quote",
+          confidence,
+        },
+        { status: 422 }
+      );
+    }
+
+    // Phase 1 / Step 7: when an address geocoded fine but neither Solar nor
+    // Footprints could produce roof data, refuse instead of silently falling
+    // through to V1 bedroom-based estimates (which produce wildly inaccurate
+    // prices from a default bedrooms=3). We still write a lead so the roofer
+    // sees the address.
+    if (address && !roofData) {
+      console.warn(
+        `[estimate] no roof data from Solar or Footprints for "${address}" (resolvedLat=${resolvedLat}, resolvedLng=${resolvedLng})`
+      );
+      await writeManualQuoteLead(supabase, contractor_id, {
+        name, email, phone, address, timeline, financing_interest, sms_consent,
+        trip_reason: "no_roof_data_solar_or_footprints",
+      });
+      return NextResponse.json(
+        {
+          error:
+            "We couldn't measure this roof from satellite. Your details were sent over for a free on-site quote.",
+          error_code: "measurement_unavailable",
+          measurement_status: "needs_manual_quote",
+          confidence,
         },
         { status: 422 }
       );
@@ -380,7 +493,7 @@ export async function POST(request: NextRequest) {
       timeline,
       financingInterest: financing_interest,
       rates,
-      bufferPercent: settings.buffer_percent || 0,
+      bufferPercent: settings.buffer_percent ?? 10,
       roofShapeClass: pricingShapeClass,
       // Mode A: per-contractor minimum job price floor (Session AZ)
       minimumJobPrice: settings.minimum_job_price || undefined,
@@ -476,6 +589,7 @@ export async function POST(request: NextRequest) {
             error:
               "The pitch you picked doesn't match what we see for this property. A flat or low-slope roof on a multi-story home is unusual — please re-check the pitch question or contact us for a manual quote.",
             error_code: "pitch_conflict_recheck",
+            confidence,
           },
           { status: 422 }
         );
@@ -483,28 +597,33 @@ export async function POST(request: NextRequest) {
 
       if (sqft < 600) trip = `under_600_sqft:${sqft}`;
       else if (sqft > 10000) trip = `over_10k_sqft:${sqft}`;
-      else if (segs >= 12) trip = `too_many_segments:${segs}segs_${sqft}sqft`;
       else if (segs >= 8) {
+        // Phase 1 (Step 4): bumped from 1.75× to 2.5× — bench validation
+        // (scripts/bench-addresses.json D.2 green band 1.3–2.0×) showed the
+        // 1.75× gate was tripping legitimate complex roofs. 2.5× sits above
+        // the green band so only true neighbor-grab cases trip.
         const living = cachedProp?.square_footage || 0;
-        if (living > 0 && sqft > living * 1.75) {
+        if (living > 0 && sqft > living * 2.5) {
           trip = `segment_heuristic:${segs}segs_${sqft}sqft_vs_${living}living`;
         }
       }
 
-      // Google Solar confidence gates — only run on fresh Solar fetches.
-      // Skipped when LiDAR wins Q1-A1 (Q2-B1 consistency: LiDAR-everything
-      // at guardrail layer; Solar imagery flags don't describe LiDAR output).
-      if (!trip && !useLidar && roofData?.source === "google_solar") {
-        if (roofData.imageryQuality === "LOW") {
-          trip = `low_imagery_quality:${sqft}sqft`;
-        } else if (roofData.imageryProcessedDate) {
-          const processed = Date.parse(roofData.imageryProcessedDate);
-          const twoYearsAgo = Date.now() - 2 * 365 * 24 * 60 * 60 * 1000;
-          if (!isNaN(processed) && processed < twoYearsAgo) {
-            trip = `stale_imagery:${roofData.imageryProcessedDate}`;
-          }
-        }
+      // Phase 1 (Step 3): ≥12 segments and LOW Solar imagery quality used to
+      // trip the guardrail and return an error. Now they downgrade confidence
+      // instead — homeowner still gets a price, just flagged as low confidence.
+      if (segs >= 12) confidence = "low";
+      if (
+        !useLidar &&
+        roofData?.source === "google_solar" &&
+        roofData.imageryQuality === "LOW"
+      ) {
+        confidence = "low";
       }
+      // Phase 1 (Step 1): the stale-imagery trip block was deleted entirely.
+      // Imagery age (>2 years processed) is no longer a refusal signal —
+      // construction on a roof would change the area meaningfully and that
+      // would surface via the over_10k_sqft / under_600_sqft / segment
+      // heuristic gates. Old imagery alone is not informative enough to refuse.
 
       if (trip) {
         const living = cachedProp?.square_footage || 0;
@@ -565,19 +684,27 @@ export async function POST(request: NextRequest) {
           console.warn(
             `[estimate] guardrail tripped (${trip}) → no cache, rejecting: address="${address}"`
           );
-          // Mode B: write a lead with measurement_status='needs_manual_quote'
-          // so the roofer gets the homeowner in their pipeline instead of
-          // dead-ending them.
+          // Phase 1 (Step 5 + Step 7): differentiated error codes.
+          // over_10k_sqft → commercial_or_high_rise (residential roofs in FL
+          // top out around 8-9k installed; >10k is almost always a commercial
+          // building or neighbor-grab on a commercial parcel).
+          // Everything else → measurement_unavailable.
+          const isOverSize = trip.startsWith("over_10k_sqft");
+          const errorCode = isOverSize
+            ? "commercial_or_high_rise"
+            : "measurement_unavailable";
           await writeManualQuoteLead(supabase, contractor_id, {
             name, email, phone, address, timeline, financing_interest, sms_consent,
             trip_reason: trip,
           });
           return NextResponse.json(
             {
-              error:
-                "We couldn't get an exact satellite measurement on this roof. Your details were sent over for a free on-site quote.",
-              error_code: "couldnt_measure_accurately",
+              error: isOverSize
+                ? "This roof measures larger than our calculator handles — usually a commercial building or multi-unit property. Your details were sent over for a free on-site quote."
+                : "We couldn't get an exact satellite measurement on this roof. Your details were sent over for a free on-site quote.",
+              error_code: errorCode,
               measurement_status: "needs_manual_quote",
+              confidence,
             },
             { status: 422 }
           );
@@ -605,6 +732,7 @@ export async function POST(request: NextRequest) {
         detail_display: detailDisplay,
       },
       pipeline: pipelineUsed,
+      confidence,
       sqft_used_for_estimate: firstEst.roof_area_sqft,
       lidar_gate_status: pipelineResult?.lidarGateStatus ?? null,
       measurement_run_id: pipelineResult?.telemetryRowId ?? null,
