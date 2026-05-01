@@ -447,7 +447,7 @@ export async function POST(request: NextRequest) {
           error_code: errorCode,
           measurement_status: "needs_manual_quote",
           confidence,
-          ...(roofOverlay !== null ? { roof_overlay: roofOverlay } : {}),
+          roof_overlay: roofOverlay,
         },
         { status: 422 }
       );
@@ -473,7 +473,7 @@ export async function POST(request: NextRequest) {
           error_code: "measurement_unavailable",
           measurement_status: "needs_manual_quote",
           confidence,
-          ...(roofOverlay !== null ? { roof_overlay: roofOverlay } : {}),
+          roof_overlay: roofOverlay,
         },
         { status: 422 }
       );
@@ -619,7 +619,7 @@ export async function POST(request: NextRequest) {
               "The pitch you picked doesn't match what we see for this property. A flat or low-slope roof on a multi-story home is unusual — please re-check the pitch question or contact us for a manual quote.",
             error_code: "pitch_conflict_recheck",
             confidence,
-            ...(roofOverlay !== null ? { roof_overlay: roofOverlay } : {}),
+            roof_overlay: roofOverlay,
           },
           { status: 422 }
         );
@@ -735,7 +735,7 @@ export async function POST(request: NextRequest) {
               error_code: errorCode,
               measurement_status: "needs_manual_quote",
               confidence,
-              ...(roofOverlay !== null ? { roof_overlay: roofOverlay } : {}),
+              roof_overlay: roofOverlay,
             },
             { status: 422 }
           );
