@@ -61,7 +61,17 @@ export function buildRoofOverlayUrl(input: StaticMapInput): string | null {
   }
 
   const overlayPart = overlays.length > 0 ? `${overlays.join(",")}/` : "";
-  const center = `${input.lng},${input.lat},${zoom}`;
+  // Center on the polygon centroid when a polygon is present, not on the
+  // request lat/lng. The widget passes Google Places-derived coords, which
+  // are typically the parcel/driveway centroid; on larger lots that point
+  // can be 50m+ from the actual structure, putting the polygon off-frame at
+  // zoom 19 (single-house). Centroid-based centering keeps the building
+  // (and its outline) framed regardless of how far the input point drifts.
+  const centerLngLat =
+    input.polygon && input.polygon.coordinates.length > 0
+      ? polygonCenter(input.polygon.coordinates[0])
+      : [input.lng, input.lat];
+  const center = `${centerLngLat[0]},${centerLngLat[1]},${zoom}`;
   const size = `${width}x${height}@2x`;
   // The returned URL contains `?access_token=${token}` and is meant for
   // <img src> rendering, where the token is visible in the page HTML. This is
@@ -70,4 +80,25 @@ export function buildRoofOverlayUrl(input: StaticMapInput): string | null {
   // with query strings (Sentry breadcrumbs, request loggers, analytics) —
   // strip the access_token query param before logging.
   return `${MAPBOX_BASE}/${overlayPart}${center}/${size}?access_token=${token}`;
+}
+
+function polygonCenter(ring: number[][]): [number, number] {
+  // Arithmetic mean of the outer-ring vertices. For the ~3000 sqft residential
+  // footprints we deal with, this is within ~1m of the geometric (area-weighted)
+  // centroid — well below a satellite pixel at zoom 19, and far cheaper to
+  // compute than the signed-area formula.
+  // GeoJSON closed rings repeat the first vertex at the end; skip the duplicate.
+  const len =
+    ring.length > 1 &&
+    ring[0][0] === ring[ring.length - 1][0] &&
+    ring[0][1] === ring[ring.length - 1][1]
+      ? ring.length - 1
+      : ring.length;
+  let lng = 0;
+  let lat = 0;
+  for (let i = 0; i < len; i++) {
+    lng += ring[i][0];
+    lat += ring[i][1];
+  }
+  return [lng / len, lat / len];
 }
