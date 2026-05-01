@@ -351,11 +351,9 @@ export default function EstimateWidgetV4({
 
   // G/B/B estimate results
   const [estimateData, setEstimateData] = useState<EstimateResponse | null>(null);
-  // Mode B (Session AZ): when a guardrail refuses the measurement, the
-  // widget still converts the submission into a needs_manual_quote lead
-  // server-side and shows a confirmation screen instead of dead-ending.
-  const [manualQuote, setManualQuote] = useState<{ contractorName: string } | null>(null);
   // Phase 2 step 1: error_code-driven UI + polygon overlay + low-confidence pill.
+  // The needs_manual_quote screen (Mode B from Session AZ) is now rendered
+  // via getEstimateErrorCopy when error_code === "measurement_unavailable".
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<"high" | "low" | null>(null);
   const [roofOverlay, setRoofOverlay] = useState<{ url: string | null; has_polygon: boolean } | null>(null);
@@ -457,11 +455,12 @@ export default function EstimateWidgetV4({
         if (data.error_code) {
           setErrorCode(data.error_code);
           setRoofOverlay(data.roof_overlay ?? null);
-          if (data.measurement_status === "needs_manual_quote") {
-            setManualQuote({ contractorName });
-          } else {
-            setManualQuote(null);
-          }
+          // Clear stale success state so a previous estimate doesn't peek
+          // through if errorCode is later cleared without a fresh submit.
+          setEstimateData(null);
+          setSelectedMaterial("");
+          setLivingEstimateUrl("");
+          setConfidence(null);
           setDirection(1);
           setStep(8);
           return;
@@ -475,7 +474,6 @@ export default function EstimateWidgetV4({
       setConfidence(data.confidence ?? null);
       setRoofOverlay(data.roof_overlay ?? null);
       setErrorCode(null);
-      setManualQuote(null);
 
       // Default selection = first (cheapest) material
       const primaryMaterial = data.estimates[0]?.material || "asphalt";
@@ -1233,7 +1231,10 @@ export default function EstimateWidgetV4({
                   onClick={() => {
                     setErrorCode(null);
                     setRoofOverlay(null);
-                    setManualQuote(null);
+                    setEstimateData(null);
+                    setSelectedMaterial("");
+                    setLivingEstimateUrl("");
+                    setConfidence(null);
                     setDirection(-1);
                     setStep(2);
                   }}
@@ -1253,7 +1254,10 @@ export default function EstimateWidgetV4({
                   onClick={() => {
                     setErrorCode(null);
                     setRoofOverlay(null);
-                    setManualQuote(null);
+                    setEstimateData(null);
+                    setSelectedMaterial("");
+                    setLivingEstimateUrl("");
+                    setConfidence(null);
                     setDirection(-1);
                     setStep(3);
                   }}
@@ -1358,8 +1362,8 @@ export default function EstimateWidgetV4({
                   marginBottom: 12,
                 }}
               >
-                <span style={{ fontSize: 12 }}>&#9432;</span>
-                Approximate measurement &mdash; confirm on-site
+                <Info className="w-3 h-3 shrink-0" aria-hidden="true" />
+                <span role="status">Approximate measurement &mdash; confirm on-site</span>
               </div>
             )}
 
