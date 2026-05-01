@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getRoofData, type RoofData } from "@/lib/solar-api";
 import { getBuildingFootprintArea } from "@/lib/footprints-api";
+import { buildRoofOverlayUrl } from "@/lib/mapbox-static";
 import {
   runMeasurementPipeline,
   prodAdapters,
@@ -267,6 +268,22 @@ export async function POST(request: NextRequest) {
     // Footprints-derived synthesis) — those now flag instead of refuse.
     let confidence: "high" | "low" = "high";
 
+    // Always look up the building footprint when we have coords, regardless of
+    // whether Solar succeeded. Two callers:
+    //   1. Phase 1 fallback below — when Solar returns null, we synthesize roofData
+    //      from the footprint area.
+    //   2. The roof_overlay attached to the response — needs the polygon GeoJSON
+    //      for the Mapbox overlay on the results page.
+    // Failure is silent and degrades to no overlay (footprintResult stays null).
+    let footprintResult: Awaited<ReturnType<typeof getBuildingFootprintArea>> = null;
+    if (resolvedLat != null && resolvedLng != null) {
+      try {
+        footprintResult = await getBuildingFootprintArea(resolvedLat, resolvedLng);
+      } catch (err) {
+        console.warn("[estimate] footprint lookup errored:", err);
+      }
+    }
+
     // Phase 1 / Step 7: Footprints-direct fallback when Solar returns null.
     // Solar is the primary measurement source; when it has no buildingInsights
     // for an address (often newer FL construction missing from Google's
@@ -277,32 +294,40 @@ export async function POST(request: NextRequest) {
     // same calculateEstimate path with confidence flagged "low".
     if (
       roofData == null &&
-      resolvedLat != null &&
-      resolvedLng != null &&
+      footprintResult &&
+      footprintResult.areaSqft > 0 &&
       !roofResult.invalid
     ) {
-      try {
-        const footprint = await getBuildingFootprintArea(resolvedLat, resolvedLng);
-        if (footprint && footprint.areaSqft > 0) {
-          const pitchFactor =
-            FOOTPRINT_PITCH_MULT[pitch_category] ?? 1.20;
-          const synthSqft = Math.round(footprint.areaSqft * pitchFactor);
-          roofData = {
-            roofAreaSqft: synthSqft,
-            pitchDegrees: FOOTPRINT_PITCH_DEGREES[pitch_category] ?? 22,
-            numSegments: 2,
-            segments: [],
-            source: "ms_footprints" as const,
-          };
-          confidence = "low";
-          console.log(
-            `[estimate] footprints fallback hit: ${footprint.areaSqft}sqft footprint × ${pitchFactor} = ${synthSqft}sqft synth (building_id=${footprint.buildingId ?? "?"})`
-          );
-        }
-      } catch (err) {
-        console.warn("[estimate] footprints fallback errored:", err);
-      }
+      const pitchFactor =
+        FOOTPRINT_PITCH_MULT[pitch_category] ?? 1.20;
+      const synthSqft = Math.round(footprintResult.areaSqft * pitchFactor);
+      roofData = {
+        roofAreaSqft: synthSqft,
+        pitchDegrees: FOOTPRINT_PITCH_DEGREES[pitch_category] ?? 22,
+        numSegments: 2,
+        segments: [],
+        source: "ms_footprints" as const,
+      };
+      confidence = "low";
+      console.log(
+        `[estimate] footprints fallback hit: ${footprintResult.areaSqft}sqft footprint × ${pitchFactor} = ${synthSqft}sqft synth (building_id=${footprintResult.buildingId ?? "?"})`
+      );
     }
+
+    // Build the Mapbox static-image URL once, reused across success + error
+    // responses where lat/lng resolved. Returns null when MAPBOX_TOKEN is
+    // unset (during the period before the Mapbox token is provisioned).
+    const roofOverlay =
+      resolvedLat != null && resolvedLng != null
+        ? {
+            url: buildRoofOverlayUrl({
+              lat: resolvedLat,
+              lng: resolvedLng,
+              polygon: footprintResult?.polygon ?? null,
+            }),
+            has_polygon: !!footprintResult?.polygon,
+          }
+        : null;
 
     // Track D.5 Option-A 2026-04-23: promote measurement pipeline from
     // waitUntil (telemetry-only) to in-band await so LiDAR output can feed
@@ -422,6 +447,7 @@ export async function POST(request: NextRequest) {
           error_code: errorCode,
           measurement_status: "needs_manual_quote",
           confidence,
+          roof_overlay: roofOverlay,
         },
         { status: 422 }
       );
@@ -447,6 +473,7 @@ export async function POST(request: NextRequest) {
           error_code: "measurement_unavailable",
           measurement_status: "needs_manual_quote",
           confidence,
+          roof_overlay: roofOverlay,
         },
         { status: 422 }
       );
@@ -462,7 +489,9 @@ export async function POST(request: NextRequest) {
 
     if (pricedMaterials.length === 0) {
       return NextResponse.json(
-        { error: "No materials priced. Please configure pricing first." },
+        {
+          error: "No materials priced. Please configure pricing first.",
+        },
         { status: 400 }
       );
     }
@@ -590,6 +619,7 @@ export async function POST(request: NextRequest) {
               "The pitch you picked doesn't match what we see for this property. A flat or low-slope roof on a multi-story home is unusual — please re-check the pitch question or contact us for a manual quote.",
             error_code: "pitch_conflict_recheck",
             confidence,
+            roof_overlay: roofOverlay,
           },
           { status: 422 }
         );
@@ -705,6 +735,7 @@ export async function POST(request: NextRequest) {
               error_code: errorCode,
               measurement_status: "needs_manual_quote",
               confidence,
+              roof_overlay: roofOverlay,
             },
             { status: 422 }
           );
@@ -733,6 +764,7 @@ export async function POST(request: NextRequest) {
       },
       pipeline: pipelineUsed,
       confidence,
+      roof_overlay: roofOverlay,
       sqft_used_for_estimate: firstEst.roof_area_sqft,
       lidar_gate_status: pipelineResult?.lidarGateStatus ?? null,
       measurement_run_id: pipelineResult?.telemetryRowId ?? null,
