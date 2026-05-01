@@ -63,5 +63,11 @@ export function buildRoofOverlayUrl(input: StaticMapInput): string | null {
   const overlayPart = overlays.length > 0 ? `${overlays.join(",")}/` : "";
   const center = `${input.lng},${input.lat},${zoom}`;
   const size = `${width}x${height}@2x`;
+  // The returned URL contains `?access_token=${token}` and is meant for
+  // <img src> rendering, where the token is visible in the page HTML. This is
+  // acceptable IF the token is URL-restricted (*.ruufpro.com etc.) and scoped
+  // to styles:tiles only. Do NOT log this URL to systems that retain full URLs
+  // with query strings (Sentry breadcrumbs, request loggers, analytics) —
+  // strip the access_token query param before logging.
   return `${MAPBOX_BASE}/${overlayPart}${center}/${size}?access_token=${token}`;
 }
