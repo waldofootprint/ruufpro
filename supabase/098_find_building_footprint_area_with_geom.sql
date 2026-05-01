@@ -3,16 +3,24 @@
 --
 -- Target: GEOSPATIAL project (vfmnjwpjxamtbuehmtrv) ONLY, not prod.
 --
--- Non-breaking: this is a CREATE OR REPLACE on the existing function. The
--- return TABLE gains one column (geom_geojson). Existing Phase 1 callers
--- (lib/footprints-api.ts -> getBuildingFootprintArea) read area_sqm and
--- building_id by name and ignore the new column.
+-- DROP-then-CREATE pattern: Postgres rejects CREATE OR REPLACE FUNCTION when
+-- the RETURNS TABLE shape changes (adding `geom_geojson` is a return-type
+-- change). Wrapped in BEGIN/COMMIT so the brief window where the function
+-- is absent is atomic — no caller can hit a half-state.
+--
+-- Application-side compatibility: the existing Phase 1 caller
+-- (lib/footprints-api.ts -> getBuildingFootprintArea) reads fields by name,
+-- so the added `geom_geojson` column is purely additive at the JS level.
 --
 -- Selection logic preserved from 097: ST_Contains primary, ST_DWithin 50m
 -- fallback, with the bbox prefilter pattern from 080 to keep p95 latency
 -- under the PostgREST statement_timeout.
 
-create or replace function public.find_building_footprint_area(
+begin;
+
+drop function if exists public.find_building_footprint_area(double precision, double precision);
+
+create function public.find_building_footprint_area(
   p_lat double precision,
   p_lng double precision
 )
@@ -62,3 +70,5 @@ $$;
 
 comment on function public.find_building_footprint_area(double precision, double precision) is
   'Phase 2 step 1 (2026-05-01): extends 097 to also return geom_geojson for results-page polygon overlay. Selection logic unchanged: ST_Contains primary + ST_DWithin 50m fallback.';
+
+commit;
