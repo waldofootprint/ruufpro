@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Download, Info, Check, Phone } from "lucide-react";
 import { usePlacesAutocomplete } from "@/lib/use-places-autocomplete";
 import SatelliteView from "@/components/satellite-view";
+import { getEstimateErrorCopy } from "@/lib/estimate-error-copy";
 
 // ----- LIGHT COLOR SYSTEM (for light backgrounds) -----
 const LIGHT = {
@@ -264,6 +265,9 @@ interface EstimateResponse {
     severity: string;
   } | null;
   show_roof_details?: boolean;
+  // NEW Phase 2 step 1:
+  confidence?: "high" | "low";
+  roof_overlay?: { url: string | null; has_polygon: boolean } | null;
 }
 
 // ----- STEP TRANSITION (enhanced with scale for 3D feel) -----
@@ -351,6 +355,10 @@ export default function EstimateWidgetV4({
   // widget still converts the submission into a needs_manual_quote lead
   // server-side and shows a confirmation screen instead of dead-ending.
   const [manualQuote, setManualQuote] = useState<{ contractorName: string } | null>(null);
+  // Phase 2 step 1: error_code-driven UI + polygon overlay + low-confidence pill.
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [confidence, setConfidence] = useState<"high" | "low" | null>(null);
+  const [roofOverlay, setRoofOverlay] = useState<{ url: string | null; has_polygon: boolean } | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [livingEstimateUrl, setLivingEstimateUrl] = useState("");
 
@@ -442,19 +450,32 @@ export default function EstimateWidgetV4({
       });
       const data = await res.json();
       if (!res.ok) {
-        // Mode B: guardrail refusal. Server has already written a lead with
-        // measurement_status='needs_manual_quote'. Show confirmation screen
-        // instead of dead-ending — DO NOT run the client-side lead insert or
-        // notify flow below (server handles lead; no estimate to attach).
-        if (data.error_code === "couldnt_measure_accurately" && data.measurement_status === "needs_manual_quote") {
-          setManualQuote({ contractorName });
+        // Phase 2 step 1: structured error_code dispatch.
+        // Capture the overlay too — most error paths still have one (commercial,
+        // measurement_unavailable, pitch_conflict_recheck) so the homeowner can
+        // still see their address on the satellite.
+        if (data.error_code) {
+          setErrorCode(data.error_code);
+          setRoofOverlay(data.roof_overlay ?? null);
+          if (data.measurement_status === "needs_manual_quote") {
+            setManualQuote({ contractorName });
+          } else {
+            setManualQuote(null);
+          }
           setDirection(1);
           setStep(8);
           return;
         }
+        // Network/unstructured failure — fall through to the existing generic
+        // error toast.
         throw new Error(data.error || "Estimate failed");
       }
+      // Success — clear any prior error_code state.
       setEstimateData(data);
+      setConfidence(data.confidence ?? null);
+      setRoofOverlay(data.roof_overlay ?? null);
+      setErrorCode(null);
+      setManualQuote(null);
 
       // Default selection = first (cheapest) material
       const primaryMaterial = data.estimates[0]?.material || "asphalt";
@@ -1159,27 +1180,189 @@ export default function EstimateWidgetV4({
           </div>
         )}
 
-        {/* ===== STEP 8 (Mode B): Manual-quote confirmation ===== */}
-        {step === 8 && manualQuote && (
-          <div className="space-y-5 py-4 text-center">
-            <p className="text-[12px] font-semibold uppercase" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>
-              Request Received
-            </p>
-            <h2 className="text-[24px] font-bold" style={{ color: C.text, letterSpacing: "-0.025em" }}>
-              We couldn&apos;t get an exact satellite measurement on this roof.
-            </h2>
-            <p className="text-[15px] leading-relaxed" style={{ color: C.textSecondary }}>
-              Your details were sent to <span style={{ color: C.text, fontWeight: 600 }}>{manualQuote.contractorName}</span> for a free on-site quote. They&apos;ll reach out shortly to schedule.
-            </p>
-            <p className="text-[12px]" style={{ color: C.textTertiary }}>
-              Complex roof shapes, trees, or older satellite imagery can make automatic measurement unreliable — an on-site visit gets you an exact number.
-            </p>
-          </div>
-        )}
+        {/* ===== STEP 8: Error state (driven by error_code) ===== */}
+        {step === 8 && errorCode && (() => {
+          const copy = getEstimateErrorCopy(errorCode, contractorName);
+          return (
+            <div className="space-y-5 py-4">
+              {/* Show the overlay even on errors when we have one (commercial,
+                  measurement_unavailable, pitch_conflict_recheck — coords resolved). */}
+              {roofOverlay?.url && (
+                <div
+                  style={{
+                    width: "100%",
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    border: `1px solid ${C.cardBorder}`,
+                    background: variant === "light" ? "#F3F4F6" : "#0a0a0a",
+                    aspectRatio: "5/3",
+                  }}
+                >
+                  <img
+                    src={roofOverlay.url}
+                    alt="Aerial view of your address"
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    loading="lazy"
+                  />
+                </div>
+              )}
+
+              <div className="text-center">
+                <p
+                  className="text-[12px] font-semibold uppercase mb-2"
+                  style={{ color: C.textTertiary, letterSpacing: "0.06em" }}
+                >
+                  {copy.cta === "manual_quote" ? "Request Received" : "Heads up"}
+                </p>
+                <h2
+                  className="text-[24px] font-bold mb-3"
+                  style={{ color: C.text, letterSpacing: "-0.025em" }}
+                >
+                  {copy.headline}
+                </h2>
+                <p
+                  className="text-[15px] leading-relaxed"
+                  style={{ color: C.textSecondary }}
+                >
+                  {copy.body}
+                </p>
+              </div>
+
+              {copy.cta === "retry_address" && (
+                <button
+                  onClick={() => {
+                    setErrorCode(null);
+                    setRoofOverlay(null);
+                    setManualQuote(null);
+                    setDirection(-1);
+                    setStep(2);
+                  }}
+                  className="w-full rounded-xl py-3 text-[15px] font-semibold transition-all"
+                  style={{
+                    background: C.primaryBg,
+                    color: C.primaryText,
+                    boxShadow: S.btnPrimary,
+                  }}
+                >
+                  Try a different address
+                </button>
+              )}
+
+              {copy.cta === "retry_pitch" && (
+                <button
+                  onClick={() => {
+                    setErrorCode(null);
+                    setRoofOverlay(null);
+                    setManualQuote(null);
+                    setDirection(-1);
+                    setStep(3);
+                  }}
+                  className="w-full rounded-xl py-3 text-[15px] font-semibold transition-all"
+                  style={{
+                    background: C.primaryBg,
+                    color: C.primaryText,
+                    boxShadow: S.btnPrimary,
+                  }}
+                >
+                  Re-check pitch
+                </button>
+              )}
+
+              {copy.cta === "contact" && contractorPhone && (
+                <a
+                  href={`tel:${contractorPhone}`}
+                  className="block w-full rounded-xl py-3 text-[15px] font-semibold text-center transition-all"
+                  style={{
+                    background: C.primaryBg,
+                    color: C.primaryText,
+                    boxShadow: S.btnPrimary,
+                    textDecoration: "none",
+                  }}
+                >
+                  Call {contractorName}
+                </a>
+              )}
+
+              {copy.cta === "manual_quote" && (
+                <p
+                  className="text-[12px] text-center"
+                  style={{ color: C.textTertiary }}
+                >
+                  A representative will reach out within 1-2 business days.
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ===== STEP 8: Good/Better/Best Results ===== */}
-        {step === 8 && estimateData && !manualQuote && (
+        {step === 8 && estimateData && !errorCode && (
           <div className="space-y-5 py-2">
+            {/* Phase 2 step 1: polygon overlay (when API returned one). */}
+            {roofOverlay?.url && (
+              <div
+                style={{
+                  width: "100%",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  marginBottom: 16,
+                  border: `1px solid ${C.cardBorder}`,
+                  background: variant === "light" ? "#F3F4F6" : "#0a0a0a",
+                  aspectRatio: "5/3",
+                  position: "relative",
+                }}
+              >
+                <img
+                  src={roofOverlay.url}
+                  alt="Aerial view of your home"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                  loading="lazy"
+                />
+                {roofOverlay.has_polygon && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      padding: "4px 10px",
+                      background: "rgba(0,0,0,0.6)",
+                      color: "#fff",
+                      fontSize: 11,
+                      borderTopRightRadius: 6,
+                    }}
+                  >
+                    Measured area outlined in navy
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Phase 2 step 1: low-confidence pill. */}
+            {confidence === "low" && (
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  background: "rgba(30,58,138,0.12)",
+                  color: "#1e3a8a",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  marginBottom: 12,
+                }}
+              >
+                <span style={{ fontSize: 12 }}>&#9432;</span>
+                Approximate measurement &mdash; confirm on-site
+              </div>
+            )}
+
             {estimateData.show_roof_details !== false && (
               <div className="text-center">
                 <p className="text-[12px] font-semibold uppercase mb-2" style={{ color: C.textTertiary, letterSpacing: "0.06em" }}>
