@@ -61,7 +61,7 @@ Close the trust gap with Roofr by showing homeowners (a) a static Mapbox aerial 
 | Geospatial Supabase migration (SQL) | New | Replace `find_building_footprint` RPC to return GeoJSON polygon alongside area |
 | `lib/footprints-api.ts` | Modify | Surface polygon GeoJSON in return shape |
 | `lib/mapbox-static.ts` | New (~70 lines) | Build a Mapbox Static Images URL with a path overlay encoded from a GeoJSON polygon |
-| `lib/error-copy.ts` | New (~50 lines) | `error_code → { headline, body, cta }` map |
+| `lib/estimate-error-copy.ts` | New (~70 lines) | `error_code → { headline, body, cta }` map (renamed from `error-copy.ts` post-review for namespace clarity) |
 | `app/api/estimate/route.ts` | Modify | Call footprints on geocode success; attach `roof_overlay` to all responses |
 | `components/estimate-widget-v4.tsx` | Modify | Render overlay `<img>` on success step; render `error_code`-driven UI; render low-confidence badge; fix live bug at line 449 |
 | `.env.example` | Modify | Document `MAPBOX_TOKEN` |
@@ -72,146 +72,174 @@ Close the trust gap with Roofr by showing homeowners (a) a static Mapbox aerial 
 
 ## Tasks
 
-### Task 1: Geospatial DB — extend footprint RPC to return polygon
+### Task 1: Geospatial DB — extend `find_building_footprint_area` to also return GeoJSON polygon
+
+**Approach (revised 2026-05-01 during execution prep):** Original plan added a sibling function. Found that 097's `find_building_footprint_area` already does the right two-stage selection logic (`ST_Contains` primary → 50m `ST_DWithin` fallback). DRY-er to extend its return shape with `geom_geojson jsonb`. Existing callers (Phase 1 footprint-fallback in `lib/footprints-api.ts:50`) ignore unknown columns from `supabase.rpc()` — non-breaking. Migration 080's `footprint_lookup` already established the `geom_geojson jsonb` convention in this codebase.
 
 **Files:**
-- Migration via Supabase dashboard SQL editor (project `vfmnjwpjxamtbuehmtrv`). Save the SQL to `migrations/geospatial/2026-05-01-find-building-footprint-with-geom.sql` for source-of-truth (geospatial migrations are not in the main Supabase migration system per memory).
+- Create: `supabase/098_find_building_footprint_area_with_geom.sql` (next number after 097). Apply via Supabase dashboard SQL editor on the GEOSPATIAL project (`vfmnjwpjxamtbuehmtrv`), NOT prod.
 
-- [ ] **Step 1: Inspect current RPC**
+- [ ] **Step 1: Write the migration file**
 
-Run in Supabase SQL editor:
+Save to `supabase/098_find_building_footprint_area_with_geom.sql`. Preserve 097's plpgsql two-stage pattern + bbox optimization from 080; only add `geom_geojson jsonb` to the return shape:
+
 ```sql
-SELECT pg_get_functiondef(oid)
-FROM pg_proc
-WHERE proname = 'find_building_footprint_area';
-```
-Record the output. (Phase 1 created `find_building_footprint_area`; we'll create a sibling rather than break it.)
+-- Phase 2 step 1 (2026-05-01) — extend find_building_footprint_area to also
+-- return the building polygon as GeoJSON, for use as a results-page overlay.
+--
+-- Target: GEOSPATIAL project (vfmnjwpjxamtbuehmtrv) ONLY, not prod.
+--
+-- Non-breaking: this is a CREATE OR REPLACE on the existing function. The
+-- return TABLE gains one column (geom_geojson). Existing Phase 1 callers
+-- (lib/footprints-api.ts → getBuildingFootprintArea) read area_sqm and
+-- building_id by name and ignore the new column.
+--
+-- Selection logic preserved from 097: ST_Contains primary, ST_DWithin 50m
+-- fallback, with the bbox prefilter pattern from 080 to keep p95 latency
+-- under the PostgREST statement_timeout.
 
-- [ ] **Step 2: Write the new RPC**
-
-Save to `migrations/geospatial/2026-05-01-find-building-footprint-with-geom.sql`:
-```sql
-CREATE OR REPLACE FUNCTION public.find_building_footprint_with_geom(
+create or replace function public.find_building_footprint_area(
   p_lat double precision,
   p_lng double precision
 )
-RETURNS TABLE(
+returns table(
   area_sqm double precision,
   building_id bigint,
   geom_geojson jsonb
 )
-LANGUAGE sql STABLE AS $$
-  WITH point AS (
-    SELECT ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326) AS pt
-  ),
-  contained AS (
-    SELECT
-      ST_Area(bf.geom::geography) AS area_sqm,
-      bf.id AS building_id,
-      ST_AsGeoJSON(bf.geom)::jsonb AS geom_geojson,
-      0 AS rank
-    FROM building_footprints bf, point
-    WHERE ST_Contains(bf.geom, point.pt)
-    ORDER BY ST_Area(bf.geom::geography) DESC
-    LIMIT 1
-  ),
-  nearest AS (
-    SELECT
-      ST_Area(bf.geom::geography) AS area_sqm,
-      bf.id AS building_id,
-      ST_AsGeoJSON(bf.geom)::jsonb AS geom_geojson,
-      1 AS rank
-    FROM building_footprints bf, point
-    WHERE ST_DWithin(bf.geom::geography, point.pt::geography, 50)
-    ORDER BY ST_Distance(bf.geom::geography, point.pt::geography)
-    LIMIT 1
-  )
-  SELECT area_sqm, building_id, geom_geojson
-  FROM (SELECT * FROM contained UNION ALL SELECT * FROM nearest) u
-  ORDER BY rank
-  LIMIT 1;
+language plpgsql stable as $$
+declare
+  pt geometry := st_setsrid(st_makepoint(p_lng, p_lat), 4326);
+begin
+  -- 1. Containment first (point inside polygon).
+  return query
+    select
+      st_area(bf.geom::geography)        as area_sqm,
+      bf.id                              as building_id,
+      st_asgeojson(bf.geom)::jsonb       as geom_geojson
+    from building_footprints bf
+    where st_contains(bf.geom, pt)
+    order by st_area(bf.geom::geography) desc
+    limit 1;
+
+  if found then
+    return;
+  end if;
+
+  -- 2. Nearest-neighbor within 50m. Bbox prefilter on bare geometry uses the
+  --    GIST index; final distance check on geography drops bbox false
+  --    positives. See 080 header for the meters→degrees rationale.
+  return query
+    with candidate as (
+      select bf.id, bf.geom
+      from building_footprints bf
+      where st_dwithin(bf.geom, pt, (50::double precision / 95000.0) * 1.2)
+      order by bf.geom <-> pt
+      limit 1
+    )
+    select
+      st_area(c.geom::geography)         as area_sqm,
+      c.id                               as building_id,
+      st_asgeojson(c.geom)::jsonb        as geom_geojson
+    from candidate c
+    where st_distance(c.geom::geography, pt::geography) <= 50;
+end;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.find_building_footprint_with_geom(double precision, double precision)
-  TO anon, authenticated, service_role;
+comment on function public.find_building_footprint_area(double precision, double precision) is
+  'Phase 2 step 1 (2026-05-01): extends 097 to also return geom_geojson for results-page polygon overlay. Selection logic unchanged: ST_Contains primary + ST_DWithin 50m fallback.';
 ```
 
-- [ ] **Step 3: Apply via Supabase dashboard SQL editor**
+- [ ] **Step 2: Commit migration file**
 
-Paste the SQL above into the geospatial project's SQL editor. Run. Confirm "Success. No rows returned."
+```bash
+git add supabase/098_find_building_footprint_area_with_geom.sql
+git commit -m "migration(098): extend find_building_footprint_area to return geom_geojson"
+```
 
-- [ ] **Step 4: Smoke-test the RPC**
+- [ ] **Step 3 (Hannah, manual): Apply via Supabase dashboard SQL editor**
+
+Paste 098's contents into the GEOSPATIAL project's SQL editor (`vfmnjwpjxamtbuehmtrv`). Run. Confirm "Success. No rows returned."
+
+- [ ] **Step 4 (Hannah, manual): Smoke-test the updated RPC**
 
 In SQL editor, run with Hannah's home (8734 54th Ave E, Bradenton ≈ 27.4459, -82.4146):
 ```sql
-SELECT * FROM public.find_building_footprint_with_geom(27.4459, -82.4146);
+select * from public.find_building_footprint_area(27.4459, -82.4146);
 ```
-Expected: one row, `area_sqm` ~150-300, `geom_geojson` is a GeoJSON Polygon with `coordinates` array.
+Expected: one row, `area_sqm` ~150-300, `building_id` non-null, `geom_geojson` is a GeoJSON Polygon with `coordinates` array.
 
-- [ ] **Step 5: Commit migration file**
-
-```bash
-git add migrations/geospatial/2026-05-01-find-building-footprint-with-geom.sql
-git commit -m "migration(geospatial): add find_building_footprint_with_geom returning GeoJSON polygon"
+Then verify Phase 1 callers still work (regression check):
+```sql
+-- This should still return area_sqm correctly even though we added a column:
+select area_sqm from public.find_building_footprint_area(27.4459, -82.4146);
 ```
 
 ---
 
-### Task 2: `lib/footprints-api.ts` — return polygon
+### Task 2: `lib/footprints-api.ts` — extend `getBuildingFootprintArea` to also return polygon
+
+**Approach (revised 2026-05-01 during execution prep):** Original plan added a sibling `getBuildingFootprintWithGeom` function. Since the underlying RPC now returns `geom_geojson` for everyone (Task 1), having two TS functions that hit the same RPC is pointless duplication. Extend the existing function's return type instead.
 
 **Files:**
 - Modify: `lib/footprints-api.ts`
 
-- [ ] **Step 1: Read the current file**
+- [ ] **Step 1: Update `FootprintAreaResult` to include `polygon`**
 
-Read all of `lib/footprints-api.ts` to confirm the current return shape (per Phase 1 audit: returns `{ areaSqft, source, buildingId? } | null`).
-
-- [ ] **Step 2: Add a new exported function `getBuildingFootprintWithGeom`**
-
-Add alongside the existing `getBuildingFootprintArea` (do not delete the existing one — Phase 1 callers still use it). Type:
+Replace the existing interface (currently lines 31-35) with:
 ```ts
-export type FootprintWithGeom = {
+export type Polygon = {
+  type: "Polygon";
+  /** SRID 4326. Outer ring first, holes after. Coordinates are [lng, lat]. */
+  coordinates: number[][][];
+};
+
+export interface FootprintAreaResult {
   areaSqft: number;
   source: "ms_footprints";
   buildingId?: number;
-  /** GeoJSON Polygon. SRID 4326. */
-  polygon: {
-    type: "Polygon";
-    coordinates: number[][][]; // [[[lng,lat],[lng,lat],...]]
-  } | null;
-};
-
-export async function getBuildingFootprintWithGeom(
-  lat: number,
-  lng: number,
-): Promise<FootprintWithGeom | null> {
-  const url = process.env.SUPABASE_GEOSPATIAL_URL;
-  const key = process.env.SUPABASE_GEOSPATIAL_ANON_KEY;
-  if (!url || !key) return null;
-
-  const client = createClient(url, key);
-  const { data, error } = await client.rpc("find_building_footprint_with_geom", {
-    p_lat: lat,
-    p_lng: lng,
-  });
-  if (error || !data || data.length === 0) return null;
-
-  const row = data[0];
-  const areaSqft = Math.round(row.area_sqm * 10.7639);
-  const polygon = row.geom_geojson && row.geom_geojson.type === "Polygon"
-    ? row.geom_geojson
-    : null;
-
-  return {
-    areaSqft,
-    source: "ms_footprints",
-    buildingId: row.building_id,
-    polygon,
-  };
+  /** Building outline as GeoJSON Polygon. Null when the RPC didn't return one. */
+  polygon: Polygon | null;
 }
 ```
 
-(Use the existing `createClient` import. If the file currently imports from `@supabase/supabase-js`, reuse that. If it constructs its own client elsewhere, follow that pattern.)
+- [ ] **Step 2: Update `getBuildingFootprintArea` to read and return `geom_geojson`**
+
+Modify the row-shape type and the return at the bottom of `getBuildingFootprintArea`:
+
+```ts
+const rows = data as Array<{
+  area_sqm?: number;
+  building_id?: number;
+  geom_geojson?: { type?: string; coordinates?: number[][][] } | null;
+}> | null;
+const row = rows && rows.length > 0 ? rows[0] : null;
+if (!row || typeof row.area_sqm !== "number" || row.area_sqm <= 0) {
+  return null;
+}
+
+const polygon =
+  row.geom_geojson &&
+  row.geom_geojson.type === "Polygon" &&
+  Array.isArray(row.geom_geojson.coordinates)
+    ? { type: "Polygon" as const, coordinates: row.geom_geojson.coordinates }
+    : null;
+
+return {
+  areaSqft: Math.round(row.area_sqm * SQFT_PER_SQM),
+  source: "ms_footprints",
+  buildingId: typeof row.building_id === "number" ? row.building_id : undefined,
+  polygon,
+};
+```
+
+- [ ] **Step 3: Update the file header comment**
+
+Update lines 13-14 to reflect the new return shape:
+```
+// RPC (supabase/098_find_building_footprint_area_with_geom.sql, replaces 097):
+//   find_building_footprint_area(lat, lng) → (area_sqm, building_id, geom_geojson)
+```
 
 - [ ] **Step 3: Type-check**
 
@@ -225,7 +253,7 @@ Expected: clean (no errors involving `lib/footprints-api.ts`).
 
 ```bash
 git add lib/footprints-api.ts
-git commit -m "feat(footprints): add getBuildingFootprintWithGeom returning polygon"
+git commit -m "feat(footprints): return polygon GeoJSON from getBuildingFootprintArea"
 ```
 
 ---
@@ -334,13 +362,13 @@ This is two coordinated edits.
 
 - [ ] **Step 1: Replace the Phase-1 footprint call site to use the with-geom version**
 
-Find the existing call to `getBuildingFootprintArea(lat, lng)` (Phase 1, after `roofData = roofResult.data` ~line 234). Replace with `getBuildingFootprintWithGeom(lat, lng)`. Use its `areaSqft` for the synthesized `RoofData` exactly as before; capture the full result in a local `footprintResult` so the polygon survives.
+Find the existing call to `getBuildingFootprintArea(lat, lng)` (Phase 1, after `roofData = roofResult.data` ~line 234). Move it earlier, so it runs whenever lat/lng are known (not just on Solar null). Use its `areaSqft` for the synthesized `RoofData` exactly as before; the same result also carries `polygon` for the overlay.
 
 ```ts
 // Near top of route handler, after geocode succeeds (lat/lng resolved):
-let footprintResult: Awaited<ReturnType<typeof getBuildingFootprintWithGeom>> = null;
+let footprintResult: Awaited<ReturnType<typeof getBuildingFootprintArea>> = null;
 if (lat != null && lng != null) {
-  footprintResult = await getBuildingFootprintWithGeom(lat, lng);
+  footprintResult = await getBuildingFootprintArea(lat, lng);
 }
 
 // At the existing Phase-1 fallback block:
@@ -606,14 +634,14 @@ Just below the overlay (before the price tiles), add:
 
 - [ ] **Step 4: Replace the error/manual-quote branch with error_code-driven rendering**
 
-Find the existing manual-quote screen (~line 1162). Replace with a unified error-state renderer that reads from `lib/error-copy.ts`:
+Find the existing manual-quote screen (~line 1162). Replace with a unified error-state renderer that reads from `lib/estimate-error-copy.ts`:
 
 ```tsx
-import { getErrorCopy } from "@/lib/error-copy";
+import { getEstimateErrorCopy } from "@/lib/estimate-error-copy";
 
 // In the step-8 render branch, before the success path:
 {errorCode && (() => {
-  const copy = getErrorCopy(errorCode, contractorName);
+  const copy = getEstimateErrorCopy(errorCode, contractorName);
   return (
     <div>
       {/* Show overlay even on error if we have it (commercial / measurement_unavailable / pitch_conflict) */}
