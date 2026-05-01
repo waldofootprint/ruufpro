@@ -239,18 +239,24 @@ export function PropertyPipelineTab() {
       });
   }, [rows]);
 
-  // Storm banner: most recent county-wide event in last 30 days. Shown once
-  // above the table — not on every row.
+  // Storm banner: most recent county-wide event in last 30 days, SCOPED to
+  // counties of the rows actually shown on this page. A Manatee-only roofer
+  // never sees a Miami-Dade banner.
   const stormBanner = useMemo(() => {
     if (Object.keys(storms).length === 0) return null;
+    const visibleCounties = new Set(
+      rows.map((r) => (r.county ?? "manatee").toLowerCase())
+    );
+    if (visibleCounties.size === 0) return null;
     const now = Date.now();
     const cutoff = now - 30 * 86_400_000;
     const fresh = Object.entries(storms)
+      .filter(([county]) => visibleCounties.has(county))
       .map(([county, s]) => ({ county, ...s }))
       .filter((s) => new Date(s.valid_at).getTime() >= cutoff)
       .sort((a, b) => b.valid_at.localeCompare(a.valid_at));
     return fresh[0] ?? null;
-  }, [storms]);
+  }, [storms, rows]);
 
   if (!loading && !error && total === 0 && zipAggs.length === 0 && !zipFilter) {
     return <EmptyState />;

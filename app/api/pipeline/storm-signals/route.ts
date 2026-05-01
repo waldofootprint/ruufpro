@@ -10,6 +10,22 @@ export const dynamic = "force-dynamic";
 
 const STORM_WINDOW_DAYS = 90;
 
+// Roof-relevant typecodes only. IEM LSR also contains WILDFIRE, WATERSPOUT,
+// FLOOD, SNOW, etc. — none of which signal roof damage. Keep this list tight.
+const ROOF_RELEVANT_TYPECODES = new Set([
+  "HAIL",
+  "TSTM WND DMG",
+  "TSTM WND GST",
+  "MARINE TSTM WIND",
+  "TORNADO",
+  "FUNNEL CLOUD",
+  "HIGH WIND",
+  "NON-TSTM WND DMG",
+  "NON-TSTM WND GST",
+  "HURRICANE",
+  "TROPICAL STORM",
+]);
+
 export async function GET() {
   const cookieStore = await cookies();
   const auth = createServerClient(
@@ -61,6 +77,7 @@ export async function GET() {
   for (const r of data ?? []) {
     const key = (r.county || "").toLowerCase();
     if (!key) continue;
+    if (!ROOF_RELEVANT_TYPECODES.has((r.typecode || "").toUpperCase())) continue;
     if (!byCounty[key]) {
       byCounty[key] = {
         valid_at: r.valid_at,
