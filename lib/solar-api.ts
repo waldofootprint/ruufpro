@@ -262,7 +262,25 @@ export async function getRoofData(
   const addressHash = hashAddress(address);
   const cached = await getCachedRoofData(addressHash);
   if (cached) {
-    return { data: cached, geocoded: null };
+    // Populate geocoded on cache hit too — downstream callers (Phase 2 step 1
+    // footprint lookup + roof_overlay) need lat/lng even when Solar data
+    // came from cache. Use preCoords if the widget supplied them; otherwise
+    // re-geocode (cheap; ~150ms). Pre-Phase-2 callers ignored geocoded on
+    // cache hit, so this is non-breaking.
+    let geo: GeoResult | null = null;
+    if (preCoords) {
+      geo = {
+        lat: preCoords.lat,
+        lng: preCoords.lng,
+        formattedAddress: address,
+        types: [],
+        hasStreetNumber: false,
+        locationType: "ROOFTOP",
+      };
+    } else {
+      geo = await geocodeAddress(address);
+    }
+    return { data: cached, geocoded: geo };
   }
 
   // Step 2: Use pre-resolved coords or geocode the address. When we geocode
