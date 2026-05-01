@@ -3,25 +3,25 @@
 // right message without duplicating string constants. Token {contractor}
 // is replaced at call time with the roofer's display name.
 
-export type ErrorCode =
+export type EstimateErrorCode =
   | "setup_incomplete"
   | "commercial_or_high_rise"
   | "address_unrecognized"
   | "measurement_unavailable"
   | "pitch_conflict_recheck";
 
-export type ErrorCta = "manual_quote" | "retry_address" | "retry_pitch" | "contact" | null;
+export type EstimateErrorCta = "manual_quote" | "retry_address" | "retry_pitch" | "contact" | null;
 
-export type ErrorCopy = {
+export type EstimateErrorCopy = {
   /** Short headline (~6 words). */
   headline: string;
   /** Full explanation (1-3 sentences). May reference {contractor}. */
   body: string;
   /** What the homeowner should do next. Drives which CTA the widget renders. */
-  cta: ErrorCta;
+  cta: EstimateErrorCta;
 };
 
-const COPY: Record<ErrorCode, ErrorCopy> = {
+const COPY: Record<EstimateErrorCode, EstimateErrorCopy> = {
   setup_incomplete: {
     headline: "Online estimates aren't available right now",
     body: "{contractor} hasn't finished setting up online pricing. Submit your details and they'll get back to you with a quote.",
@@ -54,10 +54,13 @@ const COPY: Record<ErrorCode, ErrorCopy> = {
  * "manual quote" message for unknown codes so a future API addition
  * doesn't crash old widgets.
  */
-export function getErrorCopy(code: string | undefined, contractorName: string): ErrorCopy {
+export function getEstimateErrorCopy(
+  code: string | undefined,
+  contractorName: string
+): EstimateErrorCopy {
   const isKnown = code !== undefined && code in COPY;
   if (isKnown) {
-    const c = COPY[code as ErrorCode];
+    const c = COPY[code as EstimateErrorCode];
     return { ...c, body: c.body.replace("{contractor}", contractorName) };
   }
   return {
