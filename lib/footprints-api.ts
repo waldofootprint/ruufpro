@@ -28,7 +28,7 @@ function getGeospatialClient(): SupabaseClient | null {
   return cachedClient;
 }
 
-export type Polygon = {
+export type FootprintPolygon = {
   type: "Polygon";
   /** SRID 4326. Outer ring first, holes after. Coordinates are [lng, lat]. */
   coordinates: number[][][];
@@ -39,7 +39,7 @@ export interface FootprintAreaResult {
   source: "ms_footprints";
   buildingId?: number;
   /** Building outline as GeoJSON Polygon. Null when the RPC didn't return one. */
-  polygon: Polygon | null;
+  polygon: FootprintPolygon | null;
 }
 
 export async function getBuildingFootprintArea(
@@ -78,7 +78,7 @@ export async function getBuildingFootprintArea(
     return null;
   }
 
-  const polygon: Polygon | null =
+  const polygon: FootprintPolygon | null =
     row.geom_geojson &&
     row.geom_geojson.type === "Polygon" &&
     Array.isArray(row.geom_geojson.coordinates)
