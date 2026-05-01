@@ -491,7 +491,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "No materials priced. Please configure pricing first.",
-          ...(roofOverlay !== null ? { roof_overlay: roofOverlay } : {}),
         },
         { status: 400 }
       );
