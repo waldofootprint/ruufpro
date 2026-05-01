@@ -29,16 +29,17 @@ interface StormByCounty {
 }
 
 interface SignalTag {
-  code: "OLD_PERMIT" | "RECENT_SALE" | "STORM";
+  code: "OLD_PERMIT" | "RECENT_SALE";
   emoji: string;
   label: string;
   date: string | null;
+  hot: boolean;        // true = high-intent; styled prominently
 }
 
-function computeTags(
-  c: PipelineCandidate,
-  storms: StormByCounty
-): SignalTag[] {
+// Storm chip is intentionally NOT a row-level tag — it's county-wide and
+// identical across all rows in that county, which clutters the table and
+// hijacks the sort. Storm context lives in the county banner above the table.
+function computeTags(c: PipelineCandidate): SignalTag[] {
   const out: SignalTag[] = [];
   const now = Date.now();
 
@@ -48,6 +49,7 @@ function computeTags(
       emoji: "🔨",
       label: "No permit on file",
       date: null,
+      hot: true,
     });
   } else {
     const yrs =
@@ -59,38 +61,50 @@ function computeTags(
         emoji: "🔨",
         label: `Permit ${c.last_roof_permit_date.slice(0, 4)}`,
         date: c.last_roof_permit_date,
+        hot: true,
       });
     }
   }
 
-  if (
-    c.last_sale_year &&
-    CURRENT_YEAR - c.last_sale_year <= RECENT_SALE_YEARS
-  ) {
-    out.push({
-      code: "RECENT_SALE",
-      emoji: "🏠",
-      label: `Sold ${c.last_sale_year}`,
-      date: `${c.last_sale_year}-01-01T00:00:00Z`,
-    });
-  }
-
-  const storm = storms[(c.county ?? "manatee").toLowerCase()];
-  if (storm) {
-    const mag = storm.magnitude ? ` ${storm.magnitude}` : "";
-    out.push({
-      code: "STORM",
-      emoji: "⛈️",
-      label: `${storm.typecode}${mag} ${storm.valid_at.slice(0, 10)}`,
-      date: storm.valid_at,
-    });
+  if (c.last_sale_year) {
+    const ageYears = CURRENT_YEAR - c.last_sale_year;
+    if (ageYears <= RECENT_SALE_YEARS) {
+      // 🏠 = high-intent signal: just bought, very likely roof shopping
+      out.push({
+        code: "RECENT_SALE",
+        emoji: "🏠",
+        label: `Sold ${c.last_sale_year}`,
+        date: `${c.last_sale_year}-01-01T00:00:00Z`,
+        hot: true,
+      });
+    } else {
+      // Older sale = data point, not a signal. Faint, no emoji, no sort weight.
+      out.push({
+        code: "RECENT_SALE",
+        emoji: "",
+        label: `Sold ${c.last_sale_year}`,
+        date: null,
+        hot: false,
+      });
+    }
   }
 
   return out;
 }
 
+function daysAgoLabel(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 14) return `${days} days ago`;
+  if (days < 60) return `${Math.round(days / 7)} weeks ago`;
+  return `${Math.round(days / 30)} months ago`;
+}
+
 function latestSignalDate(tags: SignalTag[]): string | null {
-  const real = tags.map((t) => t.date).filter((d): d is string => !!d);
+  // Only HOT tags drive the sort. Faint info-only tags (older sales) shouldn't
+  // beat a fresh signal.
+  const real = tags.filter((t) => t.hot).map((t) => t.date).filter((d): d is string => !!d);
   if (real.length === 0) return null;
   return real.sort().at(-1) ?? null;
 }
@@ -214,7 +228,7 @@ export function PropertyPipelineTab() {
   const enrichedRows = useMemo(() => {
     return rows
       .map((r) => {
-        const tags = computeTags(r, storms);
+        const tags = computeTags(r);
         return { row: r, tags, latest: latestSignalDate(tags) };
       })
       .sort((a, b) => {
@@ -223,7 +237,20 @@ export function PropertyPipelineTab() {
         if (b.latest) return 1;
         return 0;
       });
-  }, [rows, storms]);
+  }, [rows]);
+
+  // Storm banner: most recent county-wide event in last 30 days. Shown once
+  // above the table — not on every row.
+  const stormBanner = useMemo(() => {
+    if (Object.keys(storms).length === 0) return null;
+    const now = Date.now();
+    const cutoff = now - 30 * 86_400_000;
+    const fresh = Object.entries(storms)
+      .map(([county, s]) => ({ county, ...s }))
+      .filter((s) => new Date(s.valid_at).getTime() >= cutoff)
+      .sort((a, b) => b.valid_at.localeCompare(a.valid_at));
+    return fresh[0] ?? null;
+  }, [storms]);
 
   if (!loading && !error && total === 0 && zipAggs.length === 0 && !zipFilter) {
     return <EmptyState />;
@@ -293,6 +320,24 @@ export function PropertyPipelineTab() {
         )}
       </div>
 
+      {stormBanner && (
+        <div
+          className="neu-flat mb-4 flex items-center gap-3 px-4 py-3 text-sm"
+          style={{ borderRadius: "var(--neu-radius, 16px)", color: "var(--neu-text)" }}
+        >
+          <span className="text-lg">⛈️</span>
+          <span>
+            <span className="font-semibold capitalize">{stormBanner.county}</span>{" "}
+            <span className="neu-muted">
+              had a {stormBanner.typecode.toLowerCase()}
+              {stormBanner.magnitude ? ` (${stormBanner.magnitude})` : ""} event{" "}
+              {daysAgoLabel(stormBanner.valid_at)}
+              {stormBanner.count > 1 ? ` · ${stormBanner.count} reports total in last 90d` : ""}
+            </span>
+          </span>
+        </div>
+      )}
+
       <div
         className="neu-flat overflow-hidden"
         style={{ borderRadius: "var(--neu-radius, 16px)" }}
@@ -354,23 +399,32 @@ export function PropertyPipelineTab() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {tags.length === 0 ? (
                         <span className="text-[11px] italic neu-muted">
                           No signal
                         </span>
                       ) : (
-                        tags.map((t) => (
-                          <span
-                            key={t.code}
-                            title={t.label}
-                            className="neu-flat inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
-                            style={{ color: "var(--neu-text)" }}
-                          >
-                            <span>{t.emoji}</span>
-                            <span>{t.label}</span>
-                          </span>
-                        ))
+                        tags.map((t) =>
+                          t.hot ? (
+                            <span
+                              key={t.code}
+                              title={t.label}
+                              className="neu-flat inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                              style={{ color: "var(--neu-text)" }}
+                            >
+                              {t.emoji && <span>{t.emoji}</span>}
+                              <span>{t.label}</span>
+                            </span>
+                          ) : (
+                            <span
+                              key={t.code}
+                              className="text-[11px] neu-muted tabular-nums"
+                            >
+                              {t.label}
+                            </span>
+                          )
+                        )
                       )}
                     </div>
                   </td>
