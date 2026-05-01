@@ -5,7 +5,7 @@ const MAPBOX_BASE = "https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static
 export type StaticMapInput = {
   lat: number;
   lng: number;
-  /** GeoJSON Polygon (SRID 4326). If null, a marker-only image is returned. */
+  /** GeoJSON Polygon (SRID 4326). If null, an unmarked centered aerial is returned. */
   polygon: FootprintPolygon | null;
   /** Output dimensions in CSS pixels. @2x is added automatically. */
   width?: number;
@@ -35,7 +35,14 @@ export function buildRoofOverlayUrl(input: StaticMapInput): string | null {
   if (input.polygon && input.polygon.coordinates.length > 0) {
     // Outer ring only; ignore holes for the overlay (residential building
     // footprints in the MS dataset don't typically have holes anyway).
-    const ring = input.polygon.coordinates[0];
+    // Round coordinates to 6 decimals (~11cm precision at FL latitudes,
+    // well below 1 satellite pixel at z19). PostGIS emits 14+ decimals
+    // by default; trimming keeps the URL well under Mapbox's 8KB limit
+    // on dense polygons.
+    const ring = input.polygon.coordinates[0].map(([lng, lat]) => [
+      Math.round(lng * 1e6) / 1e6,
+      Math.round(lat * 1e6) / 1e6,
+    ]);
     const geojson = {
       type: "Feature" as const,
       properties: {
