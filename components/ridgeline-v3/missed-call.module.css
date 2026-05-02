@@ -1,0 +1,368 @@
+/* MISSED-CALL RECOVERY (dark) — folds in audit P2:
+   - phones staggered vertically (+0 / -24 / +0)
+   - typing-dot animation on phone 2 (auto-reply moment)
+   - reassurance points reframed as receipts (OBJECTION 01/02/03 + check glyph hints) */
+
+.grid {
+  margin-top: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 64px;
+}
+
+.phones {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  justify-items: center;
+  align-items: center;
+  perspective: 1600px;
+}
+
+@media (max-width: 720px) {
+  .phones { grid-template-columns: 1fr; gap: 40px; }
+}
+
+.phone {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 1 / 1;
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.55));
+  transform-style: preserve-3d;
+}
+
+.phoneTiltL { transform: rotateY(12deg) translateY(0); }
+.phoneCenter { transform: translateY(-24px); }
+.phoneTiltR { transform: rotateY(-12deg) translateY(0); }
+
+@media (max-width: 720px) {
+  .phoneTiltL, .phoneTiltR, .phoneCenter { transform: none; }
+}
+
+.phoneImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.screen {
+  position: absolute;
+  top: 11.5%;
+  left: 30%;
+  right: 30%;
+  bottom: 8.5%;
+  background: #FFFFFF;
+  border-radius: 22px;
+  padding: 20px 7px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.statusBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 8px;
+  color: var(--rv3-ink);
+  padding: 0 6px 2px;
+}
+
+.statusBar .icons {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.bar {
+  width: 7px;
+  height: 6px;
+  background: currentColor;
+  clip-path: polygon(0 100%, 25% 100%, 25% 60%, 50% 60%, 50% 30%, 75% 30%, 75% 0, 100% 0, 100% 100%);
+}
+
+.batt {
+  width: 13px;
+  height: 6px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  position: relative;
+  padding: 1px;
+}
+.batt::before {
+  content: "";
+  display: block;
+  width: 70%;
+  height: 100%;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+/* ── Phone 1: Missed-call screen ── */
+.missScreen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 4px;
+}
+
+.missIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(194, 86, 42, 0.12);
+  border: 1px solid var(--rv3-rust);
+  color: var(--rv3-rust);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
+.missLabel {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 6.5px;
+  color: var(--rv3-rust);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.missNum {
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--rv3-ink);
+  letter-spacing: -0.01em;
+}
+
+.missTime {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 6.5px;
+  color: var(--rv3-slate-2);
+}
+
+/* ── Phone 2: SMS auto-reply ── */
+.convoHead {
+  text-align: center;
+  padding: 2px 4px 6px;
+  border-bottom: 1px solid var(--rv3-line-2);
+}
+.convoHead :global(.nm) {
+  font-weight: 500;
+  font-size: 9px;
+  color: var(--rv3-ink);
+  letter-spacing: -0.01em;
+}
+.convoHead :global(.num) {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 7px;
+  color: var(--rv3-slate-2);
+  margin-top: 1px;
+}
+
+.thread {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 2px 0;
+  overflow: hidden;
+}
+.thread :global(.ts) {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 6.5px;
+  color: var(--rv3-slate-2);
+  text-align: center;
+  margin: 2px 0 1px;
+}
+.thread :global(.bubble) {
+  padding: 4px 7px;
+  border-radius: 9px;
+  font-size: 7.5px;
+  line-height: 1.3;
+  max-width: 88%;
+}
+.thread :global(.bubble.them) {
+  background: rgba(14, 14, 17, 0.08);
+  color: var(--rv3-ink);
+  align-self: flex-start;
+  border-bottom-left-radius: 3px;
+}
+.thread :global(.bubble.you) {
+  background: linear-gradient(135deg, var(--rv3-rust), var(--rv3-coral));
+  color: var(--rv3-bg);
+  align-self: flex-end;
+  border-bottom-right-radius: 3px;
+}
+.thread :global(.bubble.you .lk) {
+  color: var(--rv3-bg);
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.typing {
+  display: inline-flex;
+  gap: 2px;
+  align-self: flex-start;
+  background: rgba(14, 14, 17, 0.06);
+  padding: 5px 8px;
+  border-radius: 9px;
+  border-bottom-left-radius: 2px;
+}
+.typing span {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--rv3-slate-2);
+  animation: rv3-typing 1.4s ease-in-out infinite;
+}
+.typing span:nth-child(2) { animation-delay: 0.18s; }
+.typing span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes rv3-typing {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30%           { opacity: 1; transform: translateY(-2px); }
+}
+
+/* ── Phone 3: AI chat ── */
+.aiBar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 5px;
+  background: rgba(14, 14, 17, 0.05);
+  border-radius: 6px;
+  margin: 0 2px 2px;
+}
+.aiBar :global(.av) {
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--rv3-rust), var(--rv3-coral));
+  color: var(--rv3-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 600;
+}
+.aiBar :global(.nm) {
+  font-size: 7px;
+  font-weight: 500;
+  color: var(--rv3-ink);
+}
+.aiBar :global(.live) {
+  margin-left: auto;
+  font-size: 5.5px;
+  color: var(--rv3-mint);
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.aiBar :global(.live)::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--rv3-mint);
+  animation: rv3-live-pulse 1.8s ease-in-out infinite;
+}
+@keyframes rv3-live-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 2px;
+}
+.chat :global(.b) {
+  padding: 4px 6px;
+  font-size: 7px;
+  line-height: 1.35;
+  border-radius: 7px;
+  max-width: 86%;
+}
+.chat :global(.b.ans) {
+  background: rgba(14, 14, 17, 0.07);
+  color: var(--rv3-ink);
+  align-self: flex-start;
+  border-bottom-left-radius: 2px;
+}
+.chat :global(.b.ask) {
+  background: linear-gradient(135deg, var(--rv3-rust), var(--rv3-coral));
+  color: var(--rv3-bg);
+  align-self: flex-end;
+  border-bottom-right-radius: 2px;
+}
+
+/* ── Reassurance points ── */
+.points {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  border-top: 1px solid rgba(245, 241, 232, 0.12);
+  padding-top: 40px;
+}
+@media (max-width: 720px) {
+  .points { grid-template-columns: 1fr; gap: 20px; }
+}
+
+.point {
+  border: 1px solid rgba(245, 241, 232, 0.08);
+  border-left: 2px solid var(--rv3-coral);
+  border-radius: 4px 12px 12px 4px;
+  padding: 22px 22px 22px 20px;
+  background: rgba(245, 241, 232, 0.02);
+}
+
+.ptNum {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--rv3-coral);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ptNum::before {
+  content: "✓";
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--rv3-coral);
+  font-size: 8px;
+}
+
+.ptH {
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--rv3-bg);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.ptP {
+  font-size: 14px;
+  color: rgba(245, 241, 232, 0.65);
+  line-height: 1.55;
+}

@@ -2,6 +2,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "@/components/ridgeline-v3/_tokens.css";
 import { Pricing } from "@/components/ridgeline-v3/pricing";
+import { MissedCall } from "@/components/ridgeline-v3/missed-call";
 import { Footer } from "@/components/ridgeline-v3/footer";
 
 export const metadata = {
@@ -27,6 +28,7 @@ export default function V3Preview() {
         ridgeline-v3 · preview · not indexed · sections shipping one-by-one
       </div>
 
+      <MissedCall />
       <Pricing />
       <Footer />
     </div>
