@@ -1,43 +1,190 @@
-/* MISSED-CALL RECOVERY (dark) — folds in audit P2:
-   - phones staggered vertically (+0 / -24 / +0)
-   - typing-dot animation on phone 2 (auto-reply moment)
-   - reassurance points reframed as receipts (OBJECTION 01/02/03 + check glyph hints) */
+/* MISSED-CALL RECOVERY (dark) — stage stack pattern.
+   Three full-bleed cards stacked vertically: 01 · 02 · 03.
+   Each card = one stage of the story, alternating layout direction.
+   No drop-shadows on phones. Phones sit on lifted sub-surfaces. */
 
-.grid {
+.stack {
   margin-top: 56px;
   display: flex;
   flex-direction: column;
-  gap: 64px;
+  gap: 24px;
 }
 
-.phones {
+.stage {
+  position: relative;
+  border-radius: 24px;
+  border: 1px solid rgba(245, 241, 232, 0.06);
+  overflow: hidden;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
-  justify-items: center;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  min-height: 460px;
+}
+
+@media (max-width: 980px) {
+  .stage {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+}
+
+/* Stage variants — each card has a distinct surface treatment */
+.stage01 {
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 50%, rgba(194, 86, 42, 0.10) 0%, transparent 70%),
+    linear-gradient(135deg, rgba(245, 241, 232, 0.025) 0%, rgba(245, 241, 232, 0.01) 100%);
+}
+
+.stage02 {
+  background:
+    radial-gradient(ellipse 50% 60% at 30% 50%, rgba(226, 133, 90, 0.14) 0%, transparent 70%),
+    linear-gradient(135deg, rgba(245, 241, 232, 0.04) 0%, rgba(245, 241, 232, 0.015) 100%);
+  border-color: rgba(226, 133, 90, 0.18);
+}
+.stage02::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(226, 133, 90, 0.04) 100%);
+}
+
+.stage03 {
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 50%, rgba(107, 135, 99, 0.10) 0%, transparent 70%),
+    linear-gradient(135deg, rgba(245, 241, 232, 0.025) 0%, rgba(245, 241, 232, 0.01) 100%);
+}
+
+/* ── Layout halves ── */
+.copy {
+  padding: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 1;
+}
+@media (max-width: 720px) { .copy { padding: 40px 28px; } }
+
+.stageEyebrow {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  display: inline-flex;
   align-items: center;
-  perspective: 1600px;
+  gap: 12px;
+}
+.stageEyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1px;
 }
 
-@media (max-width: 720px) {
-  .phones { grid-template-columns: 1fr; gap: 40px; }
+.stage01 .stageEyebrow { color: var(--rv3-coral); }
+.stage01 .stageEyebrow::before { background: var(--rv3-coral); }
+.stage02 .stageEyebrow { color: var(--rv3-coral); }
+.stage02 .stageEyebrow::before { background: var(--rv3-coral); }
+.stage03 .stageEyebrow {
+  color: var(--rv3-mint);
+}
+.stage03 .stageEyebrow::before { background: var(--rv3-mint); }
+
+.stageNum {
+  font-weight: 500;
+  letter-spacing: 0.04em;
 }
 
-.phone {
+.stageH {
+  font-weight: 500;
+  font-size: clamp(28px, 3vw, 36px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--rv3-bg);
+  margin-bottom: 16px;
+  max-width: 18ch;
+}
+.stageH em {
+  font-style: normal;
+  color: var(--rv3-coral);
+}
+.stage03 .stageH em { color: var(--rv3-mint); }
+
+.stageP {
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(245, 241, 232, 0.7);
+  max-width: 42ch;
+}
+
+.objection {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-left: 2px solid var(--rv3-coral);
+  background: rgba(245, 241, 232, 0.025);
+  border-radius: 4px 10px 10px 4px;
+}
+.stage03 .objection { border-left-color: var(--rv3-mint); }
+
+.objectionLabel {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rv3-coral);
+  margin-bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.stage03 .objectionLabel { color: var(--rv3-mint); }
+.objectionLabel::before {
+  content: "✓";
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 8px;
+}
+
+.objectionBody {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--rv3-bg);
+  font-weight: 400;
+}
+
+/* ── Phone half ── */
+.phoneStage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 56px 56px 0;
+  z-index: 1;
+}
+
+.phoneStageReverse {
+  padding: 56px 0 56px 56px;
+}
+
+@media (max-width: 980px) {
+  .phoneStage,
+  .phoneStageReverse {
+    padding: 0 28px 40px;
+    order: 2;
+  }
+  .copy { order: 1; }
+}
+
+.phoneFrame {
   position: relative;
   width: 100%;
   max-width: 280px;
   aspect-ratio: 1 / 1;
-  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.55));
-  transform-style: preserve-3d;
-}
-
-.phoneTiltL { transform: rotateY(12deg) translateY(0); }
-.phoneCenter { transform: translateY(-24px); }
-.phoneTiltR { transform: rotateY(-12deg) translateY(0); }
-
-@media (max-width: 720px) {
-  .phoneTiltL, .phoneTiltR, .phoneCenter { transform: none; }
 }
 
 .phoneImg {
@@ -75,20 +222,17 @@
   color: var(--rv3-ink);
   padding: 0 6px 2px;
 }
-
-.statusBar .icons {
+.statusBar :global(.icons) {
   display: inline-flex;
   gap: 3px;
   align-items: center;
 }
-
 .bar {
   width: 7px;
   height: 6px;
   background: currentColor;
   clip-path: polygon(0 100%, 25% 100%, 25% 60%, 50% 60%, 50% 30%, 75% 30%, 75% 0, 100% 0, 100% 100%);
 }
-
 .batt {
   width: 13px;
   height: 6px;
@@ -106,7 +250,7 @@
   border-radius: 1px;
 }
 
-/* ── Phone 1: Missed-call screen ── */
+/* ── Phone 1: missed-call screen ── */
 .missScreen {
   flex: 1;
   display: flex;
@@ -116,7 +260,6 @@
   text-align: center;
   gap: 4px;
 }
-
 .missIcon {
   width: 38px;
   height: 38px;
@@ -130,7 +273,6 @@
   font-size: 17px;
   margin-bottom: 6px;
 }
-
 .missLabel {
   font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
   font-size: 6.5px;
@@ -138,14 +280,12 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-
 .missNum {
   font-weight: 500;
   font-size: 11px;
   color: var(--rv3-ink);
   letter-spacing: -0.01em;
 }
-
 .missTime {
   font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
   font-size: 6.5px;
@@ -170,7 +310,6 @@
   color: var(--rv3-slate-2);
   margin-top: 1px;
 }
-
 .thread {
   flex: 1;
   display: flex;
@@ -210,7 +349,6 @@
   text-decoration: underline;
   font-weight: 500;
 }
-
 .typing {
   display: inline-flex;
   gap: 2px;
@@ -282,7 +420,6 @@
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.4; }
 }
-
 .chat {
   display: flex;
   flex-direction: column;
@@ -309,60 +446,15 @@
   border-bottom-right-radius: 2px;
 }
 
-/* ── Reassurance points ── */
-.points {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  border-top: 1px solid rgba(245, 241, 232, 0.12);
-  padding-top: 40px;
-}
-@media (max-width: 720px) {
-  .points { grid-template-columns: 1fr; gap: 20px; }
-}
-
-.point {
-  border: 1px solid rgba(245, 241, 232, 0.08);
-  border-left: 2px solid var(--rv3-coral);
-  border-radius: 4px 12px 12px 4px;
-  padding: 22px 22px 22px 20px;
-  background: rgba(245, 241, 232, 0.02);
-}
-
-.ptNum {
-  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
-  font-size: 10px;
-  color: var(--rv3-coral);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.ptNum::before {
-  content: "✓";
-  display: inline-flex;
-  width: 14px;
-  height: 14px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  border: 1px solid var(--rv3-coral);
-  font-size: 8px;
-}
-
-.ptH {
-  font-weight: 500;
-  font-size: 18px;
-  color: var(--rv3-bg);
-  margin-bottom: 8px;
-  letter-spacing: -0.01em;
-  line-height: 1.25;
-}
-
-.ptP {
-  font-size: 14px;
-  color: rgba(245, 241, 232, 0.65);
-  line-height: 1.55;
+/* ── Connector dots between stages ── */
+.stack > .stage:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 16px;
+  background: rgba(245, 241, 232, 0.12);
+  z-index: 2;
 }
