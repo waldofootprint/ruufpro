@@ -6,15 +6,15 @@
 .scarcity {
   margin-top: 56px;
   margin-bottom: 24px;
-  padding: 18px 22px;
+  padding: 16px 20px;
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 14px;
-  border: 1px solid rgba(226, 133, 90, 0.55);
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(226, 133, 90, 0.08) 0%, rgba(194, 86, 42, 0.04) 100%);
-  box-shadow: 0 12px 36px -16px rgba(194, 86, 42, 0.35);
+  border: 1px solid var(--rv3-line);
+  border-left: 2px solid var(--rv3-rust);
+  border-radius: 4px 12px 12px 4px;
+  background: var(--rv3-bg-3);
 }
 
 .scarcityLabel {
@@ -23,15 +23,14 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--rv3-rust);
-  background: rgba(194, 86, 42, 0.12);
-  padding: 4px 9px;
-  border-radius: 999px;
+  padding: 0;
+  border-radius: 0;
 }
 
 .scarcityCount {
   font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
   font-size: 12px;
-  color: var(--rv3-rust);
+  color: var(--rv3-slate);
   font-weight: 500;
 }
 
@@ -59,10 +58,10 @@
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(194, 86, 42, 0.55) 0%,
-    rgba(226, 133, 90, 0.35) 35%,
-    rgba(14, 14, 17, 0.06) 70%,
-    rgba(194, 86, 42, 0.4) 100%
+    rgba(14, 14, 17, 0.18) 0%,
+    rgba(194, 86, 42, 0.32) 30%,
+    rgba(14, 14, 17, 0.08) 70%,
+    rgba(14, 14, 17, 0.18) 100%
   );
   box-shadow: 0 32px 80px -24px rgba(14, 14, 17, 0.18);
 }
@@ -87,12 +86,12 @@
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--rv3-bg);
-  background: linear-gradient(135deg, var(--rv3-rust), var(--rv3-coral));
-  padding: 6px 12px;
+  color: var(--rv3-rust);
+  background: rgba(194, 86, 42, 0.08);
+  border: 1px solid rgba(194, 86, 42, 0.25);
+  padding: 5px 11px;
   border-radius: 999px;
   font-weight: 500;
-  box-shadow: 0 6px 16px -6px rgba(194, 86, 42, 0.55);
 }
 
 .left { padding: 48px; }

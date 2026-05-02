@@ -1,0 +1,199 @@
+/* FOOTER — folds in audit P2 trust scaffolding:
+   - infrastructure strip ("Built with Stripe · Supabase · Vercel")
+   - status link (wires to /api/health)
+   - address line + support hours
+   - changelog link
+   - "Built in Bradenton · v1.0" promoted next to wordmark */
+
+.footer {
+  background: var(--rv3-ink);
+  color: var(--rv3-bg);
+  padding: 64px 0 32px;
+  border-top: 1px solid rgba(245, 241, 232, 0.06);
+}
+
+.wrap {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 36px;
+}
+@media (max-width: 720px) { .wrap { padding: 0 20px; } }
+
+.cols {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+@media (max-width: 720px) {
+  .cols { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+
+.col h5 {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--rv3-coral);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+.col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.col li {
+  font-size: 13px;
+  color: rgba(245, 241, 232, 0.65);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.col li:hover { color: var(--rv3-bg); }
+
+.col li a { color: inherit; }
+
+.brandCol .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.025em;
+  color: var(--rv3-bg);
+  margin-bottom: 6px;
+}
+
+.brandCol .mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--rv3-rust) 0%, var(--rv3-coral) 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rv3-bg);
+}
+
+.brandCol .built {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--rv3-coral);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.brandCol p {
+  font-size: 13px;
+  color: rgba(245, 241, 232, 0.55);
+  max-width: 30ch;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.address {
+  margin-top: 18px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: rgba(245, 241, 232, 0.45);
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+}
+
+/* Infrastructure trust strip */
+.infraStrip {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(245, 241, 232, 0.06);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px 28px;
+}
+
+.infraLabel {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  color: rgba(245, 241, 232, 0.4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.infraStack {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: rgba(245, 241, 232, 0.7);
+  letter-spacing: 0.04em;
+}
+
+.infraStack span:not(:last-child)::after {
+  content: "·";
+  color: rgba(245, 241, 232, 0.25);
+  margin-left: 16px;
+}
+
+.statusLink {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: rgba(245, 241, 232, 0.7);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.statusLink:hover { color: var(--rv3-bg); }
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rv3-mint);
+  box-shadow: 0 0 0 0 rgba(107, 135, 99, 0.5);
+  animation: rv3-status-pulse 1.8s ease-out infinite;
+}
+
+@keyframes rv3-status-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(107, 135, 99, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(107, 135, 99, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(107, 135, 99, 0); }
+}
+
+@media (max-width: 720px) {
+  .statusLink { margin-left: 0; width: 100%; }
+}
+
+/* Meta bar */
+.metaBar {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(245, 241, 232, 0.06);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: rgba(245, 241, 232, 0.45);
+  letter-spacing: 0.03em;
+}
+
+.metaBar a {
+  color: rgba(245, 241, 232, 0.6);
+  transition: color 0.15s;
+}
+.metaBar a:hover { color: var(--rv3-bg); }
