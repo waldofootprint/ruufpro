@@ -1,0 +1,180 @@
+/* ridgeline-v3 design tokens — scoped to .rv3 root.
+   Importing this file alone applies nothing; consumers wrap their
+   tree in <div className="rv3">…</div> so v3 styles never leak into
+   ridgeline-v2 or roofer-site templates. */
+
+.rv3 {
+  --rv3-bg:        #F5F1E8;
+  --rv3-bg-2:      #ECE6D8;
+  --rv3-bg-3:      #FAF6EC;
+  --rv3-bg-deep:   #E4DCC8;
+  --rv3-ink:       #0E0E11;
+  --rv3-ink-2:     #1A1A1F;
+  --rv3-rust:      #C2562A;
+  --rv3-coral:     #E2855A;
+  --rv3-slate:     #5A5048;
+  --rv3-slate-2:   #82786C;
+  --rv3-mint:      #6B8763;
+  --rv3-line:      rgba(14, 14, 17, 0.08);
+  --rv3-line-2:    rgba(14, 14, 17, 0.04);
+
+  background: var(--rv3-bg);
+  color: var(--rv3-ink);
+  font-family: var(--font-geist-sans, "Geist", system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.rv3 *,
+.rv3 *::before,
+.rv3 *::after {
+  box-sizing: border-box;
+}
+
+.rv3 a { color: inherit; text-decoration: none; }
+.rv3 button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+.rv3 ::selection { background: var(--rv3-rust); color: var(--rv3-bg); }
+
+/* ─── Section frame ─── */
+.rv3-wrap { max-width: 1320px; margin: 0 auto; padding: 0 36px; }
+@media (max-width: 720px) { .rv3-wrap { padding: 0 20px; } }
+
+.rv3-section { padding: 96px 0; position: relative; }
+.rv3-section.tight { padding: 72px 0; }
+.rv3-section.sand {
+  background: var(--rv3-bg-2);
+  border-top: 1px solid var(--rv3-line-2);
+  border-bottom: 1px solid var(--rv3-line-2);
+}
+.rv3-section.deep {
+  background: var(--rv3-bg-deep);
+  border-top: 1px solid var(--rv3-line-2);
+  border-bottom: 1px solid var(--rv3-line-2);
+}
+.rv3-section.dark {
+  background: linear-gradient(180deg, var(--rv3-ink) 0%, var(--rv3-ink-2) 100%);
+  color: var(--rv3-bg);
+}
+@media (max-width: 720px) { .rv3-section { padding: 64px 0; } }
+
+/* ─── Eyebrow ─── */
+.rv3-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--rv3-rust);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.rv3-eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: var(--rv3-rust);
+}
+.rv3-section.dark .rv3-eyebrow { color: var(--rv3-coral); }
+.rv3-section.dark .rv3-eyebrow::before { background: var(--rv3-coral); }
+
+/* ─── Display H2 ─── */
+.rv3-display {
+  font-weight: 500;
+  font-size: clamp(36px, 4.4vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: var(--rv3-ink);
+  max-width: 22ch;
+}
+.rv3-display em {
+  font-style: normal;
+  color: var(--rv3-rust);
+  position: relative;
+  white-space: nowrap;
+}
+.rv3-display em::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.06em;
+  height: 0.18em;
+  background: var(--rv3-rust);
+  opacity: 0.12;
+  z-index: -1;
+  border-radius: 2px;
+}
+.rv3-section.dark .rv3-display { color: var(--rv3-bg); }
+.rv3-section.dark .rv3-display em { color: var(--rv3-coral); }
+.rv3-section.dark .rv3-display em::after { background: var(--rv3-coral); }
+
+/* ─── Lede ─── */
+.rv3-lede {
+  margin-top: 22px;
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--rv3-slate);
+  max-width: 56ch;
+  font-weight: 400;
+}
+.rv3-section.dark .rv3-lede { color: rgba(245, 241, 232, 0.65); }
+
+/* ─── Buttons ─── */
+.rv3-btn-primary {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--rv3-ink);
+  color: var(--rv3-bg);
+  padding: 13px 22px;
+  border-radius: 11px;
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: 0 12px 24px -10px rgba(14, 14, 17, 0.5);
+  transition: transform 0.15s;
+}
+.rv3-btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.12) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: rv3-shimmer 6s linear infinite;
+}
+.rv3-btn-primary:hover { transform: translateY(-2px); }
+.rv3-section.dark .rv3-btn-primary {
+  background: var(--rv3-bg);
+  color: var(--rv3-ink);
+  box-shadow:
+    0 0 0 1px rgba(245, 241, 232, 0.3),
+    0 16px 40px -12px rgba(245, 241, 232, 0.25);
+}
+@keyframes rv3-shimmer {
+  from { background-position: 200% 0%; }
+  to   { background-position: -200% 0%; }
+}
+
+.rv3-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--rv3-ink);
+  padding: 13px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--rv3-line);
+  backdrop-filter: blur(8px);
+  transition: background 0.15s;
+}
+.rv3-btn-secondary:hover { background: rgba(255, 255, 255, 0.85); }
+.rv3-section.dark .rv3-btn-secondary {
+  color: var(--rv3-bg);
+  background: rgba(245, 241, 232, 0.04);
+  border-color: rgba(245, 241, 232, 0.12);
+}
+.rv3-section.dark .rv3-btn-secondary:hover { background: rgba(245, 241, 232, 0.08); }

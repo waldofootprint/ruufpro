@@ -1,0 +1,225 @@
+/* PRICING — folds in audit P1 items:
+   1. rust→coral gradient border + "THE ONLY PLAN" coral ribbon
+   2. $6K callout pulled out next to $149
+   3. "First 5 roofers" scarcity promoted to coral-bordered card above price */
+
+.scarcity {
+  margin-top: 56px;
+  margin-bottom: 24px;
+  padding: 18px 22px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(226, 133, 90, 0.55);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(226, 133, 90, 0.08) 0%, rgba(194, 86, 42, 0.04) 100%);
+  box-shadow: 0 12px 36px -16px rgba(194, 86, 42, 0.35);
+}
+
+.scarcityLabel {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rv3-rust);
+  background: rgba(194, 86, 42, 0.12);
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+
+.scarcityCount {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--rv3-rust);
+  font-weight: 500;
+}
+
+.scarcityCount strong {
+  color: var(--rv3-ink);
+  font-weight: 500;
+}
+
+.scarcityBody {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--rv3-slate);
+}
+
+.scarcityBody strong { color: var(--rv3-ink); font-weight: 500; }
+
+@media (max-width: 720px) {
+  .scarcity { margin-top: 40px; }
+}
+
+/* ── Price card with gradient border ── */
+.cardOuter {
+  position: relative;
+  border-radius: 21px;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(194, 86, 42, 0.55) 0%,
+    rgba(226, 133, 90, 0.35) 35%,
+    rgba(14, 14, 17, 0.06) 70%,
+    rgba(194, 86, 42, 0.4) 100%
+  );
+  box-shadow: 0 32px 80px -24px rgba(14, 14, 17, 0.18);
+}
+
+.card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+}
+@media (max-width: 980px) { .card { grid-template-columns: 1fr; } }
+
+.ribbon {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rv3-bg);
+  background: linear-gradient(135deg, var(--rv3-rust), var(--rv3-coral));
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 500;
+  box-shadow: 0 6px 16px -6px rgba(194, 86, 42, 0.55);
+}
+
+.left { padding: 48px; }
+
+.right {
+  padding: 48px;
+  background: var(--rv3-bg-2);
+  border-left: 1px solid var(--rv3-line);
+}
+@media (max-width: 980px) {
+  .right { border-left: none; border-top: 1px solid var(--rv3-line); }
+}
+
+.lab {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--rv3-rust);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Price + ROI row */
+.priceRow {
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.pr {
+  font-weight: 500;
+  font-size: clamp(72px, 10vw, 112px);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  color: var(--rv3-ink);
+}
+
+.roi {
+  margin-top: 16px;
+  max-width: 22ch;
+  font-weight: 500;
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--rv3-ink);
+  border-left: 2px solid var(--rv3-rust);
+  padding-left: 14px;
+}
+
+.roi small {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rv3-slate-2);
+}
+
+.per {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 13px;
+  color: var(--rv3-slate);
+  margin-top: 4px;
+}
+
+.pitch {
+  margin-top: 22px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--rv3-slate);
+  max-width: 38ch;
+}
+.pitch strong { color: var(--rv3-ink); font-weight: 500; }
+
+.ctaRow { margin-top: 32px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+.terms {
+  margin-top: 18px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--rv3-slate-2);
+  letter-spacing: 0.04em;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.terms span::before { content: "✓ "; color: var(--rv3-rust); }
+
+.right ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.right li {
+  display: flex;
+  gap: 12px;
+  font-size: 15px;
+  color: var(--rv3-ink);
+  line-height: 1.4;
+}
+
+.right li::before {
+  content: "→";
+  color: var(--rv3-rust);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.footnote {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--rv3-line);
+  font-size: 14px;
+  color: var(--rv3-slate);
+  line-height: 1.5;
+}
+.footnote strong { color: var(--rv3-ink); font-weight: 500; }
+
+@media (max-width: 720px) {
+  .left { padding: 36px 28px; }
+  .right { padding: 36px 28px; }
+  .ribbon { top: 14px; right: 14px; }
+}
