@@ -1,0 +1,200 @@
+/* GOOGLE UPDATE — folds in audit P1:
+   - Side-by-side filter ON / filter OFF mocks (show, don't tell)
+   - 4 source citations promoted from footer-row to bordered cards w/ link icons */
+
+.grid {
+  margin-top: 48px;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 56px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .grid { grid-template-columns: 1fr; gap: 40px; }
+}
+
+.points {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-top: 6px;
+}
+.point {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.ptNum {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--rv3-rust);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.ptH {
+  font-weight: 500;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  margin-bottom: 6px;
+  color: var(--rv3-ink);
+}
+.ptB {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--rv3-slate);
+}
+
+/* ── Side-by-side mocks ── */
+.mocks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 720px) { .mocks { grid-template-columns: 1fr; } }
+
+.gmock {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--rv3-line);
+  border-radius: 14px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 24px 60px -28px rgba(14, 14, 17, 0.15);
+}
+.gmockLabel {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rv3-slate-2);
+  margin-bottom: 10px;
+}
+.gmockOff .gmockLabel { color: var(--rv3-slate-2); }
+.gmockOn .gmockLabel { color: var(--rv3-rust); }
+
+.url {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--rv3-slate-2);
+  margin-bottom: 8px;
+}
+.search {
+  border: 1px solid var(--rv3-line);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--rv3-ink);
+  background: rgba(255, 255, 255, 0.6);
+  margin-bottom: 10px;
+}
+.filters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.chip {
+  padding: 4px 9px;
+  border: 1px solid var(--rv3-line);
+  border-radius: 999px;
+  font-size: 10.5px;
+  color: var(--rv3-slate);
+}
+.chipActive {
+  background: var(--rv3-ink);
+  color: var(--rv3-bg);
+  border-color: var(--rv3-ink);
+  font-weight: 500;
+}
+.chipActive::before { content: "✓ "; }
+
+.results { display: flex; flex-direction: column; }
+.result {
+  padding: 10px 0;
+  border-top: 1px solid var(--rv3-line-2);
+}
+.result:first-child { border-top: 0; }
+.resultDim { opacity: 0.32; }
+.biz {
+  font-weight: 500;
+  font-size: 12.5px;
+  margin-bottom: 3px;
+  color: var(--rv3-ink);
+}
+.meta { font-size: 10.5px; color: var(--rv3-slate-2); }
+.badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 9px;
+  background: rgba(194, 86, 42, 0.10);
+  color: var(--rv3-rust);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Citations grid ── */
+.citationsGrid {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--rv3-line);
+}
+.citationsLabel {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rv3-slate-2);
+  margin-bottom: 16px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 980px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .cards { grid-template-columns: 1fr; } }
+
+.card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--rv3-line);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s, transform 0.15s;
+  cursor: pointer;
+}
+.card:hover {
+  border-color: rgba(194, 86, 42, 0.4);
+  transform: translateY(-2px);
+}
+.cardPub {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--rv3-ink);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cardPub::after {
+  content: "↗";
+  color: var(--rv3-rust);
+  font-size: 12px;
+}
+.cardDate {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--rv3-slate-2);
+  letter-spacing: 0.04em;
+}
+.cardTake {
+  font-size: 12.5px;
+  color: var(--rv3-slate);
+  line-height: 1.4;
+}

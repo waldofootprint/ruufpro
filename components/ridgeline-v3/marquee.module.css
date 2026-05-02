@@ -1,0 +1,27 @@
+.marquee {
+  background: var(--rv3-ink);
+  color: var(--rv3-bg);
+  padding: 14px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(245, 241, 232, 0.7);
+}
+
+.line {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.line span:not(:last-child)::after {
+  content: "·";
+  color: var(--rv3-coral);
+  margin-left: 16px;
+  font-size: 16px;
+}

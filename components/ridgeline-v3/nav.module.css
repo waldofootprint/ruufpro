@@ -1,0 +1,117 @@
+/* NAV — desktop nav-card + mobile hamburger (audit P0). */
+
+.nav {
+  position: relative;
+  z-index: 10;
+  padding: 22px 0;
+  display: flex;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+@media (max-width: 720px) { .wrap { padding: 0 20px; } }
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.025em;
+  color: var(--rv3-ink);
+}
+.wordmark .mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--rv3-ink) 0%, var(--rv3-ink-2) 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rv3-coral);
+  position: relative;
+}
+.wordmark .mark::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--rv3-rust) 0%, transparent 60%);
+  z-index: -1;
+  opacity: 0.6;
+}
+
+.navCard {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(14, 14, 17, 0.06);
+  border-radius: 14px;
+  padding: 6px 8px 6px 16px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 4px 16px -4px rgba(14, 14, 17, 0.06);
+}
+.navCard nav {
+  display: flex;
+  gap: 2px;
+  font-size: 13px;
+}
+.navCard nav a {
+  padding: 7px 12px;
+  border-radius: 8px;
+  color: var(--rv3-slate);
+  transition: background 0.15s, color 0.15s;
+}
+.navCard nav a:hover {
+  background: rgba(14, 14, 17, 0.04);
+  color: var(--rv3-ink);
+}
+
+.ctaMini {
+  background: var(--rv3-ink);
+  color: var(--rv3-bg);
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 8px 20px -8px rgba(14, 14, 17, 0.4);
+  transition: transform 0.15s;
+}
+.ctaMini:hover { transform: translateY(-1px); }
+
+/* Mobile hamburger trigger — audit P0 */
+.hamburger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--rv3-line);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+.hamburger span {
+  width: 18px;
+  height: 1.5px;
+  background: var(--rv3-ink);
+  border-radius: 1px;
+}
+
+@media (max-width: 720px) {
+  .navCard, .ctaMini { display: none; }
+  .hamburger { display: inline-flex; }
+}

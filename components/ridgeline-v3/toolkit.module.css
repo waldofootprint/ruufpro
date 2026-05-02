@@ -1,0 +1,299 @@
+/* TOOLKIT — three sticky-stack tool cards.
+   Audit P2: differentiate surfaces (white / bone-3 with hairline / sand-tinted edge). */
+
+.grid {
+  margin-top: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  padding: 40px;
+  border: 1px solid var(--rv3-line);
+  border-radius: 18px;
+  position: sticky;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 32px 60px -28px rgba(14, 14, 17, 0.18);
+}
+
+.card:nth-child(1) { top: 90px; z-index: 1; background: #FFFFFF; }
+.card:nth-child(2) {
+  top: 110px;
+  z-index: 2;
+  background: var(--rv3-bg-3);
+  border-top: 2px solid rgba(194, 86, 42, 0.4);
+}
+.card:nth-child(3) {
+  top: 130px;
+  z-index: 3;
+  background: linear-gradient(180deg, rgba(194, 86, 42, 0.06) 0%, var(--rv3-bg-3) 80px);
+}
+
+.grid::after {
+  content: "";
+  display: block;
+  height: 200px;
+}
+
+@media (max-width: 980px) {
+  .card {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 28px;
+    position: static;
+  }
+  .grid::after { display: none; }
+}
+
+.reverse > div:first-child { order: 2; }
+@media (max-width: 980px) { .reverse > div:first-child { order: 0; } }
+
+.num {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--rv3-rust);
+  margin-bottom: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.h3 {
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  margin: 0 0 14px;
+  color: var(--rv3-ink);
+  max-width: 18ch;
+}
+
+.pay {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--rv3-rust);
+  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+}
+
+.body {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--rv3-slate);
+  max-width: 44ch;
+}
+.body strong { color: var(--rv3-ink); font-weight: 500; }
+
+.featureList {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--rv3-slate);
+}
+.featureList span::before {
+  content: "→";
+  color: var(--rv3-rust);
+  margin-right: 8px;
+}
+
+/* ── Tool visuals ── */
+/* Tool 01 — 3D photoreal frame */
+.tv3d {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--rv3-line);
+  background: var(--rv3-ink);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 24px 60px -20px rgba(14, 14, 17, 0.28),
+    0 0 0 1px rgba(194, 86, 42, 0.12);
+}
+.tv3d :global(.frame) {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1400 / 900;
+  overflow: hidden;
+}
+.tv3d :global(.frame) img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.tv3d :global(.badge) {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 5px;
+  background: rgba(14, 14, 17, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(245, 241, 232, 0.18);
+  border-radius: 999px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  color: rgba(245, 241, 232, 0.9);
+  letter-spacing: 0.03em;
+}
+.tv3d :global(.dot) {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rv3-mint);
+}
+.tv3d :global(.caption) {
+  padding: 14px 18px;
+  background: linear-gradient(180deg, rgba(20, 48, 61, 0.95) 0%, var(--rv3-ink) 100%);
+  color: var(--rv3-bg);
+  border-top: 1px solid rgba(245, 241, 232, 0.06);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+}
+.tv3d :global(.label) {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--rv3-coral);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.tv3d :global(.biz) {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--rv3-bg);
+  letter-spacing: -0.01em;
+}
+.tv3d :global(.meta) {
+  font-size: 11px;
+  color: rgba(245, 241, 232, 0.55);
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  margin-top: 4px;
+}
+.tv3d :global(.price) {
+  font-weight: 600;
+  font-size: 26px;
+  color: var(--rv3-coral);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.tv3d :global(.priceSub) {
+  display: block;
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(245, 241, 232, 0.5);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+}
+
+/* Tool 02 — phone with SMS */
+.tvPhone {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  filter: drop-shadow(0 24px 40px rgba(14, 14, 17, 0.18));
+}
+.tvPhone img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.tvPhone :global(.screen) {
+  position: absolute;
+  top: 11.5%;
+  left: 30%;
+  right: 30%;
+  bottom: 8.5%;
+  background: #FFFFFF;
+  border-radius: 22px;
+  padding: 22px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+.tvPhone :global(.convoHead) {
+  text-align: center;
+  padding: 2px 4px 6px;
+  border-bottom: 1px solid var(--rv3-line-2);
+}
+.tvPhone :global(.convoHead .nm) { font-weight: 500; font-size: 9px; color: var(--rv3-ink); }
+.tvPhone :global(.convoHead .num) { font-family: var(--font-geist-mono, monospace); font-size: 7px; color: var(--rv3-slate-2); margin-top: 1px; }
+.tvPhone :global(.thread) { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 4px 2px 0; }
+.tvPhone :global(.ts) { font-family: var(--font-geist-mono, monospace); font-size: 6.5px; color: var(--rv3-slate-2); text-align: center; margin: 2px 0; }
+.tvPhone :global(.bubble) { padding: 4px 7px; border-radius: 9px; font-size: 7.5px; line-height: 1.3; max-width: 88%; }
+.tvPhone :global(.bubbleThem) { background: rgba(14, 14, 17, 0.08); color: var(--rv3-ink); align-self: flex-start; border-bottom-left-radius: 3px; }
+.tvPhone :global(.bubbleYou) { background: linear-gradient(135deg, var(--rv3-rust), var(--rv3-coral)); color: var(--rv3-bg); align-self: flex-end; border-bottom-right-radius: 3px; }
+.tvPhone :global(.bubbleYou .lk) { color: var(--rv3-bg); text-decoration: underline; font-weight: 500; }
+
+/* Tool 03 — review push notification */
+.tvPush {
+  background: linear-gradient(180deg, var(--rv3-ink) 0%, var(--rv3-ink-2) 100%);
+  color: var(--rv3-bg);
+  border-radius: 26px;
+  padding: 18px;
+  box-shadow: 0 24px 60px -24px rgba(14, 14, 17, 0.4);
+  max-width: 320px;
+  margin: 0 auto;
+}
+.tvPush :global(.nbTime) {
+  text-align: center;
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 11px;
+  color: rgba(245, 241, 232, 0.4);
+  margin-bottom: 18px;
+}
+.tvPush :global(.notif) {
+  background: rgba(245, 241, 232, 0.06);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(245, 241, 232, 0.1);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.tvPush :global(.icon) {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--rv3-rust), var(--rv3-coral));
+  color: var(--rv3-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+.tvPush :global(.nbBody) { flex: 1; }
+.tvPush :global(.nbTop) { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.tvPush :global(.nbName) { font-weight: 500; font-size: 13px; }
+.tvPush :global(.nbWhen) { font-family: var(--font-geist-mono, monospace); font-size: 10px; color: rgba(245, 241, 232, 0.5); }
+.tvPush :global(.nbMsg) { font-size: 13px; color: rgba(245, 241, 232, 0.85); line-height: 1.4; }
+.tvPush :global(.actions) { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tvPush :global(.a) { text-align: center; padding: 10px; border-radius: 9px; font-size: 12px; font-weight: 500; }
+.tvPush :global(.aDismiss) { background: rgba(245, 241, 232, 0.08); color: rgba(245, 241, 232, 0.7); }
+.tvPush :global(.aSend) { background: var(--rv3-bg); color: var(--rv3-ink); }
