@@ -18,7 +18,7 @@ function StatusBar() {
 
 export function MissedCall() {
   return (
-    <Section id="missed-call" variant="dark">
+    <Section id="missed-call">
       <Wrap>
         <Eyebrow>Missed-call recovery</Eyebrow>
         <Display>
