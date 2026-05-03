@@ -47,6 +47,26 @@ Response shape matches TS `LidarResult` in `lib/measurement-pipeline.types.ts`.
 LIDAR_MEASURE_URL=<url> GOOGLE_MAPS_API_KEY=... node scripts/smoke-lidar-modal.mjs
 ```
 
+## Coverage (FL residential)
+
+**FL LiDAR coverage: 97.0% of residential addresses (probe 2026-05-03, n=200, Manatee County).**
+
+200-address random sample from `property_pipeline_candidates` (Manatee County
+residential), geocoded via Google + run through the production Modal pipeline:
+
+| Outcome | n | % |
+|---|---|---|
+| `ok` | 194 | 97.0% |
+| `no_footprint_lidar` | 4 | 2.0% |
+| `http_500` | 2 | 1.0% |
+
+Implications for M2 fallback design:
+- LiDAR alone covers 97% of FL residential homes. The Solar+Footprints+homeowner-pitch
+  fallback chain is needed only for the ~3% LiDAR can't measure.
+- Statewide variance possible — Manatee is the only sampled county.
+- Re-run via `node scripts/probe-lidar-coverage.mjs --n 200`.
+
+
 ## Cost / warm-pool
 
 Deployed with `keep_warm=1` per Track A.9-class-2 §3.1 (2026-04-22). Warmth
