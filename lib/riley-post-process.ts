@@ -112,7 +112,36 @@ const ESTIMATE_OVERPROMISE: { pattern: RegExp; replacement: string }[] = [
 const ALL_CAPS_WORD = /\b[A-Z]{2,}\b/g;
 // Whitelist: abbreviations and acronyms that are legitimately uppercase
 const CAPS_WHITELIST = new Set([
-  "AI", "BBB", "GAF", "TPO", "EPDM", "LLC", "OK", "FL", "PM", "AM",
+  "AI", "BBB", "GAF", "TPO", "EPDM", "PVC", "HVAC", "LLC", "OK", "PM", "AM",
+  // US state codes (legitimate ALL CAPS in addresses)
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
+  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
+  "VA","WA","WV","WI","WY","DC",
+]);
+
+// ── Acronym normalization (title-case → ALL CAPS for known terms) ─────────
+// Catches the model output mistake of writing "Pvc", "Tpo", "Cary, Nc" etc.
+// instead of "PVC", "TPO", "Cary, NC". The fixAllCaps function above handles
+// the opposite (legit lowercase → title case) — this handles wrong-cased uppercase.
+const ACRONYMS_TO_UPPER = [
+  "PVC", "TPO", "EPDM", "GAF", "BBB", "HVAC", "LLC", "PLLC",
+];
+// Pre-build case-insensitive regex: \b(Pvc|Tpo|Epdm|Gaf|Bbb|Hvac|Llc|Pllc)\b
+// Matches any case variation that ISN'T already correct.
+const ACRONYM_PATTERN = new RegExp(
+  `\\b(${ACRONYMS_TO_UPPER.join("|")})\\b`,
+  "gi",
+);
+// State-code pattern: matches "City, Xx" where Xx is a 2-letter title-case
+// state code (e.g. "Cary, Nc" → "Cary, NC"). Only fires after a comma to avoid
+// false positives on common 2-letter words (Pa = parent, In = preposition).
+const STATE_CODE_PATTERN = /(,\s+)([A-Z][a-z])\b/g;
+const VALID_STATE_CODES = new Set([
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
+  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
+  "VA","WA","WV","WI","WY","DC",
 ]);
 
 const MAX_CREDENTIALS = 2;
@@ -197,6 +226,10 @@ export function postProcessRileyResponse(
 
   // 6. Fix ALL CAPS words (except whitelisted acronyms)
   result = fixAllCaps(result);
+
+  // 6b. Fix mis-cased acronyms (Pvc → PVC, Tpo → TPO) and state codes
+  //     (Cary, Nc → Cary, NC). LLM frequently title-cases known acronyms.
+  result = fixAcronymCase(result);
 
   // 7. Strip filler phrases from start of response
   result = stripFillers(result);
@@ -325,6 +358,17 @@ function fixAllCaps(text: string): string {
     // Title-case the word instead
     return match.charAt(0) + match.slice(1).toLowerCase();
   });
+}
+
+function fixAcronymCase(text: string): string {
+  // Uppercase known industry acronyms regardless of input case.
+  let result = text.replace(ACRONYM_PATTERN, (match) => match.toUpperCase());
+  // Uppercase state codes after a comma (e.g. "Cary, Nc" → "Cary, NC").
+  result = result.replace(STATE_CODE_PATTERN, (match, comma, code) => {
+    const upper = code.toUpperCase();
+    return VALID_STATE_CODES.has(upper) ? `${comma}${upper}` : match;
+  });
+  return result;
 }
 
 function splitSentences(text: string): string[] {
