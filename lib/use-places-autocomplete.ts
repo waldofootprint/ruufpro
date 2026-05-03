@@ -25,6 +25,7 @@ interface Suggestion {
 interface PlaceCoords {
   lat: number;
   lng: number;
+  postalCode?: string | null;
 }
 
 export function usePlacesAutocomplete() {
@@ -96,16 +97,20 @@ export function usePlacesAutocomplete() {
 
       try {
         const place = new google.maps.places.Place({ id: placeId });
-        await place.fetchFields({ fields: ["location"] });
+        await place.fetchFields({ fields: ["location", "addressComponents"] });
 
         // Rotate session token — fetchFields completes the session
         sessionTokenRef.current =
           new google.maps.places.AutocompleteSessionToken();
 
         if (place.location) {
+          const postalComponent = place.addressComponents?.find((c) =>
+            c.types?.includes("postal_code")
+          );
           return {
             lat: place.location.lat(),
             lng: place.location.lng(),
+            postalCode: postalComponent?.shortText || postalComponent?.longText || null,
           };
         }
         return null;

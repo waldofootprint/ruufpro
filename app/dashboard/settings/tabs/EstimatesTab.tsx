@@ -87,6 +87,7 @@ export function EstimatesTab() {
   const [repPhone, setRepPhone] = useState("");
   const [repPhotoUrl, setRepPhotoUrl] = useState("");
   const [calendarUrl, setCalendarUrl] = useState("");
+  const [coverageCheckEnabled, setCoverageCheckEnabled] = useState(true);
 
   const [financingEnabled, setFinancingEnabled] = useState(false);
   const [financingProvider, setFinancingProvider] = useState("");
@@ -157,6 +158,7 @@ export function EstimatesTab() {
         setRepPhone(settings.rep_phone || "");
         setRepPhotoUrl(settings.rep_photo_url || "");
         setCalendarUrl(settings.calendar_url || "");
+        setCoverageCheckEnabled(settings.coverage_check_enabled ?? true);
       } else {
         // Pre-fill metro defaults
         const defaults = getMetroDefaults(contractor.state || "TX", contractor.city || undefined).rates;
@@ -266,6 +268,7 @@ export function EstimatesTab() {
       rep_phone: repPhone.trim() || null,
       rep_photo_url: repPhotoUrl.trim() || null,
       calendar_url: calendarUrl.trim() || null,
+      coverage_check_enabled: coverageCheckEnabled,
     });
 
     // Save addons (replace all for this contractor)
@@ -516,6 +519,16 @@ export function EstimatesTab() {
           placeholder="75201, 75202, 75203"
           value={serviceZips}
           onChange={(e) => setServiceZips(e.target.value)}
+        />
+        <NeuToggle
+          checked={coverageCheckEnabled}
+          onChange={setCoverageCheckEnabled}
+          label="Check coverage upfront"
+          description={
+            coverageCheckEnabled
+              ? "Out-of-zone homeowners hit an email-capture screen instead of the full funnel."
+              : "Anyone can request an estimate, regardless of ZIP."
+          }
         />
       </SettingsSection>
 

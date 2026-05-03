@@ -336,6 +336,12 @@ export default function EstimateWidgetV4({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [addressSelectedFromDropdown, setAddressSelectedFromDropdown] = useState(false);
   const [propertyCoords, setPropertyCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [propertyZip, setPropertyZip] = useState<string | null>(null);
+  // M1.6 coverage check — set when address ZIP is outside roofer's service area.
+  const [outOfZone, setOutOfZone] = useState(false);
+  const [outOfZoneEmail, setOutOfZoneEmail] = useState("");
+  const [outOfZoneSubmitted, setOutOfZoneSubmitted] = useState(false);
+  const [coverageChecking, setCoverageChecking] = useState(false);
   const { suggestions, search: searchPlaces, clearSuggestions, isLoaded: placesLoaded, getPlaceDetails } = usePlacesAutocomplete();
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [pitchCategory, setPitchCategory] = useState("");
@@ -784,10 +790,15 @@ export default function EstimateWidgetV4({
                         setAddressSelectedFromDropdown(true);
                         clearSuggestions();
 
-                        // Get lat/lng from placeId (included in session billing)
+                        // Reset coverage gate when picking a new address.
+                        setOutOfZone(false);
+                        setOutOfZoneSubmitted(false);
+                        setOutOfZoneEmail("");
+                        // Get lat/lng + ZIP from placeId (included in session billing)
                         const coords = await getPlaceDetails(s.placeId);
                         if (coords) {
-                          setPropertyCoords(coords);
+                          setPropertyCoords({ lat: coords.lat, lng: coords.lng });
+                          setPropertyZip(coords.postalCode || null);
                         }
 
                         // Pre-warm RentCast cache so the guardrail has
@@ -822,13 +833,33 @@ export default function EstimateWidgetV4({
             </AnimatePresence>
 
             <motion.button
-              onClick={nextStep}
-              disabled={!addressValid}
-              whileHover={addressValid ? { y: -1, boxShadow: S.btnPrimaryHover } : undefined}
-              whileTap={addressValid ? { y: 1, boxShadow: S.btnPrimaryActive } : undefined}
+              onClick={async () => {
+                if (!addressValid) return;
+                setCoverageChecking(true);
+                try {
+                  const res = await fetch("/api/widget/coverage-check", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contractor_id: contractorId, zip: propertyZip }),
+                  });
+                  const data = await res.json();
+                  if (data.in_zone === false) {
+                    setOutOfZone(true);
+                    setCoverageChecking(false);
+                    return;
+                  }
+                } catch {
+                  // Fail open — don't block on coverage-check error.
+                }
+                setCoverageChecking(false);
+                nextStep();
+              }}
+              disabled={!addressValid || coverageChecking}
+              whileHover={addressValid && !coverageChecking ? { y: -1, boxShadow: S.btnPrimaryHover } : undefined}
+              whileTap={addressValid && !coverageChecking ? { y: 1, boxShadow: S.btnPrimaryActive } : undefined}
               className={cn(
                 "w-full py-3 rounded-xl text-[17px] transition-all duration-300",
-                !addressValid ? "cursor-not-allowed opacity-40" : ""
+                !addressValid || coverageChecking ? "cursor-not-allowed opacity-40" : ""
               )}
               style={{
                 background: !addressValid ? C.separator : C.primaryBg,
@@ -837,8 +868,79 @@ export default function EstimateWidgetV4({
                 letterSpacing: "-0.022em", fontWeight: 600, minHeight: 44,
               }}
             >
-              Continue
+              {coverageChecking ? "Checking…" : "Continue"}
             </motion.button>
+
+            {outOfZone && (
+              <div
+                className="rounded-xl p-5 space-y-3"
+                style={{
+                  background: C.secondaryBg,
+                  border: `1px solid ${C.separator}`,
+                }}
+              >
+                {!outOfZoneSubmitted ? (
+                  <>
+                    <div>
+                      <h3 className="text-[17px] font-semibold mb-1" style={{ color: C.text }}>
+                        We don&apos;t service {propertyZip || "that area"} yet
+                      </h3>
+                      <p className="text-[13px]" style={{ color: C.textSecondary }}>
+                        Leave your email and {contractorName} will reach out if coverage expands.
+                      </p>
+                    </div>
+                    <input
+                      type="email"
+                      value={outOfZoneEmail}
+                      onChange={(e) => setOutOfZoneEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="w-full px-3 py-2.5 rounded-lg text-[15px] outline-none"
+                      style={{
+                        background: variant === "light" ? "#fff" : "rgba(0,0,0,0.2)",
+                        border: `1px solid ${C.separator}`,
+                        color: C.text,
+                      }}
+                    />
+                    <motion.button
+                      onClick={async () => {
+                        if (!outOfZoneEmail.includes("@")) return;
+                        await fetch("/api/widget/out-of-zone-lead", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            contractor_id: contractorId,
+                            email: outOfZoneEmail,
+                            address,
+                            zip: propertyZip,
+                          }),
+                        }).catch(() => {});
+                        setOutOfZoneSubmitted(true);
+                      }}
+                      disabled={!outOfZoneEmail.includes("@")}
+                      whileHover={outOfZoneEmail.includes("@") ? { y: -1, boxShadow: S.btnPrimaryHover } : undefined}
+                      whileTap={outOfZoneEmail.includes("@") ? { y: 1, boxShadow: S.btnPrimaryActive } : undefined}
+                      className={cn(
+                        "w-full py-2.5 rounded-lg text-[15px] transition-all duration-300",
+                        !outOfZoneEmail.includes("@") ? "cursor-not-allowed opacity-40" : ""
+                      )}
+                      style={{
+                        background: C.primaryBg,
+                        color: C.primaryText,
+                        boxShadow: S.btnPrimary,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Notify me
+                    </motion.button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 text-[14px]" style={{ color: C.text }}>
+                    <Check className="w-4 h-4" style={{ color: C.green }} />
+                    Got it — we&apos;ll be in touch.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
