@@ -13,6 +13,19 @@ const DEFAULT_K = 8;
 // even the literal "Financing is available" chunk (sim 0.548) was filtered
 // out. Per Hannah: prefer keeping marginal chunks over losing real answers.
 const MIN_SIMILARITY = 0.40;
+// 2026-05-03: a SECOND threshold for confidence. Chunks above 0.40 enter the
+// prompt (so the model can use them as soft context), but if NO chunk crosses
+// HIGH_CONFIDENCE, we flag the retrieval as WEAK and inject a hard prompt
+// directive forcing the safe-deflect template.
+//
+// Threshold tuning (data from 2026-05-03 audit, voyage-3-large embeddings):
+//   Fabricated answers had top sim ≈ 0.58 (Baker materials — chunks were generic
+//   /about/ pages, model invented "asphalt + metal + tile")
+//   Correct answers from real RAG had top sim ≥ 0.66 (Premium services 0.72,
+//   Premium materials 0.67, Baker services 0.66, BlueCollar materials/services
+//   similar). The "noise band" 0.55–0.60 catches semantic overlap on generic
+//   roofing language without actual topical content. 0.60 separates them.
+const HIGH_CONFIDENCE = 0.60;
 const MAX_TOTAL_CHARS = 8000; // ~2000 tokens
 
 export type RetrievedChunk = {
@@ -22,17 +35,39 @@ export type RetrievedChunk = {
   similarity: number;
 };
 
+export type RetrievalResult = {
+  chunks: RetrievedChunk[];
+  /** Highest similarity across all returned chunks (0 if none). */
+  topSimilarity: number;
+  /** True when at least one chunk crossed HIGH_CONFIDENCE. False = "weak retrieval". */
+  hasHighConfidenceMatch: boolean;
+};
+
+export function isWeakRetrieval(result: RetrievalResult): boolean {
+  return !result.hasHighConfidenceMatch;
+}
+
 export async function retrieveKnowledgeChunks(
   contractorId: string,
   question: string,
   k: number = DEFAULT_K,
 ): Promise<RetrievedChunk[]> {
-  if (!question || question.trim().length < 3) return [];
-  if (!process.env.VOYAGE_API_KEY) return [];
+  const result = await retrieveKnowledgeChunksWithMeta(contractorId, question, k);
+  return result.chunks;
+}
+
+export async function retrieveKnowledgeChunksWithMeta(
+  contractorId: string,
+  question: string,
+  k: number = DEFAULT_K,
+): Promise<RetrievalResult> {
+  const empty: RetrievalResult = { chunks: [], topSimilarity: 0, hasHighConfidenceMatch: false };
+  if (!question || question.trim().length < 3) return empty;
+  if (!process.env.VOYAGE_API_KEY) return empty;
 
   // Embed the question.
   const embedded = await embedTexts([question], "query");
-  if (!embedded.ok || embedded.vectors.length === 0) return [];
+  if (!embedded.ok || embedded.vectors.length === 0) return empty;
   const vec = embedded.vectors[0];
 
   const supabase = createClient(
@@ -54,7 +89,7 @@ export async function retrieveKnowledgeChunks(
 
   if (error || !data) {
     if (error) console.warn("[knowledge-retrieval] rpc error:", error.message);
-    return [];
+    return empty;
   }
 
   type Row = {
@@ -65,6 +100,8 @@ export async function retrieveKnowledgeChunks(
   };
 
   const rows = data as Row[];
+  const topSimilarity = rows.length > 0 ? Math.max(...rows.map((r) => r.similarity)) : 0;
+  const hasHighConfidenceMatch = rows.some((r) => r.similarity >= HIGH_CONFIDENCE);
   const filtered = rows.filter((r) => r.similarity >= MIN_SIMILARITY);
 
   // Token-budget cap.
@@ -80,7 +117,7 @@ export async function retrieveKnowledgeChunks(
     });
     budget -= r.chunk_text.length;
   }
-  return out;
+  return { chunks: out, topSimilarity, hasHighConfidenceMatch };
 }
 
 export function formatChunksForPrompt(chunks: RetrievedChunk[], businessName: string): string {

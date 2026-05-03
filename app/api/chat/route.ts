@@ -10,7 +10,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
-import { retrieveKnowledgeChunks, formatChunksForPrompt } from "@/lib/knowledge-retrieval";
+import { retrieveKnowledgeChunksWithMeta, formatChunksForPrompt } from "@/lib/knowledge-retrieval";
 import { detectIntent } from "@/lib/intent-detection";
 import { runChatEstimate } from "@/lib/chat-estimate";
 import { getTierFromContractor } from "@/lib/types";
@@ -326,7 +326,7 @@ export async function POST(request: NextRequest) {
     // Build system prompt (with intent signals for context)
     let systemPrompt = buildChatSystemPrompt(templateData, messageCount, leadCaptured, chatbotConfig ?? null, hasEstimateWidget, intent);
 
-    // RAG: pull top-3 chunks from the contractor's site for the latest question.
+    // RAG: pull top-K chunks from the contractor's site for the latest question.
     // Fail silently — Riley still works without retrieval.
     try {
       const questionText = (() => {
@@ -337,10 +337,19 @@ export async function POST(request: NextRequest) {
       })();
 
       if (questionText.length >= 3) {
-        const chunks = await retrieveKnowledgeChunks(contractorId, questionText, 8);
-        if (chunks.length > 0) {
-          const knowledgeBlock = formatChunksForPrompt(chunks, contractor.business_name);
+        const retrieval = await retrieveKnowledgeChunksWithMeta(contractorId, questionText, 8);
+        if (retrieval.chunks.length > 0) {
+          const knowledgeBlock = formatChunksForPrompt(retrieval.chunks, contractor.business_name);
           systemPrompt = `${systemPrompt}\n\n${knowledgeBlock}`;
+        }
+        // Anti-fabrication backstop (Fix 3, 2026-05-03): if NO chunk crossed the
+        // high-confidence threshold, the website doesn't directly answer this
+        // question. Inject a hard directive forcing the safe-deflect template.
+        // This is the deterministic backstop — system prompt rules alone failed
+        // empirically (model fabricated "asphalt + metal" for Baker when chunks
+        // were tangentially relevant but didn't mention materials).
+        if (!retrieval.hasHighConfidenceMatch) {
+          systemPrompt = `${systemPrompt}\n\n## ⚠️ RAG retrieval status: WEAK (top similarity ${retrieval.topSimilarity.toFixed(2)} < 0.55)\n\nThe website does not contain content that directly answers the homeowner's question. The chunks above (if any) are tangential at best and DO NOT mention the specific topic the homeowner asked about.\n\nYou MUST NOT make any specific claim about ${contractor.business_name}'s services, materials, certifications, warranties, financing, insurance handling, response times, processes, or other business attributes that is not explicitly stated in the structured "About" section above (phone, hours, headquarters city, credentials list).\n\nYou MUST respond using this exact pattern, lightly varied for natural tone: "I don't have those details on hand — let me get you connected with the team who can walk you through it. Want me to pull up a quick form?"\n\nAcceptable variations of the deflect:\n- "I don't have the specific info on [topic] — that's something our team handles directly. Want me to pull up a quick form?"\n- "Honestly, that's outside what I have info on, but our team would be the right ones to ask. Let me pull up a quick form for you."\n\nDo NOT add ANY claims like "we work with [X] all the time", "we typically [X]", "we offer [X]", or "we're known for [X]". Even ONE such claim violates this rule and damages the contractor's reputation. This rule overrides any helpful instinct.`;
         }
       }
     } catch (err) {
