@@ -130,6 +130,10 @@ const LEAD_PUSH_PATTERNS: RegExp[] = [
 export interface PostProcessOptions {
   isInsuranceQuery?: boolean;
   insuranceCannedResponse?: string;
+  /** True only when the roofer's chatbot_config.does_insurance_work === true.
+   *  When false/unset, we hard-replace any insurance elaboration to prevent
+   *  the model from fabricating "we work with insurance all the time" claims. */
+  insuranceWorkConfirmed?: boolean;
   /** Current conversation stage — used to block lead capture push in early stages */
   stage?: string;
   /** Current detected situation — emergencies override stage-based lead push blocking */
@@ -148,13 +152,28 @@ export function postProcessRileyResponse(
 
   let result = text;
 
-  // 1. Insurance guard — hard-replace if banned terms found
+  // 1. Insurance guard.
+  //    - If roofer has NOT confirmed they handle insurance work: hard-replace any
+  //      multi-sentence elaboration with the strict canned response. Prevents the
+  //      model from fabricating "we work with insurance all the time" for sites
+  //      with zero insurance content.
+  //    - If roofer HAS confirmed: surgically strip only sentences containing
+  //      legally-risky banned phrases (adjuster, deductible, claim outcomes).
   if (options.isInsuranceQuery && options.insuranceCannedResponse) {
-    const hasBanned = INSURANCE_BANNED.some((p) => p.test(result));
-    if (hasBanned) {
+    if (!options.insuranceWorkConfirmed) {
       result =
         options.insuranceCannedResponse +
         " Let me pull up a quick form so they can reach out to you about scheduling that inspection.";
+    } else {
+      const sentences = splitSentences(result);
+      const kept = sentences.filter((s) => !INSURANCE_BANNED.some((p) => p.test(s)));
+      if (kept.length === 0) {
+        result =
+          options.insuranceCannedResponse +
+          " Let me pull up a quick form so they can reach out to you about scheduling that inspection.";
+      } else if (kept.length < sentences.length) {
+        result = kept.join(" ");
+      }
     }
   }
 

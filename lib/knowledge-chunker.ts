@@ -94,8 +94,20 @@ export function isLikelyJunkPage(markdown: string, sourceUrl?: string): boolean 
   if (t.includes("404") && t.length < 500) return true;
   if (t.includes("page not found") && t.length < 500) return true;
   if (t.startsWith("thank you for your submission") && t.length < 800) return true;
-  // Tag/category archive pages — link soup, no real prose.
-  if (sourceUrl && /\/(tag|category|author|archive)\//i.test(sourceUrl)) return true;
+  // Junk URL patterns — blog/tag/category archives, feeds, date archives, CMS guts.
+  // Riley should never train on blog content (per 2026-05-03 hallucination audit).
+  if (sourceUrl) {
+    const junkUrlPatterns = [
+      /\/(tag|tags|category|categories|author|archive|archives)\//i,
+      /\/(blog|news|articles?|posts?)(\/|$)/i,
+      /\/(feed|rss|sitemap)(\/|\.xml|$)/i,
+      /\/wp-(content|admin|json|includes)\//i,
+      /\/\d{4}\/\d{1,2}(\/|$)/, // date archives /2024/06/
+      /\/page\/\d+/i,           // pagination /page/2/
+      /\?s=|\?p=\d+/i,           // search/post-id query strings
+    ];
+    if (junkUrlPatterns.some((p) => p.test(sourceUrl))) return true;
+  }
   return false;
 }
 

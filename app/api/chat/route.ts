@@ -413,6 +413,7 @@ export async function POST(request: NextRequest) {
 
     const postProcessOpts: PostProcessOptions = {
       isInsuranceQuery,
+      insuranceWorkConfirmed: chatbotConfig?.does_insurance_work === true,
       stage: intent.stage,
       situation: intent.situation,
       insuranceCannedResponse: isInsuranceQuery
