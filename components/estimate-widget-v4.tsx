@@ -13,7 +13,7 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Download, Info, Check, Phone } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Info, Check, Phone, Mail, Calendar } from "lucide-react";
 import { usePlacesAutocomplete } from "@/lib/use-places-autocomplete";
 import SatelliteView from "@/components/satellite-view";
 import { getEstimateErrorCopy } from "@/lib/estimate-error-copy";
@@ -261,6 +261,15 @@ interface EstimateResponse {
   // NEW Phase 2 step 1:
   confidence?: "high" | "low";
   roof_overlay?: { url: string | null; has_polygon: boolean } | null;
+  // M1.4 sales rep card:
+  sales_rep?: {
+    name: string | null;
+    title: string | null;
+    email: string | null;
+    phone: string | null;
+    photo_url: string | null;
+    calendar_url: string | null;
+  } | null;
 }
 
 // ----- STEP TRANSITION (enhanced with scale for 3D feel) -----
@@ -1465,6 +1474,86 @@ export default function EstimateWidgetV4({
                 may vary after on-site inspection. Final pricing is determined by the contractor.
               </p>
             </div>
+
+            {estimateData.sales_rep && (estimateData.sales_rep.name || estimateData.sales_rep.calendar_url) && (
+              <div
+                className="rounded-xl p-4"
+                style={{
+                  background: C.secondaryBg,
+                  border: `1px solid ${C.separator}`,
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  {estimateData.sales_rep.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={estimateData.sales_rep.photo_url}
+                      alt={estimateData.sales_rep.name || "Sales contact"}
+                      className="w-14 h-14 rounded-full object-cover shrink-0"
+                      style={{ border: `1px solid ${C.separator}` }}
+                    />
+                  ) : (
+                    <div
+                      className="w-14 h-14 rounded-full flex items-center justify-center text-[18px] font-semibold shrink-0"
+                      style={{ background: C.primaryBg, color: C.primaryText }}
+                    >
+                      {(estimateData.sales_rep.name || contractorName).charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    {estimateData.sales_rep.name && (
+                      <p className="text-[15px] font-semibold leading-tight" style={{ color: C.text }}>
+                        {estimateData.sales_rep.name}
+                      </p>
+                    )}
+                    {estimateData.sales_rep.title && (
+                      <p className="text-[12px] mt-0.5" style={{ color: C.textSecondary }}>
+                        {estimateData.sales_rep.title} · {contractorName}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[12px]">
+                      {estimateData.sales_rep.phone && (
+                        <a
+                          href={`tel:${estimateData.sales_rep.phone.replace(/\D/g, "")}`}
+                          className="flex items-center gap-1 hover:underline"
+                          style={{ color: C.text }}
+                        >
+                          <Phone className="w-3 h-3" /> {estimateData.sales_rep.phone}
+                        </a>
+                      )}
+                      {estimateData.sales_rep.email && (
+                        <a
+                          href={`mailto:${estimateData.sales_rep.email}`}
+                          className="flex items-center gap-1 hover:underline"
+                          style={{ color: C.text }}
+                        >
+                          <Mail className="w-3 h-3" /> {estimateData.sales_rep.email}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {estimateData.sales_rep.calendar_url && (
+                  <motion.a
+                    href={estimateData.sales_rep.calendar_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ y: -1, boxShadow: S.btnPrimaryHover }}
+                    whileTap={{ y: 1, boxShadow: S.btnPrimaryActive }}
+                    className="w-full mt-3 py-2.5 rounded-lg text-[14px] flex items-center justify-center gap-2 transition-all duration-300"
+                    style={{
+                      background: C.primaryBg,
+                      color: C.primaryText,
+                      boxShadow: S.btnPrimary,
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Book a time with {estimateData.sales_rep.name?.split(" ")[0] || contractorName}
+                  </motion.a>
+                )}
+              </div>
+            )}
 
             <div className="pt-2 space-y-3" style={{ borderTop: `1px solid ${C.separator}` }}>
               <p className="text-center text-[17px] font-semibold pt-3 mb-4" style={{ color: C.text }}>

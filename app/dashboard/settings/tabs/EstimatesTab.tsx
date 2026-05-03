@@ -80,6 +80,14 @@ export function EstimatesTab() {
   });
   const [showRoofDetails, setShowRoofDetails] = useState(true);
 
+  // Sales rep card (M1.4)
+  const [repName, setRepName] = useState("");
+  const [repTitle, setRepTitle] = useState("");
+  const [repEmail, setRepEmail] = useState("");
+  const [repPhone, setRepPhone] = useState("");
+  const [repPhotoUrl, setRepPhotoUrl] = useState("");
+  const [calendarUrl, setCalendarUrl] = useState("");
+
   const [financingEnabled, setFinancingEnabled] = useState(false);
   const [financingProvider, setFinancingProvider] = useState("");
   const [financingTermMonths, setFinancingTermMonths] = useState("120");
@@ -143,6 +151,12 @@ export function EstimatesTab() {
           flat: settings.flat_label || "",
         });
         setShowRoofDetails(settings.show_roof_details ?? true);
+        setRepName(settings.rep_name || "");
+        setRepTitle(settings.rep_title || "");
+        setRepEmail(settings.rep_email || "");
+        setRepPhone(settings.rep_phone || "");
+        setRepPhotoUrl(settings.rep_photo_url || "");
+        setCalendarUrl(settings.calendar_url || "");
       } else {
         // Pre-fill metro defaults
         const defaults = getMetroDefaults(contractor.state || "TX", contractor.city || undefined).rates;
@@ -246,6 +260,12 @@ export function EstimatesTab() {
       tile_label: labels.tile || null,
       flat_label: labels.flat || null,
       show_roof_details: showRoofDetails,
+      rep_name: repName.trim() || null,
+      rep_title: repTitle.trim() || null,
+      rep_email: repEmail.trim() || null,
+      rep_phone: repPhone.trim() || null,
+      rep_photo_url: repPhotoUrl.trim() || null,
+      calendar_url: calendarUrl.trim() || null,
     });
 
     // Save addons (replace all for this contractor)
@@ -332,6 +352,64 @@ export function EstimatesTab() {
           <span className="neu-muted">Adjust, then Save to activate your widget.</span>
         </div>
       )}
+
+      {/* Sales Contact (M1.4) */}
+      <SettingsSection
+        title="Sales Contact"
+        description="The human face on your estimate result. Photo + name + booking link converts way better than a faceless form."
+      >
+        <div className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <NeuInput
+              label="Name"
+              placeholder="Mike Stevens"
+              value={repName}
+              onChange={(e) => setRepName(e.target.value)}
+            />
+            <NeuInput
+              label="Title (optional)"
+              placeholder="Owner"
+              value={repTitle}
+              onChange={(e) => setRepTitle(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <NeuInput
+              label="Email"
+              type="email"
+              placeholder="mike@example.com"
+              value={repEmail}
+              onChange={(e) => setRepEmail(e.target.value)}
+            />
+            <NeuInput
+              label="Phone"
+              type="tel"
+              placeholder="(941) 555-1234"
+              value={repPhone}
+              onChange={(e) => setRepPhone(e.target.value)}
+            />
+          </div>
+          <NeuInput
+            label="Photo URL (optional)"
+            placeholder="https://yoursite.com/headshot.jpg"
+            value={repPhotoUrl}
+            onChange={(e) => setRepPhotoUrl(e.target.value)}
+          />
+          <p className="text-[11px] neu-muted -mt-1">
+            Link to a square headshot hosted anywhere — your website, Google Drive (shared), Imgur.
+          </p>
+          <NeuInput
+            label="Booking link (optional)"
+            type="url"
+            placeholder="https://calendly.com/yourname/30min"
+            value={calendarUrl}
+            onChange={(e) => setCalendarUrl(e.target.value)}
+          />
+          <p className="text-[11px] neu-muted -mt-1">
+            Calendly, Cal.com, Google appointment slots, Square — any URL works. Leave blank if you prefer to call homeowners back.
+          </p>
+        </div>
+      </SettingsSection>
 
       {/* Material Rates */}
       <SettingsSection

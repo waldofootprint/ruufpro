@@ -741,8 +741,21 @@ export async function POST(request: NextRequest) {
     // G2 can assert `measurement_runs.horiz_sqft === sqft_used_for_estimate`
     // and `pipeline` response field matches the actual data source feeding
     // calculateEstimate (not just telemetry winner).
+    // Sales rep card (M1.4) — surfaced on V4 result page.
+    const salesRep = settings?.rep_name || settings?.rep_email || settings?.rep_phone || settings?.calendar_url
+      ? {
+          name: settings.rep_name || null,
+          title: settings.rep_title || null,
+          email: settings.rep_email || null,
+          phone: settings.rep_phone || null,
+          photo_url: settings.rep_photo_url || null,
+          calendar_url: settings.calendar_url || null,
+        }
+      : null;
+
     return NextResponse.json({
       estimates,
+      sales_rep: salesRep,
       show_roof_details: showRoofDetails,
       roof_data: {
         roof_area_sqft: firstEst.roof_area_sqft,
