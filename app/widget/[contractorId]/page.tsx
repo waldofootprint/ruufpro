@@ -44,7 +44,7 @@ export default async function WidgetPage({
 
   const { data: settings } = await serviceSupabase
     .from("estimate_settings")
-    .select("asphalt_low, asphalt_high")
+    .select("asphalt_low, asphalt_high, brand_primary_hex")
     .eq("contractor_id", contractor.id)
     .single();
 
@@ -74,6 +74,7 @@ export default async function WidgetPage({
         contractorId={contractor.id}
         contractorName={contractor.business_name}
         contractorPhone={contractor.phone}
+        accentColor={settings?.brand_primary_hex || undefined}
       />
     </main>
   );

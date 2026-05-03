@@ -88,6 +88,7 @@ export function EstimatesTab() {
   const [repPhotoUrl, setRepPhotoUrl] = useState("");
   const [calendarUrl, setCalendarUrl] = useState("");
   const [coverageCheckEnabled, setCoverageCheckEnabled] = useState(true);
+  const [brandPrimaryHex, setBrandPrimaryHex] = useState("");
 
   const [financingEnabled, setFinancingEnabled] = useState(false);
   const [financingProvider, setFinancingProvider] = useState("");
@@ -159,6 +160,7 @@ export function EstimatesTab() {
         setRepPhotoUrl(settings.rep_photo_url || "");
         setCalendarUrl(settings.calendar_url || "");
         setCoverageCheckEnabled(settings.coverage_check_enabled ?? true);
+        setBrandPrimaryHex(settings.brand_primary_hex || "");
       } else {
         // Pre-fill metro defaults
         const defaults = getMetroDefaults(contractor.state || "TX", contractor.city || undefined).rates;
@@ -269,6 +271,7 @@ export function EstimatesTab() {
       rep_photo_url: repPhotoUrl.trim() || null,
       calendar_url: calendarUrl.trim() || null,
       coverage_check_enabled: coverageCheckEnabled,
+      brand_primary_hex: brandPrimaryHex.trim() || null,
     });
 
     // Save addons (replace all for this contractor)
@@ -412,6 +415,40 @@ export function EstimatesTab() {
             Calendly, Cal.com, Google appointment slots, Square — any URL works. Leave blank if you prefer to call homeowners back.
           </p>
         </div>
+      </SettingsSection>
+
+      {/* Branding (M1.5) */}
+      <SettingsSection
+        title="Branding"
+        description="Your brand color drives the widget's CTA buttons, selected cards, progress bar, and accent rings."
+      >
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={/^#[0-9a-f]{6}$/i.test(brandPrimaryHex) ? brandPrimaryHex : "#1f2937"}
+            onChange={(e) => setBrandPrimaryHex(e.target.value)}
+            className="h-10 w-16 cursor-pointer rounded-md border-0 bg-transparent p-0"
+            aria-label="Brand primary color"
+          />
+          <NeuInput
+            placeholder="#1F2937"
+            value={brandPrimaryHex}
+            onChange={(e) => setBrandPrimaryHex(e.target.value)}
+            wrapperClassName="flex-1"
+          />
+          {brandPrimaryHex && (
+            <button
+              type="button"
+              onClick={() => setBrandPrimaryHex("")}
+              className="text-[12px] neu-muted hover:opacity-70"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+        <p className="text-[11px] neu-muted">
+          Leave blank to use the default theme. Hex format: #RRGGBB.
+        </p>
       </SettingsSection>
 
       {/* Material Rates */}

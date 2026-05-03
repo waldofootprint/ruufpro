@@ -303,9 +303,11 @@ export default function EstimateWidgetV4({
   accentColor,
   variant = "dark",
 }: EstimateWidgetProps) {
-  // Build color system — if accentColor is provided, override the primary/accent navy
+  // Build color system — when accentColor (per-roofer brand_primary_hex) is set,
+  // override the highest-impact accent surfaces so the widget reads as the
+  // roofer's brand. Works for both light + dark variants. M1.5.
   const baseC = variant === "light" ? LIGHT : GLASS;
-  const C = accentColor && variant === "light" ? {
+  const C = accentColor ? {
     ...baseC,
     inputBorderFocus: accentColor,
     cardSelectedBorder: accentColor,
@@ -318,7 +320,7 @@ export default function EstimateWidgetV4({
     pillSelectedBg: `${accentColor}10`,
   } : baseC;
   const baseS = variant === "light" ? LIGHT_SHADOW : SHADOW;
-  const S = accentColor && variant === "light" ? {
+  const S = accentColor ? {
     ...baseS,
     cardSelected: `0 0 0 2px ${accentColor}, 0 2px 8px ${accentColor}1A`,
     btnPrimary: `0 4px 14px ${accentColor}40, 0 1px 3px rgba(0,0,0,0.08)`,
