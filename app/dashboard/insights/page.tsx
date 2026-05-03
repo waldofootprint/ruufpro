@@ -11,6 +11,7 @@ import { SpeedGameSection } from "@/components/dashboard/insights/SpeedGameSecti
 import { RileyROISection } from "@/components/dashboard/insights/RileyROISection";
 import { ReviewMomentumSection } from "@/components/dashboard/insights/ReviewMomentumSection";
 import { CustomerDNASection } from "@/components/dashboard/insights/CustomerDNASection";
+import { ModeBSection, type ModeBStats } from "@/components/dashboard/insights/ModeBSection";
 import type {
   ScoreboardStats, MoneyLeftStats, HomeownersWantStats,
   SpeedGameStats, RileyROIStats, ReviewMomentumStats, CustomerDNAStats,
@@ -30,6 +31,7 @@ export default function InsightsPage() {
   const { contractorId, businessName } = useDashboard();
   const isDemo = useDemoMode();
   const [data, setData] = useState<InsightsData | null>(isDemo ? (DEMO_INSIGHTS as InsightsData) : null);
+  const [modeB, setModeB] = useState<ModeBStats | null>(null);
   const [loading, setLoading] = useState(!isDemo);
 
   useEffect(() => {
@@ -38,8 +40,12 @@ export default function InsightsPage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/dashboard/insights", { cache: "no-store" });
-        if (res.ok) setData(await res.json());
+        const [insightsRes, modeBRes] = await Promise.all([
+          fetch("/api/dashboard/insights", { cache: "no-store" }),
+          fetch("/api/dashboard/insights/mode-b-rate", { cache: "no-store" }),
+        ]);
+        if (insightsRes.ok) setData(await insightsRes.json());
+        if (modeBRes.ok) setModeB(await modeBRes.json());
       } catch (err) {
         console.error("Insights fetch failed:", err);
       } finally {
@@ -97,6 +103,7 @@ export default function InsightsPage() {
           <RileyROISection stats={data.rileyROI} />
           <ReviewMomentumSection stats={data.reviewMomentum} />
           <CustomerDNASection stats={data.customerDNA} />
+          {modeB && <ModeBSection stats={modeB} />}
         </>
       )}
     </div>

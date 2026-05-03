@@ -56,6 +56,28 @@ function getSupabase() {
   );
 }
 
+// M1.7 Mode B telemetry. Fire-and-forget: telemetry failures never block the
+// homeowner response. `mode_b_fired` rows are the numerator, `estimate_returned`
+// the denominator for the 7-day refusal-rate tile on the insights dashboard.
+async function logEstimateEvent(
+  supabase: ReturnType<typeof getSupabase>,
+  contractorId: string,
+  eventType: "mode_b_fired" | "estimate_returned",
+  metadata: Record<string, unknown>
+) {
+  try {
+    await supabase.from("widget_events").insert({
+      contractor_id: contractorId,
+      event_type: eventType,
+      session_fp: "server",
+      page: "estimate_api",
+      metadata,
+    });
+  } catch {
+    // swallow — telemetry must never block the price response
+  }
+}
+
 // Material display metadata
 const MATERIAL_META: Record<string, { label: string; warranty: string; windRating: string; lifespan: string; description: string }> = {
   asphalt: {
@@ -436,6 +458,12 @@ export async function POST(request: NextRequest) {
         name, email, phone, address, timeline, financing_interest, sms_consent,
         trip_reason: `geocode_${invalidStr}`,
       });
+      await logEstimateEvent(supabase, contractor_id, "mode_b_fired", {
+        error_code: errorCode,
+        trip_reason: `geocode_${invalidStr}`,
+        address: address || null,
+        pipeline: pipelineUsed,
+      });
       return NextResponse.json(
         {
           error:
@@ -463,6 +491,12 @@ export async function POST(request: NextRequest) {
       await writeManualQuoteLead(supabase, contractor_id, {
         name, email, phone, address, timeline, financing_interest, sms_consent,
         trip_reason: "no_roof_data_solar_or_footprints",
+      });
+      await logEstimateEvent(supabase, contractor_id, "mode_b_fired", {
+        error_code: "measurement_unavailable",
+        trip_reason: "no_roof_data_solar_or_footprints",
+        address: address || null,
+        pipeline: pipelineUsed,
       });
       return NextResponse.json(
         {
@@ -602,6 +636,12 @@ export async function POST(request: NextRequest) {
         );
         // No manual-quote lead here — this is a user input error we want them
         // to correct, not a guardrail refusal.
+        await logEstimateEvent(supabase, contractor_id, "mode_b_fired", {
+          error_code: "pitch_conflict_recheck",
+          trip_reason: `pitch_conflict:${stories}story_${pitch_category}`,
+          address: address || null,
+          pipeline: pipelineUsed,
+        });
         return NextResponse.json(
           {
             error:
@@ -716,6 +756,12 @@ export async function POST(request: NextRequest) {
             name, email, phone, address, timeline, financing_interest, sms_consent,
             trip_reason: trip,
           });
+          await logEstimateEvent(supabase, contractor_id, "mode_b_fired", {
+            error_code: errorCode,
+            trip_reason: trip,
+            address: address || null,
+            pipeline: pipelineUsed,
+          });
           return NextResponse.json(
             {
               error: isOverSize
@@ -752,6 +798,13 @@ export async function POST(request: NextRequest) {
           calendar_url: settings.calendar_url || null,
         }
       : null;
+
+    await logEstimateEvent(supabase, contractor_id, "estimate_returned", {
+      pipeline: pipelineUsed,
+      confidence,
+      is_fallback: isFallback,
+      sqft: firstEstFinal.roof_area_sqft,
+    });
 
     return NextResponse.json({
       estimates,
