@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getWeatherSurge } from "@/lib/weather-surge";
+import { getWeatherSurge } from "@/lib/archive/weather-surge";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

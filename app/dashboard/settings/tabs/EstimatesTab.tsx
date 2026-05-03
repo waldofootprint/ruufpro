@@ -35,13 +35,6 @@ const MATERIALS = [
 ] as const;
 
 const BUFFERS = [0, 5, 10, 15, 20] as const;
-const SURGE_MULTIPLIERS = ["1.10", "1.15", "1.20", "1.25", "1.35"] as const;
-const SURGE_DURATIONS = [
-  { value: "3", label: "3 days" },
-  { value: "7", label: "1 week" },
-  { value: "14", label: "2 weeks" },
-  { value: "30", label: "30 days" },
-] as const;
 
 interface Addon {
   id: string;
@@ -86,12 +79,6 @@ export function EstimatesTab() {
     asphalt: "", metal: "", tile: "", flat: "",
   });
   const [showRoofDetails, setShowRoofDetails] = useState(true);
-
-  const [surgeEnabled, setSurgeEnabled] = useState(false);
-  const [surgeMultiplier, setSurgeMultiplier] = useState("1.20");
-  const [surgeDurationDays, setSurgeDurationDays] = useState("7");
-  const [surgeAutoExpire, setSurgeAutoExpire] = useState(true);
-  const [surgeExpiresAt, setSurgeExpiresAt] = useState<string | null>(null);
 
   const [financingEnabled, setFinancingEnabled] = useState(false);
   const [financingProvider, setFinancingProvider] = useState("");
@@ -149,11 +136,6 @@ export function EstimatesTab() {
         setFinancingTermMonths(settings.financing_term_months?.toString() || "120");
         setFinancingApr(settings.financing_apr?.toString() || "");
         setFinancingNote(settings.financing_note || "");
-        setSurgeEnabled(settings.weather_surge_enabled ?? false);
-        setSurgeMultiplier(settings.weather_surge_multiplier?.toString() || "1.20");
-        setSurgeDurationDays(settings.weather_surge_duration_days?.toString() || "7");
-        setSurgeAutoExpire(settings.weather_surge_auto_expire ?? true);
-        setSurgeExpiresAt(settings.weather_surge_expires_at || null);
         setLabels({
           asphalt: settings.asphalt_label || "",
           metal: settings.metal_label || "",
@@ -259,14 +241,6 @@ export function EstimatesTab() {
       financing_term_months: financingTermMonths ? parseInt(financingTermMonths) : null,
       financing_apr: financingApr ? parseFloat(financingApr) : null,
       financing_note: financingNote || null,
-      weather_surge_enabled: surgeEnabled,
-      weather_surge_multiplier: surgeMultiplier ? parseFloat(surgeMultiplier) : null,
-      weather_surge_duration_days: surgeDurationDays ? parseInt(surgeDurationDays) : 7,
-      weather_surge_auto_expire: surgeAutoExpire,
-      weather_surge_expires_at:
-        surgeEnabled && surgeAutoExpire && !surgeExpiresAt
-          ? new Date(Date.now() + (parseInt(surgeDurationDays) || 7) * 86400000).toISOString()
-          : surgeExpiresAt,
       asphalt_label: labels.asphalt || null,
       metal_label: labels.metal || null,
       tile_label: labels.tile || null,
@@ -482,69 +456,6 @@ export function EstimatesTab() {
               : "Homeowners see only the price range and material name."
           }
         />
-      </SettingsSection>
-
-      {/* Storm Surge */}
-      <SettingsSection
-        title="Storm Surge Pricing"
-        description="Temporarily bump estimate highs after a storm hits your area."
-        action={<NeuToggle checked={surgeEnabled} onChange={setSurgeEnabled} />}
-      >
-        {surgeEnabled && (
-          <>
-            {surgeExpiresAt && (
-              <div
-                className="neu-inset px-3 py-2 text-[12px]"
-                style={{ color: "var(--neu-text)" }}
-              >
-                <span className="font-semibold">Surge active</span>
-                <span className="neu-muted">
-                  {" "}
-                  — expires{" "}
-                  {new Date(surgeExpiresAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                  . +{Math.round((parseFloat(surgeMultiplier || "1.20") - 1) * 100)}% on all estimates.
-                </span>
-              </div>
-            )}
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
-                Price Increase
-              </label>
-              <PillGroup
-                options={SURGE_MULTIPLIERS.map((v) => ({
-                  value: v,
-                  label: `+${Math.round((parseFloat(v) - 1) * 100)}%`,
-                }))}
-                value={surgeMultiplier}
-                onChange={setSurgeMultiplier}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide neu-muted">
-                Duration
-              </label>
-              <PillGroup
-                options={SURGE_DURATIONS.map((d) => ({ value: d.value, label: d.label }))}
-                value={surgeDurationDays}
-                onChange={setSurgeDurationDays}
-              />
-            </div>
-            <NeuToggle
-              checked={surgeAutoExpire}
-              onChange={setSurgeAutoExpire}
-              label="Auto-disable after duration"
-              description={
-                surgeAutoExpire
-                  ? "Surge pricing turns off automatically when the duration ends."
-                  : "You'll turn off surge pricing manually."
-              }
-            />
-          </>
-        )}
       </SettingsSection>
 
       {/* Financing */}

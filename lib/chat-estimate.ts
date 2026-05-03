@@ -1,6 +1,6 @@
 // Chat estimate wrapper — runs the estimate engine from just an address + contractor ID.
 // Used by Riley's getEstimate tool call during chat conversations.
-// Reuses 100% of existing estimate logic (Solar API + calculator + weather surge).
+// Reuses 100% of existing estimate logic (Solar API + calculator).
 
 import { createClient } from "@supabase/supabase-js";
 import { getRoofData } from "@/lib/solar-api";
@@ -11,7 +11,6 @@ import {
   type RoofMaterial,
   type ContractorRates,
 } from "@/lib/estimate";
-import { getWeatherSurge } from "@/lib/weather-surge";
 
 const DEFAULT_MATERIAL_LABELS: Record<string, string> = {
   asphalt: "Asphalt Shingles",
@@ -33,7 +32,6 @@ export interface ChatEstimateResult {
   pitchDegrees: number;
   isSatellite: boolean;
   numSegments: number;
-  weatherSurgeActive: boolean; // True if storm pricing is applied
   summary: string; // Human-readable summary for Riley to reference
 }
 
@@ -152,18 +150,6 @@ export async function runChatEstimate(
     }
   }
 
-  // Check weather surge
-  let weatherSurgeMultiplier: number | undefined;
-  try {
-    // We don't have lat/lng here, but getRoofData geocoded internally.
-    // Weather surge requires coords — skip if not opted in.
-    if (settings.weather_surge_enabled) {
-      weatherSurgeMultiplier = settings.weather_surge_multiplier || undefined;
-    }
-  } catch {
-    // Weather surge is optional — don't fail the estimate
-  }
-
   // Calculate estimates for all priced materials
   const allMaterials: RoofMaterial[] = ["asphalt", "metal", "tile", "flat"];
   const pricedMaterials = allMaterials.filter((m) => {
@@ -189,7 +175,6 @@ export async function runChatEstimate(
         material: mat,
         shingleLayers: "not_sure",
         rates,
-        weatherSurgeMultiplier,
         // PRICING.1c-corrected (2026-04-24): chat path doesn't plumb shape
         // resolver yet — safe-middle hip default keeps pricing deterministic
         // and inside the projected 1c band for chat-served quotes.
@@ -221,8 +206,6 @@ export async function runChatEstimate(
   const pitchDegrees = Math.round(roofData.pitchDegrees * 10) / 10;
   const pitchRatio = Math.round(Math.tan((pitchDegrees * Math.PI) / 180) * 12);
 
-  const isSurged = !!(weatherSurgeMultiplier && weatherSurgeMultiplier > 1);
-
   // Build summary for Riley to reference in conversation
   const primaryEst = estimates[0];
   const summary = [
@@ -233,9 +216,6 @@ export async function runChatEstimate(
     `Most affordable: ${primaryEst.label} at ${primaryEst.rangeDisplay}.`,
     estimates.length > 1
       ? `Premium: ${estimates[estimates.length - 1].label} at ${estimates[estimates.length - 1].rangeDisplay}.`
-      : "",
-    isSurged
-      ? "NOTE: These prices include a temporary storm-demand adjustment. Prices may be lower once storm activity subsides."
       : "",
     ESTIMATE_DISCLAIMER,
   ]
@@ -249,7 +229,6 @@ export async function runChatEstimate(
     pitchDegrees,
     isSatellite: true,
     numSegments: roofData.numSegments,
-    weatherSurgeActive: isSurged,
     summary,
   };
 }

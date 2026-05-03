@@ -2,7 +2,7 @@
 // so roofers can click through it and see it working.
 // This is the "aha moment" on the marketing site.
 
-import EstimateWidget from "@/components/estimate-widget";
+import EstimateWidget from "@/components/archive/estimate-widget-v1";
 
 export default function Demo() {
   return (

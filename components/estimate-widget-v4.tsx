@@ -257,13 +257,6 @@ interface EstimateResponse {
     is_satellite: boolean;
     detail_display: string;
   };
-  weather_surge?: {
-    detected: boolean;
-    active: boolean;  // true only when roofer opted in
-    multiplier: number;
-    alerts: string[];
-    severity: string;
-  } | null;
   show_roof_details?: boolean;
   // NEW Phase 2 step 1:
   confidence?: "high" | "low";
@@ -1374,23 +1367,6 @@ export default function EstimateWidgetV4({
                 </p>
                 <p className="text-[12px]" style={{ color: C.textTertiary }}>
                   {estimateData.roof_data.detail_display}
-                </p>
-              </div>
-            )}
-
-            {/* Weather surge notice — shown when roofer has enabled storm pricing */}
-            {estimateData.weather_surge?.active && (
-              <div
-                className="rounded-xl px-4 py-3 flex items-start gap-3"
-                style={{
-                  background: variant === "light" ? "#FFF7ED" : "rgba(251,146,60,0.1)",
-                  border: `1px solid ${variant === "light" ? "#FDBA74" : "rgba(251,146,60,0.25)"}`,
-                }}
-              >
-                <span className="text-[14px] mt-0.5">&#9888;</span>
-                <p className="text-[12px] leading-relaxed" style={{ color: C.textSecondary }}>
-                  <strong style={{ color: C.text }}>Weather alert in your area.</strong>{" "}
-                  Prices may be higher than normal due to increased demand.
                 </p>
               </div>
             )}

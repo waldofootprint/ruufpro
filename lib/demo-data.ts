@@ -1113,7 +1113,6 @@ export const DEMO_ESTIMATE_SETTINGS = {
   flat_low: "6000",
   flat_high: "10000",
   service_zips: ["33602", "33606", "33609", "33701", "33755", "34205"],
-  weather_surge_enabled: false,
   buffer_pct: "10",
 };
 

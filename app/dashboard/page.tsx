@@ -7,7 +7,6 @@ import { calculateHeatScore } from "@/lib/heat-score";
 import { detectIntent, type ChatMessage } from "@/lib/intent-detection";
 import { StatCard, StatCardGrid } from "@/components/dashboard/stat-cards";
 import { LeadList, type LeadWithDetails } from "@/components/dashboard/lead-list";
-import StormAlertBanner from "@/components/dashboard/StormAlertBanner";
 import { Flame, Clock, MessageSquare, AlertTriangle, DollarSign } from "lucide-react";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { useDemoMode } from "@/lib/use-demo-mode";
@@ -356,9 +355,6 @@ export default function DashboardHome() {
           iconColor={staleLeads > 0 ? "bg-red-50 text-red-500" : "bg-muted text-muted-foreground"}
         />
       </StatCardGrid>
-
-      {/* Storm Banner */}
-      <StormAlertBanner contractorId={contractorId} />
 
       {/* Lead List */}
       <LeadList leads={leads} onStatusChange={handleStatusChange} />

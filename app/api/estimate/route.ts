@@ -32,7 +32,6 @@ import {
   type ContractorRates,
   type RoofShapeClass,
 } from "@/lib/estimate";
-import { getWeatherSurge } from "@/lib/weather-surge";
 
 // Pitch-category → multiplier on horizontal footprint area to get installed
 // roof area. Mirrors the values used in the V1 fallback elsewhere; consumed
@@ -241,16 +240,15 @@ export async function POST(request: NextRequest) {
     };
     const showRoofDetails: boolean = settings?.show_roof_details ?? true;
 
-    // Step 2: Get roof data + weather surge (parallel to avoid latency)
+    // Step 2: Get roof data
     let roofData: RoofData | null = null;
     let geometry = null;
 
     const preCoords = lat && lng ? { lat, lng } : undefined;
     const getRoofDataStart = Date.now();
-    const [roofResult, weatherSurge] = await Promise.all([
-      address ? getRoofData(address, preCoords) : Promise.resolve({ data: null, geocoded: null, invalid: undefined as string | undefined }),
-      getWeatherSurge(lat, lng),
-    ]);
+    const roofResult = address
+      ? await getRoofData(address, preCoords)
+      : { data: null, geocoded: null, invalid: undefined as string | undefined };
     const getRoofDataElapsedMs = Date.now() - getRoofDataStart;
 
     roofData = roofResult.data;
@@ -526,15 +524,6 @@ export async function POST(request: NextRequest) {
       roofShapeClass: pricingShapeClass,
       // Mode A: per-contractor minimum job price floor (Session AZ)
       minimumJobPrice: settings.minimum_job_price || undefined,
-      // Weather surge — only applied when roofer has opted in AND not expired.
-      weatherSurgeMultiplier: (() => {
-        if (!settings.weather_surge_enabled) return undefined;
-        // Check if auto-expire has passed
-        if (settings.weather_surge_auto_expire && settings.weather_surge_expires_at) {
-          if (new Date(settings.weather_surge_expires_at) < new Date()) return undefined;
-        }
-        return settings.weather_surge_multiplier || weatherSurge.multiplier;
-      })(),
     };
 
     // Assign Good/Better/Best tier labels based on price order
@@ -768,16 +757,6 @@ export async function POST(request: NextRequest) {
       sqft_used_for_estimate: firstEst.roof_area_sqft,
       lidar_gate_status: pipelineResult?.lidarGateStatus ?? null,
       measurement_run_id: pipelineResult?.telemetryRowId ?? null,
-      // Weather surge: "detected" = NOAA sees alerts, "active" = roofer opted in
-      weather_surge: weatherSurge.isSurged
-        ? {
-            detected: true,
-            active: !!settings.weather_surge_enabled,
-            multiplier: weatherSurge.multiplier,
-            alerts: weatherSurge.alerts,
-            severity: weatherSurge.highestSeverity,
-          }
-        : null,
       // Backward compatibility: if a single material was requested, include flat response
       ...(material && estimates.find((e) => e.material === material)
         ? {

@@ -570,7 +570,7 @@ export default function ChatWidget({
                   );
                 }
                 if (part.type === "tool-getEstimate" && part.result) {
-                  const est = part.result as { success: boolean; estimates?: Array<{ label: string; rangeDisplay: string; material: string }>; roofAreaSqft?: number; isSatellite?: boolean; weatherSurgeActive?: boolean; fallbackMessage?: string };
+                  const est = part.result as { success: boolean; estimates?: Array<{ label: string; rangeDisplay: string; material: string }>; roofAreaSqft?: number; isSatellite?: boolean; fallbackMessage?: string };
                   if (!est.success) return null; // Riley handles the error in text
                   return (
                     <div
@@ -633,24 +633,6 @@ export default function ChatWidget({
                             }}
                           >
                             {est.roofAreaSqft.toLocaleString()} sqft roof
-                          </div>
-                        )}
-                        {/* Weather surge notice */}
-                        {est.weatherSurgeActive && (
-                          <div
-                            style={{
-                              padding: "6px 14px",
-                              background: isDarkTheme ? "#3A2A10" : "#FEF3C7",
-                              fontSize: 11,
-                              color: isDarkTheme ? "#FCD34D" : "#92400E",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                              borderBottom: `1px solid ${isDarkTheme ? "#333" : "#E5E7EB"}`,
-                            }}
-                          >
-                            <span>⚠</span>
-                            <span>Includes temporary storm-demand pricing — prices may be lower once activity subsides</span>
                           </div>
                         )}
                         {/* Material options */}

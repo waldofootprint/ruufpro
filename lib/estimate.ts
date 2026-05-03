@@ -72,9 +72,6 @@ export interface EstimateInput {
   // Roofle handles small roofs (they won't quote a 2,000 sqft roof at $12K
   // because no roofer will show up to do it for that price).
   minimumJobPrice?: number;
-
-  // Weather surge (from NOAA monitoring, if active)
-  weatherSurgeMultiplier?: number;
 }
 
 export interface EstimateResult {
@@ -95,7 +92,6 @@ export interface EstimateResult {
     accessoryCost: number;
     tearoffCost: number;
     penetrationCost: number;
-    weatherSurge: number;
   };
 }
 
@@ -293,7 +289,6 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   const pitchMultiplier = getPitchMultiplier(pitchDegrees);
   const wasteFactor = getWasteFactor(numSegments, input.roofData?.source);
   const penetrationCost = getPenetrationCost(roofAreaSqft);
-  const weatherSurge = input.weatherSurgeMultiplier || 1.0;
 
   // Get contractor's rates — use MIDPOINT for the best estimate
   const rateLow = input.rates[`${input.material}_low` as keyof ContractorRates] || 0;
@@ -386,11 +381,8 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
   const pitchAdjustedTearoff = tearoffCost * effectivePitchMultiplier;
   const pitchAdjustedPenetrations = effectivePenetrationCost * effectivePitchMultiplier;
 
-  // Subtotal before overhead
-  const subtotal = pitchAdjustedMaterial + accessoryCost + pitchAdjustedTearoff + pitchAdjustedPenetrations;
-
-  // Apply weather surge (no overhead markup — rate already includes it)
-  const rawMid = Math.round(subtotal * weatherSurge);
+  // Subtotal — no overhead markup (rate already includes it).
+  const rawMid = Math.round(pitchAdjustedMaterial + accessoryCost + pitchAdjustedTearoff + pitchAdjustedPenetrations);
 
   // Mode A (Session AZ): minimum job price floor. If the contractor has set
   // a floor and our computed midpoint is below it, lift the midpoint up.
@@ -422,7 +414,6 @@ export function calculateEstimate(input: EstimateInput): EstimateResult {
       accessoryCost: Math.round(accessoryCost),
       tearoffCost: Math.round(tearoffCost),
       penetrationCost: Math.round(effectivePenetrationCost),
-      weatherSurge,
     },
   };
 }

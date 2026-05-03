@@ -6,7 +6,7 @@
 import { createServerSupabase } from "@/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
-import EstimateWidget from "@/components/estimate-widget";
+import EstimateWidgetV4 from "@/components/estimate-widget-v4";
 
 export default async function WidgetPage({
   params,
@@ -70,7 +70,7 @@ export default async function WidgetPage({
 
   return (
     <main className="min-h-screen bg-transparent p-4">
-      <EstimateWidget
+      <EstimateWidgetV4
         contractorId={contractor.id}
         contractorName={contractor.business_name}
         contractorPhone={contractor.phone}
