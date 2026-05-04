@@ -47,7 +47,14 @@ export default function DemoPageClient({ prospect }: { prospect: ProspectData })
           </p>
 
           <div className="hero-riley-live">
-            <span className="chip live">Live</span>
+            <div className="riley-header">
+              <div className="riley-avatar">R</div>
+              <div className="riley-meta">
+                <div className="riley-name">Riley</div>
+                <div className="riley-status"><span className="riley-dot" />online</div>
+              </div>
+              <span className="riley-live-pill">Live</span>
+            </div>
             <div className="riley-frame">
               <ChatWidget
                 contractorId={contractorId}
@@ -300,21 +307,69 @@ const CSS = `
 .demo-v5-root .hero-riley-live {
   background: #FAF8F4;
   border-radius: 22px;
-  padding: 18px;
+  padding: 14px;
   box-shadow:
     10px 10px 24px rgba(184, 175, 158, 0.6),
     -8px -8px 18px rgba(255, 255, 255, 0.95);
   position: relative; z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.demo-v5-root .riley-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 6px 0;
+}
+.demo-v5-root .riley-header .riley-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: #1F1A17;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px;
+  flex-shrink: 0;
+}
+.demo-v5-root .riley-header .riley-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  flex: 1;
+}
+.demo-v5-root .riley-header .riley-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1F1A17;
+}
+.demo-v5-root .riley-header .riley-status {
+  font-size: 12px;
+  color: #5C544A;
+  display: flex; align-items: center; gap: 6px;
+}
+.demo-v5-root .riley-header .riley-dot {
+  width: 7px; height: 7px;
+  background: #16A34A;
+  border-radius: 50%;
+  display: inline-block;
+}
+.demo-v5-root .riley-header .riley-live-pill {
+  background: rgba(249,115,22,0.12);
+  color: #D26310;
+  border: 1px solid rgba(249,115,22,0.3);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .demo-v5-root .hero-riley-live .riley-frame {
-  height: 560px;
+  height: 520px;
   border-radius: 16px;
   overflow: hidden;
   background: #fff;
   position: relative;
-}
-.demo-v5-root .hero-riley-live .riley-frame > * {
-  height: 100% !important;
 }
 .demo-v5-root .chip {
   position: absolute; top: 14px; right: 14px;
