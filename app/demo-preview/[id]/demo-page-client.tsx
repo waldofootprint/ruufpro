@@ -10,7 +10,6 @@ const RoofRender3D = dynamic(
   { ssr: false, loading: () => <div className="render-3d-skeleton" /> }
 );
 
-void ChatWidget;
 
 interface ProspectData {
   id: string;
@@ -47,26 +46,17 @@ export default function DemoPageClient({ prospect }: { prospect: ProspectData })
             Ask Riley anything about your roofing company. He already knows.
           </p>
 
-          <div className="hero-riley">
+          <div className="hero-riley-live">
             <span className="chip live">Live</span>
-            <div className="avatar">R</div>
-            <div className="r-label">Riley · online</div>
-            <div className="bubble-in">
-              Hey! I&apos;m Riley — {prospect.businessName}&apos;s assistant. What can I help with?
-            </div>
-            <div className="bubble-out">Do you do standing seam?</div>
-            <div className="bubble-in">
-              Yes — it&apos;s our specialty. We install 24-gauge Galvalume with concealed
-              fasteners. Want a ballpark on your home?
-            </div>
-            <div className="bubble-out">How long does install take?</div>
-            <div className="bubble-in">
-              Depends on square footage and pitch. Most homes take 3–5 working days. Want me
-              to pull up a quick form?
-            </div>
-            <div className="riley-input">
-              <span>Ask Riley anything…</span>
-              <span className="send">→</span>
+            <div className="riley-frame">
+              <ChatWidget
+                contractorId={contractorId}
+                businessName={prospect.businessName}
+                hasAiChatbot={true}
+                accentColor="#F97316"
+                fontFamily="DM Sans"
+                isStandalone={true}
+              />
             </div>
           </div>
         </section>
@@ -306,6 +296,25 @@ const CSS = `
     10px 10px 24px rgba(184, 175, 158, 0.6),
     -8px -8px 18px rgba(255, 255, 255, 0.95);
   position: relative; z-index: 2;
+}
+.demo-v5-root .hero-riley-live {
+  background: #FAF8F4;
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow:
+    10px 10px 24px rgba(184, 175, 158, 0.6),
+    -8px -8px 18px rgba(255, 255, 255, 0.95);
+  position: relative; z-index: 2;
+}
+.demo-v5-root .hero-riley-live .riley-frame {
+  height: 560px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+}
+.demo-v5-root .hero-riley-live .riley-frame > * {
+  height: 100% !important;
 }
 .demo-v5-root .chip {
   position: absolute; top: 14px; right: 14px;
